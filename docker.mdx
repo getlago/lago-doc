@@ -1,20 +1,25 @@
 ---
 title: "Docker"
+description:
+  "Docker is the easiest way to get started with the self-hosted version of
+  Lago."
 ---
-
-Docker is the easiest way to get started with the self-hosted version of Lago.
 
 ## Requirements[](#requirements "Direct link to heading")
 
 1. Install [Docker](https://docs.docker.com/get-docker/) on your machine;
-2. Make sure [Docker Compose](https://docs.docker.com/compose/install/) is installed and available (it should be the case if you have chosen to install Docker via Docker Desktop); and
-3. Make sure [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) is installed on your machine.
+2. Make sure [Docker Compose](https://docs.docker.com/compose/install/) is
+   installed and available (it should be the case if you have chosen to install
+   Docker via Docker Desktop); and
+3. Make sure
+   [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) is
+   installed on your machine.
 
 ## Run the app[](#run-the-app "Direct link to heading")
 
 To start using Lago, run the following commands in a shell:
 
-```
+```shell
 # Get the code
 git clone https://github.com/getlago/lago.git
 
@@ -30,17 +35,24 @@ docker-compose up
 
 ```
 
-You can now open your browser and go to [http://localhost](http://localhost) to connect to the application. Just after [signing up](/docs/guide/self-hosting/docker#signing-up), Lago's API is exposed at [http://localhost:3000](http://localhost:3000).
+You can now open your browser and go to [http://localhost](http://localhost) to
+connect to the application. Just after
+[signing up](/docs/guide/self-hosting/docker#signing-up), Lago's API is exposed
+at [http://localhost:3000](http://localhost:3000).
 
 ## Signing up[](#signing-up "Direct link to heading")
 
-It's mandatory to create your organization by signing up to Lago. This organization is the core object of your biller as it's used to invoice your customers.
+It's mandatory to create your organization by signing up to Lago. This
+organization is the core object of your biller as it's used to invoice your
+customers.
 
 1. Write down your `organization name`;
 2. Use the main billing `email` of your company; and
 3. Define the admin `password` for this email.
 
-You will be able to **invite other email addresses within the application**. If you already have an account, you can also log in. Once you are able to access the app, you can retrieve your API key.
+You will be able to **invite other email addresses within the application**. If
+you already have an account, you can also log in. Once you are able to access
+the app, you can retrieve your API key.
 
 ## Find your API Key[](#find-your-api-key "Direct link to heading")
 
@@ -54,201 +66,221 @@ Your API Key can be found directly in the UI:
 
 ### Version[](#version "Direct link to heading")
 
-Docker images are always updated to the last stable version in the `docker-compose.yml` file. You can use a different tag if needed by checking the [releases list](https://github.com/getlago/lago/releases).
+Docker images are always updated to the last stable version in the
+`docker-compose.yml` file. You can use a different tag if needed by checking the
+[releases list](https://github.com/getlago/lago/releases).
 
-caution
+<Warning>
+  We recommend to avoid the usage of `latest` tag, you should use the last
+  tagged version, you can track what are the last version on Dockerhub
+</Warning>
 
-We recommend to avoid the usage of `latest` tag, you should use the last tagged version, you can track what are the last version on Dockerhub
-
-* lago-api : [https://hub.docker.com/repository/docker/getlago/api](https://hub.docker.com/repository/docker/getlago/api)
-* lago-front : [https://hub.docker.com/repository/docker/getlago/front](https://hub.docker.com/repository/docker/getlago/front)
+- lago-api :
+  [https://hub.docker.com/repository/docker/getlago/api](https://hub.docker.com/repository/docker/getlago/api)
+- lago-front :
+  [https://hub.docker.com/repository/docker/getlago/front](https://hub.docker.com/repository/docker/getlago/front)
 
 ### Environment variables[](#environment-variables "Direct link to heading")
 
-Lago uses the following environment variables to configure the components of the application. You can override them to customise your setup.
+Lago uses the following environment variables to configure the components of the
+application. You can override them to customise your setup.
 
-| Variable                                | Default value                                                                                            | Description                                                                                                                                                      |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POSTGRES\_HOST                          | db                                                                                                       | Host name of the postgres server                                                                                                                                 |
-| POSTGRES\_DB                            | lago                                                                                                     | Name of the postgres database                                                                                                                                    |
-| POSTGRES\_USER                          | lago                                                                                                     | Database user for postgres connection                                                                                                                            |
-| POSTGRES\_PASSWORD                      | changeme                                                                                                 | Database password for postgres connection                                                                                                                        |
-| POSTGRES\_PORT                          | 5432                                                                                                     | Port the postgres database listens to                                                                                                                            |
-| REDIS\_HOST                             | redis                                                                                                    | Host name of the redis server                                                                                                                                    |
-| REDIS\_PORT                             | 6379                                                                                                     | Port the redis database listens to                                                                                                                               |
-| LAGO\_REDIS\_CACHE\_HOST                | redis                                                                                                    | Host name of the redis cache server                                                                                                                              |
-| LAGO\_REDIS\_CACHE\_PORT                | 6379                                                                                                     | Port the redis cache server listens to                                                                                                                           |
-| LAGO\_FRONT\_URL                        | http://localhost                                                                                         | URL of the Lago front-end application.Used for CORS configuration                                                                                                |
-| FRONT\_PORT                             | 80                                                                                                       | Port the front-end application listens to                                                                                                                        |
-| LAGO\_API\_URL                          | http://localhost:3000                                                                                    | URL of the Lago back-end application                                                                                                                             |
-| API\_PORT                               | 3000                                                                                                     | Port the back-end application listens to                                                                                                                         |
-| SECRET\_KEY\_BASE                       | your-secret-key-base-hex-64                                                                              | Secret key used for session encryption                                                                                                                           |
-| SENTRY\_DSN                             | Sentry DSN key for error and performance tracking                                                        |                                                                                                                                                                  |
-| LAGO\_RSA\_PRIVATE\_KEY                 | Private key used for webhook signatures                                                                  |                                                                                                                                                                  |
-| LAGO\_SIDEKIQ\_WEB                      | Activate the Sidekiq web UI, disabled by default                                                         |                                                                                                                                                                  |
-| LAGO\_ENCRYPTION\_PRIMARY\_KEY          | Encryption primary key used to secure sensitive values stored in the database                            |                                                                                                                                                                  |
-| LAGO\_ENCRYPTION\_DETERMINISTIC\_KEY    | Encryption deterministic key used to secure sensitive values stored in the database                      |                                                                                                                                                                  |
-| LAGO\_ENCRYPTION\_KEY\_DERIVATION\_SALT | Encryption key salt used to secure sensitive values stored in the database                               |                                                                                                                                                                  |
-| LAGO\_WEBHOOK\_ATTEMPTS                 | 3                                                                                                        | Number of failed attempt before stopping to deliver a webhook                                                                                                    |
-| LAGO\_USE\_AWS\_S3                      | Use AWS S3 for files storage                                                                             |                                                                                                                                                                  |
-| LAGO\_AWS\_S3\_ACCESS\_KEY\_ID          | AWS Access Key id that has access to S3                                                                  |                                                                                                                                                                  |
-| LAGO\_AWS\_S3\_SECRET\_ACCESS\_KEY      | AWS Secret Access Key that has access to S3                                                              |                                                                                                                                                                  |
-| LAGO\_AWS\_S3\_REGION                   | AWS S3 Region                                                                                            |                                                                                                                                                                  |
-| LAGO\_AWS\_S3\_BUCKET                   | AWS S3 Bucket name                                                                                       |                                                                                                                                                                  |
-| LAGO\_AWS\_S3\_ENDPOINT                 | S3 compatible storage endpoint. Should be set only if you are using another storage provider than AWS S3 |                                                                                                                                                                  |
-| LAGO\_USE\_GCS                          | false                                                                                                    | Use Google Cloud Service Cloud Storage for file storage, ⚠️ If you want to use GCS, you have to pass the credentials json key file to the api and worker service |
-| LAGO\_GCS\_PROJECT                      | GCS Project name                                                                                         |                                                                                                                                                                  |
-| LAGO\_GCS\_BUCKET                       | GCS Bucket Name                                                                                          |                                                                                                                                                                  |
-| LAGO\_PDF\_URL                          | http://pdf:3000                                                                                          | PDF Service URL on your infrastructure                                                                                                                           |
-| LAGO\_DISABLE\_SIGNUP                   | Disable Sign up when running Lago in self-hosted                                                         |                                                                                                                                                                  |
-| LAGO\_RAILS\_STDOUT                     | Set to true to activate logs on containers                                                               |                                                                                                                                                                  |
+| Variable                            | Default value                                                                                            | Description                                                                                                                                                      |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POSTGRES_HOST                       | db                                                                                                       | Host name of the postgres server                                                                                                                                 |
+| POSTGRES_DB                         | lago                                                                                                     | Name of the postgres database                                                                                                                                    |
+| POSTGRES_USER                       | lago                                                                                                     | Database user for postgres connection                                                                                                                            |
+| POSTGRES_PASSWORD                   | changeme                                                                                                 | Database password for postgres connection                                                                                                                        |
+| POSTGRES_PORT                       | 5432                                                                                                     | Port the postgres database listens to                                                                                                                            |
+| REDIS_HOST                          | redis                                                                                                    | Host name of the redis server                                                                                                                                    |
+| REDIS_PORT                          | 6379                                                                                                     | Port the redis database listens to                                                                                                                               |
+| LAGO_REDIS_CACHE_HOST               | redis                                                                                                    | Host name of the redis cache server                                                                                                                              |
+| LAGO_REDIS_CACHE_PORT               | 6379                                                                                                     | Port the redis cache server listens to                                                                                                                           |
+| LAGO_FRONT_URL                      | http://localhost                                                                                         | URL of the Lago front-end application.Used for CORS configuration                                                                                                |
+| FRONT_PORT                          | 80                                                                                                       | Port the front-end application listens to                                                                                                                        |
+| LAGO_API_URL                        | http://localhost:3000                                                                                    | URL of the Lago back-end application                                                                                                                             |
+| API_PORT                            | 3000                                                                                                     | Port the back-end application listens to                                                                                                                         |
+| SECRET_KEY_BASE                     | your-secret-key-base-hex-64                                                                              | Secret key used for session encryption                                                                                                                           |
+| SENTRY_DSN                          | Sentry DSN key for error and performance tracking                                                        |                                                                                                                                                                  |
+| LAGO_RSA_PRIVATE_KEY                | Private key used for webhook signatures                                                                  |                                                                                                                                                                  |
+| LAGO_SIDEKIQ_WEB                    | Activate the Sidekiq web UI, disabled by default                                                         |                                                                                                                                                                  |
+| LAGO_ENCRYPTION_PRIMARY_KEY         | Encryption primary key used to secure sensitive values stored in the database                            |                                                                                                                                                                  |
+| LAGO_ENCRYPTION_DETERMINISTIC_KEY   | Encryption deterministic key used to secure sensitive values stored in the database                      |                                                                                                                                                                  |
+| LAGO_ENCRYPTION_KEY_DERIVATION_SALT | Encryption key salt used to secure sensitive values stored in the database                               |                                                                                                                                                                  |
+| LAGO_WEBHOOK_ATTEMPTS               | 3                                                                                                        | Number of failed attempt before stopping to deliver a webhook                                                                                                    |
+| LAGO_USE_AWS_S3                     | Use AWS S3 for files storage                                                                             |                                                                                                                                                                  |
+| LAGO_AWS_S3_ACCESS_KEY_ID           | AWS Access Key id that has access to S3                                                                  |                                                                                                                                                                  |
+| LAGO_AWS_S3_SECRET_ACCESS_KEY       | AWS Secret Access Key that has access to S3                                                              |                                                                                                                                                                  |
+| LAGO_AWS_S3_REGION                  | AWS S3 Region                                                                                            |                                                                                                                                                                  |
+| LAGO_AWS_S3_BUCKET                  | AWS S3 Bucket name                                                                                       |                                                                                                                                                                  |
+| LAGO_AWS_S3_ENDPOINT                | S3 compatible storage endpoint. Should be set only if you are using another storage provider than AWS S3 |                                                                                                                                                                  |
+| LAGO_USE_GCS                        | false                                                                                                    | Use Google Cloud Service Cloud Storage for file storage, ⚠️ If you want to use GCS, you have to pass the credentials json key file to the api and worker service |
+| LAGO_GCS_PROJECT                    | GCS Project name                                                                                         |                                                                                                                                                                  |
+| LAGO_GCS_BUCKET                     | GCS Bucket Name                                                                                          |                                                                                                                                                                  |
+| LAGO_PDF_URL                        | http://pdf:3000                                                                                          | PDF Service URL on your infrastructure                                                                                                                           |
+| LAGO_DISABLE_SIGNUP                 | Disable Sign up when running Lago in self-hosted                                                         |                                                                                                                                                                  |
+| LAGO_RAILS_STDOUT                   | Set to true to activate logs on containers                                                               |                                                                                                                                                                  |
 
-caution
+<Warning>
+We recommend that you change `POSTGRES_PASSWORD`, `SECRET_KEY_BASE`,
+`LAGO_RSA_PRIVATE_KEY`, `LAGO_ENCRYPTION_PRIMARY_KEY`,
+`LAGO_ENCRYPTION_DETERMINISTIC_KEY` and `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` to
+improve the security of your Lago instance:
 
-We recommend that you change `POSTGRES_PASSWORD`, `SECRET_KEY_BASE`, `LAGO_RSA_PRIVATE_KEY`, `LAGO_ENCRYPTION_PRIMARY_KEY`, `LAGO_ENCRYPTION_DETERMINISTIC_KEY` and `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` to improve the security of your Lago instance:
+- `SECRET_KEY_BASE` can be generated using the `openssl rand -hex 64` command.
+- `LAGO_RSA_PRIVATE_KEY` can be generated using the
+  `openssl genrsa 2048 | base64` command.
+- `LAGO_ENCRYPTION_PRIMARY_KEY`, `LAGO_ENCRYPTION_DETERMINISTIC_KEY` and
+  `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` can all be gerated using the
+  `cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` command.
 
-* `SECRET_KEY_BASE` can be generated using the `openssl rand -hex 64` command.
-* `LAGO_RSA_PRIVATE_KEY` can be generated using the `openssl genrsa 2048 | base64` command.
-* `LAGO_ENCRYPTION_PRIMARY_KEY`, `LAGO_ENCRYPTION_DETERMINISTIC_KEY` and `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` can all be gerated using the `cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` command.
+</Warning>
 
 ### Components[](#components "Direct link to heading")
 
 Lago uses the following containers:
 
-| Container   | Role                                                                  |
-| ----------- | --------------------------------------------------------------------- |
-| front       | Front-end application                                                 |
-| api         | API back-end application                                              |
-| api\_worker | Asynchronous worker for the API application                           |
-| api\_clock  | Clock worker for the API application                                  |
-| db          | Postgres database engine used to store application data               |
-| redis       | Redis database engine used as a queuing system for asynchronous tasks |
-| pdf         | PDF generation powered by Gotenberg                                   |
+| Container  | Role                                                                  |
+| ---------- | --------------------------------------------------------------------- |
+| front      | Front-end application                                                 |
+| api        | API back-end application                                              |
+| api_worker | Asynchronous worker for the API application                           |
+| api_clock  | Clock worker for the API application                                  |
+| db         | Postgres database engine used to store application data               |
+| redis      | Redis database engine used as a queuing system for asynchronous tasks |
+| pdf        | PDF generation powered by Gotenberg                                   |
 
-You can also use your own database or Redis server. To do so, remove the `db` and `redis` configurations from the `docker-compose.yml` file and update the environment variables accordingly.
+You can also use your own database or Redis server. To do so, remove the `db`
+and `redis` configurations from the `docker-compose.yml` file and update the
+environment variables accordingly.
 
 ### SSL Support[](#ssl-support "Direct link to heading")
 
-Lago Front application can be configured to support SSL certificates. You have two options to achieve this:
+Lago Front application can be configured to support SSL certificates. You have
+two options to achieve this:
 
-* by using a self-signed certificate
-* by using a signed certificate generated by Let's Encrypt
+- by using a self-signed certificate
+- by using a signed certificate generated by Let's Encrypt
 
 #### Self Signed Certificate[](#self-signed-certificate "Direct link to heading")
 
-* Run the script to generate the certificates
+- Run the script to generate the certificates
 
-```
+```shell
 # Be sure to be in your lago folder
 ./extra/init-selfsigned.sh
 
 # This should create certificates in the ./extra/ssl/ folder
-
 ```
 
-* Take a look at the `docker-compose.yml` file and uncomment the part related to the Self-Signed certificate
+- Take a look at the `docker-compose.yml` file and uncomment the part related to
+  the Self-Signed certificate
 
-```
+```yaml
 volumes:
   - ./extra/nginx-selfsigned.conf:/etc/nginx/conf.d/default.conf
   - ./extra/ssl/nginx-selfsigned.crt:/etc/ssl/certs/nginx-selfsigned.crt
   - ./extra/ssl/nginx-selfsigned.key:/etc/ssl/private/nginx-selfsigned.key
   - ./extra/ssl/dhparam.pem:/etc/ssl/certs/dhparam.pem
-
 ```
 
-* You can now start the front application with a self signed SSL certificate support
+- You can now start the front application with a self signed SSL certificate
+  support
 
-```
+```shell
 docker-compose up front
-
 ```
 
 #### Let's Encrypt Certificate[](#lets-encrypt-certificate "Direct link to heading")
 
-* Edit the file `extra/init-letsencrypt.sh`  
-   * You must replace `lago.example` with your domain name  
-   * You must enter a valid email address
-* Run the script
+- Edit the file `extra/init-letsencrypt.sh`
+  - You must replace `lago.example` with your domain name
+  - You must enter a valid email address
+- Run the script
 
-```
+```shell
 # Be sure to be in your lago folder
 ./extra/init-letsencrypt.sh
 
 # You will be asked to provide some information
 # After that you should be able to see the extra/certbot folder
-
 ```
 
-* Take a look at the `docker-compose.yml` file and uncomment all the parts related to the Let's Encrypt's support
+- Take a look at the `docker-compose.yml` file and uncomment all the parts
+  related to the Let's Encrypt's support
 
-```
-command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-...
+```yaml
+command:
+  '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx
+  -g "daemon off;"'''
+---
 volumes:
   - ./extra/nginx-letsencrypt.conf:/etc/nginx/conf.d/default.conf
   - ./extra/certbot/conf:/etc/letsencrypt
   - ./extra/certbot/www:/var/www/certbot
-
 ```
 
-* You can now start the front application with the signed certificate support
+- You can now start the front application with the signed certificate support
 
-```
+```shell
 docker-compose up front
-
 ```
 
 ### Storage[](#storage "Direct link to heading")
 
-By default, Lago uses the internal storage of the container. You can customize it by defining different environment variables.
+By default, Lago uses the internal storage of the container. You can customize
+it by defining different environment variables.
 
-We currently support : 
+We currently support :
 
-* AWS S3
-* AWS S3 Compatibles Endpoints
-* Google Cloud Service Cloud Storage
+- AWS S3
+- AWS S3 Compatibles Endpoints
+- Google Cloud Service Cloud Storage
 
-⚠️ If you use S3 compatibles endpoints, you should set the `LAGO_AWS_S3_REGION` to a default value (ei: `us-east-1`), it is required to work properly!
+<Warning>
+  If you use S3 compatibles endpoints, you should set the `LAGO_AWS_S3_REGION`
+  to a default value (ei: `us-east-1`), it is required to work properly!
+</Warning>
 
 #### AWS S3[](#aws-s3 "Direct link to heading")
 
 You have to set these variables to use AWS S3.
 
-| Name                               | Description                             |
-| ---------------------------------- | --------------------------------------- |
-| LAGO\_USE\_AWS\_S3                 | Set to "true" if you want to use AWS S3 |
-| LAGO\_AWS\_S3\_ACCESS\_KEY\_ID     | AWS S3 Credentials Access Key Id        |
-| LAGO\_AWS\_S3\_SECRET\_ACCESS\_KEY | AWS S3 Credentials Secret Access Key    |
-| LAGO\_AWS\_S3\_REGION              | AWS S3 Region                           |
-| LAGO\_AWS\_S3\_BUCKET              | AWS S3 Bucket                           |
+| Name                          | Description                             |
+| ----------------------------- | --------------------------------------- |
+| LAGO_USE_AWS_S3               | Set to "true" if you want to use AWS S3 |
+| LAGO_AWS_S3_ACCESS_KEY_ID     | AWS S3 Credentials Access Key Id        |
+| LAGO_AWS_S3_SECRET_ACCESS_KEY | AWS S3 Credentials Secret Access Key    |
+| LAGO_AWS_S3_REGION            | AWS S3 Region                           |
+| LAGO_AWS_S3_BUCKET            | AWS S3 Bucket                           |
 
 #### AWS S3 Compatible Endpoints[](#aws-s3-compatible-endpoints "Direct link to heading")
 
 You have to set these variables to use AWS S3 Compatible Endpoints.
 
-| Name                               | Description                                                  |
-| ---------------------------------- | ------------------------------------------------------------ |
-| LAGO\_USE\_AWS\_S3                 | Set to "true" if you want to use AWS S3 Compatible Endpoints |
-| LAGO\_AWS\_S3\_ENDPOINT            | AWS S3 Compatible Endpoint                                   |
-| LAGO\_AWS\_S3\_ACCESS\_KEY\_ID     | AWS S3 Credentials Access Key Id                             |
-| LAGO\_AWS\_S3\_SECRET\_ACCESS\_KEY | AWS S3 Credentials Secret Access Key                         |
-| LAGO\_AWS\_S3\_BUCKET              | AWS S3 Bucket                                                |
-| LAGO\_AWS\_S3\_REGION              | Not used but required by the AWS SDK                         |
+| Name                          | Description                                                  |
+| ----------------------------- | ------------------------------------------------------------ |
+| LAGO_USE_AWS_S3               | Set to "true" if you want to use AWS S3 Compatible Endpoints |
+| LAGO_AWS_S3_ENDPOINT          | AWS S3 Compatible Endpoint                                   |
+| LAGO_AWS_S3_ACCESS_KEY_ID     | AWS S3 Credentials Access Key Id                             |
+| LAGO_AWS_S3_SECRET_ACCESS_KEY | AWS S3 Credentials Secret Access Key                         |
+| LAGO_AWS_S3_BUCKET            | AWS S3 Bucket                                                |
+| LAGO_AWS_S3_REGION            | Not used but required by the AWS SDK                         |
 
 #### Google Cloud Service Cloud Storage[](#google-cloud-service-cloud-storage "Direct link to heading")
 
 You have to set those variables to use GCS Cloud Storage.
 
-| Name               | Description                                        |
-| ------------------ | -------------------------------------------------- |
-| LAGO\_USE\_GCS     | Set to "true" if you want to use GCS Cloud Storage |
-| LAGO\_GCS\_PROJECT | GCS Project name                                   |
-| LAGO\_GCS\_BUCKET  | GCS Bucket name                                    |
+| Name             | Description                                        |
+| ---------------- | -------------------------------------------------- |
+| LAGO_USE_GCS     | Set to "true" if you want to use GCS Cloud Storage |
+| LAGO_GCS_PROJECT | GCS Project name                                   |
+| LAGO_GCS_BUCKET  | GCS Bucket name                                    |
 
-In the `docker-compose.yml` file, you must uncomment the lines and pass the correct GCS credentials json file.
+In the `docker-compose.yml` file, you must uncomment the lines and pass the
+correct GCS credentials json file.
 
-```
+```yaml
 api:
   volumes:
     - gcs_keyfile.json:/app/gcs_keyfile.json
@@ -256,5 +288,4 @@ api:
 api-worker:
   volumes:
     - gcs_keyfile.json:/app/gcs_keyfile.json
-
 ```
