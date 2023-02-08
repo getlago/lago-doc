@@ -53,7 +53,7 @@ article, I will provide a high-level view of the technical challenges we faced
 while implementing hybrid pricing (based on subscription and usage) and what we
 learned during this journey.
 
-![How engineers feel about building a billing system](/images/billing-nightmare.png)
+![How engineers feel about building a billing system](/images/billing-nightmare-3c8b70de58b169f0a4f882549c9edcb7.png)
 
 ## TL;DR: Billing is just 100x harder than you will ever think[](#tldr-billing-is-just-100x-harder-than-you-will-ever-think "Direct link to heading")
 
@@ -168,17 +168,17 @@ that they need to count the distinct number of users each month and reset this
 value to zero for the next billing period. In order to retrieve the number of
 unique visitors, they need to apply a 'distinct' function to deduplicate them.
 
-![Event related to tracked users](/images/tracked-users-event-f81fc6d343efffad1c4b3355517d90db.png)
+![Event related to tracked users](/introduction/images/tracked-users-event-f81fc6d343efffad1c4b3355517d90db.png)
 
-![Event aggregation for tracked users](/images/tracked-users-aggregation-1c662afae3af55c1d1b43793d0f56cc8.png)
+![Event aggregation for tracked users](/introduction/images/tracked-users-aggregation-1c662afae3af55c1d1b43793d0f56cc8.png)
 
 Algolia tracks the number of API searches per month. This means they need to sum
 the number of monthly searches for each customer and reset this value to zero
 for the next billing period.
 
-![Event related to API searches](/images/api-search-event-9e90f7f9c063238a4e14cfd03d314a1e.png)
+![Event related to API searches](/introduction/images/api-search-event-9e90f7f9c063238a4e14cfd03d314a1e.png)
 
-![Event aggregation for API searches](/images/api-search-aggregation-23924f13dd3da2e5d73388afffe7e89a.png)
+![Event aggregation for API searches](/introduction/images/api-search-aggregation-23924f13dd3da2e5d73388afffe7e89a.png)
 
 It becomes even more complex when you start calculating charges based on a
 timeframe. For instance, Snowflake charges for the compute usage of a data
@@ -189,7 +189,7 @@ Consider the example of a utility company that charges $10 per kilowatt of
 electricity per hour. The illustration below shows what needs to be modeled and
 automated by the billing system.
 
-![Power consumption diagram](/images/power-consumption-aba79c1bc4259e79144011519a519586.png)
+![Power consumption diagram](/introduction/images/power-consumption-aba79c1bc4259e79144011519a519586.png)
 
 - **Hour 1**: 10 KW used for 0.5 hour = 5 KW (10 x 0.5)
 - **Hour 2**: 20 KW used for 1 hour = 20 KW (20 x 1)
@@ -260,7 +260,7 @@ Taxes are challenging and depend on multiple dimensions. Taxes depend on what
 you are selling, your home country and your customer's home country. In the
 simplest situations, your tax decision tree should look like this:
 
-![Decision tree for taxes](/images/taxes-vat-46fc3b96167c21bc33b279431aa187ca.png)
+![Decision tree for taxes](/introduction/images/taxes-vat-46fc3b96167c21bc33b279431aa187ca.png)
 
 Now, imagine that you sell different types of goods/services to different types
 of customers in 100+ countries. If you think the logic on paper looks complex,
