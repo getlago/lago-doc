@@ -1,0 +1,108 @@
+---
+title: "Customer usage object"
+description:
+  "This object represents the usage-based charges associated with one of your
+  customers for the current billing period. It allows you to monitor customer
+  usage throughout the period."
+---
+
+## Schema[](#schema "Direct link to heading")
+
+```json
+{
+  "customer_usage": {
+    "from_datetime": "2022-07-01T00:00:00Z",
+    "to_datetime": "2022-07-31T23:59:59Z",
+    "issuing_date": "2022-08-01",
+    "amount_cents": 123,
+    "amount_currency": "EUR",
+    "total_amount_cents": 123,
+    "total_amount_currency": "EUR",
+    "vat_amount_cents": 0,
+    "vat_amount_currency": "EUR",
+    "charges_usage": [
+      {
+        "units": "1.0",
+        "amount_cents": 123,
+        "amount_currency": "EUR",
+        "charge": {
+          "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "charge_model": "graduated"
+        },
+        "billable_metric": {
+          "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
+          "name": "Usage metric",
+          "code": "usage_metric",
+          "aggregation_type": "sum"
+        },
+        "groups": [
+          {
+            "lago_id": "a78f2185-1474-4a64-95bf-bcd96623fec5",
+            "key": null,
+            "value": "europe",
+            "units": "0.9",
+            "amount_cents": 1000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+| Attributes                                                    | Description                                           |
+| ------------------------------------------------------------- | ----------------------------------------------------- |
+| **from_datetime** `String` Not null*ISO 8601 datetime in UTC* | Lower bound of the billing period                     |
+| **to_datetime** `String` Not null*ISO 8601 datetime in UTC*   | Upper bound of the billing period                     |
+| **issuing_date** `String` Not null*ISO 8601 date*             | Date of creation of the invoice                       |
+| **amount_cents** `Integer` Not null                           | Amount in cents, VAT (tax) excluded                   |
+| **amount_currency** `String` Not null                         | Currency of the amount                                |
+| **total_amount_cents** `Integer` Not null                     | Should be the sum of the amount and the VAT amount    |
+| **total_amount_currency** `String` Not null                   | Currency of the total amount                          |
+| **vat_amount_cents** `Integer` Not null                       | VAT amount in cents                                   |
+| **vat_amount_currency** `String` Not null                     | Currency of the VAT amount                            |
+| **charges_usage** `Array` Not null                            | Array of [charge usage](#charge-usage-object) objects |
+
+### Deprecated attributes[](#deprecated-attributes "Direct link to heading")
+
+| Attributes                                                      | Description                       |
+| --------------------------------------------------------------- | --------------------------------- |
+| **from_date** `String` Not null <br /> <sub>ISO 8601 date</sub> | Lower bound of the billing period |
+| **to_date** `String` Not null <br /> <sub>ISO 8601 date</sub>   | Upper bound of the billing period |
+
+## Charge Usage object[](#charge-usage-object "Direct link to heading")
+
+| Attributes                            | Description                                               |
+| ------------------------------------- | --------------------------------------------------------- |
+| **units** `String` Not null           | Number of units consumed by the customer                  |
+| **amount_cents** `Integer` Not null   | Amount in cents, VAT (tax) excluded                       |
+| **amount_currency** `String` Not null | Currency of the amount                                    |
+| **charge** `JSON` Not null            | Related [charge](#charge) object                          |
+| **billable_metric** `JSON` Not null   | Related [billable metric](#billable-metric-object) object |
+| **groups** `Array` Not null           | Array of [group](#group-object) objects                   |
+
+## Charge object[](#charge-object "Direct link to heading")
+
+| Attributes                         | Description                                                                                                                        |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **lago_id** `String` Not null      | ID of the charge in the Lago application                                                                                           |
+| **charge_model** `String` Not null | Model of pricing applied by the charge.See [charge documentation](/docs/guide/plans/charges#the-charge-models) for possible values |
+
+## Billable Metric object[](#billable-metric-object "Direct link to heading")
+
+| Attributes                             | Description                                                                                                                                    |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **lago_id** `String` Not null          | ID of the billable metric in the Lago application                                                                                              |
+| **name** `String` Not null             | Name of the billable metric                                                                                                                    |
+| **code** `String` Not null             | Code of the billable metric                                                                                                                    |
+| **aggregation_type** `String` Not null | Aggregation type of the billable metricSee [billable metric documentation](/docs/guide/billable-metrics/aggregation-types) for possible values |
+
+## Group object[](#group-object "Direct link to heading")
+
+| Attributes                          | Description                                            |
+| ----------------------------------- | ------------------------------------------------------ |
+| **lago_id** `String` Not null       | ID of the group in the Lago application                |
+| **key** `String`                    | Group key, only defined if two dimensions              |
+| **value** `String` Not null         | Group value                                            |
+| **units** `String` Not null         | Number of units consumed by the customer for the group |
+| **amount_cents** `Integer` Not null | Amount in cents for the group, VAT (tax) excluded      |

@@ -1,0 +1,41 @@
+---
+title: "Event object"
+---
+
+Events represents the data delivered to lago application that will then be
+aggregated into billable metrics.
+
+## Schema[](#schema "Direct link to heading")
+
+```json
+{
+  "event": {
+    "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
+    "transaction_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+    "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
+    "external_customer_id": "ext_1234",
+    "code": "billable_metric_code",
+    "timestamp": "2022-04-29T08:59:51Z",
+    "properties": {
+      "custom_field": 12345,
+      "operation_type": "add"
+    },
+    "lago_subscription_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
+    "external_subscription_id": "ext_1234",
+    "created_at": "2022-04-29T08:59:51Z"
+  }
+}
+```
+
+| Attributes                                                                     | Description                                                                                                 |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| **lago_id** `String` Not null                                                  | Unique identifer of the event in Lago application                                                           |
+| **transaction_id** `String` Not null                                           | Unique identifer of the event in your application                                                           |
+| **lago_customer_id** `String` Not null                                         | Unique identifer of the customer in Lago application                                                        |
+| **external_customer_id** `String` Not null                                     | Unique identifer of the customer in your application                                                        |
+| **code** `String` Not null                                                     | Code identifying the type of the event. It matches the code property of one of your active billable metrics |
+| **timestamp** `String` Not null <br /> <sub>_ISO 8601 datetime in UTC_</sub>   | Event occurence datetime in UTC                                                                             |
+| **properties** `JSON`                                                          | Extra data to used for the event aggregation.                                                               |
+| **lago_subscription_id** `String` Not null                                     | Unique identifer of the subscription in Lago application                                                    |
+| **external_subscription_id** `String` Not null                                 | Unique identifer of the subscription in Lago application                                                    |
+| **created_at** `String` Not null <br /> <sub>_ISO 8601 datetime in UTC_ </sub> | Creation date of the event                                                                                  |

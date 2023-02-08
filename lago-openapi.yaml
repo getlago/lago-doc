@@ -1,0 +1,2995 @@
+openapi: 3.0.1
+info:
+  title: Lago API
+  version: ""
+paths:
+  add_ons:
+    post:
+      description: Create a new add-on
+      operationId: addOnsService.create
+      tags:
+        - AddOns
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddOn"
+              examples:
+                Example1:
+                  value:
+                    add_on:
+                      lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                      name: add_on_name
+                      code: add_on_code
+                      amount_cents: 5000
+                      amount_currency: USD
+                      description: description
+                      created_at: "2022-04-29T08:59:51Z"
+      summary: Create a new add-on
+      security: &ref_0
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddOnInput"
+            examples:
+              Example1:
+                value:
+                  add_on:
+                    name: add_on_name
+                    code: add_on_code
+                    amount_cents: 5000
+                    amount_currency: USD
+                    description: desc
+    get:
+      description: Get all add-ons in certain organisation
+      operationId: addOnsService.find
+      tags:
+        - AddOns
+      parameters:
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+          examples:
+            Example1:
+              value: 1
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+          examples:
+            Example1:
+              value: 2
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddOns"
+              examples:
+                Example1:
+                  value:
+                    add_ons:
+                      - lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                        name: add_on_name
+                        code: add_on_code
+                        amount_cents: 5000
+                        amount_currency: USD
+                        description: description
+                        created_at: "2022-04-29T08:59:51Z"
+      summary: Find add-ons
+      security: *ref_0
+  add_ons/{code}:
+    get:
+      description: Return a single add-on
+      operationId: addOnsService.get
+      tags:
+        - AddOns
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing add-on
+          required: true
+          schema:
+            type: string
+          examples:
+            Example1:
+              value: code
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddOn"
+              examples:
+                Example1:
+                  value:
+                    add_on:
+                      lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                      name: add_on_name
+                      code: add_on_code
+                      amount_cents: 5000
+                      amount_currency: USD
+                      description: description
+                      created_at: "2022-04-29T08:59:51Z"
+      summary: Find add-on by code
+      security: *ref_0
+    put:
+      description: Update an existing add-on by code
+      operationId: addOnsService.update
+      tags:
+        - AddOns
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing add-on
+          required: true
+          schema:
+            type: string
+          examples:
+            Example1:
+              value: code
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddOn"
+              examples:
+                Example1:
+                  value:
+                    add_on:
+                      lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                      name: add_on_name
+                      code: add_on_code
+                      amount_cents: 5000
+                      amount_currency: USD
+                      description: description
+                      created_at: "2022-04-29T08:59:51Z"
+      summary: Update an existing add-on
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddOnInput"
+            examples:
+              Example1:
+                value:
+                  add_on:
+                    name: add_on_name
+                    code: add_on_code
+                    amount_cents: 5000
+                    amount_currency: USD
+                    description: desc
+    delete:
+      description: Delete an add-on
+      operationId: addOnsService.destroy
+      tags:
+        - AddOns
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing add-on
+          required: true
+          schema:
+            type: string
+          examples:
+            Example1:
+              value: code
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddOn"
+              examples:
+                Example1:
+                  value:
+                    add_on:
+                      lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                      name: add_on_name
+                      code: add_on_code
+                      amount_cents: 5000
+                      amount_currency: USD
+                      description: description
+                      created_at: "2022-04-29T08:59:51Z"
+      summary: Delete an add-on
+      security: *ref_0
+  applied_add_ons:
+    post:
+      description: Apply an add-on to a customer
+      operationId: addOnsService.apply
+      tags:
+        - AddOns
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppliedAddOn"
+              examples:
+                Example1:
+                  value:
+                    applied_add_on:
+                      lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                      lago_add_on_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                      add_on_code: add-on-code
+                      external_customer_id: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+                      lago_customer_id: 99a6094e-199b-4101-896a-54e927ce7bd7
+                      amount_cents: 123
+                      amount_currency: EUR
+                      created_at: "2022-04-29T08:59:51Z"
+      summary: Apply an add-on to a customer
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                applied_add_on:
+                  $ref: "#/components/schemas/AppliedAddOnInputObject"
+            examples:
+              Example1:
+                value:
+                  applied_add_on:
+                    external_customer_id: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+                    add_on_code: code
+                    amount_cents: 123
+                    amount_currency: EUR
+  /billable_metrics:
+    post:
+      description: Create a new billable metric
+      operationId: billableMetricsService.create
+      tags:
+        - BillableMetrics
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillableMetric"
+              examples:
+                Example1:
+                  value:
+                    billable_metric:
+                      lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                      name: bm_name
+                      code: bm_code
+                      description: description
+                      aggregation_type: sum_agg
+                      field_name: amount_sum
+                      created_at: "2022-04-29T08:59:51Z"
+                      group: {}
+                      active_subscriptions_count: 0
+                      draft_invoices_count: 0
+      summary: Create a new billable metric
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillableMetricInput"
+            examples:
+              Example1:
+                value:
+                  billable_metric:
+                    name: bm_name
+                    code: bm_code
+                    description: description
+                    aggregation_type: sum_agg
+                    field_name: amount_sum
+                    group:
+                      key: country
+                      values:
+                        - france
+                        - italy
+                        - spain
+    get:
+      description: Get all billable metrics in certain organisation
+      operationId: billableMetricsService.getAll
+      tags:
+        - BillableMetrics
+      parameters:
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+          examples:
+            Example1:
+              value: 3
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+          examples:
+            Example1:
+              value: 2
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillableMetrics"
+              examples:
+                Example1:
+                  value:
+                    billable_metrics:
+                      - lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                        name: bm_name
+                        code: bm_code
+                        description: description
+                        aggregation_type: sum_agg
+                        field_name: amount_sum
+                        created_at: "2022-04-29T08:59:51Z"
+                        group: {}
+                        active_subscriptions_count: 0
+                        draft_invoices_count: 0
+      summary: Find Billable metrics
+      security: *ref_0
+  /billable_metrics/{code}:
+    get:
+      description: Return a single billable metric
+      operationId: billableMetricsService.get
+      tags:
+        - BillableMetrics
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing billable metric
+          required: true
+          schema:
+            type: string
+          examples:
+            Example1:
+              value: code
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillableMetric"
+              examples:
+                Example1:
+                  value:
+                    billable_metric:
+                      lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                      name: bm_name
+                      code: bm_code
+                      description: description
+                      aggregation_type: sum_agg
+                      field_name: amount_sum
+                      created_at: "2022-04-29T08:59:51Z"
+                      group: {}
+                      active_subscriptions_count: 0
+                      draft_invoices_count: 0
+      summary: Find billable metric by code
+      security: *ref_0
+    put:
+      description: Update an existing billable metric by code
+      operationId: billableMetricsService.update
+      tags:
+        - BillableMetrics
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing billable metric
+          required: true
+          schema:
+            type: string
+          examples:
+            Example1:
+              value: code
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillableMetric"
+              examples:
+                Example1:
+                  value:
+                    billable_metric:
+                      lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                      name: bm_name
+                      code: bm_code
+                      description: description
+                      aggregation_type: sum_agg
+                      field_name: amount_sum
+                      created_at: "2022-04-29T08:59:51Z"
+                      group: {}
+                      active_subscriptions_count: 0
+                      draft_invoices_count: 0
+      summary: Update an existing billable metric
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillableMetricInput"
+            examples:
+              Example1:
+                value:
+                  billable_metric:
+                    name: bm_name
+                    code: bm_code
+                    description: description
+                    aggregation_type: sum_agg
+                    field_name: amount_sum
+                    group:
+                      key: country
+                      values:
+                        - france
+                        - italy
+                        - spain
+    delete:
+      description: Delete a billable metric
+      operationId: billableMetricsService.destroy
+      tags:
+        - BillableMetrics
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing billable metric
+          required: true
+          schema:
+            type: string
+          examples:
+            Example1:
+              value: code
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillableMetric"
+              examples:
+                Example1:
+                  value:
+                    billable_metric:
+                      lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                      name: bm_name
+                      code: bm_code
+                      description: description
+                      aggregation_type: sum_agg
+                      field_name: amount_sum
+                      created_at: "2022-04-29T08:59:51Z"
+                      group: {}
+                      active_subscriptions_count: 0
+                      draft_invoices_count: 0
+      summary: Delete a billable metric
+      security: *ref_0
+  /billable_metrics/{code}/groups:
+    get:
+      description: Find all billable metric groups in certain organisation
+      operationId: billableMetricsService.findMetricGroups
+      tags:
+        - BillableMetrics
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing billable metric
+          required: true
+          schema:
+            type: string
+          examples:
+            Example1:
+              value: code
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+          examples:
+            Example1:
+              value: 3
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+          examples:
+            Example1:
+              value: 2
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Groups"
+              examples:
+                Example1:
+                  value:
+                    groups:
+                      - lago_id: b7ab2926-1de8-4428-9bcd-779314ac129b
+                        key: group_key
+                        value: group_value
+      summary: Find Billable metric groups
+      security: *ref_0
+  coupons:
+    post:
+      description: Create a new coupon
+      operationId: couponsService.create
+      tags:
+        - Coupons
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
+      summary: Create a new coupon
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CouponInput"
+    get:
+      description: Find all coupons in certain organisation
+      operationId: couponsService.find
+      tags:
+        - Coupons
+      parameters:
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupons"
+      summary: Find Coupons
+      security: *ref_0
+  coupons/{code}:
+    get:
+      description: Return a single coupon
+      operationId: couponsService.get
+      tags:
+        - Coupons
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing coupon
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
+      summary: Find coupon by code
+      security: *ref_0
+    put:
+      description: Update an existing coupon by code
+      operationId: couponsService.update
+      tags:
+        - Coupons
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing coupon
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
+      summary: Update an existing coupon
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CouponInput"
+    delete:
+      description: Delete a coupon
+      operationId: couponsService.destroy
+      tags:
+        - Coupons
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing coupon
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
+      summary: Delete a coupon
+      security: *ref_0
+  applied_coupons:
+    post:
+      description: Apply a coupon to a customer
+      operationId: couponsService.apply
+      tags:
+        - Coupons
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppliedCoupon"
+      summary: Apply a coupon to a customer
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppliedCouponInput"
+    get:
+      description: Find all applied coupons
+      operationId: couponsService.findAllAppliedCoupons
+      tags:
+        - Coupons
+      parameters:
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          description: Applied coupon status
+          required: false
+          schema:
+            $ref: "#/components/schemas/CouponStatus"
+        - name: external_customer_id
+          in: query
+          description: External customer ID
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppliedCoupons"
+      summary: Find Applied Coupons
+      security: *ref_0
+  /credit_notes:
+    post:
+      description: Create a new credit note
+      operationId: creditNotesService.create
+      tags:
+        - CreditNotes
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditNote"
+      summary: Create a new Credit note
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditNoteInput"
+    get:
+      description: Find all credit notes in certain organisation
+      operationId: creditNotesService.find
+      tags:
+        - CreditNotes
+      parameters:
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+        - name: external_customer_id
+          in: query
+          description: External customer ID
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditNotes"
+      summary: Find Credit notes
+      security: *ref_0
+  /credit_notes/{id}:
+    get:
+      description: Return a single credit note
+      operationId: creditNotesService.get
+      tags:
+        - CreditNotes
+      parameters:
+        - name: id
+          in: path
+          description: Id of the existing credit note
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditNote"
+      summary: Find credit note
+      security: *ref_0
+    put:
+      description: Update an existing credit note
+      operationId: creditNotesService.update
+      tags:
+        - CreditNotes
+      parameters:
+        - name: id
+          in: path
+          description: Id of the existing credit note
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditNote"
+      summary: Update an existing credit note
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditNoteUpdateInput"
+  /credit_notes/{id}/download:
+    post:
+      description: Download an existing credit note
+      operationId: creditNotesService.download
+      tags:
+        - CreditNotes
+      parameters:
+        - name: id
+          in: path
+          description: ID of the existing Lago Credit note
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditNote"
+      summary: Download an existing credit note
+      security: *ref_0
+  /credit_notes/{id}/void:
+    put:
+      description: Void an existing credit note
+      operationId: creditNotesService.voidCreditNote
+      tags:
+        - CreditNotes
+      parameters:
+        - name: id
+          in: path
+          description: ID of the existing Lago Credit note
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditNote"
+      summary: Void existing credit note
+      security: *ref_0
+  /customers:
+    post:
+      description: Create a new customer
+      operationId: customersService.create
+      tags:
+        - Customers
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+      summary: Create a customer
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+    get:
+      description: Find all customers in certain organisation
+      operationId: customersService.find
+      tags:
+        - Customers
+      parameters:
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customers"
+      summary: Find customers
+      security: *ref_0
+  /customers/{external_id}:
+    get:
+      description: Return a single customer
+      operationId: customersService.get
+      tags:
+        - Customers
+      parameters:
+        - name: external_id
+          in: path
+          description: External ID of the existing customer
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+      summary: Find customer by external ID
+      security: *ref_0
+  /customers/{customer_external_id}/current_usage:
+    get:
+      description: Return a customer current usage
+      operationId: customersService.getCurrentUsage
+      tags:
+        - Customers
+      parameters:
+        - name: customer_external_id
+          in: path
+          description: External ID of the existing customer
+          required: true
+          schema:
+            type: string
+        - name: external_subscription_id
+          in: query
+          description: External subscription ID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerUsage"
+      summary: Find customer current usage
+      security: *ref_0
+  /events:
+    post:
+      description: Create a new event
+      operationId: eventsService.create
+      tags:
+        - Events
+      parameters: []
+      responses:
+        "204":
+          description: ""
+      summary: Create a new event
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+  /events/batch:
+    post:
+      description: Create batch events
+      operationId: eventsService.createBatchEvents
+      tags:
+        - Events
+      parameters: []
+      responses:
+        "204":
+          description: ""
+      summary: Create batch events
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BatchEventInput"
+  /events/{id}:
+    get:
+      description: Return a single event
+      operationId: eventsService.get
+      tags:
+        - Events
+      parameters:
+        - name: id
+          in: path
+          description: Id of the existing transaction
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+      summary: Find event by transaction ID
+      security: *ref_0
+  /invoices/{id}:
+    get:
+      description: Return a single invoice
+      operationId: invoicesService.get
+      tags:
+        - Invoices
+      parameters:
+        - name: id
+          in: path
+          description: ID of the existing Lago Invoice
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+      summary: Find invoice by ID
+      security: *ref_0
+    put:
+      description: Update an existing invoice
+      operationId: invoicesService.update
+      tags:
+        - Invoices
+      parameters:
+        - name: id
+          in: path
+          description: ID of the existing Lago Invoice
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+      summary: Update an existing invoice status
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceInput"
+  /invoices/{id}/download:
+    post:
+      description: Download an existing invoice
+      operationId: invoicesService.download
+      tags:
+        - Invoices
+      parameters:
+        - name: id
+          in: path
+          description: ID of the existing Lago Invoice
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+      summary: Download an existing invoice
+      security: *ref_0
+  /invoices/{id}/retry_payment:
+    post:
+      description: Retry invoice payment
+      operationId: invoicesService.retryPayment
+      tags:
+        - Invoices
+      parameters:
+        - name: id
+          in: path
+          description: ID of the existing Lago Invoice
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: ""
+      summary: Retry invoice payment
+      security: *ref_0
+  /invoices/{id}/refresh:
+    put:
+      description: Refresh a draft invoice
+      operationId: invoicesService.refreshInvoice
+      tags:
+        - Invoices
+      parameters:
+        - name: id
+          in: path
+          description: ID of the existing Lago Invoice
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+      summary: Refresh a draft invoice
+      security: *ref_0
+  /invoices/{id}/finalize:
+    put:
+      description: Finalize a draft invoice
+      operationId: invoicesService.finalize
+      tags:
+        - Invoices
+      parameters:
+        - name: id
+          in: path
+          description: ID of the draft Lago Invoice
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+      summary: Finalize a draft invoice
+      security: *ref_0
+  /invoices:
+    get:
+      description: Find all invoices in certain organisation
+      operationId: invoicesService.find
+      tags:
+        - Invoices
+      parameters:
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+        - name: external_customer_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: issuing_date_from
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: issuing_date_to
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/InvoiceStatus"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoices"
+      summary: Find all invoices
+      security: *ref_0
+  /organizations:
+    put:
+      description: Update an existing organization
+      operationId: organizationsService.update
+      tags:
+        - Organizations
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+      summary: Update an existing Organization
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationInput"
+  /plans:
+    post:
+      description: Create a new plan
+      operationId: plansService.create
+      tags:
+        - Plans
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+      summary: Create a new plan
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanInput"
+    get:
+      description: Find all plans in certain organisation
+      operationId: plansService.find
+      tags:
+        - Plans
+      parameters:
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plans"
+      summary: Find plans
+      security: *ref_0
+  /plans/{code}:
+    get:
+      description: Return a single plan
+      operationId: plansService.get
+      tags:
+        - Plans
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing plan
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+      summary: Fin plan by code
+      security: *ref_0
+    put:
+      description: Update an existing plan by code
+      operationId: plansService.update
+      tags:
+        - Plans
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing plan
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+      summary: Update an existing plan
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanInput"
+    delete:
+      description: Delete a plan
+      operationId: plansService.destroy
+      tags:
+        - Plans
+      parameters:
+        - name: code
+          in: path
+          description: Code of the existing plan
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Plan"
+      summary: Delete a plan
+      security: *ref_0
+  /subscriptions:
+    post:
+      description: Assign a plan to a customer
+      operationId: subscriptionsService.create
+      tags:
+        - Subscriptions
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+      summary: Assign a plan to a customer
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionCreateInput"
+    get:
+      description: Find all suscriptions for certain customer
+      operationId: subscriptionsService.find
+      tags:
+        - Subscriptions
+      parameters:
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+        - name: external_customer_id
+          in: query
+          description: External customer ID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscriptions"
+      summary: Find subscriptions
+      security: *ref_0
+  /subscriptions/{external_id}:
+    put:
+      description: Update an existing subscription by external ID
+      operationId: subscriptionsService.update
+      tags:
+        - Subscriptions
+      parameters:
+        - name: external_id
+          in: path
+          description: External ID of the existing subscription
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+      summary: Update an existing subscription
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionUpdateInput"
+    delete:
+      description: Terminate a subscription
+      operationId: subscriptionsService.delete
+      tags:
+        - Subscriptions
+      parameters:
+        - name: external_id
+          in: path
+          description: External ID of the existing subscription
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+      summary: Terminate a subscription
+      security: *ref_0
+  wallets:
+    post:
+      description: Create a new wallet
+      operationId: walletsService.create
+      tags:
+        - Wallets
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+      summary: Create a new wallet
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletInput"
+    get:
+      description: Find all wallets for certain customer
+      operationId: walletsService.find
+      tags:
+        - Wallets
+      parameters:
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+        - name: external_customer_id
+          in: query
+          description: External customer ID
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallets"
+      summary: Find wallets
+      security: *ref_0
+  wallets/{id}:
+    get:
+      description: Return a wallet
+      operationId: walletsService.get
+      tags:
+        - Wallets
+      parameters:
+        - name: id
+          in: path
+          description: Lago ID of the existing wallet
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+      summary: Find wallet
+      security: *ref_0
+    put:
+      description: Update an existing wallet
+      operationId: walletsService.update
+      tags:
+        - Wallets
+      parameters:
+        - name: id
+          in: path
+          description: Lago ID of the existing wallet
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+      summary: Update an existing wallet
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletUpdateInput"
+    delete:
+      description: Delete a wallet
+      operationId: walletsService.destroy
+      tags:
+        - Wallets
+      parameters:
+        - name: id
+          in: path
+          description: Lago ID of the existing wallet
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+      summary: Delete a wallet
+      security: *ref_0
+  wallet_transactions:
+    post:
+      description: Create a new wallet transaction
+      operationId: walletsService.createWalletTransaction
+      tags:
+        - Wallets
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletTransactions"
+      summary: Create a new wallet transaction
+      security: *ref_0
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletTransactionInput"
+  wallets/{id}/wallet_transactions:
+    get:
+      description: Find all wallet transactions for certain wallet
+      operationId: walletsService.findWalletTransactions
+      tags:
+        - Wallets
+      parameters:
+        - name: id
+          in: path
+          description: Lago ID of the existing wallet
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Number of page
+          required: false
+          schema:
+            type: integer
+        - name: per_page
+          in: query
+          description: Number of records per page
+          required: false
+          schema:
+            type: integer
+        - name: status
+          in: query
+          description: Status (pending or settled)
+          required: false
+          schema:
+            type: string
+        - name: transaction_type
+          in: query
+          description: Transaction Type (inbound or outbound)
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletTransactions"
+      summary: Find wallet transactions
+      security: *ref_0
+components:
+  schemas:
+    AddOns:
+      type: object
+      properties:
+        add_ons:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddOnObject"
+    AppliedAddOnInputObject:
+      type: object
+      properties:
+        external_customer_id:
+          type: string
+        add_on_code:
+          type: string
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+    AddOnInput:
+      type: object
+      properties:
+        add_on:
+          $ref: "#/components/schemas/AddOnInputObject"
+    AddOnInputObject:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+    AddOn:
+      type: object
+      properties:
+        add_on:
+          $ref: "#/components/schemas/AddOnObject"
+    AddOnObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+    AppliedAddOn:
+      type: object
+      properties:
+        applied_add_on:
+          $ref: "#/components/schemas/AppliedAddOnObject"
+    AppliedAddOnObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        lago_add_on_id:
+          type: string
+        add_on_code:
+          type: string
+        lago_customer_id:
+          type: string
+        external_customer_id:
+          type: string
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        created_at:
+          type: string
+    BillableMetrics:
+      type: object
+      properties:
+        billable_metrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillableMetricObject"
+    Groups:
+      type: object
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupObject"
+    GroupObject:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        lago_id:
+          type: string
+    BillableMetricInput:
+      type: object
+      properties:
+        billable_metric:
+          $ref: "#/components/schemas/BillableMetricInputObject"
+    BillableMetricInputObject:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        field_name:
+          type: string
+        aggregation_type:
+          $ref: "#/components/schemas/AggregationType"
+        group:
+          $ref: "#/components/schemas/BillableMetricGroup"
+    BillableMetric:
+      type: object
+      properties:
+        billable_metric:
+          $ref: "#/components/schemas/BillableMetricObject"
+    BillableMetricGroup:
+      type: object
+      properties:
+        key:
+          type: string
+        values:
+          type: array
+          items: {}
+    BillableMetricObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+        field_name:
+          type: string
+        aggregation_type:
+          $ref: "#/components/schemas/AggregationType"
+        group:
+          $ref: "#/components/schemas/BillableMetricGroup"
+        active_subscriptions_count:
+          type: integer
+        draft_invoices_count:
+          type: integer
+    BillingTime:
+      type: string
+      enum:
+        - calendar
+        - anniversary
+    FeeObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        lago_group_id:
+          type: string
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        vat_amount_cents:
+          type: integer
+        vat_amount_currency:
+          type: string
+        units:
+          type: number
+          format: double
+        events_count:
+          type: integer
+        item:
+          $ref: "#/components/schemas/FeeItem"
+    FeeItem:
+      type: object
+      properties:
+        type:
+          $ref: "#/components/schemas/BillingTime"
+        code:
+          type: string
+        name:
+          type: string
+    AggregationType:
+      type: string
+      enum:
+        - count_agg
+        - sum_agg
+        - max_agg
+        - unique_count_agg
+        - recurring_count_agg
+    Coupons:
+      type: object
+      properties:
+        coupons:
+          type: array
+          items:
+            $ref: "#/components/schemas/CouponObject"
+    AppliedCouponInput:
+      type: object
+      properties:
+        applied_coupon:
+          $ref: "#/components/schemas/AppliedCouponInputObject"
+    AppliedCouponInputObject:
+      type: object
+      properties:
+        external_customer_id:
+          type: string
+        coupon_code:
+          type: string
+        frequency:
+          $ref: "#/components/schemas/FrequencyType"
+        frequency_duration:
+          type: integer
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        percentage_rate:
+          type: number
+          format: double
+    AppliedCoupon:
+      type: object
+      properties:
+        applied_coupon:
+          $ref: "#/components/schemas/AppliedCouponObject"
+    AppliedCoupons:
+      type: object
+      properties:
+        applied_coupons:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppliedCouponObject"
+    CouponStatus:
+      type: string
+      enum:
+        - active
+        - terminated
+    CouponInput:
+      type: object
+      properties:
+        coupon:
+          $ref: "#/components/schemas/CouponInputObject"
+    CouponType:
+      type: string
+      enum:
+        - fixed_amount
+        - percentage
+    FrequencyType:
+      type: string
+      enum:
+        - once
+        - recurring
+    ExpirationType:
+      type: string
+      enum:
+        - no_expiration
+        - time_limit
+    CouponInputObject:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        coupon_type:
+          $ref: "#/components/schemas/CouponType"
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        reusable:
+          type: boolean
+        percentage_rate:
+          type: number
+          format: double
+        frequency:
+          $ref: "#/components/schemas/FrequencyType"
+        frequency_duration:
+          type: integer
+        expiration_at:
+          type: string
+        expiration:
+          $ref: "#/components/schemas/ExpirationType"
+    Coupon:
+      type: object
+      properties:
+        coupon:
+          $ref: "#/components/schemas/CouponObject"
+    CouponObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        coupon_type:
+          $ref: "#/components/schemas/CouponType"
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        reusable:
+          type: boolean
+        created_at:
+          type: string
+        percentage_rate:
+          type: number
+          format: double
+        frequency:
+          $ref: "#/components/schemas/FrequencyType"
+        frequency_duration:
+          type: integer
+        expiration_at:
+          type: string
+        expiration:
+          $ref: "#/components/schemas/ExpirationType"
+    AppliedCouponObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        lago_coupon_id:
+          type: string
+        coupon_code:
+          type: string
+        lago_customer_id:
+          type: string
+        external_customer_id:
+          type: string
+        status:
+          $ref: "#/components/schemas/CouponStatus"
+        amount_cents:
+          type: integer
+        amount_cents_remaining:
+          type: integer
+        amount_currency:
+          type: string
+        percentage_rate:
+          type: number
+          format: double
+        frequency:
+          $ref: "#/components/schemas/FrequencyType"
+        frequency_duration:
+          type: integer
+        frequency_duration_remaining:
+          type: integer
+        expiration_at:
+          type: string
+        created_at:
+          type: string
+        terminated_at:
+          type: string
+    CreditNoteInput:
+      type: object
+      properties:
+        credit_note:
+          $ref: "#/components/schemas/CreditNoteInputObject"
+    CreditNoteReason:
+      type: string
+      enum:
+        - duplicated_charge
+        - product_unsatisfactory
+        - order_change
+        - order_cancellation
+        - fraudulent_charge
+        - other
+    CreditNoteItem:
+      type: object
+      properties:
+        fee_id:
+          type: string
+        amount_cents:
+          type: integer
+    CreditNoteInputObject:
+      type: object
+      properties:
+        invoice_id:
+          type: string
+        reason:
+          $ref: "#/components/schemas/CreditNoteReason"
+        description:
+          type: string
+        credit_amount_cents:
+          type: integer
+        refund_amount_cents:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreditNoteItem"
+    CreditNoteUpdateInput:
+      type: object
+      properties:
+        credit_note:
+          $ref: "#/components/schemas/CreditNoteInputObject"
+    CreditNotes:
+      type: object
+      properties:
+        credit_notes:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreditNoteObject"
+    CreditNote:
+      type: object
+      properties:
+        credit_note:
+          $ref: "#/components/schemas/CreditNoteObject"
+    CreditNoteObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        sequential_id:
+          type: integer
+        number:
+          type: string
+        lago_invoice_id:
+          type: string
+        invoice_number:
+          type: string
+        issuing_date:
+          type: string
+        credit_status:
+          $ref: "#/components/schemas/CreditStatus"
+        refund_status:
+          $ref: "#/components/schemas/RefundStatus"
+        reason:
+          $ref: "#/components/schemas/CreditReason"
+        description:
+          type: string
+        total_amount_cents:
+          type: integer
+        total_amount_currency:
+          type: string
+        vat_amount_cents:
+          type: integer
+        vat_amount_currency:
+          type: string
+        sub_total_vat_excluded_amount_cents:
+          type: integer
+        sub_total_vat_excluded_amount_currency:
+          type: string
+        balance_amount_cents:
+          type: integer
+        balance_amount_currency:
+          type: string
+        credit_amount_cents:
+          type: integer
+        credit_amount_currency:
+          type: string
+        refund_amount_cents:
+          type: integer
+        refund_amount_currency:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        file_url:
+          type: string
+        customer:
+          $ref: "#/components/schemas/CustomerObject"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreditNoteItemObject"
+    CreditStatus:
+      type: string
+      enum:
+        - available
+        - consumed
+        - voided
+    RefundStatus:
+      type: string
+      enum:
+        - pending
+        - succeeded
+        - failed
+    CreditReason:
+      type: string
+      enum:
+        - duplicated_charge
+        - product_unsatisfactory
+        - order_change
+        - order_cancellation
+        - fraudulent_charge
+        - other
+    CreditNoteItemObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        fee:
+          $ref: "#/components/schemas/FeeObject"
+    CustomerInput:
+      type: object
+      properties:
+        customer:
+          $ref: "#/components/schemas/CustomerInputObject"
+    CustomerInputObject:
+      type: object
+      properties:
+        external_id:
+          type: string
+        name:
+          type: string
+        country:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        state:
+          type: string
+        zipode:
+          type: string
+        email:
+          type: string
+        city:
+          type: string
+        url:
+          type: string
+        phone:
+          type: string
+        lago_url:
+          type: string
+        legal_name:
+          type: string
+        legal_number:
+          type: string
+        currency:
+          type: string
+        timezone:
+          type: string
+        billing_configuration:
+          $ref: "#/components/schemas/BillingConfigurationCustomer"
+    CustomerUsage:
+      type: object
+      properties:
+        customer_usage:
+          $ref: "#/components/schemas/CustomerUsageObject"
+    Customers:
+      type: object
+      properties:
+        customers:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomerObject"
+    Customer:
+      type: object
+      properties:
+        customer:
+          $ref: "#/components/schemas/CustomerObject"
+    BillingConfigurationCustomer:
+      type: object
+      additionalProperties: {}
+    CustomerObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        external_id:
+          type: string
+        name:
+          type: string
+        sequential_id:
+          type: integer
+        slug:
+          type: string
+        created_at:
+          type: string
+        country:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        state:
+          type: string
+        zipode:
+          type: string
+        email:
+          type: string
+        city:
+          type: string
+        url:
+          type: string
+        phone:
+          type: string
+        lago_url:
+          type: string
+        legal_name:
+          type: string
+        legal_number:
+          type: string
+        currency:
+          type: string
+        timezone:
+          type: string
+        applicable_timezone:
+          type: string
+        billing_configuration:
+          $ref: "#/components/schemas/BillingConfigurationCustomer"
+    CustomerUsageObject:
+      type: object
+      properties:
+        from_datetime:
+          type: string
+        to_datetime:
+          type: string
+        issuing_date:
+          type: string
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        total_amount_cents:
+          type: integer
+        total_amount_currency:
+          type: string
+        vat_amount_cents:
+          type: integer
+        vat_amount_currency:
+          type: string
+        charges_usage:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChargeUsageObject"
+    ChargeUsageObject:
+      type: object
+      properties:
+        units:
+          type: number
+          format: double
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        charge:
+          $ref: "#/components/schemas/Charge"
+        billable_metric:
+          $ref: "#/components/schemas/ChargeBillableMetric"
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/Group"
+    ChargeModelType:
+      type: string
+      enum:
+        - standard
+        - graduated
+        - package
+        - percentage
+        - volume
+    Charge:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        charge_model:
+          $ref: "#/components/schemas/ChargeModelType"
+          description: Charge model type
+    ChargeBillableMetric:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        aggregation_type:
+          $ref: "#/components/schemas/AggregationType"
+    Group:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        key:
+          type: string
+        value:
+          type: string
+        units:
+          type: number
+          format: double
+        amount_cents:
+          type: integer
+    EventInput:
+      type: object
+      properties:
+        event:
+          $ref: "#/components/schemas/EventInputObject"
+    EventInputObject:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+        external_customer_id:
+          type: string
+        code:
+          type: string
+        timestamp:
+          type: integer
+        external_subscription_id:
+          type: string
+        properties:
+          type: object
+          additionalProperties: {}
+    BatchEventInput:
+      type: object
+      properties:
+        event:
+          $ref: "#/components/schemas/BatchEventInputObject"
+    BatchEventInputObject:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+        external_customer_id:
+          type: string
+        code:
+          type: string
+        timestamp:
+          type: integer
+        external_subscription_ids:
+          type: array
+          items:
+            type: string
+        properties:
+          type: object
+          additionalProperties: {}
+    Event:
+      type: object
+      properties:
+        event:
+          $ref: "#/components/schemas/EventObject"
+    EventObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        transaction_id:
+          type: string
+        lago_customer_id:
+          type: string
+        external_customer_id:
+          type: string
+        code:
+          type: string
+        timestamp:
+          type: string
+        properties:
+          type: object
+          additionalProperties: {}
+        lago_subscription_id:
+          type: string
+        external_subscription_id:
+          type: string
+        created_at:
+          type: string
+    InvoiceInput:
+      type: object
+      properties:
+        invoice:
+          $ref: "#/components/schemas/InvoiceObject"
+    Invoices:
+      type: object
+      properties:
+        invoices:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceObject"
+    Invoice:
+      type: object
+      properties:
+        invoice:
+          $ref: "#/components/schemas/InvoiceObject"
+    InvoiceObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        sequential_id:
+          type: integer
+        number:
+          type: string
+        issuing_date:
+          type: string
+        invoice_type:
+          $ref: "#/components/schemas/InvoiceType"
+        status:
+          $ref: "#/components/schemas/InvoiceStatus"
+        payment_status:
+          $ref: "#/components/schemas/PaymentStatus"
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        vat_amount_cents:
+          type: integer
+        vat_amount_currency:
+          type: string
+        credit_amount_cents:
+          type: integer
+        credit_amount_currency:
+          type: string
+        total_amount_cents:
+          type: integer
+        total_amount_currency:
+          type: string
+        legacy:
+          type: boolean
+        file_url:
+          type: string
+        customer:
+          $ref: "#/components/schemas/CustomerObject"
+        subscriptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubscriptionObject"
+        fees:
+          type: array
+          items:
+            $ref: "#/components/schemas/FeeObject"
+        credits:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreditObject"
+    InvoiceStatus:
+      type: string
+      enum:
+        - draft
+        - finalized
+    PaymentStatus:
+      type: string
+      enum:
+        - pending
+        - succeeded
+        - failed
+    InvoiceType:
+      type: string
+      enum:
+        - charge
+        - add_on
+        - subscription
+        - credit
+    CreditObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        item:
+          $ref: "#/components/schemas/CreditItem"
+    CreditItem:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        type:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+    OrganizationInput:
+      type: object
+      properties:
+        organization:
+          $ref: "#/components/schemas/OrganizationInputObject"
+    OrganizationInputObject:
+      type: object
+      properties:
+        webhook_url:
+          type: string
+        country:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        state:
+          type: string
+        zipode:
+          type: string
+        email:
+          type: string
+        city:
+          type: string
+        legal_name:
+          type: string
+        legal_number:
+          type: string
+        timezone:
+          type: string
+        billing_configuration:
+          $ref: "#/components/schemas/BillingConfigurationOrganization"
+    Organization:
+      type: object
+      properties:
+        organization:
+          $ref: "#/components/schemas/OrganizationObject"
+    OrganizationObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        name:
+          type: string
+        created_at:
+          type: string
+        webhook_url:
+          type: string
+        country:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        state:
+          type: string
+        zipode:
+          type: string
+        email:
+          type: string
+        city:
+          type: string
+        legal_name:
+          type: string
+        legal_number:
+          type: string
+        timezone:
+          type: string
+        billing_configuration:
+          $ref: "#/components/schemas/BillingConfigurationOrganization"
+    BillingConfigurationOrganization:
+      type: object
+      properties:
+        invoice_footer:
+          type: string
+        invoice_grace_period:
+          type: integer
+        vat_rate:
+          type: number
+          format: double
+    Plans:
+      type: object
+      properties:
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanObject"
+    PlanInputObject:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        interval:
+          $ref: "#/components/schemas/PlanInterval"
+          description: Plan interval
+        description:
+          type: string
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        trial_period:
+          type: number
+          format: double
+        pay_in_advance:
+          type: boolean
+        bill_charges_monthly:
+          type: boolean
+        charges:
+          type: array
+          items:
+            $ref: "#/components/schemas/Charges"
+    Plan:
+      type: object
+      properties:
+        plan:
+          $ref: "#/components/schemas/PlanObject"
+    PlanObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        name:
+          type: string
+        created_at:
+          type: string
+        code:
+          type: string
+        interval:
+          $ref: "#/components/schemas/PlanInterval"
+        description:
+          type: string
+        amount_cents:
+          type: integer
+        amount_currency:
+          type: string
+        trial_period:
+          type: number
+          format: double
+        pay_in_advance:
+          type: boolean
+        bill_charges_monthly:
+          type: boolean
+        charges:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChargeObject"
+    ChargeObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        lago_billable_metric_id:
+          type: string
+        created_at:
+          type: string
+        charge_model:
+          $ref: "#/components/schemas/ChargeModelType"
+        properties:
+          type: object
+          additionalProperties: {}
+        group_properties:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupPropertiesObject"
+    GroupPropertiesObject:
+      type: object
+      properties:
+        group_id:
+          type: string
+        values:
+          type: object
+          additionalProperties: {}
+    PlanInput:
+      type: object
+      properties:
+        plan:
+          $ref: "#/components/schemas/PlanInputObject"
+    PlanInterval:
+      type: string
+      enum:
+        - weekly
+        - monthly
+        - yearly
+    ChargeModel:
+      type: string
+      enum:
+        - standard
+        - graduated
+        - package
+        - percentage
+        - volume
+    GroupProperties:
+      type: object
+      properties:
+        group_id:
+          type: string
+        values:
+          type: object
+          additionalProperties: {}
+    Charges:
+      type: object
+      properties:
+        id:
+          type: string
+        billable_metric_id:
+          type: string
+        charge_model:
+          $ref: "#/components/schemas/ChargeModel"
+        properties:
+          type: object
+          additionalProperties: {}
+        group_properties:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupProperties"
+    SubscriptionCreateInput:
+      type: object
+      properties:
+        subscription:
+          $ref: "#/components/schemas/SubscriptionCreateInputObject"
+    SubscriptionCreateInputObject:
+      type: object
+      properties:
+        external_customer_id:
+          type: string
+        plan_code:
+          type: string
+        name:
+          type: string
+        external_id:
+          type: string
+        billing_time:
+          $ref: "#/components/schemas/BillingTime"
+        subscription_at:
+          type: string
+    SubscriptionUpdateInput:
+      type: object
+      properties:
+        subscription:
+          $ref: "#/components/schemas/SubscriptionUpdateInputObject"
+    SubscriptionUpdateInputObject:
+      type: object
+      properties:
+        name:
+          type: string
+        subscription_at:
+          type: string
+    Subscriptions:
+      type: object
+      properties:
+        subscriptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubscriptionObject"
+    Subscription:
+      type: object
+      properties:
+        subscription:
+          $ref: "#/components/schemas/SubscriptionObject"
+    SubscriptionObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        external_id:
+          type: string
+        lago_customer_id:
+          type: string
+        external_customer_id:
+          type: string
+        name:
+          type: string
+        plan_code:
+          type: string
+        status:
+          $ref: "#/components/schemas/SubscriptionStatus"
+        billing_time:
+          $ref: "#/components/schemas/BillingTime"
+        subscription_at:
+          type: string
+        started_at:
+          type: string
+        terminated_at:
+          type: string
+        canceled_at:
+          type: string
+        created_at:
+          type: string
+        previous_plan_code:
+          type: string
+        next_plan_code:
+          type: string
+        downgrade_plan_date:
+          type: string
+    SubscriptionStatus:
+      type: string
+      enum:
+        - active
+        - pending
+        - terminated
+        - canceled
+    WalletInput:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/WalletInputObject"
+    WalletInputObject:
+      type: object
+      properties:
+        name:
+          type: string
+        rate_amount:
+          type: number
+          format: double
+        currency:
+          type: string
+        paid_credits:
+          type: number
+          format: double
+        granted_credits:
+          type: number
+          format: double
+        external_customer_id:
+          type: string
+        expiration_at:
+          type: string
+    WalletUpdateInput:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/WalletUpdateInputObject"
+    WalletUpdateInputObject:
+      type: object
+      properties:
+        name:
+          type: string
+        expiration_at:
+          type: string
+    Wallets:
+      type: object
+      properties:
+        wallets:
+          type: array
+          items:
+            $ref: "#/components/schemas/WalletObject"
+    WalletTransactionInput:
+      type: object
+      properties:
+        wallet_transaction:
+          $ref: "#/components/schemas/WalletTransactionInputObject"
+    WalletTransactionInputObject:
+      type: object
+      properties:
+        wallet_id:
+          type: string
+        paid_credits:
+          type: number
+          format: double
+        granted_credits:
+          type: number
+          format: double
+    Wallet:
+      type: object
+      properties:
+        wallet:
+          $ref: "#/components/schemas/WalletObject"
+    WalletObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        lago_customer_id:
+          type: string
+        external_customer_id:
+          type: string
+        status:
+          $ref: "#/components/schemas/WalletStatus"
+        currency:
+          type: string
+        name:
+          type: string
+        rate_amount:
+          type: number
+          format: double
+        credits_balance:
+          type: number
+          format: double
+        balance:
+          type: number
+          format: double
+        consumed_credits:
+          type: number
+          format: double
+        created_at:
+          type: string
+        expiration_at:
+          type: string
+        last_balance_sync_at:
+          type: string
+        last_consumed_credit_at:
+          type: string
+        terminated_at:
+          type: string
+    WalletStatus:
+      type: string
+      enum:
+        - active
+        - terminated
+    WalletTransactions:
+      type: object
+      properties:
+        wallet_transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/WalletTransactionObject"
+    WalletTransactionObject:
+      type: object
+      properties:
+        lago_id:
+          type: string
+        lago_wallet_id:
+          type: string
+        status:
+          $ref: "#/components/schemas/TransactionStatus"
+        transaction_type:
+          $ref: "#/components/schemas/TransactionType"
+        amount:
+          type: number
+          format: double
+        credit_amount:
+          type: number
+          format: double
+        settled_at:
+          type: string
+        created_at:
+          type: string
+    TransactionStatus:
+      type: string
+      enum:
+        - pending
+        - settled
+    TransactionType:
+      type: string
+      enum:
+        - inbound
+        - outbound
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+servers:
+  - url: https://api.getlago.com/api/v1
+    description: Production
+  - url: https://sandbox.example.com
+    description: Sandbox

@@ -1,0 +1,198 @@
+---
+title: "Plan object"
+description: "This object represents a plan."
+---
+
+## Schema[](#schema "Direct link to heading")
+
+```json
+{
+  "plan": {
+    "lago_id": "6bcba20e-cbc8-4975-a47b-2055eef34b22",
+    "name": "Basic",
+    "created_at": "2022-08-24T14:58:59Z",
+    "code": "basic",
+    "interval": "yearly",
+    "description": "This is a basic plan description",
+    "amount_cents": 90000,
+    "amount_currency": "USD",
+    "trial_period": 3.0,
+    "pay_in_advance": true,
+    "bill_charges_monthly": true,
+    "charges": [
+      {
+        "lago_id": "27f12d13-4ae0-437b-b822-8771bcd62e3a",
+        "lago_billable_metric_id": "b09ce382-ce87-4da4-89f2-78b2060689fc",
+        "created_at": "2022-08-24T14:58:59Z",
+        "charge_model": "standard",
+        "group_properties": [
+          {
+            "group_id": "12345678-4ae0-437b-b822-8771bcd62e3a",
+            "values": {
+              "amount": "0.10"
+            }
+          }
+        ]
+      },
+      {
+        "lago_id": "e530f658-c06a-44bb-a413-1fbe3796adb4",
+        "lago_billable_metric_id": "b09ce382-ce87-4da4-89f2-78b2060689fc",
+        "created_at": "2022-08-24T14:58:59Z",
+        "charge_model": "graduated",
+        "properties": {
+          "graduated_ranges": [
+            {
+              "to_value": 10,
+              "from_value": 0,
+              "flat_amount": "0",
+              "per_unit_amount": "10"
+            },
+            {
+              "to_value": null,
+              "from_value": 11,
+              "flat_amount": "0",
+              "per_unit_amount": "5"
+            }
+          ]
+        }
+      },
+      {
+        "lago_id": "108051fc-c71b-47b4-bd86-47436ea6b639",
+        "lago_billable_metric_id": "b09ce382-ce87-4da4-89f2-78b2060689fc",
+        "created_at": "2022-08-24T14:58:59Z",
+        "charge_model": "package",
+        "properties": {
+          "amount": "100",
+          "free_units": 10000,
+          "package_size": 1000
+        }
+      },
+      {
+        "lago_id": "88b878e2-4ba4-4f37-98c9-ca8522a9e574",
+        "lago_billable_metric_id": "b09ce382-ce87-4da4-89f2-78b2060689fc",
+        "created_at": "2022-08-24T14:58:59Z",
+        "charge_model": "percentage",
+        "properties": {
+          "rate": "0.5",
+          "fixed_amount": "1",
+          "free_units_per_events": 3,
+          "free_units_per_total_aggregation": null
+        }
+      },
+      {
+        "lago_id": "e530f658-c06a-44bb-a413-1fbe3796555",
+        "lago_billable_metric_id": "b09ce382-ce87-4da4-89f2-78b2060689fc",
+        "created_at": "2022-08-24T14:58:59Z",
+        "charge_model": "volume",
+        "properties": {
+          "volume_ranges": [
+            {
+              "to_value": 10,
+              "from_value": 0,
+              "flat_amount": "0",
+              "per_unit_amount": "10"
+            },
+            {
+              "to_value": null,
+              "from_value": 11,
+              "flat_amount": "0",
+              "per_unit_amount": "5"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+### Plan attributes[](#plan-attributes "Direct link to heading")
+
+| Attributes                                                                    | Description                                                                                                         |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **lago_id** `String` Not null                                                 | Unique identifier of the plan in Lago application.                                                                  |
+| **name** `String` Not null                                                    | Plan name.                                                                                                          |
+| **created_at** `String` Not null <br /> <sub>_ISO 8601 datetime in UTC_</sub> | Date of plan creation.                                                                                              |
+| **code** `String` Not null                                                    | Code identifying the plan.                                                                                          |
+| **interval** `String` Not null                                                | Interval that applies on subscription and specifies billing period. **Possible values**\- yearly\- weekly\- monthly |
+| **description** `String`                                                      | Plan description.                                                                                                   |
+| **amount_cents** `Integer` Not null                                           | Amount in cents.                                                                                                    |
+| **amount_currency** `String` Not null                                         | Currency of the amount.                                                                                             |
+| **trial_period** `Float`                                                      | Number of days for free trial.                                                                                      |
+| **pay_in_advance** `Boolean`                                                  | Value should be true for payment in advance and false for payment in arrear.                                        |
+| **bill_charges_monthly** `Boolean`                                            | It should be set to true if monthly billing is needed on yearly plan.                                               |
+
+### Charge attributes[](#charge-attributes "Direct link to heading")
+
+| Attributes                                                                    | Description                                                                                                         |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **lago_id** `String` Not null                                                 | Unique identifier of the charge in Lago application.                                                                |
+| **lago_billable_metric_id** `String` Not null                                 | Unique identifier of the related billable metric in Lago application.                                               |
+| **created_at** `String` Not null <br /> <sub>_ISO 8601 datetime in UTC_</sub> | Date of charge creation.                                                                                            |
+| **charge_model** `String` Not null                                            | Charge model used in event calculations. **Possible values**\- standard\- graduated\- package\- percentage\- volume |
+| **properties** `JSON`                                                         | Extra data. This field will depend on selected charge_model                                                         |
+| **group_properties** `Array`                                                  | Extra data scoped by groups. This field will depend on selected charge_model                                        |
+
+### Group Properties[](#group-properties "Direct link to heading")
+
+| Attributes                     | Description                                                           |
+| ------------------------------ | --------------------------------------------------------------------- |
+| **group_id** `String` Not null | Group id in lago application                                          |
+| **values** `JSON` Not null     | Extra data. This field will depend on selected charge_model and group |
+
+#### Standard charge model[](#standard-charge-model "Direct link to heading")
+
+| Attributes                                                     | Description                  |
+| -------------------------------------------------------------- | ---------------------------- |
+| **amount** `String` Not null <br /> <sub>_Decimal value_</sub> | Price of one aggregated unit |
+
+#### Graduated charge model[](#graduated-charge-model "Direct link to heading")
+
+- Model:
+
+| Attributes                                      | Description                                            |
+| ----------------------------------------------- | ------------------------------------------------------ |
+| **graduated_ranges** `Array of ranges` Not null | Graduated ranges, sorted from bottom to top boundaries |
+
+- Graduated Ranges:
+
+| Attributes                                                              | Description                                                                                       |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **from_value** `Integer` Not null                                       | Lower value of the range.\- Must be 0 or previous range to_value + 1                              |
+| **to_value** `Integer`                                                  | Top value of the range.\- Must be higher than the range from_value.\- Must be null on last range. |
+| **per_unit_amount** `String` Not null <br /> <sub>_Decimal value_</sub> | Amount to apply to each aggregated unit between the boundaries                                    |
+| **flat_amount** `String` Not null <br /> <sub>_Decimal value_</sub>     | Flat amount to add to the result if the range is reached                                          |
+
+#### Package charge model[](#package-charge-model "Direct link to heading")
+
+| Attributes                                                   | Description                                                             |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| **amount** String Not null <br /> <sub>_Decimal value_</sub> | Price of one package                                                    |
+| **package_size** `Integer` Not null                          | Number of aggregated units per package.                                 |
+| **free_units** Integer Not null                              | Number of aggregated units to exclude before applying the charge model. |
+
+#### Percentage charge model[](#percentage-charge-model "Direct link to heading")
+
+| Attributes                                                                      | Description                                                       |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **rate** `String` Not null <br /> <sub>_Decimal value_</sub>                    | Charge rate that applies to the total amount                      |
+| **fixed_amount** `String` <br /> <sub>_Decimal value_</sub>                     | Fee that applies to each event ingested during the billing period |
+| **free_units_per_events** `Integer`                                             | Number of events that are not subject to the fixed fee            |
+| **free_units_per_total_aggregation** `String` <br /> <sub>_Decimal value_</sub> | Amount that is not subject to the charge rate                     |
+
+#### Volume charge model[](#volume-charge-model "Direct link to heading")
+
+- Model:
+
+| Attributes                                   | Description                                         |
+| -------------------------------------------- | --------------------------------------------------- |
+| **volume_ranges** `Array of ranges` Not null | Volume ranges, sorted from bottom to top boundaries |
+
+- Volume Ranges:
+
+| Attributes                                                              | Description                                                                                       |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **from_value** `Integer` Not null                                       | Lower value of the range.\- Must be 0 or previous range to_value + 1                              |
+| **to_value** `Integer`                                                  | Top value of the range.\- Must be higher than the range from_value.\- Must be null on last range. |
+| **per_unit_amount** `String` Not null <br /> <sub>_Decimal value_</sub> | Amount to apply to each aggregated unit                                                           |
+| **flat_amount** `String` Not null <br /> <sub>_Decimal value_</sub>     | Flat amount to add to the result if the range is reached                                          |
