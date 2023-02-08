@@ -1,14 +1,13 @@
 ---
 title: "Messages"
+description: "Here is the list of webhook messages sent by Lago."
 ---
-
-Here is the list of webhook messages sent by Lago.
 
 **Draft invoice created**
 
 Sent when a new invoice is in draft.
 
-```
+```json
 {
   "webhook_type": "invoice.drafted",
   "object_type": "invoice",
@@ -99,12 +98,11 @@ Sent when a new invoice is in draft.
     "credits": []
   }
 }
-
 ```
 
-| Attributes                        | Description                                         |
-| --------------------------------- | --------------------------------------------------- |
-| **invoice**   JSON   Not nullable | [Invoice object](/docs/api/invoices/invoice-object) |
+| Attributes                      | Description                                         |
+| ------------------------------- | --------------------------------------------------- |
+| **invoice** `JSON` Not nullable | [Invoice object](/docs/api/invoices/invoice-object) |
 
 **Finalized invoice created**
 
@@ -112,7 +110,7 @@ Sent when an invoice is finalized.
 
 This will allow your application to proceed with the billing.
 
-```
+```json
 {
   "webhook_type": "invoice.created",
   "object_type": "invoice",
@@ -151,7 +149,7 @@ This will allow your application to proceed with the billing.
       "zipcode": "91364"
     },
     "subscriptions": [
-        {
+      {
         "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
         "external_id": "susbcription_external_id",
         "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
@@ -195,12 +193,11 @@ This will allow your application to proceed with the billing.
     ]
   }
 }
-
 ```
 
-| Attributes                        | Description                                         |
-| --------------------------------- | --------------------------------------------------- |
-| **invoice**   JSON   Not nullable | [Invoice object](/docs/api/invoices/invoice-object) |
+| Attributes                      | Description                                         |
+| ------------------------------- | --------------------------------------------------- |
+| **invoice** `JSON` Not nullable | [Invoice object](/docs/api/invoices/invoice-object) |
 
 **PDF invoice generated**
 
@@ -208,7 +205,7 @@ Sent when the PDF file has been generated for a customer invoice.
 
 This will allow your application to retrieve the PDF invoice.
 
-```
+```json
 {
   "webhook_type": "invoice.generated",
   "object_type": "invoice",
@@ -226,23 +223,23 @@ This will allow your application to retrieve the PDF invoice.
     "vat_amount_currency": "EUR",
     "total_amount_cents": 120,
     "total_amount_currency": "EUR",
-    "file_url": "https://getlago.com/invoice/file",
+    "file_url": "https://getlago.com/invoice/file"
   }
 }
-
 ```
 
-| Attributes                        | Description                                         |
-| --------------------------------- | --------------------------------------------------- |
-| **invoice**   JSON   Not nullable | [Invoice object](/docs/api/invoices/invoice-object) |
+| Attributes                      | Description                                         |
+| ------------------------------- | --------------------------------------------------- |
+| **invoice** `JSON` Not nullable | [Invoice object](/docs/api/invoices/invoice-object) |
 
 **Add-on added**
 
-Sent when an add-on has been applied to customer. The invoice is created immediately after the add-on is assigned to a customer.
+Sent when an add-on has been applied to customer. The invoice is created
+immediately after the add-on is assigned to a customer.
 
 You can use this information to generate a PDF invoice or collect the payment.
 
-```
+```json
 {
   "webhook_type": "invoice.add_on_added",
   "object_type": "invoice",
@@ -304,12 +301,11 @@ You can use this information to generate a PDF invoice or collect the payment.
     ]
   }
 }
-
 ```
 
-| Attributes                        | Description                                         |
-| --------------------------------- | --------------------------------------------------- |
-| **invoice**   JSON   Not nullable | [Invoice object](/docs/api/invoices/invoice-object) |
+| Attributes                      | Description                                         |
+| ------------------------------- | --------------------------------------------------- |
+| **invoice** `JSON` Not nullable | [Invoice object](/docs/api/invoices/invoice-object) |
 
 **Prepaid credits added**
 
@@ -317,7 +313,7 @@ Sent when prepaid credits have been added to the customer's wallet.
 
 You can use this information to generate a PDF invoice or collect the payment.
 
-```
+```json
 {
   "webhook_type": "invoice.paid_credit_added",
   "object_type": "invoice",
@@ -386,12 +382,11 @@ You can use this information to generate a PDF invoice or collect the payment.
     ]
   }
 }
-
 ```
 
-| Attributes                        | Description                                         |
-| --------------------------------- | --------------------------------------------------- |
-| **invoice**   JSON   Not nullable | [Invoice object](/docs/api/invoices/invoice-object) |
+| Attributes                      | Description                                         |
+| ------------------------------- | --------------------------------------------------- |
+| **invoice** `JSON` Not nullable | [Invoice object](/docs/api/invoices/invoice-object) |
 
 **Credit note created**
 
@@ -399,7 +394,7 @@ Sent when a new credit note has been issued for a customer.
 
 This will allow your application to proceed with the refund.
 
-```
+```json
 {
   "webhook_type": "credit_note.created",
   "object_type": "credit_note",
@@ -434,7 +429,7 @@ This will allow your application to proceed with the refund.
         "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
         "amount_cents": 100,
         "amount_currency": "EUR",
-        "fee":       {
+        "fee": {
           "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
           "item": {
             "type": "charge",
@@ -452,12 +447,11 @@ This will allow your application to proceed with the refund.
     ]
   }
 }
-
 ```
 
-| Attributes                             | Description                                                       |
-| -------------------------------------- | ----------------------------------------------------------------- |
-| **credit\_note**   JSON   Not nullable | [Credit note object](/docs/api/credit%5Fnotes/credit-note-object) |
+| Attributes                          | Description                                                       |
+| ----------------------------------- | ----------------------------------------------------------------- |
+| **credit_note** `JSON` Not nullable | [Credit note object](/docs/api/credit%5Fnotes/credit-note-object) |
 
 **PDF credit note generated**
 
@@ -465,11 +459,11 @@ Sent when the PDF file has been generated for a credit note.
 
 This will allow your application to retrieve the PDF credit note.
 
-```
+```json
 {
   "webhook_type": "credit_note.generated",
   "object_type": "credit_note",
-    "credit_note": {
+  "credit_note": {
     "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
     "sequential_id": 2,
     "number": "LAG-1234-CN2",
@@ -500,7 +494,7 @@ This will allow your application to retrieve the PDF credit note.
         "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
         "amount_cents": 100,
         "amount_currency": "EUR",
-        "fee":       {
+        "fee": {
           "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
           "item": {
             "type": "charge",
@@ -518,20 +512,21 @@ This will allow your application to retrieve the PDF credit note.
     ]
   }
 }
-
 ```
 
-| Attributes                             | Description                                                       |
-| -------------------------------------- | ----------------------------------------------------------------- |
-| **credit\_note**   JSON   Not nullable | [Credit note object](/docs/api/credit%5Fnotes/credit-note-object) |
+| Attributes                          | Description                                                       |
+| ----------------------------------- | ----------------------------------------------------------------- |
+| **credit_note** `JSON` Not nullable | [Credit note object](/docs/api/credit%5Fnotes/credit-note-object) |
 
 **Payment provider created**
 
-This webhook is sent when a customer is successfully created in the payment provider's application.
+This webhook is sent when a customer is successfully created in the payment
+provider's application.
 
-This allows you to retrieve the identifier assigned to the customer by the payment service provider.
+This allows you to retrieve the identifier assigned to the customer by the
+payment service provider.
 
-```
+```json
 {
   "webhook_type": "customer.payment_provider_created",
   "object_type": "customer",
@@ -559,20 +554,20 @@ This allows you to retrieve the identifier assigned to the customer by the payme
     }
   }
 }
-
 ```
 
-| Attributes                         | Description                                            |
-| ---------------------------------- | ------------------------------------------------------ |
-| **customer**   JSON   Not nullable | [Customer object](/docs/api/customers/customer-object) |
+| Attributes                       | Description                                            |
+| -------------------------------- | ------------------------------------------------------ |
+| **customer** `JSON` Not nullable | [Customer object](/docs/api/customers/customer-object) |
 
 **Payment provider error**
 
-This webhook is sent when there is an error related to the creation of a customer in the payment provider's application.
+This webhook is sent when there is an error related to the creation of a
+customer in the payment provider's application.
 
 You should review the customer's data.
 
-```
+```json
 {
   "webhook_type": "invoice.payment_failure",
   "object_type": "payment_provider_customer_error",
@@ -586,24 +581,24 @@ You should review the customer's data.
     }
   }
 }
-
 ```
 
-| Attributes                                  | Description                                          |
-| ------------------------------------------- | ---------------------------------------------------- |
-| **lago\_id**   String   Not null            | Unique identifer of the customer in Lago application |
-| **external\_id**   String   Not null        | Unique identifer of the customer in your application |
-| **payment\_provider**   String              | Payment provider used to process the payment         |
-| **provider\_error\[message\]**   String     | Error message sent by the payment provider           |
-| **provider\_error\[error\_code\]**   String | Error code sent by the payment provider              |
+| Attributes                                | Description                                          |
+| ----------------------------------------- | ---------------------------------------------------- |
+| **lago_id** `String` Not null             | Unique identifer of the customer in Lago application |
+| **external_id** `String` Not null         | Unique identifer of the customer in your application |
+| **payment_provider** `String`             | Payment provider used to process the payment         |
+| **provider_error\[message\]** `String`    | Error message sent by the payment provider           |
+| **provider_error\[error_code\]** `String` | Error code sent by the payment provider              |
 
 **Checkout URL generated**
 
 Sent when a new customer is created through integration with GoCardless.
 
-Includes the URL that should be used to set up the [direct debit mandate](/docs/guide/payments/gocardless-integration#direct-debit).
+Includes the URL that should be used to set up the
+[direct debit mandate](/docs/guide/payments/gocardless-integration#direct-debit).
 
-```
+```json
 {
   "webhook_type": "customer.checkout_url_generated",
   "object_type": "payment_provider_customer_checkout_url",
@@ -614,23 +609,23 @@ Includes the URL that should be used to set up the [direct debit mandate](/docs/
     "checkout_url": "__CUSTOM_CHECKOUT_URL__"
   }
 }
-
 ```
 
-| Attributes                                     | Description                                                |
-| ---------------------------------------------- | ---------------------------------------------------------- |
-| **lago\_customer\_id**   String   Not null     | Unique identifer of the customer in Lago                   |
-| **external\_customer\_id**   String   Not null | Unique identifer of the customer in your application       |
-| **payment\_provider**   String   Not null      | Default payment provider for this customer                 |
-| **checkout\_url**   String   Not null          | URL that should be used to set up the direct debit mandate |
+| Attributes                                 | Description                                                |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| **lago_customer_id** `String` Not null     | Unique identifer of the customer in Lago                   |
+| **external_customer_id** `String` Not null | Unique identifer of the customer in your application       |
+| **payment_provider** `String` Not null     | Default payment provider for this customer                 |
+| **checkout_url** `String` Not null         | URL that should be used to set up the direct debit mandate |
 
 **Payment failure**
 
 Sent when there is an error related to the payment process.
 
-Usually occurs when no valid payment method is defined for the customer in the payment service provider's application.
+Usually occurs when no valid payment method is defined for the customer in the
+payment service provider's application.
 
-```
+```json
 {
   "webhook_type": "invoice.payment_failure",
   "object_type": "payment_provider_invoice_payment_error",
@@ -646,24 +641,24 @@ Usually occurs when no valid payment method is defined for the customer in the p
     }
   }
 }
-
 ```
 
-| Attributes                                     | Description                                                      |
-| ---------------------------------------------- | ---------------------------------------------------------------- |
-| **lago\_invoice\_id**   String   Not null      | Unique identifer of the invoice in Lago application              |
-| **lago\_customer\_id**   String   Not null     | Unique identifer of the customer in Lago application             |
-| **external\_customer\_id**   String   Not null | Unique identifer of the customer in your application             |
-| **provider\_customer\_id**   String   Not null | Unique identifer of the customer in payment provider application |
-| **payment\_provider**   String                 | Payment provider used to process the payment                     |
-| **provider\_error\[message\]**   String        | Error message sent by the payment provider                       |
-| **provider\_error\[error\_code\]**   String    | Error code sent by the payment provider                          |
+| Attributes                                 | Description                                                      |
+| ------------------------------------------ | ---------------------------------------------------------------- |
+| **lago_invoice_id** `String` Not null      | Unique identifer of the invoice in Lago application              |
+| **lago_customer_id** `String` Not null     | Unique identifer of the customer in Lago application             |
+| **external_customer_id** `String` Not null | Unique identifer of the customer in your application             |
+| **provider_customer_id** `String` Not null | Unique identifer of the customer in payment provider application |
+| **payment_provider** `String`              | Payment provider used to process the payment                     |
+| **provider_error\[message\]** `String`     | Error message sent by the payment provider                       |
+| **provider_error\[error_code\]** `String`  | Error code sent by the payment provider                          |
 
 **Refund failure**
 
-This webhook is sent when there is an error related to a credit note refund of a payment previously created on a payment provider.
+This webhook is sent when there is an error related to a credit note refund of a
+payment previously created on a payment provider.
 
-```
+```json
 {
   "webhook_type": "credit_note.refund_failure",
   "object_type": "payment_provider_customer_error",
@@ -676,27 +671,26 @@ This webhook is sent when there is an error related to a credit note refund of a
     "provider_error": {
       "message": "error message",
       "code": "error_code"
-    },
+    }
   }
 }
-
 ```
 
-| Attributes                                     | Description                                             |
-| ---------------------------------------------- | ------------------------------------------------------- |
-| **lago\_credit\_note\_id**   String   Not null | Unique identifer of the credit note in Lago application |
-| **lago\_customer\_id**   String   Not null     | Unique identifer of the customer in Lago application    |
-| **external\_customer\_id**   String   Not null | Unique identifer of the customer in your application    |
-| **provider\_customer\_id**   String   Not null | Unique identifer of the customer in payment provider    |
-| **payment\_provider**   String   Not null      | Payment provider used to process the payment            |
-| **provider\_error\[message\]**   String        | Error message sent by the payment provider              |
-| **provider\_error\[error\_code\]**   String    | Error message sent by the payment provider              |
+| Attributes                                 | Description                                             |
+| ------------------------------------------ | ------------------------------------------------------- |
+| **lago_credit_note_id** `String` Not null  | Unique identifer of the credit note in Lago application |
+| **lago_customer_id** `String` Not null     | Unique identifer of the customer in Lago application    |
+| **external_customer_id** `String` Not null | Unique identifer of the customer in your application    |
+| **provider_customer_id** `String` Not null | Unique identifer of the customer in payment provider    |
+| **payment_provider** `String` Not null     | Payment provider used to process the payment            |
+| **provider_error\[message\]** `String`     | Error message sent by the payment provider              |
+| **provider_error\[error_code\]** `String`  | Error message sent by the payment provider              |
 
 **Event error**
 
 This webhook is sent when there is an error related to the creation of an event.
 
-```
+```json
 {
   "webhook_type": "event.error",
   "object_type": "event_error",
@@ -711,29 +705,28 @@ This webhook is sent when there is an error related to the creation of an event.
     }
   }
 }
-
 ```
 
-| Attributes                          | Description                                                            |
-| ----------------------------------- | ---------------------------------------------------------------------- |
-| **status**   String   Not null      | HTTP status of the error. Possible statuses are 404 or 422             |
-| **error**   String   Not null       | HTTP error code. Possible errors are Not found or Unprocessable entity |
-| **message**   String   Not null     | Error code. See next list for the description of each error code.      |
-| **input\_params**   JSON   Not null | JSON provided at event creation                                        |
+| Attributes                       | Description                                                            |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| **status** `String` Not null     | HTTP status of the error. Possible statuses are 404 or 422             |
+| **error** `String` Not null      | HTTP error code. Possible errors are Not found or Unprocessable entity |
+| **message** `String` Not null    | Error code. See next list for the description of each error code.      |
+| **input_params** `JSON` Not null | JSON provided at event creation                                        |
 
-| Code                                   | Description                                                |
-| -------------------------------------- | ---------------------------------------------------------- |
-| **billable\_metric\_not\_found**   404 | No billable metric matches the given code                  |
-| **customer\_not\_found**   404         | No customer matches the external id                        |
-| **subscription\_not\_found**   404     | No subscription matches the given external subscription id |
-| **invalid\_argument**   422            | No subscription matches the given external subscription id |
-| **invalid\_recurring\_resource**   422 | Provided recurring resource for persisted event is invalid |
+| Code                                 | Description                                                |
+| ------------------------------------ | ---------------------------------------------------------- |
+| **billable_metric_not_found** `404`  | No billable metric matches the given code                  |
+| **customer_not_found** `404`         | No customer matches the external id                        |
+| **subscription_not_found** `404`     | No subscription matches the given external subscription id |
+| **invalid_argument** `422`           | No subscription matches the given external subscription id |
+| **invalid_recurring_resource** `422` | Provided recurring resource for persisted event is invalid |
 
 **Subscription terminated**
 
 Sent when a subscription is terminated.
 
-```
+```json
 {
   "webhook_type": "subscription.terminated",
   "object_type": "subscription",
@@ -757,9 +750,8 @@ Sent when a subscription is terminated.
     "subscription_date": "2023-01-11"
   }
 }
-
 ```
 
-| Attributes                             | Description                                                        |
-| -------------------------------------- | ------------------------------------------------------------------ |
-| **subscription**   JSON   Not nullable | [Subscription object](/docs/api/subscriptions/subscription-object) |
+| Attributes                           | Description                                                        |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| **subscription** `JSON` Not nullable | [Subscription object](/docs/api/subscriptions/subscription-object) |
