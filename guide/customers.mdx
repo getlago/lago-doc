@@ -1,0 +1,159 @@
+---
+title: "Customers"
+---
+
+## Create and update a customer[](#create-and-update-a-customer "Direct link to heading")
+<Tabs>
+  <Tab title="Dashboard">
+      To create a customer through the user interface:
+
+      1. Access the **"Customers"** section via the side menu;
+      2. In the upper right corner, click **"Add a customer"**;
+      3. Enter the customer's name and external ID (i.e. unique ID as defined in your
+         backend system);
+      4. Select the customer's timezone (optional -
+         [learn more](#invoicing-a-customer));
+      5. Enter the customer's billing information, including company information and
+         address (optional);
+      6. Select the default payment provider for this customer (optional -
+         [learn more](/payments/overview)); and
+      7. Click **"Create customer"** to confirm.
+
+  </Tab>
+  <Tab title="API">
+      <CodeGroup>
+        ```bash Create or update a customer
+            LAGO_URL="https://api.getlago.com"
+            API_KEY="__YOUR_API_KEY__"
+
+            curl --location --request POST "$LAGO_URL/api/v1/customers" \
+            --header "Authorization: Bearer $API_KEY" \
+            --header 'Content-Type: application/json' \
+            --data-raw '{
+               "customer": {
+                  "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+                  "address_line1": "5230 Penfield Ave",
+                  "address_line2": "",
+                  "city": "Woodland Hills",
+                  "country": "US",
+                  "currency": "EUR",
+                  "email": "dinesh@piedpiper.test",
+                  "legal_name": "Coleman-Blair",
+                  "legal_number": "49-008-2965",
+                  "tax_identification_number": "EU123456789",
+                  "logo_url": "http://hooli.com/logo.png",
+                  "name": "Gavin Belson",
+                  "phone": "1-171-883-3711 x245",
+                  "state": "CA",
+                  "timezone": "Europe/Paris",
+                  "url": "http://hooli.com",
+                  "zipcode": "91364",
+                  "billing_configuration": {
+                  "invoice_grace_period": 3,
+                  "payment_provider": "stripe",
+                  "provider_customer_id": "cus_12345",
+                  "sync": true,
+                  "sync_with_provider": true,
+                  "document_locale": "fr",
+                  "vat_rate": 12.5
+                  },
+                  "metadata": [
+                  {
+                     "key": "Name",
+                     "value": "John",
+                     "display_in_invoice": true
+                  }
+                  ]
+               }
+            }'
+        ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+Once a customer is created, you can access the customer view, where you can edit their information.
+
+<Warning>
+  You cannot change the `external_id` and the `currency` of customers after an object has been
+  assigned to them (i.e. plans, coupons, one-off invoices, wallet and credits).
+</Warning>
+
+## Assign objects to a customer[](#assign-objects-to-a-customer "Direct link to heading")
+
+The usage monitoring and billing processes start when you assign a plan to a
+customer, which triggers a [subscription](/plans/subscriptions).
+
+You can also apply [coupons](/coupons), [one-off invoices](/add-ons) and
+[prepaid credits](/prepaid-credits) to a customer account.
+
+To assign objects to a customer through the user interface:
+
+1. Access the **"Customers"** section via the side menu;
+2. Select a customer from the list;
+3. In the upper right corner of the customer view, click **"Actions"**; and
+4. Select an action from the dropdown list.
+
+## Monitor the customer's current usage[](#monitor-the-customers-current-usage "Direct link to heading")
+
+When a plan that includes usage-based charges is assigned to a customer, you can
+start pushing [events](/ingesting-events) associated with the customer account.
+
+During the billing period, the customer's current usage is visible in the
+**"Usage"** tab of the customer view, including (but not limited to):
+
+- Total amount for the period under consideration; and
+- Breakdown by charge, including total number of billing units and amount.
+
+<Tabs>
+  <Tab title="Dashboard">
+   <Frame caption="Fetch customer's current usage">
+      <img src="/guide/images/customer-current-usage-28893d7bd2e44ae054012ffa8e3cc69b.png" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+   You can retrieve the customer's current usage via the API using [this endpoint](/api/customer-usage/get-current).
+      <CodeGroup>
+        ```bash Get customer current usage
+            LAGO_URL="https://api.getlago.com"
+            API_KEY="__YOUR_API_KEY__"
+            EXTERNAL_CUSTOMER_ID="5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba"
+            EXTERNAL_SUBSCRIPTION_ID="sub_1234567890"
+
+            curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/current_usage?external_subscription_id=$EXTERNAL_SUBSCRIPTION_ID" \
+            --header "Authorization: Bearer $API_KEY" \
+            --header 'Content-Type: application/json'
+        ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Invoicing a customer[](#invoicing-a-customer "Direct link to heading")
+
+If a customer has an active subscription, Lago will automatically generate an
+[invoice](/invoicing/overview) for them at the end of the billing period.
+
+The beginning and end of the billing period depend on the timezone applied to
+the customer account. The default timezone is UTC but you can define another
+[timezone for your organization](/changelog/timezones), which can be overwritten
+by the customer's timezone.
+
+<Note>**Premium feature ✨**: The timezone feature is only available to users with a premium license. Please
+**[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago
+Self-Hosted Premium.</Note>
+
+To set the customer's timezone through the user interface:
+
+1. Access the **"Customers"** section via the side menu;
+2. Select a customer from the list;
+3. In the **"Overview"** tab of the customer view, click **"Edit"** above the
+   customer details;
+4. Select a timezone from the list; and
+5. Click **"Edit customer information"** to confirm.
+
+The dates displayed in the **"Usage"**, **"Invoices"** and **"Credit notes"**
+tabs of the customer view are based on the customer's timezone.
+
+<Tip>
+  You can hover over any date in the customer view to see the reference
+  timezones.
+</Tip>

@@ -1,0 +1,110 @@
+---
+title: "Create billable metrics"
+description:
+  "Billable metrics define how incoming events are aggregated in order to
+  measure consumption."
+---
+
+If you want to charge your customers for the use of a particular feature, then
+you should create the corresponding billable metric.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To add a new billable metric through the user interface:
+    - Enter its `name`;
+    - Assign it a `code` which will be used as the name of the event sent from your
+      backend;
+    - Add a `description` _(optional)_;
+    - Select the `aggregation type` which will define how consumption will be
+      measured;
+    - Define the aggregation property `field_name` to aggregate on;
+    - Define `groups` if you price several dimensions for a same billing component; and
+    - Define if this billable metric is `recurring` and kept in memory period over period, or resume to 0 at the end of each period.
+  </Tab>
+  <Tab title="API">
+      Here are few examples of billable metrics you can create:
+      <CodeGroup>
+        ```bash Storage
+            LAGO_URL="https://api.getlago.com"
+            API_KEY="__YOUR_API_KEY__"
+
+            curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+              --header "Authorization: Bearer $API_KEY" \
+              --header 'Content-Type: application/json' \
+              --data-raw '{
+                "billable_metric": {
+                  "name": "Storage",
+                  "code": "storage",
+                  "description": "Number of GB used",
+                  "aggregation_type": "sum_agg",
+                  "field_name": "gb",
+                  "recurring": false,
+                  "group": {
+                    "key": "provider",
+                    "value": ["aws", "google", "azure"]
+                  }
+                }
+              }'
+        ```
+        ```bash Seats
+            LAGO_URL="https://api.getlago.com"
+            API_KEY="__YOUR_API_KEY__"
+
+            curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+              --header "Authorization: Bearer $API_KEY" \
+              --header 'Content-Type: application/json' \
+              --data-raw '{
+                "billable_metric": {
+                  "name": "Seats",
+                  "code": "seats",
+                  "description": "Active seats added",
+                  "aggregation_type": "unique_count_agg",
+                  "field_name": "seat_id",
+                  "recurring": true
+                }
+              }'
+        ```
+        ```bash CPUs
+            LAGO_URL="https://api.getlago.com"
+            API_KEY="__YOUR_API_KEY__"
+
+            curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+              --header "Authorization: Bearer $API_KEY" \
+              --header 'Content-Type: application/json' \
+              --data-raw '{
+                "billable_metric": {
+                  "name": "CPU",
+                  "code": "cpu",
+                  "description": "Maximum number of CPUs used",
+                  "aggregation_type": "max_agg",
+                  "field_name": "total_cpu",
+                  "recurring": false
+                }
+              }'
+        ```
+        ```bash Payments
+            LAGO_URL="https://api.getlago.com"
+            API_KEY="__YOUR_API_KEY__"
+
+            curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+              --header "Authorization: Bearer $API_KEY" \
+              --header 'Content-Type: application/json' \
+              --data-raw '{
+                "billable_metric": {
+                  "name": "Payments",
+                  "code": "payments",
+                  "description": "Card payments issued",
+                  "aggregation_type": "sum_agg",
+                  "field_name": "amount",
+                  "recurring": false
+                }
+              }'
+        ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+The next section describes the different
+[aggregation types](/guide/billable-metrics/aggregation-types). In addition to this, we have added some
+[examples](/guide/billable-metrics/aggregation-examples) to help you understand the relationship
+between incoming events and billable metrics.
