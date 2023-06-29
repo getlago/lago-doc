@@ -1,0 +1,152 @@
+---
+title: "Invoice a customer"
+---
+
+If a customer has an active subscription, Lago will automatically generate an [invoice](/guide/invoicing/overview) for them at the end of the billing period.
+
+## Bill following your customer's timezone
+<Info>
+**Premium feature ✨**:
+
+The timezone feature is only available to users with a premium license. Please **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago Self-Hosted Premium.
+</Info>
+
+The beginning and end of the billing period depend on the timezone applied to the customer account. The default timezone is UTC but you can define another timezone for your organization, which can be overwritten by the customer's timezone.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To set the customer's timezone through the user interface:
+    1. Access the **"Customers"** section via the side menu;
+    2. Select a customer from the list;
+    3. In the **"Overview"** tab of the customer view, click **"Edit"** above the customer details;
+    4. Select a timezone from the list; and
+    5. Click **"Edit customer information"** to confirm.
+  </Tab>
+  <Tab title="API">
+      You can define a specific timezone by using the `timezone` field on a customer.
+      <CodeGroup>
+        ```bash Set a customer timezone
+            LAGO_URL="https://api.getlago.com"
+            API_KEY="__YOUR_API_KEY__"
+
+            curl --location --request POST "$LAGO_URL/api/v1/customers" \
+            --header "Authorization: Bearer $API_KEY" \
+            --header 'Content-Type: application/json' \
+            --data-raw '{
+                "customer": {
+                "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+                "address_line1": "5230 Penfield Ave",
+                "address_line2": "",
+                "city": "Woodland Hills",
+                "country": "US",
+                "currency": "EUR",
+                "email": "dinesh@piedpiper.test",
+                "legal_name": "Coleman-Blair",
+                "legal_number": "49-008-2965",
+                "tax_identification_number": "EU123456789",
+                "logo_url": "http://hooli.com/logo.png",
+                "name": "Gavin Belson",
+                "phone": "1-171-883-3711 x245",
+                "state": "CA",
+                "timezone": "Europe/Paris",
+                "url": "http://hooli.com",
+                "zipcode": "91364",
+                "billing_configuration": {
+                    "invoice_grace_period": 3,
+                    "payment_provider": "stripe",
+                    "provider_customer_id": "cus_12345",
+                    "sync": true,
+                    "sync_with_provider": true,
+                    "document_locale": "fr",
+                    "vat_rate": 12.5
+                },
+                "metadata": [
+                    {
+                    "key": "Name",
+                    "value": "John",
+                    "display_in_invoice": true
+                    }
+                ]
+            }
+        }'
+        ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+The dates displayed in the **"Usage"**, **"Invoices"** and **"Credit notes"** tabs of the customer view are based on the customer's timezone.
+
+<Tip>
+You can hover over any date in the customer view to see the reference timezones.
+</Tip>
+
+## Preferred language
+The default language for documents is defined at the organization level ([learn more](/guide/invoicing/download-invoices#translate-invoices)). It can be overwritten at the customer level.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To set the customer's preferred language:
+    1. Access the **"Customers"** section via the side menu;
+    2. Select a customer from the list;
+    3. Open the **"Settings"** tab;
+    4. Click **"Add a language"**;
+    5. Select a language from the list; and
+    6. Click **"Add language"** to confirm.
+  </Tab>
+  <Tab title="API">
+      You can define a specific preferred language by using the `document_locale` field on a customer, inside the `billing_configuration` object.
+      <CodeGroup>
+        ```bash Set a customer preferred language
+            LAGO_URL="https://api.getlago.com"
+            API_KEY="__YOUR_API_KEY__"
+
+            curl --location --request POST "$LAGO_URL/api/v1/customers" \
+            --header "Authorization: Bearer $API_KEY" \
+            --header 'Content-Type: application/json' \
+            --data-raw '{
+                "customer": {
+                "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+                "address_line1": "5230 Penfield Ave",
+                "address_line2": "",
+                "city": "Woodland Hills",
+                "country": "US",
+                "currency": "EUR",
+                "email": "dinesh@piedpiper.test",
+                "legal_name": "Coleman-Blair",
+                "legal_number": "49-008-2965",
+                "tax_identification_number": "EU123456789",
+                "logo_url": "http://hooli.com/logo.png",
+                "name": "Gavin Belson",
+                "phone": "1-171-883-3711 x245",
+                "state": "CA",
+                "timezone": "Europe/Paris",
+                "url": "http://hooli.com",
+                "zipcode": "91364",
+                "billing_configuration": {
+                    "invoice_grace_period": 3,
+                    "payment_provider": "stripe",
+                    "provider_customer_id": "cus_12345",
+                    "sync": true,
+                    "sync_with_provider": true,
+                    "document_locale": "fr",
+                    "vat_rate": 12.5
+                },
+                "metadata": [
+                    {
+                    "key": "Name",
+                    "value": "John",
+                    "display_in_invoice": true
+                    }
+                ]
+            }
+        }'
+        ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+Please refer to the API documentation to see the [list of supported languages](/api/resources/locales).
+
+<Info>
+When the customer's preferred language is updated, the change only applies to new PDF files. Existing documents are not affected.
+</Info>

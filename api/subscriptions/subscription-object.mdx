@@ -1,30 +1,26 @@
 ---
-title: "Subscription object"
+title: "The subscription object"
 description:
   "This object represents the assignation of plan to one of the customer of your
   business."
 ---
 
-The subscription will then define how a the related customer will be invoiced
-based on the fixed and usage-based charges belonging to this related plan.
-
-## Schema[](#schema "Direct link to heading")
-
-```json
+<RequestExample>
+```json The subscription object
 {
   "subscription": {
     "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
     "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
     "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "canceled_at": "2022-04-29T08:59:51Z",
-    "created_at": "2022-04-29T08:59:51Z",
-    "plan_code": "new_code",
-    "started_at": "2022-04-29T08:59:51Z",
+    "canceled_at": "",
+    "created_at": "2022-08-08T00:00:00Z",
+    "plan_code": "premium",
+    "started_at": "2022-08-08T00:00:00Z",
     "status": "active",
-    "name": "display name",
-    "external_id": "external_id",
+    "name": "Repository A",
+    "external_id": "my_sub_1234567890",
     "billing_time": "anniversary",
-    "subscription_at": "2022-04-29T00:00:00Z",
+    "subscription_at": "2022-08-08T00:00:00Z",
     "terminated_at": null,
     "previous_plan_code": null,
     "next_plan_code": null,
@@ -32,28 +28,76 @@ based on the fixed and usage-based charges belonging to this related plan.
   }
 }
 ```
+</RequestExample>
 
-| Attributes                                                                         | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **lago_id** `String` Not null                                                      | Unique identifer of the subscription in Lago application                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **lago_customer_id** `String` Not null                                             | Unique identifer of the customer in Lago application                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **billing_time** `String` Not null                                                 | Billing time of the subscription. **Possible values**\- anniversary: Subscription will be billed on each week/month/year anniversary, depending on the plan reccurence\- calendar: Subscription at the end of week/month/year. The first subscription billing will be at pro-rata if it is not created at the beginning of the week/month/year                                                                                                                                                                                       |
-| **external_customer_id** `String` Not null                                         | Unique identifer of the customer in your application                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **subscription_at** `String` Not null <br /> <sub>_ISO 8601 datetime in UTC_</sub> | Anniversary date and time of the initial subscription. It is used a the based date to bill subscription with anniversary billing time.                                                                                                                                                                                                                                                                                                                                                                                               |
-| **canceled_at** `String` <br /> <sub> ISO 8601 datetime in UTC</sub>               | Cancelation date of the subscription. It's not null when the subscription is canceled                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| **created_at** `String` Not null <br /> <sub>_ISO 8601 datetime in UTC_</sub>      | Creation date of the subscription                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| **plan_code** `String` Not null                                                    | Code identifying the plan.It matches the code property of one of the plans                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| **started_at** `String` Not null <br /> <sub>_ISO 8601 datetime in UTC_</sub>      | Start date of the subscription. It could be null if the subscription is pending of canceled                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **name** `String`                                                                  | Subscription display name in Lago application                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| **external_id** `String` Not null                                                  | Unique external identifier of the subscription. Used as an idempotency key. Corresponds to the external_customer_id for subscriptions created before August 8th, 2022.                                                                                                                                                                                                                                                                                                                                                               |
-| **status** `String` Not null                                                       | Status of the subscription. **Possible values**\- pending: a previous subscription has been downgraded, the current one is waiting for its automatic activation at the end of the billing period.\- active: the subscription is currently applied to the customer.\- terminated: the subscription is not active anymore\- canceled: the subscription has been stopped before its activation. It could happen when two consecutive downgrade have been applied to a customer or when a subscription with a pending one is terminaded. |
-| **terminated_at** `String` <br /> <sub>_ISO 8601 datetime in UTC_ </sub>           | Termination date of the subscription. It's not null when the subscription is terminated                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| **previous_plan_code** `String`                                                    | Code identifying the previous plan.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| **next_plan_code** `String`                                                        | Code identifying the next plan, in case of downgrade.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| **downgrade_plan_date** `String` <br /> <sub>_ISO 8601 date_ </sub>                | Date when the plan will be downgraded.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+## Attributes
 
-### Deprecated attributes[](#deprecated-attributes "Direct link to heading")
-
-| Attributes                                                                | Description                                                                                                                   |
-| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **subscription_date** `String` Not null <br /> <sub>_ISO 8601 date_</sub> | Anniversary date of the initial subscription. It is used a the based date to bill subscription with anniversary billing time. |
+<ResponseField name="subscription" type="object">
+  <Expandable title="object" defaultOpen="true">
+    <ResponseField name="lago_id" type="string" required>
+      Unique identifier assigned to the subscription within the Lago application. 
+      This ID is exclusively created by Lago and serves as a unique identifier for 
+      the subscription’s record within the Lago system.
+    </ResponseField>
+    <ResponseField name="lago_customer_id" type="string" required>
+      Unique identifier assigned to the customer within the Lago application. 
+      This ID is exclusively created by Lago and serves as a unique identifier for the 
+      customer's record within the Lago system.
+    </ResponseField>
+    <ResponseField name="billing_time" type="string" required>
+      The billing time for the subscription, which can be set as either `anniversary` or `calendar`. 
+      If not explicitly provided, it will default to `calendar`. The billing time determines the timing of recurring 
+      billing cycles for the subscription. By specifying `anniversary`, the billing cycle will be based on the specific 
+      date the subscription started (billed fully), while `calendar` sets the billing cycle at the first day of the week/month/year 
+      (billed with proration).
+    </ResponseField>
+    <ResponseField name="external_customer_id" type="string" required>
+      The customer external unique identifier (provided by your own application).
+    </ResponseField>
+    <ResponseField name="subscription_at" type="string" required>
+      The anniversary date and time of the initial subscription. This date serves as the basis for billing subscriptions with 
+      `anniversary` billing time. The `anniversary_date` should be provided in ISO 8601 datetime format and expressed in 
+      Coordinated Universal Time (UTC).
+    </ResponseField>
+    <ResponseField name="canceled_at" type="string">
+      The cancellation date of the subscription. This field is not null when the subscription is `canceled`. 
+      This date should be provided in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).
+    </ResponseField>
+    <ResponseField name="created_at" type="string" required>
+      The creation date of the subscription, represented in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC). 
+      This date provides a timestamp indicating when the subscription was initially created.
+    </ResponseField>
+    <ResponseField name="plan_code" type="string" required>
+      The unique code representing the plan to be attached to the customer. 
+      This code must correspond to the `code` property of one of the active plans.
+    </ResponseField>
+    <ResponseField name="started_at" type="string" required>
+      The effective start date of the subscription. This field can be null if the subscription is `pending` or `canceled`. 
+      This date should be provided in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).
+    </ResponseField>
+    <ResponseField name="name" type="string" required>
+      The display name of the subscription on an invoice. This field allows for customization of the subscription's name for 
+      billing purposes, especially useful when a single customer has multiple subscriptions using the same plan.
+    </ResponseField>
+    <ResponseField name="status" type="string" required>
+      The status of the subscription, which can have the following values:
+      - `pending`: a previous subscription has been downgraded, and the current one is awaiting automatic activation at the end of the billing period.
+      - `active`: the subscription is currently active and applied to the customer.
+      - `terminated`: the subscription is no longer active.
+      - `canceled`: the subscription has been stopped before its activation. This can occur when two consecutive downgrades have been applied to a customer or when a subscription with a pending status is terminated.
+    </ResponseField>
+    <ResponseField name="terminated_at" type="string">
+      The termination date of the subscription. This field is not null when the subscription is `terminated`. 
+      This date should be provided in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC)
+    </ResponseField>
+    <ResponseField name="previous_plan_code" type="string">
+      The code identifying the previous plan associated with this subscription.
+    </ResponseField>
+    <ResponseField name="next_plan_code" type="string">
+      The code identifying the next plan in the case of a downgrade.
+    </ResponseField>
+    <ResponseField name="downgrade_plan_date" type="string">
+      The date when the plan will be downgraded, represented in ISO 8601 date format.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

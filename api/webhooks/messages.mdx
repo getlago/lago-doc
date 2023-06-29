@@ -1,757 +1,953 @@
 ---
 title: "Messages"
-description: "Here is the list of webhook messages sent by Lago."
+description: "Here is the complete list of webhook messages sent by Lago."
 ---
 
-**Draft invoice created**
+## Event ingestion
+<AccordionGroup>
+  <Accordion title="Event error">
+    This webhook is sent when there is an error related to the creation of an event.
 
-Sent when a new invoice is in draft.
+    ```json
+      {
+        "webhook_type": "event.error",
+        "object_type": "event_error",
+        "event_error": {
+          "status": 422,
+          "error": "Unprocessable entity",
+          "message": "code does not exist",
+          "input_params": {
+            "transaction_id": "__transaction_id__",
+            "external_customer_id": "customer123",
+            "code": "code123"
+          }
+        }
+      } 
+    ```
+    ### Arguments
+    <ResponseField name="status" type="string" required>
+      HTTP status of the error. Possible statuses are `404` or `422`.
+    </ResponseField>
+    <ResponseField name="error" type="string" required>
+      HTTP error code. Possible errors are `Not found` or `Unprocessable entity`.
+    </ResponseField>
+    <ResponseField name="message" type="string" required>
+      Error code. See next list for the description of each error code.
+    </ResponseField>
+    <ResponseField name="input_params" type="string" required>
+      JSON provided at event creation.
+    </ResponseField>
 
-```json
-{
-  "webhook_type": "invoice.drafted",
-  "object_type": "invoice",
-  "invoice": {
-    "lago_id": "10pb140c-0e7a-44dc-bdff-b683d0770et9",
-    "sequential_id": 2,
-    "number": "LAG-1234-001-002",
-    "issuing_date": "2023-01-22",
-    "invoice_type": "subscription",
-    "status": "draft",
-    "payment_status": "pending",
-    "amount_cents": 5500,
-    "amount_currency": "USD",
-    "vat_amount_cents": 0,
-    "vat_amount_currency": "USD",
-    "credit_amount_cents": 0,
-    "credit_amount_currency": "USD",
-    "total_amount_cents": 5500,
-    "total_amount_currency": "USD",
-    "file_url": null,
-    "legacy": false,
-    "customer": {
-      "lago_id": "578df9d1-a5b5-abc4-b1cd-cc123159cdj3",
-      "external_id": "customer_1234",
-      "name": "Helen Ross",
-      "sequential_id": 26,
-      "slug": "LAG-X575-026",
-      "created_at": "2023-01-11T06:59:44Z",
-      "country": null,
-      "address_line1": null,
-      "address_line2": null,
-      "state": null,
-      "zipcode": null,
-      "email": null,
-      "city": null,
-      "url": null,
-      "phone": null,
-      "logo_url": null,
-      "legal_name": null,
-      "legal_number": null,
-      "currency": "USD",
-      "timezone": null,
-      "applicable_timezone": "Europe/Paris",
-      "billing_configuration": {
-        "invoice_grace_period": null,
-        "payment_provider": null,
-        "vat_rate": null
-      }
-    },
-    "subscriptions": [
+    ### Errors
+    | Error | Code                         | Description                                                |
+    |------:|------------------------------|------------------------------------------------------------|
+    | 404   | `billable_metric_not_found`  | No billable metric matches the given code                  |
+    | 404   | `customer_not_found`         | No customer matches the external id                        |
+    | 404   | `subscription_not_found`     | No subscription matches the given external subscription id |
+    | 422   | `invalid_argument`           | No subscription matches the given external subscription id |
+    | 422   | `invalid_recurring_resource` | Provided recurring resource for persisted event is invalid |
+  </Accordion>
+</AccordionGroup>
+
+## Invoices
+<AccordionGroup>
+  <Accordion title="Draft invoice created">
+    Sent when a new invoice is in draft.
+
+    ```json
       {
-        "lago_id": "00911bba-d074-1234-abcd-00d4e57746mm",
-        "external_id": "07cc066d-1234-5678-xyzw-e42ea21e6307",
-        "lago_customer_id": "578df9d1-a5b5-abc4-b1cd-cc123159cdj3",
-        "external_customer_id": "customer_1234",
-        "name": "",
-        "plan_code": "corporate",
-        "status": "active",
-        "billing_time": "anniversary",
-        "subscription_at": "2023-01-17T15:44:16Z",
-        "started_at": "2023-01-17T15:44:16Z",
-        "terminated_at": null,
-        "canceled_at": null,
-        "created_at": "2023-01-17T15:44:39Z",
-        "previous_plan_code": null,
-        "next_plan_code": null,
-        "downgrade_plan_date": null,
-        "subscription_date": "2023-01-17"
+        "webhook_type": "invoice.drafted",
+        "object_type": "invoice",
+        "invoice": {
+          "lago_id": "10pb140c-0e7a-44dc-bdff-b683d0770et9",
+          "sequential_id": 2,
+          "number": "LAG-1234-001-002",
+          "issuing_date": "2023-01-22",
+          "invoice_type": "subscription",
+          "status": "draft",
+          "payment_status": "pending",
+          "amount_cents": 5500,
+          "amount_currency": "USD",
+          "vat_amount_cents": 0,
+          "vat_amount_currency": "USD",
+          "credit_amount_cents": 0,
+          "credit_amount_currency": "USD",
+          "total_amount_cents": 5500,
+          "total_amount_currency": "USD",
+          "file_url": null,
+          "legacy": false,
+          "customer": {
+            "lago_id": "578df9d1-a5b5-abc4-b1cd-cc123159cdj3",
+            "external_id": "customer_1234",
+            "name": "Helen Ross",
+            "sequential_id": 26,
+            "slug": "LAG-X575-026",
+            "created_at": "2023-01-11T06:59:44Z",
+            "country": null,
+            "address_line1": null,
+            "address_line2": null,
+            "state": null,
+            "zipcode": null,
+            "email": null,
+            "city": null,
+            "url": null,
+            "phone": null,
+            "logo_url": null,
+            "legal_name": null,
+            "legal_number": null,
+            "currency": "USD",
+            "timezone": null,
+            "applicable_timezone": "Europe/Paris",
+            "billing_configuration": {
+              "invoice_grace_period": null,
+              "payment_provider": null,
+              "vat_rate": null
+            }
+          },
+          "subscriptions": [
+            {
+              "lago_id": "00911bba-d074-1234-abcd-00d4e57746mm",
+              "external_id": "07cc066d-1234-5678-xyzw-e42ea21e6307",
+              "lago_customer_id": "578df9d1-a5b5-abc4-b1cd-cc123159cdj3",
+              "external_customer_id": "customer_1234",
+              "name": "",
+              "plan_code": "corporate",
+              "status": "active",
+              "billing_time": "anniversary",
+              "subscription_at": "2023-01-17T15:44:16Z",
+              "started_at": "2023-01-17T15:44:16Z",
+              "terminated_at": null,
+              "canceled_at": null,
+              "created_at": "2023-01-17T15:44:39Z",
+              "previous_plan_code": null,
+              "next_plan_code": null,
+              "downgrade_plan_date": null,
+              "subscription_date": "2023-01-17"
+            }
+          ],
+          "fees": [
+            {
+              "lago_id": "12345678-ebea-47de-ghjk-bbbfd42755f3",
+              "lago_group_id": null,
+              "lago_true_up_fee_id": null,
+              "lago_true_up_parent_fee_id": null,
+              "item": {
+                "type": "subscription",
+                "code": "corporate",
+                "name": "Corporate"
+              },
+              "amount_cents": 5500,
+              "amount_currency": "USD",
+              "vat_amount_cents": 0,
+              "vat_amount_currency": "USD",
+              "total_amount_cents": 5500,
+              "total_amount_currency": "EUR",
+              "units": "1.0",
+              "events_count": null
+            }
+          ],
+          "credits": []
+        }
       }
-    ],
-    "fees": [
-      {
-        "lago_id": "12345678-ebea-47de-ghjk-bbbfd42755f3",
-        "lago_group_id": null,
-        "item": {
-          "type": "subscription",
-          "code": "corporate",
-          "name": "Corporate"
+    ```
+    ### Arguments
+    <ResponseField name="invoice" type="JSON" required>
+      Returning an invoice object. 
+    </ResponseField>
+  </Accordion>
+  <Accordion title="Finalized invoice created">
+    Sent when an invoice is finalized. This event serves as a signal to your application that the invoice processing is 
+    complete and you can proceed with the necessary billing actions or procedures.
+    ```json
+    {
+      "webhook_type": "invoice.created",
+      "object_type": "invoice",
+      "invoice": {
+        "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "sequential_id": 2,
+        "number": "LAG-1234-001-002",
+        "issuing_date": "2022-04-29",
+        "invoice_type": "subscription",
+        "status": "finalized",
+        "payment_status": "succeeded",
+        "amount_cents": 100,
+        "amount_currency": "EUR",
+        "vat_amount_cents": 20,
+        "vat_amount_currency": "EUR",
+        "total_amount_cents": 120,
+        "total_amount_currency": "EUR",
+        "file_url": "https://getlago.com/invoice/file",
+        "customer": {
+          "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
+          "sequential_id": 1,
+          "slug": "LAG-1234-001",
+          "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "address_line1": "5230 Penfield Ave",
+          "address_line2": null,
+          "city": "Woodland Hills",
+          "country": "US",
+          "created_at": "2022-04-29T08:59:51Z",
+          "email": "dinesh@piedpiper.test",
+          "legal_name": "Coleman-Blair",
+          "legal_number": "49-008-2965",
+          "logo_url": "http://hooli.com/logo.png",
+          "name": "Gavin Belson",
+          "phone": "1-171-883-3711 x245",
+          "state": "CA",
+          "url": "http://hooli.com",
+          "vat_rate": 20.0,
+          "zipcode": "91364"
         },
-        "amount_cents": 5500,
+        "subscriptions": [
+            {
+            "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
+            "external_id": "susbcription_external_id",
+            "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
+            "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+            "canceled_at": "2022-04-29T08:59:51Z",
+            "created_at": "2022-04-29T08:59:51Z",
+            "plan_code": "new_code",
+            "started_at": "2022-04-29T08:59:51Z",
+            "status": "active",
+            "terminated_at": null
+          }
+        ],
+        "fees": [
+          {
+            "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
+            "lago_group_id": null,
+            "lago_true_up_fee_id": null,
+            "lago_true_up_parent_fee_id": null,
+            "item": {
+              "type": "subscription",
+              "code": "plan_code",
+              "name": "Plan"
+            },
+            "amount_cents": 100,
+            "amount_currency": "EUR",
+            "vat_amount_cents": 20,
+            "vat_amount_currency": "EUR",
+            "total_amount_cents": 120,
+            "total_amount_currency": "EUR",
+            "units": "0.32",
+            "events_count": 23
+          }
+        ],
+        "credits": [
+          {
+            "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
+            "item": {
+              "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
+              "type": "coupon",
+              "code": "coupon_code",
+              "name": "Coupon"
+            },
+            "amount_cents": 100,
+            "amount_currency": "EUR"
+          }
+        ]
+      }
+    }
+    ```
+    ### Arguments
+    <ResponseField name="invoice" type="JSON" required>
+      Returning an invoice object. 
+    </ResponseField>
+  </Accordion>
+  <Accordion title="One-off invoice created">
+    Sent when a one-off invoice is created. Only add-ons can be applied to one-off invoices.
+    ```json
+      {
+        "webhook_type": "invoice.one_off_created",
+        "object_type": "invoice",
+        "invoice": {
+          "lago_id": "b7b6a31f-b81b-4ae5-a9c8-05c407e47416",
+          "sequential_id": 4,
+          "number": "ONE-0499-001-004",
+          "issuing_date": "2023-05-05",
+          "invoice_type": "one_off",
+          "status": "finalized",
+          "payment_status": "pending",
+          "currency": "USD",
+          "fees_amount_cents": 25000,
+          "vat_amount_cents": 2500,
+          "coupons_amount_cents": 0,
+          "credit_notes_amount_cents": 0,
+          "sub_total_vat_excluded_amount_cents": 25000,
+          "sub_total_vat_included_amount_cents": 27500,
+          "total_amount_cents": 27500,
+          "prepaid_credit_amount_cents": 0,
+          "file_url": null,
+          "version_number": 3,
+          "legacy": false,
+          "amount_currency": "USD",
+          "vat_amount_currency": "USD",
+          "credit_amount_currency": "USD",
+          "total_amount_currency": "USD",
+          "amount_cents": 25000,
+          "credit_amount_cents": 0,
+          "customer": {
+            "lago_id": "37cee916-5751-4665-9774-aa05bb1a2ffd",
+            "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+            "name": "Gavin Belson",
+            "sequential_id": 1,
+            "slug": "TWI-2B86-001",
+            "created_at": "2022-06-01T09:01:12Z",
+            "country": "US",
+            "address_line1": "5230 Penfield Ave",
+            "address_line2": null,
+            "state": "CA",
+            "zipcode": "91364",
+            "email": "dinesh@piedpiper.test",
+            "city": "Woodland Hills",
+            "url": "http://hooli.com",
+            "phone": "1-171-883-3711 x245",
+            "logo_url": "http://hooli.com/logo.png",
+            "legal_name": "Coleman-Blair",
+            "legal_number": "49-008-2965",
+            "currency": "USD",
+            "timezone": null,
+            "applicable_timezone": "UTC",
+            "billing_configuration": {
+              "invoice_grace_period": null,
+              "payment_provider": null,
+              "vat_rate": 0,
+              "document_locale": null
+            }
+          },
+          "fees": [
+            {
+              "lago_id": "5fe06606-25c8-4aa8-bce8-a19a12383d51",
+              "lago_group_id": null,
+              "lago_invoice_id": "b7b6a31f-b81b-4ae5-a9c8-05c407e47416",
+              "lago_true_up_fee_id": null,
+              "lago_true_up_parent_fee_id": null,
+              "item": {
+                "type": "add_on",
+                "code": "setup_fee",
+                "name": "Setup Fee",
+                "lago_item_id": "b3f1967d-bf84-44a7-b3e9-207024a6aaa5",
+                "item_type": "AddOn"
+              },
+              "amount_cents": 5000,
+              "amount_currency": "USD",
+              "vat_amount_cents": 500,
+              "vat_amount_currency": "USD",
+              "total_amount_cents": 5500,
+              "total_amount_currency": "USD",
+              "units": "5.0",
+              "description": "",
+              "unit_amount_cents": 1000,
+              "events_count": null,
+              "payment_status": "pending",
+              "created_at": "2023-05-05T15:05:27Z",
+              "succeeded_at": null,
+              "failed_at": null,
+              "refunded_at": null
+            },
+            {
+              "lago_id": "a74705a1-05f2-41cb-b315-ab0c858c215d",
+              "lago_group_id": null,
+              "lago_invoice_id": "b7b6a31f-b81b-4ae5-a9c8-05c407e47416",
+              "lago_true_up_fee_id": null,
+              "lago_true_up_parent_fee_id": null,
+              "item": {
+                "type": "add_on",
+                "code": "customer_success_fee",
+                "name": "Customer Success",
+                "lago_item_id": "66b75fbf-3410-4251-9105-b4b3d5922a1d",
+                "item_type": "AddOn"
+              },
+              "amount_cents": 20000,
+              "amount_currency": "USD",
+              "vat_amount_cents": 2000,
+              "vat_amount_currency": "USD",
+              "total_amount_cents": 22000,
+              "total_amount_currency": "USD",
+              "units": "1.0",
+              "description": "My new description",
+              "unit_amount_cents": 20000,
+              "events_count": null,
+              "payment_status": "pending",
+              "created_at": "2023-05-05T15:05:27Z",
+              "succeeded_at": null,
+              "failed_at": null,
+              "refunded_at": null
+            }
+          ]
+        }
+      }
+    ```
+    ### Arguments
+    <ResponseField name="invoice" type="JSON" required>
+      Returning an invoice object. 
+    </ResponseField>
+  </Accordion>
+  <Accordion title="Prepaid credits added">
+    Sent when prepaid credits have been added to the customer's wallet.
+    You can use this information to generate a PDF invoice or collect the payment.
+    ```json
+      {
+        "webhook_type": "invoice.paid_credit_added",
+        "object_type": "invoice",
+        "invoice": {
+          "lago_id": "0e77ace9-68ba-0000-aaaa-999888c43f75",
+          "sequential_id": 14,
+          "number": "SEL-AZ22-034-014",
+          "issuing_date": "2023-04-24",
+          "invoice_type": "credit",
+          "status": "finalized",
+          "payment_status": "pending",
+          "currency": "USD",
+          "fees_amount_cents": 100,
+          "amount_cents": 100,
+          "vat_amount_cents": 0,
+          "coupons_amount_cents": 0,
+          "credit_notes_amount_cents": 0,
+          "credit_amount_cents": 0,
+          "total_amount_cents": 100,
+          "prepaid_credit_amount_cents": 0,
+          "file_url": null,
+          "version_number": 2,
+          "legacy": false,
+          "amount_currency": "USD",
+          "vat_amount_currency": "USD",
+          "credit_amount_currency": "USD",
+          "total_amount_currency": "USD",
+          "customer": {
+            "lago_id": "0e77ace9-68ba-1111-bbbb-999888c43f75",
+            "external_id": "customer_1234",
+            "name": "James White",
+            "sequential_id": 34,
+            "slug": "SEL-AZ22-034",
+            "created_at": "2023-04-19T21:49:37Z",
+            "country": null,
+            "address_line1": null,
+            "address_line2": null,
+            "state": null,
+            "zipcode": null,
+            "email": null,
+            "city": null,
+            "url": null,
+            "phone": null,
+            "logo_url": null,
+            "legal_name": null,
+            "legal_number": null,
+            "currency": "USD",
+            "timezone": null,
+            "applicable_timezone": "UTC",
+            "billing_configuration": {
+              "invoice_grace_period": null,
+              "payment_provider": null,
+              "vat_rate": null,
+              "document_locale": null
+            }
+          },
+          "fees": [
+            {
+              "lago_id": "0e77ace9-68ba-3333-hhhh-999888c43f75",
+              "lago_group_id": null,
+              "lago_invoice_id": "0e77ace9-68ba-4444-pppp-999888c43f75",
+              "lago_true_up_fee_id": null,
+              "lago_true_up_parent_fee_id": null,
+              "item": {
+                "type": "credit",
+                "code": "credit",
+                "name": "credit",
+                "lago_item_id": "0e77ace9-68ba-9999-rrrr-999888c43f75",
+                "item_type": "WalletTransaction"
+              },
+              "amount_cents": 100,
+              "amount_currency": "USD",
+              "vat_amount_cents": 0,
+              "vat_amount_currency": "USD",
+              "total_amount_cents": 100,
+              "total_amount_currency": "USD",
+              "units": "1.0",
+              "events_count": null,
+              "external_subscription_id": null,
+              "payment_status": "pending",
+              "created_at": "2023-04-24T08:47:43Z",
+              "succeeded_at": null,
+              "failed_at": null,
+              "refunded_at": null
+            }
+          ]
+        }
+      }
+    ```
+    ### Arguments
+    <ResponseField name="invoice" type="JSON" required>
+      Returning an invoice object. 
+    </ResponseField>
+  </Accordion>
+  <Accordion title="PDF invoice generated">
+    Sent when the PDF file has been generated for a customer invoice.
+    This will allow your application to retrieve the PDF invoice.
+    ```json
+      {
+      "webhook_type": "invoice.generated",
+      "object_type": "invoice",
+      "invoice": {
+        "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "sequential_id": 2,
+        "number": "LAG-1234-001-002",
+        "from_date": "2022-04-01",
+        "to_date": "2022-04-30",
+        "charges_from_date": "2022-04-01",
+        "issuing_date": "",
+        "amount_cents": 100,
+        "amount_currency": "EUR",
+        "vat_amount_cents": 20,
+        "vat_amount_currency": "EUR",
+        "total_amount_cents": 120,
+        "total_amount_currency": "EUR",
+        "file_url": "https://getlago.com/invoice/file",
+      }
+    }
+    ```
+    ### Arguments
+    <ResponseField name="invoice" type="JSON" required>
+      Returning an invoice object. 
+    </ResponseField>
+  </Accordion>
+  <Accordion title="Payment status updated">
+    Sent when the payment status of an invoice is updated based on information provided by the payment provider.
+    ```json
+    {
+      "webhook_type": "invoice.payment_status_updated",
+      "object_type": "invoice",
+      "invoice": {
+        "lago_id": "68133479-abcd-1234-5678-jklm437da000",
+        "sequential_id": 1,
+        "number": "SEL-AZ22-040-XXX",
+        "issuing_date": "2023-04-24",
+        "invoice_type": "subscription",
+        "status": "finalized",
+        "payment_status": "succeeded",
+        "currency": "USD",
+        "fees_amount_cents": 70,
+        "amount_cents": 70,
+        "vat_amount_cents": 11,
+        "coupons_amount_cents": 0,
+        "credit_notes_amount_cents": 0,
+        "credit_amount_cents": 0,
+        "total_amount_cents": 81,
+        "prepaid_credit_amount_cents": 0,
+        "file_url": null,
+        "version_number": 2,
+        "legacy": false,
         "amount_currency": "USD",
-        "vat_amount_cents": 0,
         "vat_amount_currency": "USD",
-        "units": "1.0",
-        "events_count": null
+        "credit_amount_currency": "USD",
+        "total_amount_currency": "USD"
       }
-    ],
-    "credits": []
-  }
-}
-```
+    }
+    ```
+    ### Arguments
+    <ResponseField name="invoice" type="JSON" required>
+      Returning an invoice object. 
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
 
-| Attributes                      | Description                                    |
-| ------------------------------- | ---------------------------------------------- |
-| **invoice** `JSON` Not nullable | [Invoice object](/api/invoices/invoice-object) |
+## Subscriptions and fees
+<AccordionGroup>
+  <Accordion title="Fee created">
+    Sent when a fee for a charge to be paid in advance is created. You can use this information to collect the payment of the
+     `pay_in_advance` fee. Useful for fintech that need to create a statement of transactions without invoicing.
 
-**Finalized invoice created**
-
-Sent when an invoice is finalized.
-
-This will allow your application to proceed with the billing.
-
-```json
-{
-  "webhook_type": "invoice.created",
-  "object_type": "invoice",
-  "invoice": {
-    "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "sequential_id": 2,
-    "number": "LAG-1234-001-002",
-    "charges_from_date": "2022-04-01",
-    "issuing_date": "",
-    "amount_cents": 100,
-    "amount_currency": "EUR",
-    "vat_amount_cents": 20,
-    "vat_amount_currency": "EUR",
-    "total_amount_cents": 120,
-    "total_amount_currency": "EUR",
-    "file_url": "https://getlago.com/invoice/file",
-    "customer": {
-      "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
-      "sequential_id": 1,
-      "slug": "LAG-1234-001",
-      "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-      "address_line1": "5230 Penfield Ave",
-      "address_line2": null,
-      "city": "Woodland Hills",
-      "country": "US",
-      "created_at": "2022-04-29T08:59:51Z",
-      "email": "dinesh@piedpiper.test",
-      "legal_name": "Coleman-Blair",
-      "legal_number": "49-008-2965",
-      "logo_url": "http://hooli.com/logo.png",
-      "name": "Gavin Belson",
-      "phone": "1-171-883-3711 x245",
-      "state": "CA",
-      "url": "http://hooli.com",
-      "vat_rate": 20.0,
-      "zipcode": "91364"
-    },
-    "subscriptions": [
+    ```json
       {
-        "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
-        "external_id": "susbcription_external_id",
-        "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
-        "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-        "canceled_at": "2022-04-29T08:59:51Z",
-        "created_at": "2022-04-29T08:59:51Z",
-        "plan_code": "new_code",
-        "started_at": "2022-04-29T08:59:51Z",
-        "status": "active",
-        "terminated_at": null
-      }
-    ],
-    "fees": [
-      {
-        "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
+      "webhook_type": "fee.created",
+      "object_type": "fee",
+      "fee": {
+        "lago_id": "6be23c42-47d2-45a3-9770-5b3572f225c3",
+        "lago_group_id": "5b4881e3-b451-472e-9e03-d99379550743",
+        "lago_true_up_fee_id": null,
+        "lago_true_up_parent_fee_id": null,
         "item": {
-          "type": "subscription",
-          "code": "plan_code",
-          "name": "Plan"
+          "type": "charge",
+          "code": "fx_transfer",
+          "name": "FX Transfer"
         },
         "amount_cents": 100,
         "amount_currency": "EUR",
         "vat_amount_cents": 20,
         "vat_amount_currency": "EUR",
+        "total_amount_cents": 120,
+        "total_amount_currency": "EUR",
         "units": "0.32",
         "events_count": 23
       }
-    ],
-    "credits": [
-      {
-        "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
-        "item": {
-          "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
-          "type": "coupon",
-          "code": "coupon_code",
-          "name": "Coupon"
-        },
-        "amount_cents": 100,
-        "amount_currency": "EUR"
+    }
+    ```
+    ### Arguments
+    <ResponseField name="fee" type="JSON" required>
+      Returning a fee object. 
+    </ResponseField>
+  </Accordion>
+  <Accordion title="Subscription terminated">
+    Sent when a subscription is terminated.
+
+    ```json
+    {
+      "webhook_type": "subscription.terminated",
+      "object_type": "subscription",
+      "subscription": {
+        "lago_id": "0fd99089-b15a-abcd-1234-a8292df18990",
+        "external_id": "custom_sub_id_1234",
+        "lago_customer_id": "27b9c2d9-abcd-1234-898f-hyt29a8e0eea",
+        "external_customer_id": "customer_1234",
+        "name": "",
+        "plan_code": "premium",
+        "status": "terminated",
+        "billing_time": "anniversary",
+        "subscription_at": "2023-01-11T10:51:29Z",
+        "started_at": "2023-01-11T10:51:29Z",
+        "terminated_at": "2023-01-24T14:53:02Z",
+        "canceled_at": null,
+        "created_at": "2023-01-11T10:51:34Z",
+        "previous_plan_code": null,
+        "next_plan_code": null,
+        "downgrade_plan_date": null,
+        "subscription_date": "2023-01-11"
       }
-    ]
-  }
-}
-```
+    }
+    ```
+    ### Arguments
+    <ResponseField name="subscription" type="JSON" required>
+      Returning a subscription object. 
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
 
-| Attributes                      | Description                                    |
-| ------------------------------- | ---------------------------------------------- |
-| **invoice** `JSON` Not nullable | [Invoice object](/api/invoices/invoice-object) |
+## External payment providers
+<AccordionGroup>
+  <Accordion title="Payment provider created">
+    This webhook is sent when a customer is successfully created in the payment provider's application. 
+    This allows you to retrieve the identifier assigned to the customer by the payment service provider.
 
-**PDF invoice generated**
-
-Sent when the PDF file has been generated for a customer invoice.
-
-This will allow your application to retrieve the PDF invoice.
-
-```json
-{
-  "webhook_type": "invoice.generated",
-  "object_type": "invoice",
-  "invoice": {
-    "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "sequential_id": 2,
-    "number": "LAG-1234-001-002",
-    "from_date": "2022-04-01",
-    "to_date": "2022-04-30",
-    "charges_from_date": "2022-04-01",
-    "issuing_date": "",
-    "amount_cents": 100,
-    "amount_currency": "EUR",
-    "vat_amount_cents": 20,
-    "vat_amount_currency": "EUR",
-    "total_amount_cents": 120,
-    "total_amount_currency": "EUR",
-    "file_url": "https://getlago.com/invoice/file"
-  }
-}
-```
-
-| Attributes                      | Description                                    |
-| ------------------------------- | ---------------------------------------------- |
-| **invoice** `JSON` Not nullable | [Invoice object](/api/invoices/invoice-object) |
-
-**Add-on added**
-
-Sent when an add-on has been applied to customer. The invoice is created
-immediately after the add-on is assigned to a customer.
-
-You can use this information to generate a PDF invoice or collect the payment.
-
-```json
-{
-  "webhook_type": "invoice.add_on_added",
-  "object_type": "invoice",
-  "invoice": {
-    "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "sequential_id": 2,
-    "issuing_date": "2022-04-30",
-    "amount_cents": 100,
-    "amount_currency": "EUR",
-    "vat_amount_cents": 20,
-    "vat_amount_currency": "EUR",
-    "total_amount_cents": 120,
-    "total_amount_currency": "EUR",
-    "customer": {
-      "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
-      "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-      "address_line1": "5230 Penfield Ave",
-      "address_line2": null,
-      "city": "Woodland Hills",
-      "country": "US",
-      "created_at": "2022-04-29T08:59:51Z",
-      "email": "dinesh@piedpiper.test",
-      "legal_name": "Coleman-Blair",
-      "legal_number": "49-008-2965",
-      "logo_url": "http://hooli.com/logo.png",
-      "name": "Gavin Belson",
-      "phone": "1-171-883-3711 x245",
-      "state": "CA",
-      "url": "http://hooli.com",
-      "vat_rate": 20.0,
-      "zipcode": "91364"
-    },
-    "subscription": {
-      "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
-      "external_id": "susbcription_external_id",
-      "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
-      "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-      "canceled_at": "2022-04-29T08:59:51Z",
-      "created_at": "2022-04-29T08:59:51Z",
-      "plan_code": "new_code",
-      "started_at": "2022-04-29T08:59:51Z",
-      "status": "active",
-      "terminated_at": null
-    },
-    "fees": [
+    ```json
       {
-        "item": {
-          "type": "add_on",
-          "code": "add_on_code",
-          "name": "add_on_name"
-        },
-        "amount_cents": 100,
-        "amount_currency": "EUR",
+        "webhook_type": "customer.payment_provider_created",
+        "object_type": "customer",
+        "customer": {
+          "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
+          "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "address_line1": "5230 Penfield Ave",
+          "address_line2": null,
+          "city": "Woodland Hills",
+          "country": "US",
+          "created_at": "2022-04-29T08:59:51Z",
+          "email": "dinesh@piedpiper.test",
+          "legal_name": "Coleman-Blair",
+          "legal_number": "49-008-2965",
+          "logo_url": "http://hooli.com/logo.png",
+          "name": "Gavin Belson",
+          "phone": "1-171-883-3711 x245",
+          "state": "CA",
+          "url": "http://hooli.com",
+          "vat_rate": 12.5,
+          "zipcode": "91364",
+          "billing_configuration": {
+            "payment_provider": "stripe",
+            "provider_customer_id": "cus_12345"
+          }
+        }
+      }
+    ```
+    ### Arguments
+    <ResponseField name="customer" type="JSON" required>
+      Returning a customer object. 
+    </ResponseField>
+  </Accordion>
+  <Accordion title="Checkout URL generated">
+    Sent when a checkout link is issued for a customer.
+
+    ```json
+      {
+        "webhook_type": "customer.checkout_url_generated",
+        "object_type": "payment_provider_customer_checkout_url",
+        "payment_provider_customer_checkout_url": {
+          "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
+          "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "payment_provider": "gocardless",
+          "checkout_url": "__CUSTOM_CHECKOUT_URL__"
+        }
+      }
+    ```
+    ### Arguments
+    <ResponseField name="lago_customer_id" type="String" required>
+      Unique identifier assigned to the customer within the Lago application. 
+      This ID is exclusively created by Lago and serves as a unique identifier for the customer's record within the Lago system.
+    </ResponseField>
+    <ResponseField name="external_customer_id" type="String" required>
+      The customer external unique identifier (provided by your own application).
+    </ResponseField>
+      <ResponseField name="payment_provider" type="String" required>
+      The default payment provider attached to this customer.
+    </ResponseField>
+    <ResponseField name="checkout_url" type="String" required>
+      URL that should be utilized to set up the payment method within the payment provider's system.
+    </ResponseField>
+  </Accordion>
+  <Accordion title="Payment provider error">
+    This webhook is sent when there is an error related to the creation of a customer in the payment provider's system.
+
+    ```json
+      {
+        "webhook_type": "customer.payment_provider_error",
+        "object_type": "payment_provider_customer_error",
+        "payment_provider_customer_error": {
+          "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "payment_provider": "stripe",
+          "provider_error": {
+            "message": "Invalid email address",
+            "error_code": "email_invalid"
+          }
+        }
+      }
+    ```
+    ### Arguments
+    <ResponseField name="lago_id" type="String" required>
+      Unique identifier assigned to the customer within the Lago application. 
+      This ID is exclusively created by Lago and serves as a unique identifier for the customer's record within the Lago system.
+    </ResponseField>
+    <ResponseField name="external_id" type="String" required>
+      The customer external unique identifier (provided by your own application).
+    </ResponseField>
+      <ResponseField name="payment_provider" type="String" required>
+      The default payment provider attached to this customer.
+    </ResponseField>
+    <ResponseField name="provider_error[message]" type="String" required>
+      The error message sent by the payment provider.
+    </ResponseField>
+      <ResponseField name="provider_error[error_code] " type="String" required>
+      The error code sent by the payment provider.
+    </ResponseField>
+  </Accordion>
+  <Accordion title="Payment failure">
+    Sent when there is an error related to the payment process.
+    Usually occurs when no valid payment method is defined for the customer in the payment service provider's application.
+
+    ```json
+      {
+        "webhook_type": "invoice.payment_failure",
+        "object_type": "payment_provider_invoice_payment_error",
+        "payment_provider_invoice_payment_error": {
+          "lago_invoice_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
+          "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "provider_customer_id": "cus_123456",
+          "payment_provider": "stripe",
+          "provider_error": {
+            "message": "Cannot charge a customer that has no active card",
+            "error_code": "missing"
+          }
+        }
+      }
+    ```
+    ### Arguments
+    <ResponseField name="lago_invoice_id" type="String" required>
+      Unique identifer of the invoice in Lago application.
+    </ResponseField>
+    <ResponseField name="lago_customer_id" type="String" required>
+      Unique identifier assigned to the customer within the Lago application. 
+      This ID is exclusively created by Lago and serves as a unique identifier for the customer's record within the Lago system.
+    </ResponseField>
+    <ResponseField name="external_customer_id" type="String" required>
+      The customer external unique identifier (provided by your own application).
+    </ResponseField>
+    <ResponseField name="provider_customer_id" type="String" required>
+      Unique identifer of the customer in payment provider application.
+    </ResponseField>
+      <ResponseField name="payment_provider" type="String" required>
+      The default payment provider attached to this customer.
+    </ResponseField>
+    <ResponseField name="provider_error[message]" type="String" required>
+      The error message sent by the payment provider.
+    </ResponseField>
+      <ResponseField name="provider_error[error_code] " type="String" required>
+      The error code sent by the payment provider.
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>
+
+## Credit notes and refunds
+<AccordionGroup>
+  <Accordion title="Credit note created">
+    Sent when a new credit note has been issued for a customer.
+    This will allow your application to proceed with the refund.
+
+    ```json
+    {
+      "webhook_type": "credit_note.created",
+      "object_type": "credit_note",
+      "credit_note": {
+        "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "sequential_id": 2,
+        "number": "LAG-1234-CN2",
+        "lago_invoice_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "invoice_number": "LAG-1234",
+        "issuing_date": "2022-12-06",
+        "credit_status": "available",
+        "refund_status": "pending",
+        "reason": "other",
+        "description": "Free text",
+        "total_amount_cents": 120,
+        "total_amount_currency": "EUR",
+        "credit_amount_cents": 100,
+        "credit_amount_currency": "EUR",
+        "refund_amount_cents": 0,
+        "refund_amount_currency": "EUR",
+        "balance_amount_cents": 100,
+        "balance_amount_currency": "EUR",
         "vat_amount_cents": 20,
         "vat_amount_currency": "EUR",
-        "units": "1",
-        "events_count": 23
+        "sub_total_vat_excluded_amount_cents": 100,
+        "sub_total_vat_excluded_amount_currency": "EUR",
+        "created_at": "2022-10-06 09:52:00",
+        "updated_at": "2022-10-06 09:52:00",
+        "file_url": "https://getlago.com/credit_note/file",
+        "items": [
+          {
+            "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+            "amount_cents": 100,
+            "amount_currency": "EUR",
+            "fee":       {
+              "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+              "item": {
+                "type": "charge",
+                "code": "user_seats",
+                "name": "User Seats"
+              },
+              "amount_cents": 100,
+              "amount_currency": "",
+              "vat_amount_cents": 20,
+              "vat_amount_currency": "EUR",
+              "total_amount_cents": 120,
+              "total_amount_currency": "EUR",
+              "units": 12.6,
+              "events_count": 10
+            }
+          }
+        ]
       }
-    ]
-  }
-}
-```
+    }
+    ```
+    ### Arguments
+    <ResponseField name="credit_note" type="JSON" required>
+      Returning a credit note object. 
+    </ResponseField>
+  </Accordion>
+  <Accordion title="PDF credit note generated">
+      Sent when the PDF file has been generated for a credit note.  
+      This will allow your application to retrieve the PDF credit note.
 
-| Attributes                      | Description                                    |
-| ------------------------------- | ---------------------------------------------- |
-| **invoice** `JSON` Not nullable | [Invoice object](/api/invoices/invoice-object) |
-
-**Prepaid credits added**
-
-Sent when prepaid credits have been added to the customer's wallet.
-
-You can use this information to generate a PDF invoice or collect the payment.
-
-```json
-{
-  "webhook_type": "invoice.paid_credit_added",
-  "object_type": "invoice",
-  "invoice": {
-    "lago_id": "dd3f587c-1122-4fc1-a8dd-dfghj0d98765",
-    "sequential_id": 7,
-    "number": "LAG-C875-031-007",
-    "issuing_date": "2023-01-18",
-    "invoice_type": "credit",
-    "status": "finalized",
-    "payment_status": "pending",
-    "amount_cents": 5000,
-    "amount_currency": "USD",
-    "vat_amount_cents": 0,
-    "vat_amount_currency": "USD",
-    "credit_amount_cents": 0,
-    "credit_amount_currency": "USD",
-    "total_amount_cents": 5000,
-    "total_amount_currency": "USD",
-    "file_url": null,
-    "legacy": false,
-    "customer": {
-      "lago_id": "12345678-qsdf-vbnm-898f-f0d29a8e0eea",
-      "external_id": "seb_1234",
-      "name": "Sebastian Molde",
-      "sequential_id": 31,
-      "slug": "LAG-C875-031",
-      "created_at": "2023-01-17T13:43:53Z",
-      "country": null,
-      "address_line1": null,
-      "address_line2": null,
-      "state": null,
-      "zipcode": null,
-      "email": null,
-      "city": null,
-      "url": null,
-      "phone": null,
-      "logo_url": null,
-      "legal_name": null,
-      "legal_number": null,
-      "currency": "USD",
-      "timezone": null,
-      "applicable_timezone": "Europe/Paris",
-      "billing_configuration": {
-        "invoice_grace_period": null,
-        "payment_provider": null,
-        "vat_rate": null
-      }
-    },
-    "fees": [
-      {
-        "lago_id": "600a3709-erty-8765-3214-e4ca436fe6b6",
-        "lago_group_id": null,
-        "item": {
-          "type": "credit",
-          "code": "credit",
-          "name": "credit"
-        },
-        "amount_cents": 5000,
-        "amount_currency": "USD",
-        "vat_amount_cents": 0,
-        "vat_amount_currency": "USD",
-        "units": "1.0",
-        "events_count": null
-      }
-    ]
-  }
-}
-```
-
-| Attributes                      | Description                                    |
-| ------------------------------- | ---------------------------------------------- |
-| **invoice** `JSON` Not nullable | [Invoice object](/api/invoices/invoice-object) |
-
-**Credit note created**
-
-Sent when a new credit note has been issued for a customer.
-
-This will allow your application to proceed with the refund.
-
-```json
-{
-  "webhook_type": "credit_note.created",
-  "object_type": "credit_note",
-  "credit_note": {
-    "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "sequential_id": 2,
-    "number": "LAG-1234-CN2",
-    "lago_invoice_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "invoice_number": "LAG-1234",
-    "issuing_date": "2022-12-06",
-    "credit_status": "available",
-    "refund_status": "pending",
-    "reason": "other",
-    "description": "Free text",
-    "total_amount_cents": 120,
-    "total_amount_currency": "EUR",
-    "credit_amount_cents": 100,
-    "credit_amount_currency": "EUR",
-    "refund_amount_cents": 0,
-    "refund_amount_currency": "EUR",
-    "balance_amount_cents": 100,
-    "balance_amount_currency": "EUR",
-    "vat_amount_cents": 20,
-    "vat_amount_currency": "EUR",
-    "sub_total_vat_excluded_amount_cents": 100,
-    "sub_total_vat_excluded_amount_currency": "EUR",
-    "created_at": "2022-10-06 09:52:00",
-    "updated_at": "2022-10-06 09:52:00",
-    "file_url": "https://getlago.com/credit_note/file",
-    "items": [
-      {
+    ```json
+    {
+      "webhook_type": "credit_note.generated",
+      "object_type": "credit_note",
+        "credit_note": {
         "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-        "amount_cents": 100,
-        "amount_currency": "EUR",
-        "fee": {
-          "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-          "item": {
-            "type": "charge",
-            "code": "user_seats",
-            "name": "User Seats"
+        "sequential_id": 2,
+        "number": "LAG-1234-CN2",
+        "lago_invoice_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "invoice_number": "LAG-1234",
+        "issuing_date": "2022-12-06",
+        "credit_status": "available",
+        "refund_status": "pending",
+        "reason": "other",
+        "description": "Free text",
+        "total_amount_cents": 120,
+        "total_amount_currency": "EUR",
+        "credit_amount_cents": 100,
+        "credit_amount_currency": "EUR",
+        "refund_amount_cents": 0,
+        "refund_amount_currency": "EUR",
+        "balance_amount_cents": 100,
+        "balance_amount_currency": "EUR",
+        "vat_amount_cents": 20,
+        "vat_amount_currency": "EUR",
+        "sub_total_vat_excluded_amount_cents": 100,
+        "sub_total_vat_excluded_amount_currency": "EUR",
+        "created_at": "2022-10-06 09:52:00",
+        "updated_at": "2022-10-06 09:52:00",
+        "file_url": "https://getlago.com/credit_note/file",
+        "items": [
+          {
+            "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+            "amount_cents": 100,
+            "amount_currency": "EUR",
+            "fee":       {
+              "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+              "item": {
+                "type": "charge",
+                "code": "user_seats",
+                "name": "User Seats"
+              },
+              "amount_cents": 100,
+              "amount_currency": "",
+              "vat_amount_cents": 20,
+              "vat_amount_currency": "EUR",
+              "total_amount_cents": 120,
+              "total_amount_currency": "EUR",
+              "units": 12.6,
+              "events_count": 10
+            }
+          }
+        ]
+      }
+    }
+    ```
+    ### Arguments
+    <ResponseField name="credit_note" type="JSON" required>
+      Returning a credit note object. 
+    </ResponseField>
+  </Accordion>
+  <Accordion title="Refund failure">
+    This webhook is sent when there is an error related to a credit note refund of a payment previously created on a payment provider.
+
+    ```json
+      {
+        "webhook_type": "credit_note.refund_failure",
+        "object_type": "payment_provider_customer_error",
+        "credit_note_payment_provider_refund_error": {
+          "lago_credit_note_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "lago_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "provider_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "payment_provider": "stripe",
+          "provider_error": {
+            "message": "error message",
+            "code": "error_code"
           },
-          "amount_cents": 100,
-          "amount_currency": "",
-          "vat_amount_cents": 20,
-          "vat_amount_currency": "EUR",
-          "units": 12.6,
-          "events_count": 10
         }
       }
-    ]
-  }
-}
-```
-
-| Attributes                          | Description                                                  |
-| ----------------------------------- | ------------------------------------------------------------ |
-| **credit_note** `JSON` Not nullable | [Credit note object](/api/credit%5Fnotes/credit-note-object) |
-
-**PDF credit note generated**
-
-Sent when the PDF file has been generated for a credit note.
-
-This will allow your application to retrieve the PDF credit note.
-
-```json
-{
-  "webhook_type": "credit_note.generated",
-  "object_type": "credit_note",
-  "credit_note": {
-    "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "sequential_id": 2,
-    "number": "LAG-1234-CN2",
-    "lago_invoice_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "invoice_number": "LAG-1234",
-    "issuing_date": "2022-12-06",
-    "credit_status": "available",
-    "refund_status": "pending",
-    "reason": "other",
-    "description": "Free text",
-    "total_amount_cents": 120,
-    "total_amount_currency": "EUR",
-    "credit_amount_cents": 100,
-    "credit_amount_currency": "EUR",
-    "refund_amount_cents": 0,
-    "refund_amount_currency": "EUR",
-    "balance_amount_cents": 100,
-    "balance_amount_currency": "EUR",
-    "vat_amount_cents": 20,
-    "vat_amount_currency": "EUR",
-    "sub_total_vat_excluded_amount_cents": 100,
-    "sub_total_vat_excluded_amount_currency": "EUR",
-    "created_at": "2022-10-06 09:52:00",
-    "updated_at": "2022-10-06 09:52:00",
-    "file_url": "https://getlago.com/credit_note/file",
-    "items": [
-      {
-        "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-        "amount_cents": 100,
-        "amount_currency": "EUR",
-        "fee": {
-          "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-          "item": {
-            "type": "charge",
-            "code": "user_seats",
-            "name": "User Seats"
-          },
-          "amount_cents": 100,
-          "amount_currency": "",
-          "vat_amount_cents": 20,
-          "vat_amount_currency": "EUR",
-          "units": 12.6,
-          "events_count": 10
-        }
-      }
-    ]
-  }
-}
-```
-
-| Attributes                          | Description                                                  |
-| ----------------------------------- | ------------------------------------------------------------ |
-| **credit_note** `JSON` Not nullable | [Credit note object](/api/credit%5Fnotes/credit-note-object) |
-
-**Payment provider created**
-
-This webhook is sent when a customer is successfully created in the payment
-provider's application.
-
-This allows you to retrieve the identifier assigned to the customer by the
-payment service provider.
-
-```json
-{
-  "webhook_type": "customer.payment_provider_created",
-  "object_type": "customer",
-  "customer": {
-    "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
-    "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "address_line1": "5230 Penfield Ave",
-    "address_line2": null,
-    "city": "Woodland Hills",
-    "country": "US",
-    "created_at": "2022-04-29T08:59:51Z",
-    "email": "dinesh@piedpiper.test",
-    "legal_name": "Coleman-Blair",
-    "legal_number": "49-008-2965",
-    "logo_url": "http://hooli.com/logo.png",
-    "name": "Gavin Belson",
-    "phone": "1-171-883-3711 x245",
-    "state": "CA",
-    "url": "http://hooli.com",
-    "vat_rate": 12.5,
-    "zipcode": "91364",
-    "billing_configuration": {
-      "payment_provider": "stripe",
-      "provider_customer_id": "cus_12345"
-    }
-  }
-}
-```
-
-| Attributes                       | Description                                       |
-| -------------------------------- | ------------------------------------------------- |
-| **customer** `JSON` Not nullable | [Customer object](/api/customers/customer-object) |
-
-**Payment provider error**
-
-This webhook is sent when there is an error related to the creation of a
-customer in the payment provider's application.
-
-You should review the customer's data.
-
-```json
-{
-  "webhook_type": "invoice.payment_failure",
-  "object_type": "payment_provider_customer_error",
-  "payment_provider_customer_error": {
-    "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "payment_provider": "stripe",
-    "provider_error": {
-      "message": "Invalid email address",
-      "error_code": "email_invalid"
-    }
-  }
-}
-```
-
-| Attributes                                | Description                                          |
-| ----------------------------------------- | ---------------------------------------------------- |
-| **lago_id** `String` Not null             | Unique identifer of the customer in Lago application |
-| **external_id** `String` Not null         | Unique identifer of the customer in your application |
-| **payment_provider** `String`             | Payment provider used to process the payment         |
-| **provider_error\[message\]** `String`    | Error message sent by the payment provider           |
-| **provider_error\[error_code\]** `String` | Error code sent by the payment provider              |
-
-**Checkout URL generated**
-
-Sent when a new customer is created through integration with GoCardless.
-
-Includes the URL that should be used to set up the
-[direct debit mandate](/payments/gocardless-integration#direct-debit).
-
-```json
-{
-  "webhook_type": "customer.checkout_url_generated",
-  "object_type": "payment_provider_customer_checkout_url",
-  "payment_provider_customer_checkout_url": {
-    "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
-    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "payment_provider": "gocardless",
-    "checkout_url": "__CUSTOM_CHECKOUT_URL__"
-  }
-}
-```
-
-| Attributes                                 | Description                                                |
-| ------------------------------------------ | ---------------------------------------------------------- |
-| **lago_customer_id** `String` Not null     | Unique identifer of the customer in Lago                   |
-| **external_customer_id** `String` Not null | Unique identifer of the customer in your application       |
-| **payment_provider** `String` Not null     | Default payment provider for this customer                 |
-| **checkout_url** `String` Not null         | URL that should be used to set up the direct debit mandate |
-
-**Payment failure**
-
-Sent when there is an error related to the payment process.
-
-Usually occurs when no valid payment method is defined for the customer in the
-payment service provider's application.
-
-```json
-{
-  "webhook_type": "invoice.payment_failure",
-  "object_type": "payment_provider_invoice_payment_error",
-  "payment_provider_invoice_payment_error": {
-    "lago_invoice_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
-    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "provider_customer_id": "cus_123456",
-    "payment_provider": "stripe",
-    "provider_error": {
-      "message": "Cannot charge a customer that has no active card",
-      "error_code": "missing"
-    }
-  }
-}
-```
-
-| Attributes                                 | Description                                                      |
-| ------------------------------------------ | ---------------------------------------------------------------- |
-| **lago_invoice_id** `String` Not null      | Unique identifer of the invoice in Lago application              |
-| **lago_customer_id** `String` Not null     | Unique identifer of the customer in Lago application             |
-| **external_customer_id** `String` Not null | Unique identifer of the customer in your application             |
-| **provider_customer_id** `String` Not null | Unique identifer of the customer in payment provider application |
-| **payment_provider** `String`              | Payment provider used to process the payment                     |
-| **provider_error\[message\]** `String`     | Error message sent by the payment provider                       |
-| **provider_error\[error_code\]** `String`  | Error code sent by the payment provider                          |
-
-**Refund failure**
-
-This webhook is sent when there is an error related to a credit note refund of a
-payment previously created on a payment provider.
-
-```json
-{
-  "webhook_type": "credit_note.refund_failure",
-  "object_type": "payment_provider_customer_error",
-  "credit_note_payment_provider_refund_error": {
-    "lago_credit_note_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "lago_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "provider_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "payment_provider": "stripe",
-    "provider_error": {
-      "message": "error message",
-      "code": "error_code"
-    }
-  }
-}
-```
-
-| Attributes                                 | Description                                             |
-| ------------------------------------------ | ------------------------------------------------------- |
-| **lago_credit_note_id** `String` Not null  | Unique identifer of the credit note in Lago application |
-| **lago_customer_id** `String` Not null     | Unique identifer of the customer in Lago application    |
-| **external_customer_id** `String` Not null | Unique identifer of the customer in your application    |
-| **provider_customer_id** `String` Not null | Unique identifer of the customer in payment provider    |
-| **payment_provider** `String` Not null     | Payment provider used to process the payment            |
-| **provider_error\[message\]** `String`     | Error message sent by the payment provider              |
-| **provider_error\[error_code\]** `String`  | Error message sent by the payment provider              |
-
-**Event error**
-
-This webhook is sent when there is an error related to the creation of an event.
-
-```json
-{
-  "webhook_type": "event.error",
-  "object_type": "event_error",
-  "event_error": {
-    "status": 422,
-    "error": "Unprocessable entity",
-    "message": "code does not exist",
-    "input_params": {
-      "transaction_id": "__transaction_id__",
-      "external_customer_id": "customer123",
-      "code": "code123"
-    }
-  }
-}
-```
-
-| Attributes                       | Description                                                            |
-| -------------------------------- | ---------------------------------------------------------------------- |
-| **status** `String` Not null     | HTTP status of the error. Possible statuses are 404 or 422             |
-| **error** `String` Not null      | HTTP error code. Possible errors are Not found or Unprocessable entity |
-| **message** `String` Not null    | Error code. See next list for the description of each error code.      |
-| **input_params** `JSON` Not null | JSON provided at event creation                                        |
-
-| Code                                 | Description                                                |
-| ------------------------------------ | ---------------------------------------------------------- |
-| **billable_metric_not_found** `404`  | No billable metric matches the given code                  |
-| **customer_not_found** `404`         | No customer matches the external id                        |
-| **subscription_not_found** `404`     | No subscription matches the given external subscription id |
-| **invalid_argument** `422`           | No subscription matches the given external subscription id |
-| **invalid_recurring_resource** `422` | Provided recurring resource for persisted event is invalid |
-
-**Subscription terminated**
-
-Sent when a subscription is terminated.
-
-```json
-{
-  "webhook_type": "subscription.terminated",
-  "object_type": "subscription",
-  "subscription": {
-    "lago_id": "0fd99089-b15a-abcd-1234-a8292df18990",
-    "external_id": "custom_sub_id_1234",
-    "lago_customer_id": "27b9c2d9-abcd-1234-898f-hyt29a8e0eea",
-    "external_customer_id": "customer_1234",
-    "name": "",
-    "plan_code": "premium",
-    "status": "terminated",
-    "billing_time": "anniversary",
-    "subscription_at": "2023-01-11T10:51:29Z",
-    "started_at": "2023-01-11T10:51:29Z",
-    "terminated_at": "2023-01-24T14:53:02Z",
-    "canceled_at": null,
-    "created_at": "2023-01-11T10:51:34Z",
-    "previous_plan_code": null,
-    "next_plan_code": null,
-    "downgrade_plan_date": null,
-    "subscription_date": "2023-01-11"
-  }
-}
-```
-
-| Attributes                           | Description                                                   |
-| ------------------------------------ | ------------------------------------------------------------- |
-| **subscription** `JSON` Not nullable | [Subscription object](/api/subscriptions/subscription-object) |
+    ```
+    ### Arguments
+    <ResponseField name="lago_credit_note_id" type="String" required>
+      Unique identifer of the credit note in Lago application.
+    </ResponseField>
+    <ResponseField name="lago_customer_id" type="String" required>
+      Unique identifer of the customer in Lago application.
+    </ResponseField>
+    <ResponseField name="external_customer_id" type="String" required>
+      Unique identifer of the customer in your application.
+    </ResponseField>
+    <ResponseField name="provider_customer_id" type="String" required>
+      Unique identifer of the customer in payment provider's system.
+    </ResponseField>
+    <ResponseField name="payment_provider" type="String" required>
+      The payment provider used to process the payment.
+    </ResponseField>
+    <ResponseField name="provider_error[message]" type="String" required>
+      The error message sent by the payment provider.
+    </ResponseField>
+    <ResponseField name="provider_error[error_code]" type="String" required>
+      The error message sent by the payment provider.
+    </ResponseField>
+  </Accordion>
+</AccordionGroup>

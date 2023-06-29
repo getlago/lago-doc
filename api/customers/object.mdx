@@ -1,13 +1,12 @@
 ---
-title: "Customer object"
+title: "The customer object"
 description:
-  "This object represents a customer of your business. It lets you create a
+  "This object represents a customer of your business. It lets you create or update a
   customer, but also track usage and create invoices for the same customer."
 ---
 
-## Schema[](#schema "Direct link to heading")
-
-```json
+<RequestExample>
+```json The customer object
 {
   "customer": {
     "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
@@ -22,13 +21,14 @@ description:
     "email": "dinesh@piedpiper.test",
     "legal_name": "Coleman-Blair",
     "legal_number": "49-008-2965",
+    "tax_identification_number": "EU123456789",
     "logo_url": "http://hooli.com/logo.png",
     "name": "Gavin Belson",
     "phone": "1-171-883-3711 x245",
     "state": "CA",
     "url": "http://hooli.com",
     "zipcode": "91364",
-    "currency": "EUR",
+    "currency": "USD",
     "timezone": "Europe/Paris",
     "applicable_timezone": "Europe/Paris",
     "billing_configuration": {
@@ -36,42 +36,167 @@ description:
       "payment_provider": "stripe",
       "provider_customer_id": "cus_12345",
       "sync_with_provider": true,
+      "document_locale": "fr",
       "vat_rate": 12.5
-    }
+    },
+    "metadata": [
+      {
+        "lago_id": "27f12d13-4ae0-437b-b822-8771bcd62e3a",
+        "key": "Purchase Order",
+        "value": "123456789",
+        "display_in_invoice": true,
+        "created_at": "2022-04-29T08:59:51Z"
+      }
+    ]
   }
 }
 ```
+</RequestExample>
 
-| Attributes                                                 | Description                                                                                             |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **lago_id** `String` Not nullable                          | Unique identifer of the customer in Lago application                                                    |
-| **sequential_id** `String` Not nullable                    | Sequential id of the customer scoped on the organization                                                |
-| **slug** `String` Not nullable                             | Slug of the customer based on the Organization name, id and customer sequantial_id                      |
-| **external_id** `String` Not nullable                      | Unique identifer of the customer in your application                                                    |
-| **address_line1** `String`                                 | First line of the billing address                                                                       |
-| **address_line2** `String`                                 | Second line of the billing address                                                                      |
-| **address_line2** `String`                                 | Second line of the billing address                                                                      |
-| **city** `String`                                          | City of the customer's billing address                                                                  |
-| **country** `String`<br /> <sub>_ISO 3166 (alpha-2)_</sub> | Country code of the customer's billing address                                                          |
-| **currency** `String`<br /> <sub>_ISO 4217_</sub>          | Currency of the customer - [learn more](/api/resources/currencies)                                      |
-| **email** `String`                                         | Email of the customer                                                                                   |
-| **legal_name** `String`                                    | Legal company name of the customer                                                                      |
-| **legal_number** `String`                                  | Legal company number of the customer                                                                    |
-| **logo_url** `String`                                      | Logo URL of the customer                                                                                |
-| **name** `String`                                          | Full name of the customer                                                                               |
-| **phone** `String`                                         | Phone number of the customer                                                                            |
-| **state** `String`                                         | State of the customer's billing address                                                                 |
-| **timezone** `String`<br /> <sub>_TZ database_</sub>       | Timezone of the customer - [learn more](/api/resources/timezones)                                       |
-| **applicable_timezone** `String`                           | Timezone applicable the customer.Value is inherited from the organization if timezone attribute is null |
-| **url** `String`                                           | Custom URL of the customer                                                                              |
-| **zipcode** `String`                                       | Zipcode of the customer's billing address                                                               |
+## Attributes
 
-## Billing Configuration Object[](#billing-configuration-object "Direct link to heading")
-
-| Attributes                     | Description                                                                                                                                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| invoice_grace_period `Integer` | Grace period in days for the invoice (time between the end of the period and the closing of the invoice).                                                                                         |
-| payment_provider `String`      | Payment provider used to bill the customer. **Possible values**\- stripe: Use stripe as a payment provider.\- null: No payment providers. Only webhooks will be send to process customer billing. |
-| provider_customer_id `String`  | Customer ID on the payment provider.                                                                                                                                                              |
-| vat_rate `Float`               | Custom VAT rate applied to the customer.                                                                                                                                                          |
-| sync_with_provider `Boolean`   | Field that determines whether to create customer in payment provider or not.                                                                                                                      |
+<ResponseField name="customer" type="object">
+  <Expandable title="object" defaultOpen="true">
+    <ResponseField name="lago_id" type="string" required>
+      Unique identifier assigned to the customer within the Lago application.
+      This ID is exclusively created by Lago and serves as a unique identifier
+      for the customer's record within the Lago system.
+    </ResponseField>
+    <ResponseField name="sequential_id" type="integer" required>
+      The unique identifier assigned to the customer within the organization's
+      scope. This identifier is used to track and reference the customer's order
+      of creation within the organization's system. It ensures that each
+      customer has a distinct `sequential_id`` associated with them, allowing
+      for easy identification and sorting based on the order of creation
+    </ResponseField>
+    <ResponseField name="slug" type="string" required>
+      A concise and unique identifier for the customer, formed by combining the
+      Organization's `name`, `id`, and customer's `sequential_id`.
+    </ResponseField>
+    <ResponseField name="external_id" type="string">
+      The customer external unique identifier (provided by your own
+      application).
+    </ResponseField>
+    <ResponseField name="address_line1" type="string">
+      The first line of the billing address.
+    </ResponseField>
+    <ResponseField name="address_line2" type="string">
+      The second line of the billing address.
+    </ResponseField>
+    <ResponseField name="applicable_timezone" type="string" required>
+      The customer's applicable timezone, used for billing purposes in their
+      local time.
+    </ResponseField>
+    <ResponseField name="city" type="string">
+      The city of the customer's billing address.
+    </ResponseField>
+    <ResponseField name="country" type="string">
+      Country code of the customer's billing address. Format must be ISO 3166
+      (alpha-2).
+    </ResponseField>
+    <ResponseField name="currency" type="string">
+      Currency of the customer. Format must be ISO 4217.
+    </ResponseField>
+    <ResponseField name="email" type="string">
+      The email of the customer.
+    </ResponseField>
+    <ResponseField name="legal_name" type="string">
+      The legal company name of the customer.
+    </ResponseField>
+    <ResponseField name="legal_number" type="string">
+      The legal company number of the customer.
+    </ResponseField>
+    <ResponseField name="logo_url" type="string">
+      The logo URL of the customer.
+    </ResponseField>
+    <ResponseField name="name" type="string">
+      The full name of the customer.
+    </ResponseField>
+    <ResponseField name="state" type="string">
+      The state of the customer's billing address.
+    </ResponseField>
+    <ResponseField name="tax_identification_number" type="string">
+      The tax identification number of the customer.
+    </ResponseField>
+    <ResponseField name="timezone" type="string">
+      The customer's timezone, used for billing purposes in their local time.
+      Overrides the organization's timezone.
+    </ResponseField>
+    <ResponseField name="url" type="string">
+      The custom website URL of the customer.
+    </ResponseField>
+    <ResponseField name="zipcode" type="string">
+      The zipcode of the customer's billing address.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" required>
+      The date of the customer creation, represented in ISO 8601 datetime format
+      and expressed in Coordinated Universal Time (UTC). The creation_date
+      provides a standardized and internationally recognized timestamp for when
+      the customer object was created.
+    </ResponseField>
+    <ResponseField name="billing_configuration" type="object">
+      <Expandable title="object">
+        <ResponseField name="invoice_grace_period" type="integer">
+          The grace period, expressed in days, for the invoice. This period
+          refers to the additional time granted to the customer beyond the
+          invoice due date to adjust usage and line items.
+        </ResponseField>
+        <ResponseField name="payment_provider" type="string">
+          The payment provider utilized to initiate payments for invoices issued
+          by Lago. Accepted values: `stripe`, `adyen`, `gocardless` or `null`.
+          This field is required if you intend to assign a
+          `provider_customer_id`.
+        </ResponseField>
+        <ResponseField name="provider_customer_id" type="string">
+          The customer ID within the payment provider's system. If this field is
+          not provided, Lago has the option to create a new customer record
+          within the payment provider's system on behalf of the customer.
+        </ResponseField>
+        <ResponseField name="sync" type="boolean">
+          Set this field to `true` if you want to create the customer in the
+          payment provider synchronously with the customer creation process in
+          Lago. This option is applicable only when the `provider_customer_id`
+          is null and the customer is automatically created in the payment
+          provider through Lago. By default, the value is set to `false`.
+        </ResponseField>
+        <ResponseField name="sync_with_provider" type="boolean">
+          Set this field to `true` if you want to create a customer record in
+          the payment provider's system. This option is applicable only when the
+          `provider_customer_id` is null and the `sync_with_provider` field is
+          set to `true`. By default, the value is set to `false`.
+        </ResponseField>
+        <ResponseField name="document_locale" type="string">
+          The document locale, specified in the ISO 639-1 format. This field
+          represents the language or locale used for the documents issued by
+          Lago.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="metadata" type="array">
+      <Expandable title="array">
+        <ResponseField name="lago_id" type="string" required>
+          A unique identifier for the customer metadata object in the Lago
+          application. Can be used to update a key-value pair.
+        </ResponseField>
+        <ResponseField name="key" type="string" required>
+          The metadata object key.
+        </ResponseField>
+        <ResponseField name="value" type="string" required>
+          The metadata object value.
+        </ResponseField>
+        <ResponseField name="display_in_invoice" type="boolean" required>
+          Determines whether the item or information should be displayed in the
+          invoice. If set to `true`, the item or information will be included
+          and visible in the generated invoice. If set to `false`, the item or
+          information will be excluded and not displayed in the invoice.
+        </ResponseField>
+        <ResponseField name="created_at" type="string" required>
+          The date of the metadata object creation, represented in ISO 8601
+          datetime format and expressed in Coordinated Universal Time (UTC). The
+          creation_date provides a standardized and internationally recognized
+          timestamp for when the metadata object was created.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>

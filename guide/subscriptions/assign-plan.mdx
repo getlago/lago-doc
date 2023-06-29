@@ -4,7 +4,6 @@ description: "A subscription is created when a plan is assigned to a customer.
     You can assign a plan to a customer at any time (i.e. when the customer record is created or later on)."
 ---
 
-## Assign a plan to a customer
 <Tabs>
   <Tab title="Dashboard">
     To assign a plan to a customer through the user interface:
@@ -15,7 +14,7 @@ description: "A subscription is created when a plan is assigned to a customer.
     5. Give a name to the subscription (name that will be displayed on the invoice - optional);
     5. Give an id to the subscription (define your own subscription identifier - optional);
     7. Set a subscription date (start date of the subscription - [see below](#subscription-date));
-    8. Choose whether the subscription should be renewed at the beginning of the period or on its anniversary date (see [below](subscription#billing-cycles)); and
+    8. Choose whether the subscription should be renewed at the beginning of the period or on its anniversary date (see [below](#billing-cycles)); and
     9. Click **"Add plan"** to confirm.
   </Tab>
   <Tab title="API">
@@ -42,7 +41,7 @@ description: "A subscription is created when a plan is assigned to a customer.
   </Tab>
 </Tabs>
 
-When a subscription is active, Lago will automatically generate invoices for the customer according to the [plan model](./plan-model). It will also start monitoring the customer's consumption, which means that you can start pushing [events](../../api/events/metered-event) related to this subscription.
+When a subscription is active, Lago will automatically generate invoices for the customer according to the [plan model](/guide/plans/plan-model). It will also start monitoring the customer's consumption, which means that you can start pushing [events](/guide/events/ingesting-usage) related to this subscription.
 
 <Info>
 The subscription date displayed in the app is based on the organization's timezone.
@@ -86,7 +85,7 @@ Optimize billing for your customers by assigning subscriptions based on either c
 
 ## Subscription date
 By default, the subscription starts the day it is created. However, you can set a subscription date in the past or in the future. 
-The subscription date displayed in the app is based on the [organization's timezone](../../../changelog/timezones).
+The subscription date displayed in the app is based on the organization's timezone.
 However, you can decide to start a subscription **in the past** or **in the future**.
 
 <Tabs>
@@ -96,7 +95,7 @@ However, you can decide to start a subscription **in the past** or **in the futu
       Lago will not generate any invoices for past periods already completed.
       </Info>
 
-      The invoicing process varies depending on the [plan model](/docs/guide/plans/plan-model) and [billing cycle](#billing-cycles):
+      The invoicing process varies depending on the [plan model](/guide/plans/plan-model) and [billing cycle](#billing-cycles):
       - If the plan includes a subscription fee to be paid in advance, it will be considered as **already paid for the current period**. The next invoice will include the usage-based charges for the current period and the subscription fee for the next period (see example 1 below); and
       - If the plan includes a subscription fee to be paid in arrears, it will be **included in the next invoice**, together with the usage-based charges for the current period (see example 2 below).
 
@@ -113,7 +112,7 @@ However, you can decide to start a subscription **in the past** or **in the futu
   <Tab title="Start date in the future">
       If the start date of the subscription is in the future, the subscription is considered pending.
 
-      The invoicing process varies depending on the [plan model](/docs/guide/plans/plan-model) and [billing cycle](#billing-cycles):
+      The invoicing process varies depending on the [plan model](/guide/plans/plan-model) and [billing cycle](#billing-cycles):
       - If the plan includes a subscription fee to be paid in advance, when the subscription becomes active, Lago will automatically generate an **invoice for the subscription fee**. Usage-based charges will be included in the next invoice, generated at the end of the billing period (see example 3 below); and
       - If the plan includes a subscription fee to be paid in arrears, when the subscription becomes active, **there will be no invoice**. The subscription fee and usage-based charges will be included in the invoice generated at the end of the billing period (see example 4 below).
 
@@ -135,7 +134,7 @@ You may create several subscriptions for a customer by assigning them multiple p
 <Warning>
 There are some rules to keep in mind when assigning multiple plans to a customer:
 1. All plans must be denominated in the same currency; and
-2. You must specify the `external_subscription_id` for each event or create [batch events](../../api/events/create-batch-event).
+2. You must specify the `external_subscription_id` for each event or create [batch events](/api/events/batch).
 </Warning>
 
 We recommend that you give each subscription a name when assigning multiple plans to a customer. The subscription names will make it easier to differentiate each plan and will also be displayed on the invoices.
@@ -168,7 +167,7 @@ Overwriting a plan has no impact on the original plan or existing subscriptions.
 </Info>
 
 ## Deleting a plan
-You could [delete a plan](../../api/plans/destroy-plan) linked to existing subscriptions.
+You could [delete a plan](/api/plans/destroy) linked to existing subscriptions.
 
 If you do so, the subscriptions associated with this plan will be immediately terminated. This action may trigger the generation of invoices and/or credit notes.
 

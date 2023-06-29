@@ -1,14 +1,13 @@
 ---
-title: "Customer usage object"
+title: "The customer usage object"
 description:
   "This object represents the usage-based charges associated with one of your
   customers for the current billing period. It allows you to monitor customer
   usage throughout the period."
 ---
 
-## Schema[](#schema "Direct link to heading")
-
-```json
+<RequestExample>
+```json The customer usage object
 {
   "customer_usage": {
     "from_datetime": "2022-07-01T00:00:00Z",
@@ -31,8 +30,8 @@ description:
         },
         "billable_metric": {
           "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
-          "name": "Usage metric",
-          "code": "usage_metric",
+          "name": "Storage",
+          "code": "storage",
           "aggregation_type": "sum"
         },
         "groups": [
@@ -49,60 +48,102 @@ description:
   }
 }
 ```
+</RequestExample>
 
-| Attributes                                                    | Description                                           |
-| ------------------------------------------------------------- | ----------------------------------------------------- |
-| **from_datetime** `String` Not null*ISO 8601 datetime in UTC* | Lower bound of the billing period                     |
-| **to_datetime** `String` Not null*ISO 8601 datetime in UTC*   | Upper bound of the billing period                     |
-| **issuing_date** `String` Not null*ISO 8601 date*             | Date of creation of the invoice                       |
-| **amount_cents** `Integer` Not null                           | Amount in cents, VAT (tax) excluded                   |
-| **amount_currency** `String` Not null                         | Currency of the amount                                |
-| **total_amount_cents** `Integer` Not null                     | Should be the sum of the amount and the VAT amount    |
-| **total_amount_currency** `String` Not null                   | Currency of the total amount                          |
-| **vat_amount_cents** `Integer` Not null                       | VAT amount in cents                                   |
-| **vat_amount_currency** `String` Not null                     | Currency of the VAT amount                            |
-| **charges_usage** `Array` Not null                            | Array of [charge usage](#charge-usage-object) objects |
+## Attributes
 
-### Deprecated attributes[](#deprecated-attributes "Direct link to heading")
-
-| Attributes                                                      | Description                       |
-| --------------------------------------------------------------- | --------------------------------- |
-| **from_date** `String` Not null <br /> <sub>ISO 8601 date</sub> | Lower bound of the billing period |
-| **to_date** `String` Not null <br /> <sub>ISO 8601 date</sub>   | Upper bound of the billing period |
-
-## Charge Usage object[](#charge-usage-object "Direct link to heading")
-
-| Attributes                            | Description                                               |
-| ------------------------------------- | --------------------------------------------------------- |
-| **units** `String` Not null           | Number of units consumed by the customer                  |
-| **amount_cents** `Integer` Not null   | Amount in cents, VAT (tax) excluded                       |
-| **amount_currency** `String` Not null | Currency of the amount                                    |
-| **charge** `JSON` Not null            | Related [charge](#charge) object                          |
-| **billable_metric** `JSON` Not null   | Related [billable metric](#billable-metric-object) object |
-| **groups** `Array` Not null           | Array of [group](#group-object) objects                   |
-
-## Charge object[](#charge-object "Direct link to heading")
-
-| Attributes                         | Description                                                                                                             |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| **lago_id** `String` Not null      | ID of the charge in the Lago application                                                                                |
-| **charge_model** `String` Not null | Model of pricing applied by the charge.See [charge documentation](/plans/charges#the-charge-models) for possible values |
-
-## Billable Metric object[](#billable-metric-object "Direct link to heading")
-
-| Attributes                             | Description                                                                                                        |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **lago_id** `String` Not null          | ID of the billable metric in the Lago application                                                                  |
-| **name** `String` Not null             | Name of the billable metric                                                                                        |
-| **code** `String` Not null             | Code of the billable metric                                                                                        |
-| **aggregation_type** `String` Not null | Aggregation type of the billable metricSee [billable metric documentation](/aggregation-types) for possible values |
-
-## Group object[](#group-object "Direct link to heading")
-
-| Attributes                          | Description                                            |
-| ----------------------------------- | ------------------------------------------------------ |
-| **lago_id** `String` Not null       | ID of the group in the Lago application                |
-| **key** `String`                    | Group key, only defined if two dimensions              |
-| **value** `String` Not null         | Group value                                            |
-| **units** `String` Not null         | Number of units consumed by the customer for the group |
-| **amount_cents** `Integer` Not null | Amount in cents for the group, VAT (tax) excluded      |
+<ResponseField name="customer_usage" type="object">
+  <Expandable title="object" defaultOpen="true">
+    <ResponseField name="from_datetime" type="string" required>
+      The lower bound of the billing period, expressed in the ISO 8601 datetime format in Coordinated Universal Time (UTC).
+    </ResponseField>
+    <ResponseField name="to_datetime" type="string" required>
+      The upper bound of the billing period, expressed in the ISO 8601 datetime format in Coordinated Universal Time (UTC).
+    </ResponseField>
+    <ResponseField name="issuing_date" type="string" required>
+      The date of creation of the invoice.
+    </ResponseField>
+    <ResponseField name="amount_cents" type="integer" required>
+      The amount in cents, tax excluded.
+    </ResponseField>
+    <ResponseField name="amount_currency" type="string" required>
+      The currency of the customer’s current usage amount excluding tax.
+    </ResponseField>
+    <ResponseField name="total_amount_cents" type="integer" required>
+      The total amount in cents, tax included.
+    </ResponseField>
+    <ResponseField name="total_amount_currency" type="string" required>
+      The currency of the customer’s current usage amount including tax.
+    </ResponseField>
+    <ResponseField name="vat_amount_cents" type="integer" required>
+      The tax amount in cents.
+    </ResponseField>
+    <ResponseField name="vat_amount_currency" type="string" required>
+      The currency of the customer’s current usage tax.
+    </ResponseField>
+    <ResponseField name="charges_usage" type="array" required>
+      <Expandable title="charges_usage">
+        <ResponseField name="units" type="string" required>
+          The number of units consumed by the customer for a specific charge item.
+        </ResponseField>
+        <ResponseField name="amount_cents" type="integer" required>
+          The amount in cents, tax excluded, consumed by the customer for a specific charge item.
+        </ResponseField>
+        <ResponseField name="amount_currency" type="string" required>
+          The currency of a usage item consumed by the customer.
+        </ResponseField>
+        <ResponseField name="charge" type="object" required>
+          <Expandable title="charge">
+            <ResponseField name="lago_id" type="string" required>
+              Unique identifier assigned to the charge within the Lago application. 
+              This ID is exclusively created by Lago and serves as a unique identifier for the charge’s 
+              record within the Lago system.
+            </ResponseField>
+            <ResponseField name="charge_model" type="string" required>
+              The pricing model applied to this charge. Possible values are `standard`, `graduated`, `percentage`, `package` or `volume`.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="billable_metric" type="object" required>
+          <Expandable title="billable_metric">
+            <ResponseField name="lago_id" type="string" required>
+              Unique identifier assigned to the billable metric within the Lago application. 
+              This ID is exclusively created by Lago and serves as a unique identifier for the billable metric’s 
+              record within the Lago system.
+            </ResponseField>
+            <ResponseField name="name" type="string" required>
+              The name of the billable metric used for this charge.
+            </ResponseField>
+            <ResponseField name="code" type="string" required>
+              The code of the billable metric used for this charge.
+            </ResponseField>
+            <ResponseField name="aggregation_type" type="string" required>
+              The aggregation type of the billable metric used for this charge. 
+              Possible values are `count_agg`, `sum_agg`, `max_agg` or `unique_count_agg`.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="group" type="object" required>
+          <Expandable title="group">
+            <ResponseField name="lago_id" type="string" required>
+              Unique identifier assigned to the group within the Lago application. 
+              This ID is exclusively created by Lago and serves as a unique identifier for the group record within the Lago system.
+            </ResponseField>
+            <ResponseField name="key" type="string" required>
+              The group key, only returned for groups with two dimensions. 
+            </ResponseField>
+            <ResponseField name="value" type="string" required>
+              The group value.
+            </ResponseField>
+            <ResponseField name="units" type="string" required>
+              The number of units consumed for a specific group related to a charge item.
+            </ResponseField>
+            <ResponseField name="amount_cents" type="integer" required>
+              The amount in cents, tax excluded, consumed for a specific group related to a charge item.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>

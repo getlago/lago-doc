@@ -1,8 +1,7 @@
 ---
-openapi: "POST /events/batch"
+openapi: "POST /events"
 authMethod: "bearer"
-title: "Batch usage events"
-description: "This endpoint is used for transmitting usage measurement events in batch multiple subscriptions of the same customer."
+title: "Send usage event"
 ---
 
 <RequestExample>
@@ -11,13 +10,14 @@ description: "This endpoint is used for transmitting usage measurement events in
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request POST "$LAGO_URL/api/v1/events/batch" \
+curl --location --request POST "$LAGO_URL/api/v1/events" \
 --header "Authorization: Bearer $API_KEY" \
 --header 'Content-Type: application/json' \
 --data-raw '{
       "event": {
           "transaction_id": "__UNIQUE_ID__",
-          "external_subscription_ids": ["__SUBSCRIPTION_ID_1__", "__SUBSCRIPTION_ID_2__"],
+          "external_customer_id": "__YOUR_CUSTOMER_ID__",
+          "external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
           "code": "__BILLABLE_METRIC_CODE__",
           "timestamp": $(date +%s),
           "properties": {
@@ -30,20 +30,21 @@ curl --location --request POST "$LAGO_URL/api/v1/events/batch" \
 ```python Python
 from lago_python_client.client import Client
 from lago_python_client.exceptions import LagoApiError
-from lago_python_client.models import BatchEvent
+from lago_python_client.models import Event
 
 client = Client(api_key='__YOUR_API_KEY__')
 
-event = BatchEvent(
-  external_subscription_ids=["__SUBSCRIPTION_ID_1__", "__SUBSCRIPTION_ID_2__"],
+event = Event(
   transaction_id="__UNIQUE_ID__",
+  external_customer_id="__UNIQUE_ID__",
+  external_subscription_id="__UNIQUE_ID__",
   code="__BILLABLE_METRIC_CODE__",
   timestamp=1650893379,
   properties={"custom_field": "custom"}
 )
 
 try:
-    client.events.batch_create(event)
+    client.events.create(event)
 except LagoApiError as e:
     repair_broken_state(e)  # do something on error or raise your own exception
 ```
@@ -53,27 +54,56 @@ require 'lago-ruby-client'
 
 client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
 
-client.events.batch_create(
+client.events.create(
   transaction_id: "__UNIQUE_ID__",
-  external_subscription_ids: ["__SUBSCRIPTION_ID_1__", "__SUBSCRIPTION_ID_2__"],
-  code:  "__BILLABLE_METRIC_CODE__",
+  external_customer_id: "__CUSTOMER_ID__",
+  external_subscription_id: "__SUBSCRIPTION_ID__",
+  code: "__BILLABLE_METRIC_CODE__",
   timestamp: Time.now.to_i,
   properties: {
-    custom_field: 12
+      custom_field: 12
   }
 )
 ```
 
 ```js Node.js
-const batchEvent = {
-  transactionId: "__UNIQUE_TRANSACTION_ID__",
-  externalSubscriptionIds: ["__SUBSCRIPTION_ID_1__", "__SUBSCRIPTION_ID_2__"],
-  code: "__BILLABLE_METRIC_CODE__",
-  timestamp: 1650893379,
-  properties: { customField: "custom" },
-};
+await client.events.createEvent({
+  event: {
+    transactionId: "__UNIQUE_TRANSACTION_ID__",
+    externalCustomerId: "__UNIQUE_CUSTOMER_ID__",
+    externalSubscriptionId: "__UNIQUE_SUBSCRIPTION_ID__",
+    code: "__BILLABLE_METRIC_CODE__",
+    timestamp: 1650893379,
+    properties: { customField: "custom" },
+  },
+});
+```
 
-await client.events.createBatchEvents({ event: batchEvent });
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+eventInput := &lago.EventInput{
+    TransactionID: "__UNIQUE_TRANSACTION_ID__",
+    ExternalCustomerID: "__UNIQUE_CUSTOMER_ID__",
+    ExternalSubscriptionID: "__UNIQUE_SUBSCRIPTION_ID__",
+    Code:          "__BILLABLE_METRIC_CODE__",
+    Timestamp:     time.Now().Unix(),
+    Properties: map[string]string{
+            "nbusers": "12",
+        },
+}
+
+err := lagoClient.Event().Create(eventInput)
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+}
 ```
 
 ```csharp C#
@@ -85,7 +115,7 @@ using Org.OpenAPITools.Model;
 
 namespace Example
 {
-  public class CreateBatchEventsExample
+  public class CreateEventExample
   {
       public static void Main()
       {
@@ -94,16 +124,16 @@ namespace Example
           Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
 
           var apiInstance = new EventsApi(Configuration.Default);
-          var batchEventInput = new BatchEventInput(); // BatchEventInput | Batch events payload
+          var eventInput = new EventInput(); // EventInput | Event payload
 
           try
           {
-              // Create batch events
-              apiInstance.CreateBatchEvents(batchEventInput);
+              // Create a new event
+              apiInstance.CreateEvent(eventInput);
           }
           catch (ApiException e)
           {
-              Debug.Print("Exception when calling EventsApi.CreateBatchEvents: " + e.Message );
+              Debug.Print("Exception when calling EventsApi.CreateEvent: " + e.Message );
               Debug.Print("Status Code: "+ e.ErrorCode);
               Debug.Print(e.StackTrace);
           }
@@ -127,12 +157,12 @@ $apiInstance = new OpenAPI\Client\Api\EventsApi(
   new GuzzleHttp\Client(),
   $config
 );
-$batch_event_input = new \OpenAPI\Client\Model\BatchEventInput(); // \OpenAPI\Client\Model\BatchEventInput | Batch events payload
+$event_input = new \OpenAPI\Client\Model\EventInput(); // \OpenAPI\Client\Model\EventInput | Event payload
 
 try {
-  $apiInstance->createBatchEvents($batch_event_input);
+  $apiInstance->createEvent($event_input);
 } catch (Exception $e) {
-  echo 'Exception when calling EventsApi->createBatchEvents: ', $e->getMessage(), PHP_EOL;
+  echo 'Exception when calling EventsApi->createEvent: ', $e->getMessage(), PHP_EOL;
 }
 ```
 

@@ -1,7 +1,8 @@
 ---
-openapi: "GET /events/{transaction_id}"
-authMethod: "bearer"
+openapi: "GET /customers/{external_customer_id}/portal_url"
+authMethod: bearer
 ---
+
 
 <RequestExample>
 
@@ -9,7 +10,7 @@ authMethod: "bearer"
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request GET "$LAGO_URL/api/v1/events/:transaction_id" \
+curl --location --request GET "$LAGO_URL/api/v1/customers/:external_id/portal_url" \
   --header "Authorization: Bearer $API_KEY"
 ```
 
@@ -20,9 +21,9 @@ from lago_python_client.exceptions import LagoApiError
 client = Client(api_key='__YOUR_API_KEY__')
 
 try:
-    client.events.find("transaction_id")
+  client.customers.portal_url('external_id')
 except LagoApiError as e:
-    repair_broken_state(e)  # do something on error or raise your own exception
+  repair_broken_state(e)  # do something on error or raise your own exception
 ```
 
 ```ruby Ruby
@@ -30,11 +31,26 @@ require 'lago-ruby-client'
 
 client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
 
-client.events.get('transaction_id')
+client.customers.portal_url('external_id')
 ```
 
-```js Node.js
-await client.events.findEvent("__UNIQUE_TRANSACTION_ID__");
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+customer, err := lagoClient.Customer().PortalUrl("__EXTERNAL_ID__")
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// customer is *lago.Customer
+fmt.Println(customer)
+}
 ```
 
 ```csharp C#
@@ -46,7 +62,7 @@ using Org.OpenAPITools.Model;
 
 namespace Example
 {
-  public class FindEventExample
+  public class FindCustomerExample
   {
       public static void Main()
       {
@@ -54,18 +70,17 @@ namespace Example
           // Configure HTTP bearer authorization: bearerAuth
           Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
 
-          var apiInstance = new EventsApi(Configuration.Default);
-          var id = "12345";  // string | Id of the existing transaction
+          var apiInstance = new CustomersApi(Configuration.Default);
+          var externalId = "12345";  // string | External ID of the existing customer
 
           try
           {
-              // Find event by transaction ID
-              Event result = apiInstance.FindEvent(id);
+              Customer result = apiInstance.GetCustomerPortalUrl(externalId);
               Debug.WriteLine(result);
           }
           catch (ApiException e)
           {
-              Debug.Print("Exception when calling EventsApi.FindEvent: " + e.Message );
+              Debug.Print("Exception when calling CustomersApi.GetCustomerPortalUrl : " + e.Message );
               Debug.Print("Status Code: "+ e.ErrorCode);
               Debug.Print(e.StackTrace);
           }
@@ -83,21 +98,19 @@ require_once(__DIR__ . '/vendor/autoload.php');
 $config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
 
 
-$apiInstance = new OpenAPI\Client\Api\EventsApi(
+$apiInstance = new OpenAPI\Client\Api\CustomersApi(
   // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
   // This is optional, `GuzzleHttp\Client` will be used as default.
   new GuzzleHttp\Client(),
   $config
 );
-$id = "12345"; // string | Id of the existing transaction
+$external_id = "12345"; // string | External ID of the existing customer
 
 try {
-  $result = $apiInstance->findEvent($id);
+  $result = $apiInstance->getCustomerPortalUrl($external_id);
   print_r($result);
 } catch (Exception $e) {
-  echo 'Exception when calling EventsApi->findEvent: ', $e->getMessage(), PHP_EOL;
+  echo 'Exception when calling CustomersApi->getCustomerPortalUrl: ', $e->getMessage(), PHP_EOL;
 }
 ```
-
 </RequestExample>
-

@@ -1,40 +1,39 @@
 ---
 title: "The billable metric object"
-description: "This object represents a billable metric."
+description: "This object represents a billable metric that is a pricing component of your application."
 ---
 
 <RequestExample>
 ```json The billable metric object
-  {
-    "billable_metric": {
-      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-      "name": "Storage",
-      "code": "storage",
-      "description": "GB of storage used in my application",
-      "created_at": "2022-09-14T16:35:31Z",
-      "field_name": "gb",
-      "aggregation_type": "sum_agg",
-      "group": {
-        "key": "region",
-        "values": [
-          "us-east-1",
-          "us-east-2",
-          "eu-west-1"
-        ]
-      },
-      "active_subscriptions_count": 4,
-      "draft_invoices_count": 10,
-      "plans_count": 4
-    }
+{
+  "billable_metric": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "name": "Storage",
+    "code": "storage",
+    "description": "GB of storage used in my application",
+    "created_at": "2022-09-14T16:35:31Z",
+    "field_name": "gb",
+    "aggregation_type": "sum_agg",
+    "group": {
+      "key": "region",
+      "values": [
+        "us-east-1",
+        "us-east-2",
+        "eu-west-1"
+      ]
+    },
+    "active_subscriptions_count": 4,
+    "draft_invoices_count": 10,
+    "plans_count": 4
   }
+}
 ```
 </RequestExample>
-
 
 ## Attributes
 
 <ResponseField name="billable_metric" type="object">
-  <Expandable title="object">
+  <Expandable title="object"  defaultOpen="true">
     <ResponseField name="lago_id" type="string" required>
       Unique identifier of the billable metric created by Lago.
     </ResponseField>
@@ -42,7 +41,8 @@ description: "This object represents a billable metric."
       Name of the billable metric.
     </ResponseField>
     <ResponseField name="code" type="string" required>
-      Unique code used to identify the billable metric associated with the API request. This code associates each event with the correct metric.
+      Unique code used to identify the billable metric associated with the API
+      request. This code associates each event with the correct metric.
     </ResponseField>
     <ResponseField name="description" type="string | null">
       Internal description of the billable metric.
@@ -51,10 +51,13 @@ description: "This object represents a billable metric."
       Creation date of the billable metric.
     </ResponseField>
     <ResponseField name="field_name" type="string | null">
-      Property of the billable metric used for aggregating usage data. This field is not required for `count_agg`.
+      Property of the billable metric used for aggregating usage data. This
+      field is not required for `count_agg`.
     </ResponseField>
     <ResponseField name="aggregation_type" type="enum<string>" required>
-      Aggregation method used to compute usage for this billable metric. Possible values are `count_agg`, `sum_agg`, `max_agg` or `unique_count_agg`.
+      Aggregation method used to compute usage for this billable metric.
+      Possible values are `count_agg`, `sum_agg`, `max_agg` or
+      `unique_count_agg`.
     </ResponseField>
     <ResponseField name="group" type="object">
       <Expandable title="object">
@@ -70,7 +73,8 @@ description: "This object represents a billable metric."
       Number of active subscriptions using this billable metric.
     </ResponseField>
     <ResponseField name="draft_invoices_count" type="integer" required>
-      Number of draft invoices for which this billable metric is listed as an invoice item.
+      Number of draft invoices for which this billable metric is listed as an
+      invoice item.
     </ResponseField>
     <ResponseField name="plans_count" type="integer" required>
       Number of plans using this billable metric.

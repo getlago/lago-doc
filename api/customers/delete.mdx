@@ -1,6 +1,6 @@
 ---
-openapi: "GET /customers/{external_id}"
-authMethod: "bearer"
+openapi: "DELETE /customers/{external_id}"
+authMethod: bearer
 ---
 
 <RequestExample>
@@ -9,7 +9,7 @@ authMethod: "bearer"
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request GET "$LAGO_URL/api/v1/customers/:external_id" \
+curl --location --request DELETE "$LAGO_URL/api/v1/customers/:external_id" \
   --header "Authorization: Bearer $API_KEY"
 ```
 
@@ -20,7 +20,7 @@ from lago_python_client.exceptions import LagoApiError
 client = Client(api_key='__YOUR_API_KEY__')
 
 try:
-    client.customers.find('external_id')
+    client.customers.destroy('external_id')
 except LagoApiError as e:
     repair_broken_state(e)  # do something on error or raise your own exception
 ```
@@ -30,11 +30,11 @@ require 'lago-ruby-client'
 
 client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
 
-client.customers.get('external_id')
+client.customers.destroy('external_id')
 ```
 
 ```js Node.js
-await client.customers.findCustomer('external_id')
+await client.customers.deleteCustomer('external_id')
 ```
 
 ```go Go
@@ -45,7 +45,7 @@ func main() {
 lagoClient := lago.New().
     SetApiKey("__YOUR_API_KEY__")
 
-customer, err := lagoClient.Customer().Get("__EXTERNAL_ID__")
+customer, err := lagoClient.Customer().Delete("external_id")
 if err != nil {
     // Error is *lago.Error
     panic(err)
@@ -65,7 +65,7 @@ using Org.OpenAPITools.Model;
 
 namespace Example
 {
-  public class FindCustomerExample
+  public class DestroyCustomerExample
   {
       public static void Main()
       {
@@ -74,47 +74,22 @@ namespace Example
           Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
 
           var apiInstance = new CustomersApi(Configuration.Default);
-          var externalId = "12345";  // string | External ID of the existing customer
+          var externalID = "external_id";  // string | External id of the existing customer
 
           try
           {
-              // Find customer by external ID
-              Customer result = apiInstance.FindCustomer(externalId);
+              // Delete a customer
+              Customer result = apiInstance.DestroyCustomer(externalID);
               Debug.WriteLine(result);
           }
           catch (ApiException e)
           {
-              Debug.Print("Exception when calling CustomersApi.FindCustomer: " + e.Message );
+              Debug.Print("Exception when calling CustomersApi.DestroyCustomer: " + e.Message );
               Debug.Print("Status Code: "+ e.ErrorCode);
               Debug.Print(e.StackTrace);
           }
       }
   }
-}
-```
-
-```php PHP
-<?php
-require_once(__DIR__ . '/vendor/autoload.php');
-
-
-// Configure Bearer authorization: bearerAuth
-$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
-
-
-$apiInstance = new OpenAPI\Client\Api\CustomersApi(
-  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
-  // This is optional, `GuzzleHttp\Client` will be used as default.
-  new GuzzleHttp\Client(),
-  $config
-);
-$external_id = "12345"; // string | External ID of the existing customer
-
-try {
-  $result = $apiInstance->findCustomer($external_id);
-  print_r($result);
-} catch (Exception $e) {
-  echo 'Exception when calling CustomersApi->findCustomer: ', $e->getMessage(), PHP_EOL;
 }
 ```
 </RequestExample>

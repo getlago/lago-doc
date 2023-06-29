@@ -2,3 +2,181 @@
 openapi: "POST /billable_metrics"
 authMethod: "bearer"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "billable_metric": {
+    "name": "Storage",
+    "code": "storage",
+    "description": "GB of storage used in my application",
+    "aggregation_type": "sum_agg",
+    "field_name": "gb",
+    "group": {
+        "key": "region",
+        "value": ["us-east-1", "us-east-2", "eu-west-1"]
+    }
+  }
+}'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import BillableMetricGroup, BillableMetric
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+group = BillableMetricGroup(
+key='region',
+values=['us-east-1', 'us-east-2', 'eu-west-1']
+)
+
+billable_metric = BillableMetric(
+name='Storage',
+code='storage',
+description='GB of storage used in my application',
+aggregation_type='sum_agg',
+field_name='gb',
+group=group
+)
+try:
+    client.billable_metrics.create(billable_metric)
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+
+client.billable_metrics.create({
+  name: 'Storage',
+  code: 'storage',
+  description: 'GB of storage used in my application',
+  aggregation_type: 'sum_agg',
+  field_name: 'gb',
+  group: {
+      key: 'region',
+      values: %w[us-east-1 us-east-2 eu-west-1]
+  }
+})
+```
+
+```js Node.js
+await client.billableMetrics.createBillableMetric({
+  billable_metric: {
+    name: "Storage",
+    code: "storage",
+    aggregationType: "sum_agg",
+    fieldName: "gb",
+    group: {
+      key: "region",
+      values: ["us-east-1", "us-east-2", "eu-west-1"],
+    },
+  },
+});
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+  lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+  bmInput := &lago.BillableMetricInput{
+    Name:            "Storage",
+    Code:            "storage",
+    Description:     "GB of storage used in my application"
+    AggregationType: lago.SumAggregation,
+    FieldName:       "gb",
+    Group: map[string]interface{}{
+        "key": "region",
+        "values": [3]string{"us-east-1", "us-east-2", "eu-west-1"},
+    },
+  }
+
+  billableMetric, err := lagoClient.BillableMetric().Create(bmInput)
+  if err != nil {
+    // Error is *lago.Error
+    panic(err)
+  }
+
+  // billableMetric is *lago.BillableMetric
+  fmt.Println(billableMetric)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+public class CreateBillableMetricExample
+{
+    public static void Main()
+    {
+        Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+        // Configure HTTP bearer authorization: bearerAuth
+        Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+        var apiInstance = new BillableMetricsApi(Configuration.Default);
+        var billableMetricInput = new BillableMetricInput(); // BillableMetricInput | Billable metric payload
+
+        try
+        {
+            // Create a new billable metric
+            BillableMetric result = apiInstance.CreateBillableMetric(billableMetricInput);
+            Debug.WriteLine(result);
+        }
+        catch (ApiException e)
+        {
+            Debug.Print("Exception when calling BillableMetricsApi.CreateBillableMetric: " + e.Message );
+            Debug.Print("Status Code: "+ e.ErrorCode);
+            Debug.Print(e.StackTrace);
+        }
+    }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\BillableMetricsApi(
+// If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+// This is optional, `GuzzleHttp\Client` will be used as default.
+new GuzzleHttp\Client(),
+$config
+);
+$billable_metric_input = new \OpenAPI\Client\Model\BillableMetricInput(); // \OpenAPI\Client\Model\BillableMetricInput | Billable metric payload
+
+try {
+$result = $apiInstance->createBillableMetric($billable_metric_input);
+print_r($result);
+} catch (Exception $e) {
+echo 'Exception when calling BillableMetricsApi->createBillableMetric: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>
