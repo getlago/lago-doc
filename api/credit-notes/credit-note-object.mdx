@@ -1,13 +1,11 @@
 ---
-title: "Credit note object"
+title: "The credit note object"
 description:
-  "This object represents a credit note emited to re-credit a customer for a fee
-  or an invoice."
+  "This object represents a credit note, used to refund or credit back a customer for a fee or an invoice."
 ---
 
-## Credit note object[](#credit-note-object-1 "Direct link to heading")
-
-```json
+<RequestExample>
+```json The credit note object
 {
   "credit_note": {
     "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
@@ -20,6 +18,7 @@ description:
     "refund_status": "pending",
     "reason": "other",
     "description": "Free text",
+    "currency": "EUR",
     "total_amount_cents": 120,
     "total_amount_currency": "EUR",
     "credit_amount_cents": 100,
@@ -32,6 +31,7 @@ description:
     "vat_amount_currency": "EUR",
     "sub_total_vat_excluded_amount_cents": 100,
     "sub_total_vat_excluded_amount_currency": "EUR",
+    "coupons_adjustement_amount_cents": 0,
     "created_at": "2022-10-06 09:52:00",
     "updated_at": "2022-10-06 09:52:00",
     "file_url": "https://getlago.com/credit_note/file",
@@ -40,7 +40,7 @@ description:
         "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
         "amount_cents": 100,
         "amount_currency": "EUR",
-        "fee": {
+        "fee":       {
           "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
           "item": {
             "type": "charge",
@@ -51,6 +51,8 @@ description:
           "amount_currency": "EUR",
           "vat_amount_cents": 20,
           "vat_amount_currency": "EUR",
+          "total_amount_cents": 120,
+          "total_amount_currency": "EUR",
           "units": 12.6,
           "events_count": 10
         }
@@ -59,40 +61,121 @@ description:
   }
 }
 ```
+</RequestExample>
 
-| Attributes                                                        | Description                                                                                                                                                                                                                                        |
-| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **lago_id** `String` Not null                                     | Unique identifer of the credit note in Lago application                                                                                                                                                                                            |
-| **sequential_id** `Integer` Not null                              | Credit note sequential id scoped on the invoice                                                                                                                                                                                                    |
-| **number** `String` Not null                                      | Credit note unique number                                                                                                                                                                                                                          |
-| **lago_id** `String` Not null                                     | Unique identifer of the invoice in Lago application                                                                                                                                                                                                |
-| **invoice_number** `String` Not null                              | Invoice unique number                                                                                                                                                                                                                              |
-| **issuing_date** `String` Not null<br /> <sub>ISO 8601 date</sub> | Date of creation of the credit note                                                                                                                                                                                                                |
-| **reason** `String` Not null                                      | Issuing reason of the credit note **Possible values**\-duplicated_charge\-product_unsatisfactory\-order_change\-order_cancellation\-fraudulent_charge\-other                                                                                       |
-| **credit_status** `String`                                        | Status of the credit part of the credit note **Possible values**\- available: An amount remain available for future usage.\- consumed: The amount is fully consumed. Remaining amount is 0\- voided: The remaining amount cannot be used any more. |
-| **refund_status** `String`                                        | Status of the refund part of the credit note **Possible values**\- pending: The refund is pending for its execution.\- succeeded: The refund has been executed\- failed: The refund failed to execute                                              |
-| **total_amount_cents** `Integer` Not null                         | Total amount in cents                                                                                                                                                                                                                              |
-| **total_amount_currency** `String` Not null                       | Currency of the total amount                                                                                                                                                                                                                       |
-| **credit_amount_cents** `Integer` Not null                        | Credit amount in cents                                                                                                                                                                                                                             |
-| **credit_amount_currency** `String` Not null                      | Currency of the credit amount                                                                                                                                                                                                                      |
-| **refund_amount_cents** `Integer` Not null                        | Refund amount in cents                                                                                                                                                                                                                             |
-| **refund_amount_currency** `String` Not null                      | Currency of the refund amount                                                                                                                                                                                                                      |
-| **balance_amount_cents** `Integer` Not null                       | Remaining credit amount in cents                                                                                                                                                                                                                   |
-| **balance_amount_currency** `String` Not null                     | Currency of the balance amount                                                                                                                                                                                                                     |
-| **vat_amount_cents** `Integer` Not null                           | VAT amount in cents                                                                                                                                                                                                                                |
-| **vat_amount_currency** `String` Not null                         | Currency of the VAT amount                                                                                                                                                                                                                         |
-| **sub_total_vat_excluded_amount_cents** `Integer` Not null        | Subtotal excluding tax, in cents                                                                                                                                                                                                                   |
-| **sub_total_vat_excluded_amount_currency** `String` Not null      | Currency of the subtotal amount                                                                                                                                                                                                                    |
-| **created_at** `String` Not null*ISO 8601 datetime*               | Date and time of creation of the credit note in UTC                                                                                                                                                                                                |
-| **updated_at** `String` Not null*ISO 8601 datetime*               | Date and time of last update of the credit note in UTC                                                                                                                                                                                             |
-| **file_url** `String`                                             | File url of the credit note PDF                                                                                                                                                                                                                    |
-| **items** `JSON`                                                  | Array of [item](#credit-note-object) object                                                                                                                                                                                                        |
+## Attributes
 
-## Item object[](#item-object "Direct link to heading")
+<ResponseField name="credit_note" type="object">
+  <Expandable title="object" defaultOpen="true">
+    <ResponseField name="lago_id" type="string" required>
+      The credit note unique identifier, created by Lago.
+    </ResponseField>
+    <ResponseField name="sequential_id" type="integer" required>
+      The sequential identifier of the credit note, specifically scoped on the associated invoice. It provides a unique numerical identifier for the credit note within the context of the invoice.
+    </ResponseField>
+    <ResponseField name="number" type="string" required>
+      The credit note unique number.
+    </ResponseField>
+    <ResponseField name="invoice_number" type="string" required>
+      The invoice unique number, related to the credit note.
+    </ResponseField>
+    <ResponseField name="issuing_date" type="string" required>
+      The date of creation of the credit note. It follows the ISO 8601 date format and provides the specific date when the credit note was created.
+    </ResponseField>
+    <ResponseField name="reason" type="string" required>
+      The reason of the credit note creation. Possible values are `duplicated_charge`, `product_unsatisfactory`, `order_change`, `order_cancellation`, `fraudulent_charge` or `other`.
+    </ResponseField>
+    <ResponseField name="credit_status" type="string">
+      The status of the credit portion of the credit note. It indicates the current state or condition of the credit amount associated with the credit note. The possible values for this field are:
 
-| Attributes                            | Description                                                  |
-| ------------------------------------- | ------------------------------------------------------------ |
-| **lago_id** `String` Not null         | Unique identifer of the credit note item in Lago application |
-| **amount_cents** `Integer` Not null   | Amount in cents                                              |
-| **amount_currency** `String` Not null | Currency of the amount                                       |
-| **fee** `JSON` Not null               | [Fee](/api/invoices/invoice-object#fee-object) object        |
+      - `available`: this status indicates that an amount remains available for future usage. The credit can be applied towards future transactions or invoices.
+
+      - `consumed`: this status indicates that the credit amount has been fully consumed. The remaining amount is 0, indicating that the credit has been utilized in its entirety.
+
+      - `voided`: this status indicates that the remaining amount of the credit cannot be used any further. The credit has been voided and is no longer available for application or redemption.
+    </ResponseField>
+    <ResponseField name="refund_status" type="string">
+      The status of the refund portion of the credit note. It indicates the current state or condition of the refund associated with the credit note. The possible values for this field are:
+
+      - `pending`: this status indicates that the refund is pending execution. The refund request has been initiated but has not been processed or completed yet.
+
+      - `succeeded`: this status indicates that the refund has been successfully executed. The refund amount has been processed and returned to the customer or the designated recipient.
+
+      - `failed`: this status indicates that the refund failed to execute. The refund request encountered an error or unsuccessful processing, and the refund amount could not be returned.
+    </ResponseField>
+    <ResponseField name="currency" type="string" required>
+      The currency of the credit note.
+    </ResponseField>
+    <ResponseField name="total_amount_cents" type="integer" required>
+      The total amount of the credit note, expressed in cents.
+    </ResponseField>
+    <ResponseField name="total_amount_currency" type="string" required>
+      The currency of the total amount of the credit note.
+    </ResponseField>
+    <ResponseField name="credit_amount_cents" type="integer" required>
+      The credited amount of the credit note, expressed in cents.
+    </ResponseField>
+    <ResponseField name="credit_amount_currency" type="string" required>
+      credit_amount_currency.
+    </ResponseField>
+    <ResponseField name="refund_amount_cents" type="integer" required>
+      The refunded amount of the credit note, expressed in cents.
+    </ResponseField>
+    <ResponseField name="refund_amount_currency" type="string" required>
+      The currency of the total refunded amount of the credit note.
+    </ResponseField>
+    <ResponseField name="balance_amount_cents" type="integer" required>
+      The remaining credit note amount, expressed in cents.
+    </ResponseField>
+    <ResponseField name="balance_amount_currency" type="string" required>
+      The currency of the total remaining amount of the credit note.
+    </ResponseField>
+    <ResponseField name="vat_amount_cents" type="integer" required>
+      The tax amount of the credit note, expressed in cents.
+    </ResponseField>
+    <ResponseField name="vat_amount_currency" type="string" required>
+      The currency of the tax amount of the credit note.
+    </ResponseField>
+    <ResponseField name="sub_total_vat_excluded_amount_cents" type="integer" required>
+      The subtotal of the credit note excluding any applicable taxes, expressed in cents.
+    </ResponseField>
+    <ResponseField name="sub_total_vat_excluded_amount_currency" type="string" required>
+      The currency of the subtotal amount of the credit note, excluding any applicable taxes.
+    </ResponseField>
+    <ResponseField name="coupons_adjustement_amount_cents" type="integer" required>
+      The pro-rated amount of the coupons applied to the source invoice.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" required>
+      The date when the credit note was last updated. It is expressed in Coordinated Universal Time (UTC).
+    </ResponseField>
+    <ResponseField name="file_url" type="string">
+      The PDF file of the credit note.
+    </ResponseField>
+    <ResponseField name="items" type="array">
+      <Expandable title="items">
+        <ResponseField name="lago_id" type="string" required>
+          The credit note’s item unique identifier, created by Lago.
+        </ResponseField>
+        <ResponseField name="amount_cents" type="integer" required>
+          The credit note’s item amount, expressed in cents.
+        </ResponseField>
+        <ResponseField name="amount_currency" type="string" required>
+          The credit note’s item currency.
+        </ResponseField>
+        <ResponseField name="fee" type="object">
+          <Expandable title="fee">
+            <ResponseField name="lago_id" type="string" required>
+              The fee item unique identifier, created by Lago.
+            </ResponseField>
+            <ResponseField name="code" type="string" required>
+              The code of the fee item.
+            </ResponseField>
+            <ResponseField name="type" type="string" required>
+              The type of the fee item.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
