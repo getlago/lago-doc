@@ -1,5 +1,5 @@
 ---
-openapi: "POST /invoices/{lago_id}/download"
+openapi: "POST /invoices"
 authMethod: "bearer"
 ---
 
@@ -7,23 +7,49 @@ authMethod: "bearer"
 
 ```bash cURL
 LAGO_URL="https://api.getlago.com"
-INVOICE_ID="__YOUR_INVOICE_ID__"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request POST "$LAGO_URL/api/v1/invoices/$INVOICE_ID/download" \
+curl --location --request POST "$LAGO_URL/api/v1/invoices" \
   --header "Authorization: Bearer $API_KEY" \
-  --header 'Content-Type: application/json'
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "invoice": {
+      "external_customer_id": "hooli_1234",
+      "currency": "USD",
+      "fees": [
+        {
+          "add_on_code": "setup_fee",
+          "units": 2.5,
+          "unit_amount_cents": 1200,
+          "description": "This is a description."
+        }
+      ]
+    }
+  }'
 ```
 
 ```python Python
 from lago_python_client.client import Client
 from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import InvoiceFee, OneOffInvoice, InvoiceFeesList
 
 client = Client(api_key='__YOUR_API_KEY__')
 
-invoice = None
+fee_object = InvoiceFee(
+  add_on_code='setup_fee',
+  units=2.5,
+  unit_amount_cents=1200,
+  description='This is a description.'
+)
+
+invoice_create = OneOffInvoice(
+  external_customer_id="hooli_1234",
+  currency="USD",
+  fees=InvoiceFeesList(__root__=[fee_object])
+)
+
 try:
-    invoice = client.invoices.download('__YOUR_INVOICE_ID__')  # Invoice ID
+    client.invoices.create(invoice_create)
 except LagoApiError as e:
     repair_broken_state(e)  # do something on error or raise your own exception
 ```
@@ -33,11 +59,37 @@ require 'lago-ruby-client'
 
 client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
 
-client.invoices.download('__YOUR_INVOICE_ID__') // Invoice ID
+client.invoices.create({
+  external_customer_id: "hooli_1234",
+  currency: 'USD',
+  fees: [
+    {
+      add_on_code: 'setup_fee',
+      units: 2.5,
+      unit_amount_cents: 1200,
+      description: 'This is a description.'
+    }
+  ]
+})
 ```
 
 ```js Node.js
-await client.invoices.downloadInvoice('invoice-id');
+const invoiceObject = {
+  externalCustomerId: "hooli_1234",
+  currency: "USD",
+  fees: [
+    {
+      addOnCode: "setup_fee",
+      description: "This is a description.",
+      units: 2.5,
+      unitAmountCents: 1200
+    },
+  ],
+};
+
+await client.invoices.createInvoice({
+  invoice: invoiceObject,
+});
 ```
 
 ```go Go
@@ -48,7 +100,20 @@ func main() {
 lagoClient := lago.New().
     SetApiKey("__YOUR_API_KEY__")
 
-invoice, err := lagoClient.Invoice().Download("__YOUR_INVOICE_ID__")
+invoiceInput := &lago.OneOffInput{
+    ExternalCustomerId: custID,
+        currency: "USD",
+    Fees: [
+    &InvoiceFeesInput{
+        AddOnCode: "setup_fee",
+        Description: "This is a description.",
+        Units: 2.5,
+        UnitAmountCents: 1200
+    }
+    ]
+}
+
+invoice, err := lagoClient.Invoice().Create(invoiceInput)
 if err != nil {
     // Error is *lago.Error
     panic(err)
@@ -56,9 +121,6 @@ if err != nil {
 
 // invoice is *lago.Invoice
 fmt.Println(invoice)
-
-// If the invoice has to be generated, the response is empty
-// And you will get a webhook `invoice.generated`
 }
 ```
 
@@ -71,7 +133,7 @@ using Org.OpenAPITools.Model;
 
 namespace Example
 {
-  public class DownloadInvoiceExample
+  public class UpdateInvoiceExample
   {
       public static void Main()
       {
@@ -81,16 +143,17 @@ namespace Example
 
           var apiInstance = new InvoicesApi(Configuration.Default);
           var id = "183da83c-c007-4fbb-afcd-b00c07c41ffe";  // string | ID of the existing Lago Invoice
+          var invoiceInput = new InvoiceOneOffInput();
 
           try
           {
-              // Download an existing invoice
-              Invoice result = apiInstance.DownloadInvoice(id);
+              // Update an existing invoice status
+              Invoice result = apiInstance.CreateInvoice(invoiceInput);
               Debug.WriteLine(result);
           }
           catch (ApiException e)
           {
-              Debug.Print("Exception when calling InvoicesApi.DownloadInvoice: " + e.Message );
+              Debug.Print("Exception when calling InvoicesApi.CreateInvoice: " + e.Message );
               Debug.Print("Status Code: "+ e.ErrorCode);
               Debug.Print(e.StackTrace);
           }
@@ -114,14 +177,15 @@ $apiInstance = new OpenAPI\Client\Api\InvoicesApi(
   new GuzzleHttp\Client(),
   $config
 );
-$id = "183da83c-c007-4fbb-afcd-b00c07c41ffe"; // string | ID of the existing Lago Invoice
+$invoice_input = new \OpenAPI\Client\Model\InvoiceOneOffInput();
 
 try {
-  $result = $apiInstance->downloadInvoice($id);
+  $result = $apiInstance->createInvoice($invoice_input);
   print_r($result);
 } catch (Exception $e) {
-  echo 'Exception when calling InvoicesApi->downloadInvoice: ', $e->getMessage(), PHP_EOL;
+  echo 'Exception when calling InvoicesApi->createInvoice: ', $e->getMessage(), PHP_EOL;
 }
 ```
 
 </RequestExample>
+

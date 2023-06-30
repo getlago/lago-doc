@@ -1,3 +1,192 @@
 ---
-openapi: "PUT /invoices/{id}"
+openapi: "PUT /invoices/{lago_id}"
+authMethod: "bearer"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PUT "$LAGO_URL/api/v1/invoices/:lago_id" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "invoice": {
+      "payment_status": "succeeded",
+      "metadata": [
+        {
+          "id": "__METADATA_ID__",
+          "key": "digital_ref_id",
+          "value": "INV-0123456-98765"
+        }
+      ]
+    }
+  }'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import InvoicePaymentStatusChange
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+metadata_object = InvoiceMetadata(
+  key='key',
+  value='value'
+)
+
+invoice_update = Invoice(
+  payment_status="succeeded",
+  metadata=InvoiceMetadataList(__root__=[metadata_object])
+)
+
+try:
+    client.invoices.update(invoice_update, "__INVOICE_ID__")
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+
+# Deprecated
+
+payment_status_change = InvoicePaymentStatusChange(
+  payment_status="succeeded"
+)
+
+try:
+    client.invoices.update(payment_status_change, "__INVOICE_ID__")
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+
+client.invoices.update({
+  lago_id: "__INVOICE_ID__",
+  payment_status: "succeeded",
+  metadata: [
+    {
+      key: 'key',
+      value: 'value'
+    }
+  ]
+})
+```
+
+```js Node.js
+const invoiceObject = {
+  paymentStatus: "succeeded" as InvoiceObject["paymentStatus"],
+  metadata: [
+    {
+      key: "key",
+      value: "value",
+    },
+  ],
+};
+
+await client.invoices.updateInvoice("invoice-id", {
+  invoice: invoiceObject,
+});
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+invoiceId, _ := uuid.Parse("__YOUR_INVOICE_ID__")
+invoiceInput := &lago.InvoiceInput{
+    LagoID: invoiceId,
+        PaymentStatus: lago.InvoicePaymentStatusSucceeded,
+    Metadata: [
+    &InvoiceMetadataInput{
+        Key: "Key",
+        Value: "Value"
+    }
+    ]
+}
+
+invoice, err := lagoClient.Invoice().Update(invoiceInput)
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// invoice is *lago.Invoice
+fmt.Println(invoice)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class UpdateInvoiceExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new InvoicesApi(Configuration.Default);
+          var id = "183da83c-c007-4fbb-afcd-b00c07c41ffe";  // string | ID of the existing Lago Invoice
+          var invoiceInput = new InvoiceInput(); // InvoiceInput | Update an existing invoice
+
+          try
+          {
+              // Update an existing invoice status
+              Invoice result = apiInstance.UpdateInvoice(id, invoiceInput);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling InvoicesApi.UpdateInvoice: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\InvoicesApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$id = "183da83c-c007-4fbb-afcd-b00c07c41ffe"; // string | ID of the existing Lago Invoice
+$invoice_input = new \OpenAPI\Client\Model\InvoiceInput(); // \OpenAPI\Client\Model\InvoiceInput | Update an existing invoice
+
+try {
+  $result = $apiInstance->updateInvoice($id, $invoice_input);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling InvoicesApi->updateInvoice: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>
+

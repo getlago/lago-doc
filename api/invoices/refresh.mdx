@@ -1,3 +1,123 @@
 ---
-openapi: "PUT /invoices/{id}/finalize"
+openapi: "PUT /invoices/{lago_id}/refresh"
+authMethod: "bearer"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PUT "$LAGO_URL/api/v1/invoices/:lago_invoice_id/refresh" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{}'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.invoices.refresh('__INVOICE_ID__')  # Invoice ID
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+
+client.invoices.refresh('__INVOICE_ID__') // Invoice ID
+```
+
+```js Node.js
+await client.invoices.refreshInvoice('invoice-id')
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+invoice, err := lagoClient.Invoice().Refresh("__INVOICE_ID__")
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// invoice is *lago.Invoice
+fmt.Println(invoice)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class RefreshInvoiceExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new InvoicesApi(Configuration.Default);
+          var id = "183da83c-c007-4fbb-afcd-b00c07c41ffe";  // string | ID of the existing Lago Invoice
+
+          try
+          {
+              // Refresh a draft invoice
+              Invoice result = apiInstance.RefreshInvoice(id);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling InvoicesApi.RefreshInvoice: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\InvoicesApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$id = "183da83c-c007-4fbb-afcd-b00c07c41ffe"; // string | ID of the existing Lago Invoice
+
+try {
+  $result = $apiInstance->refreshInvoice($id);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling InvoicesApi->refreshInvoice: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>
