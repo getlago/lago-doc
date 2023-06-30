@@ -40,16 +40,21 @@ tags:
     externalDocs:
       description: Find out more
       url: 'https://doc.getlago.com/docs/api/organizations/organization-object'
-  - name: add_ons
-    description: Everything about Add-on collection
-    externalDocs:
-      description: Find out more
-      url: 'https://doc.getlago.com/docs/api/add_ons/add-on-object'
   - name: coupons
     description: Everything about Coupon collection
     externalDocs:
       description: Find out more
       url: 'https://doc.getlago.com/docs/api/coupons/coupon-object'
+  - name: add_ons
+    description: Everything about Add-on collection
+    externalDocs:
+      description: Find out more
+      url: 'https://doc.getlago.com/docs/api/add_ons/add-on-object'
+  - name: fees
+    description: Everything about Fees
+    externalDocs:
+      description: Find out more
+      url: 'https://doc.getlago.com/docs/api/invoices/invoice-object#fee-object'
   - name: plans
     description: Everything about Plan collection
     externalDocs:
@@ -65,11 +70,6 @@ tags:
     externalDocs:
       description: Find out more
       url: 'https://doc.getlago.com/docs/api/invoices/invoice-object'
-  - name: fees
-    description: Everything about Fees
-    externalDocs:
-      description: Find out more
-      url: 'https://doc.getlago.com/docs/api/invoices/invoice-object#fee-object'
   - name: wallets
     description: Everything about Wallet collection
     externalDocs:
@@ -78,6 +78,218 @@ tags:
   - name: credit_notes
     description: Everything about Credit notes collection
 paths:
+  /add_ons:
+    post:
+      tags:
+        - add_ons
+      summary: Create an add-on
+      description: This endpoint is used to create an add-on that can be then attached to a one-off invoice.
+      operationId: createAddOn
+      requestBody:
+        description: Add-on payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddOnCreateInput'
+        required: true
+      responses:
+        '200':
+          description: Add-on created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddOn'
+        '400':
+          $ref: '#/paths/~1plans/post/responses/400'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '422':
+          $ref: '#/paths/~1plans/post/responses/422'
+    get:
+      tags:
+        - add_ons
+      summary: List all add-ons
+      description: This endpoint is used to list all existing add-ons.
+      operationId: findAllAddOns
+      parameters:
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
+      responses:
+        '200':
+          description: Add-ons
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddOnsPaginated'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+  '/add_ons/{code}':
+    parameters:
+      - name: code
+        in: path
+        description: Unique code used to identify the add-on.
+        required: true
+        schema:
+          type: string
+          example: setup_fee
+    put:
+      tags:
+        - add_ons
+      summary: Update an add-on
+      description: This endpoint is used to update an existing add-on.
+      operationId: updateAddOn
+      requestBody:
+        description: Add-on payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddOnUpdateInput'
+        required: true
+      responses:
+        '200':
+          description: Add-on updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddOn'
+        '400':
+          $ref: '#/paths/~1plans/post/responses/400'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
+        '422':
+          $ref: '#/paths/~1plans/post/responses/422'
+    get:
+      tags:
+        - add_ons
+      summary: Retrive an add-on
+      description: This endpoint is used to retrieve a specific add-on.
+      operationId: findAddOn
+      responses:
+        '200':
+          description: Add-on
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddOn'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
+    delete:
+      tags:
+        - add_ons
+      summary: Delete an add-on
+      description: This endpoint is used to delete an existing add-on.
+      operationId: destroyAddOn
+      responses:
+        '200':
+          description: Add-on deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddOn'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
+  /applied_add_ons:
+    post:
+      tags:
+        - add_ons
+      summary: Apply an add-on to a customer
+      description: Apply an add-on to a customer
+      operationId: applyAddOn
+      deprecated: true
+      requestBody:
+        description: Apply add-on payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppliedAddOnInput'
+        required: true
+      responses:
+        '200':
+          description: Add-on applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppliedAddOn'
+        '400':
+          $ref: '#/paths/~1plans/post/responses/400'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
+        '422':
+          $ref: '#/paths/~1plans/post/responses/422'
+  /applied_coupons:
+    post:
+      tags:
+        - coupons
+      summary: Apply a coupon to a customer
+      description: 'This endpoint is used to apply a specific coupon to a customer, before or during a subscription.'
+      operationId: applyCoupon
+      requestBody:
+        description: Apply coupon payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppliedCouponInput'
+        required: true
+      responses:
+        '200':
+          description: Coupon applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppliedCoupon'
+        '400':
+          $ref: '#/paths/~1plans/post/responses/400'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
+        '422':
+          $ref: '#/paths/~1plans/post/responses/422'
+    get:
+      tags:
+        - coupons
+      summary: List all applied coupons
+      description: This endpoint is used to list all applied coupons. You can filter by coupon status and by customer.
+      operationId: findAllAppliedCoupons
+      parameters:
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
+        - name: status
+          in: query
+          description: The status of the coupon. Can be either `active` or `terminated`.
+          required: false
+          explode: true
+          schema:
+            type: string
+            enum:
+              - active
+              - terminated
+            example: active
+        - name: external_customer_id
+          in: query
+          description: The customer external unique identifier (provided by your own application)
+          required: false
+          explode: true
+          schema:
+            type: string
+            example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+      responses:
+        '200':
+          description: Applied Coupons
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppliedCouponsPaginated'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
   /billable_metrics:
     post:
       tags:
@@ -102,9 +314,9 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     get:
       tags:
         - billable_metrics
@@ -112,8 +324,8 @@ paths:
       description: This endpoint retrieves all existing billable metrics that represent pricing components of your application.
       operationId: findAllBillableMetrics
       parameters:
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
       responses:
         '200':
           description: List of billable metrics
@@ -122,7 +334,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BillableMetricsPaginated'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
   '/billable_metrics/{code}':
     parameters:
       - name: code
@@ -155,11 +367,11 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     delete:
       tags:
         - billable_metrics
@@ -174,7 +386,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BillableMetric'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
     get:
@@ -191,7 +403,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BillableMetric'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   '/billable_metrics/{code}/groups':
@@ -209,8 +421,8 @@ paths:
           schema:
             type: string
             example: example_code
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
       responses:
         '200':
           description: List of billable metric's groups
@@ -236,7 +448,123 @@ paths:
                   total_pages: 1
                   total_count: 2
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
+  /coupons:
+    post:
+      tags:
+        - coupons
+      summary: Create a coupon
+      description: This endpoint is used to create a coupon that can be then attached to a customer to create a discount.
+      operationId: createCoupon
+      requestBody:
+        description: Coupon payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponCreateInput'
+        required: true
+      responses:
+        '200':
+          description: Coupon created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coupon'
+        '400':
+          $ref: '#/paths/~1plans/post/responses/400'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '422':
+          $ref: '#/paths/~1plans/post/responses/422'
+    get:
+      tags:
+        - coupons
+      summary: List all coupons
+      description: This endpoint is used to list all existing coupons.
+      operationId: findAllCoupons
+      parameters:
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
+      responses:
+        '200':
+          description: Coupons
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponsPaginated'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+  '/coupons/{code}':
+    parameters:
+      - name: code
+        in: path
+        description: Unique code used to identify the coupon.
+        required: true
+        schema:
+          type: string
+          example: startup_deal
+    put:
+      tags:
+        - coupons
+      summary: Update a coupon
+      description: This endpoint is used to update a coupon that can be then attached to a customer to create a discount.
+      operationId: updateCoupon
+      requestBody:
+        description: Coupon payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponUpdateInput'
+        required: true
+      responses:
+        '200':
+          description: Coupon updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coupon'
+        '400':
+          $ref: '#/paths/~1plans/post/responses/400'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
+        '422':
+          $ref: '#/paths/~1plans/post/responses/422'
+    get:
+      tags:
+        - coupons
+      summary: Retrieve a coupon
+      description: This endpoint is used to retrieve a specific coupon.
+      operationId: findCoupon
+      responses:
+        '200':
+          description: Coupon
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coupon'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
+    delete:
+      tags:
+        - coupons
+      summary: Delete a coupon
+      description: This endpoint is used to delete a coupon.
+      operationId: destroyCoupon
+      responses:
+        '200':
+          description: Coupon deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Coupon'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
   /customers:
     post:
       tags:
@@ -261,9 +589,9 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     get:
       tags:
         - customers
@@ -271,8 +599,8 @@ paths:
       description: This endpoint retrieves all existing customers.
       operationId: findAllCustomers
       parameters:
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
       responses:
         '200':
           description: List of customers
@@ -281,7 +609,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CustomersPaginated'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
   '/customers/{external_id}':
     parameters:
       - name: external_id
@@ -305,7 +633,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Customer'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
     delete:
@@ -322,7 +650,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/Customer'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
+  '/customers/{external_customer_id}/applied_coupons/{applied_coupon_id}':
+    delete:
+      tags:
+        - coupons
+        - customers
+      summary: Delete an applied coupon
+      description: This endpoint is used to delete a specific coupon that has been applied to a customer.
+      parameters:
+        - name: external_customer_id
+          in: path
+          description: The customer external unique identifier (provided by your own application)
+          required: true
+          schema:
+            type: string
+            example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+        - name: applied_coupon_id
+          in: path
+          description: 'Unique identifier of the applied coupon, created by Lago.'
+          required: true
+          explode: true
+          schema:
+            type: string
+            format: uuid
+            example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+      operationId: deleteAppliedCoupon
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppliedCoupon'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   '/customers/{external_customer_id}/portal_url':
@@ -363,7 +727,7 @@ paths:
                         example: 'https://app.lago.com/customer-portal/1234567890'
                         description: An embeddable link for displaying a customer portal
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
@@ -399,7 +763,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CustomerUsage'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   /events:
@@ -422,9 +786,9 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
   /events/batch:
     post:
       tags:
@@ -445,9 +809,9 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
   '/events/{transaction_id}':
     parameters:
       - name: transaction_id
@@ -471,9 +835,202 @@ paths:
               schema:
                 $ref: '#/components/schemas/Event'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
+  /fees:
+    get:
+      tags:
+        - fees
+      summary: List all fees
+      description: This endpoint is used for retrieving all fees that has been issued.
+      operationId: findAllFees
+      parameters:
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
+        - $ref: '#/components/parameters/external_customer_id'
+        - $ref: '#/components/parameters/external_subscription_id'
+        - name: currency
+          in: query
+          description: Filter results by fee’s currency.
+          required: false
+          explode: true
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Currency'
+              - example: USD
+        - name: fee_type
+          in: query
+          description: 'The fee type. Possible values are `add-on`, `charge`, `credit` or `subscription`.'
+          required: false
+          explode: true
+          schema:
+            type: string
+            enum:
+              - charge
+              - add_on
+              - subscription
+              - credit
+              - instant_charge
+            example: charge
+        - name: billable_metric_code
+          in: query
+          description: Filter results by the `code` of the billable metric attached to the fee. Only applies to `charge` types.
+          required: false
+          explode: true
+          schema:
+            type: string
+            example: bm_code
+        - name: payment_status
+          in: query
+          description: 'Indicates the payment status of the fee. It represents the current status of the payment associated with the fee. The possible values for this field are `pending`, `succeeded`, `failed` and refunded`.'
+          required: false
+          explode: true
+          schema:
+            type: string
+            enum:
+              - pending
+              - succeeded
+              - failed
+              - refunded
+            example: succeeded
+        - name: created_at_from
+          in: query
+          description: Filter results created after creation date and time in UTC.
+          required: false
+          explode: true
+          schema:
+            type: string
+            example: '2023-03-28T12:21:51Z'
+            format: date-time
+        - name: created_at_to
+          in: query
+          description: Filter results created before creation date and time in UTC.
+          required: false
+          explode: true
+          schema:
+            type: string
+            example: '2023-03-28T12:21:51Z'
+            format: date-time
+        - name: succeeded_at_from
+          in: query
+          description: Filter results with payment success after creation date and time in UTC.
+          required: false
+          explode: true
+          schema:
+            type: string
+            example: '2023-03-28T12:21:51Z'
+            format: date-time
+        - name: succeeded_at_to
+          in: query
+          description: Filter results with payment success after creation date and time in UTC.
+          required: false
+          explode: true
+          schema:
+            type: string
+            example: '2023-03-28T12:21:51Z'
+            format: date-time
+        - name: failed_at_from
+          in: query
+          description: Filter results with payment failure after creation date and time in UTC.
+          required: false
+          explode: true
+          schema:
+            type: string
+            example: '2023-03-28T12:21:51Z'
+            format: date-time
+        - name: failed_at_to
+          in: query
+          description: Filter results with payment failure after creation date and time in UTC.
+          required: false
+          explode: true
+          schema:
+            type: string
+            example: '2023-03-28T12:21:51Z'
+            format: date-time
+        - name: refunded_at_from
+          in: query
+          description: Filter results with payment refund after creation date and time in UTC.
+          required: false
+          explode: true
+          schema:
+            type: string
+            example: '2023-03-28T12:21:51Z'
+            format: date-time
+        - name: refunded_at_to
+          in: query
+          description: Filter results with payment refund after creation date and time in UTC.
+          required: false
+          explode: true
+          schema:
+            type: string
+            example: '2023-03-28T12:21:51Z'
+            format: date-time
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeesPaginated'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '422':
+          $ref: '#/paths/~1plans/post/responses/422'
+  '/fees/{lago_id}':
+    parameters:
+      - name: lago_id
+        in: path
+        description: Unique identifier assigned to the fee within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the fee’s record within the Lago system.
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+    get:
+      tags:
+        - fees
+      summary: Retrieve a specific fee
+      description: This endpoint is used for retrieving a specific fee that has been issued.
+      operationId: findFee
+      responses:
+        '200':
+          description: Fee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fee'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
+    put:
+      tags:
+        - fees
+      summary: Update a fee
+      description: This endpoint is used for updating a specific fee that has been issued.
+      operationId: updateFee
+      requestBody:
+        description: Fee payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeeUpdateInput'
+      responses:
+        '200':
+          description: Fee updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fee'
+        '400':
+          $ref: '#/paths/~1plans/post/responses/400'
+        '401':
+          $ref: '#/paths/~1plans/get/responses/401'
+        '404':
+          $ref: '#/paths/~1plans/post/responses/404'
+        '422':
+          $ref: '#/paths/~1plans/post/responses/422'
   /organizations:
     put:
       tags:
@@ -498,9 +1055,9 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
   /subscriptions:
     post:
       tags:
@@ -525,11 +1082,11 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     get:
       tags:
         - subscriptions
@@ -537,8 +1094,8 @@ paths:
       description: This endpoint retrieves all active subscriptions.
       operationId: findAllSubscriptions
       parameters:
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
         - name: external_customer_id
           in: query
           description: The customer external unique identifier (provided by your own application)
@@ -563,7 +1120,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SubscriptionsPaginated'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   '/subscriptions/{external_id}':
@@ -598,11 +1155,11 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     delete:
       tags:
         - subscriptions
@@ -617,372 +1174,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Subscription'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '405':
           $ref: '#/paths/~1wallets~1%7Bid%7D/delete/responses/405'
-  /add_ons:
-    post:
-      tags:
-        - add_ons
-      summary: Create a new add-on
-      description: Create a new add-on
-      operationId: createAddOn
-      requestBody:
-        description: Add-on payload
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddOnInput'
-        required: true
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AddOn'
-        '400':
-          $ref: '#/paths/~1plans/post/responses/400'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '422':
-          $ref: '#/paths/~1fees/get/responses/422'
-    get:
-      tags:
-        - add_ons
-      summary: Find add-ons
-      description: Find all add-ons in certain organisation
-      operationId: findAllAddOns
-      parameters:
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AddOnsPaginated'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-  '/add_ons/{code}':
-    parameters:
-      - name: code
-        in: path
-        description: Code of the existing add-on
-        required: true
-        schema:
-          type: string
-          example: example_code
-    put:
-      tags:
-        - add_ons
-      summary: Update an existing add-on
-      description: Update an existing add-on by code
-      operationId: updateAddOn
-      requestBody:
-        description: Update an existing add-on
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddOnInput'
-        required: true
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AddOn'
-        '400':
-          $ref: '#/paths/~1plans/post/responses/400'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
-        '422':
-          $ref: '#/paths/~1fees/get/responses/422'
-    get:
-      tags:
-        - add_ons
-      summary: Find add-on by code
-      description: Return a single add-on
-      operationId: findAddOn
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AddOn'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
-    delete:
-      tags:
-        - add_ons
-      summary: Delete an add-on
-      description: Delete an add-on
-      operationId: destroyAddOn
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AddOn'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
-  /applied_add_ons:
-    post:
-      tags:
-        - add_ons
-      summary: Apply an add-on to a customer
-      description: Apply an add-on to a customer
-      operationId: applyAddOn
-      requestBody:
-        description: Apply add-on payload
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AppliedAddOnInput'
-        required: true
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppliedAddOn'
-        '400':
-          $ref: '#/paths/~1plans/post/responses/400'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
-        '422':
-          $ref: '#/paths/~1fees/get/responses/422'
-  /coupons:
-    post:
-      tags:
-        - coupons
-      summary: Create a new coupon
-      description: Create a new coupon
-      operationId: createCoupon
-      requestBody:
-        description: Coupon payload
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CouponInput'
-        required: true
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Coupon'
-        '400':
-          $ref: '#/paths/~1plans/post/responses/400'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '422':
-          $ref: '#/paths/~1fees/get/responses/422'
-    get:
-      tags:
-        - coupons
-      summary: Find Coupons
-      description: Find all coupons in certain organisation
-      operationId: findAllCoupons
-      parameters:
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CouponsPaginated'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-  '/coupons/{code}':
-    parameters:
-      - name: code
-        in: path
-        description: Code of the existing coupon
-        required: true
-        schema:
-          type: string
-          example: example_code
-    put:
-      tags:
-        - coupons
-      summary: Update an existing coupon
-      description: Update an existing coupon by code
-      operationId: updateCoupon
-      requestBody:
-        description: Update an existing coupon
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CouponInput'
-        required: true
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Coupon'
-        '400':
-          $ref: '#/paths/~1plans/post/responses/400'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
-        '422':
-          $ref: '#/paths/~1fees/get/responses/422'
-    get:
-      tags:
-        - coupons
-      summary: Find coupon by code
-      description: Return a single coupon
-      operationId: findCoupon
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Coupon'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
-    delete:
-      tags:
-        - coupons
-      summary: Delete a coupon
-      description: Delete a coupon
-      operationId: destroyCoupon
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Coupon'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
-  /applied_coupons:
-    post:
-      tags:
-        - coupons
-      summary: Apply a coupon to a customer
-      description: Apply a coupon to a customer
-      operationId: applyCoupon
-      requestBody:
-        description: Apply coupon payload
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AppliedCouponInput'
-        required: true
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppliedCoupon'
-        '400':
-          $ref: '#/paths/~1plans/post/responses/400'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
-        '422':
-          $ref: '#/paths/~1fees/get/responses/422'
-    get:
-      tags:
-        - coupons
-      summary: Find Applied Coupons
-      description: Find all applied coupons
-      operationId: findAllAppliedCoupons
-      parameters:
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
-        - name: status
-          in: query
-          description: Applied coupon status
-          required: false
-          explode: true
-          schema:
-            type: string
-            description: Status
-            enum:
-              - active
-              - terminated
-        - name: external_customer_id
-          in: query
-          description: External customer ID
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '12345'
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppliedCouponsPaginated'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-  '/customers/{external_customer_id}/applied_coupons/{applied_coupon_id}':
-    delete:
-      tags:
-        - customers
-      summary: Delete customer's appplied coupon
-      parameters:
-        - name: external_customer_id
-          in: path
-          description: External ID of the existing customer
-          required: true
-          schema:
-            type: string
-            example: '12345'
-        - name: applied_coupon_id
-          in: path
-          description: Applied Coupon Lago ID
-          required: true
-          explode: true
-          schema:
-            type: string
-            example: '54321'
-      description: Delete customer's appplied coupon
-      operationId: deleteAppliedCoupon
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AppliedCoupon'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
   /events/estimate_fees:
     post:
       tags:
@@ -1007,11 +1203,11 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
   /plans:
     post:
       tags:
@@ -1040,7 +1236,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorBadRequest'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           description: Not Found error
           content:
@@ -1048,7 +1244,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiErrorNotFound'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          description: Unprocessable entity error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorUnprocessableEntity'
     get:
       tags:
         - plans
@@ -1056,8 +1256,22 @@ paths:
       description: Find all plans in certain organisation
       operationId: findAllPlans
       parameters:
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
+        - name: page
+          in: query
+          description: Page number.
+          required: false
+          explode: true
+          schema:
+            type: integer
+            example: 1
+        - name: per_page
+          in: query
+          description: Number of records per page.
+          required: false
+          explode: true
+          schema:
+            type: integer
+            example: 20
       responses:
         '200':
           description: Successful response
@@ -1066,7 +1280,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/PlansPaginated'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          description: Unauthorized error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorUnauthorized'
   '/plans/{code}':
     parameters:
       - name: code
@@ -1099,11 +1317,11 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     get:
       tags:
         - plans
@@ -1118,7 +1336,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Plan'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
     delete:
@@ -1135,7 +1353,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Plan'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   /webhooks/public_key:
@@ -1154,7 +1372,7 @@ paths:
                 type: string
                 example: MEgCQQCo9+BpMRYQ/dL3DS2CyJxRF+j6ctbT3/Qp84+KeFhnii7NT7fELilKUSnxS30WAvQCCo2yU1orfgqr41mM70MBAgMBAAE=
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
   /invoices:
     post:
       tags:
@@ -1179,9 +1397,9 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     get:
       tags:
         - invoices
@@ -1189,8 +1407,8 @@ paths:
       description: Find all invoices in certain organisation
       operationId: findAllInvoices
       parameters:
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
         - name: external_customer_id
           in: query
           description: External customer ID
@@ -1235,7 +1453,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/InvoicesPaginated'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
   '/invoices/{id}':
     parameters:
       - name: id
@@ -1269,11 +1487,11 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     get:
       tags:
         - invoices
@@ -1288,7 +1506,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Invoice'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   '/invoices/{id}/download':
@@ -1315,7 +1533,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Invoice'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   '/invoices/{id}/retry_payment':
@@ -1338,7 +1556,7 @@ paths:
         '200':
           description: Successful response
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '405':
@@ -1367,7 +1585,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Invoice'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   '/invoices/{id}/finalize':
@@ -1394,237 +1612,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Invoice'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
-  '/fees/{id}':
-    parameters:
-      - name: id
-        in: path
-        description: ID of the existing Lago Fee
-        required: true
-        schema:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-    get:
-      tags:
-        - fees
-      summary: Find fee by ID
-      description: Return a single fee
-      operationId: findFee
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeeObject'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
-    put:
-      tags:
-        - fees
-      summary: Update an existing fee
-      description: Update an existing fee
-      operationId: updateFee
-      requestBody:
-        description: Payload to update a fee
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/FeeUpdateInput'
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeeObject'
-        '400':
-          $ref: '#/paths/~1plans/post/responses/400'
-        '401':
-          $ref: '#/paths/~1fees/get/responses/401'
-        '404':
-          $ref: '#/paths/~1plans/post/responses/404'
-        '422':
-          $ref: '#/paths/~1fees/get/responses/422'
-  /fees:
-    get:
-      tags:
-        - fees
-      summary: Find all fees
-      description: Find all fees of an organization and filter them
-      operationId: findAllFees
-      parameters:
-        - name: page
-          in: query
-          description: Page number.
-          required: false
-          explode: true
-          schema:
-            type: integer
-            example: 1
-        - name: per_page
-          in: query
-          description: Number of records per page.
-          required: false
-          explode: true
-          schema:
-            type: integer
-            example: 20
-        - name: external_customer_id
-          in: query
-          description: External customer ID
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '12345'
-        - name: external_subscription_id
-          in: query
-          description: External subscription ID
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '12345'
-        - name: currency
-          in: query
-          description: Amount currency
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: EUR
-        - name: fee_type
-          in: query
-          description: Fee type
-          required: false
-          explode: true
-          schema:
-            type: string
-            enum:
-              - charge
-              - add_on
-              - subscription
-              - credit
-              - instant_charge
-            example: charge
-        - name: billable_metric_code
-          in: query
-          description: Code of the source billable metric
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: bm_code
-        - name: payment_status
-          in: query
-          description: Payment status
-          required: false
-          explode: true
-          schema:
-            type: string
-            enum:
-              - pending
-              - succeeded
-              - failed
-              - refunded
-            example: succeeded
-        - name: created_at_from
-          in: query
-          description: Creation datetime from
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '2023-03-28T12:21:51Z'
-            format: date-time
-        - name: created_at_to
-          in: query
-          description: Creation date to
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '2023-03-28T12:21:51Z'
-            format: date-time
-        - name: succeeded_at_from
-          in: query
-          description: Payment succees date from
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '2023-03-28T12:21:51Z'
-            format: date-time
-        - name: succeeded_at_to
-          in: query
-          description: Payment succees date to
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '2023-03-28T12:21:51Z'
-            format: date-time
-        - name: failed_at_from
-          in: query
-          description: Payment failed date from
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '2023-03-28T12:21:51Z'
-            format: date-time
-        - name: failed_at_to
-          in: query
-          description: Payment failed date to
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '2023-03-28T12:21:51Z'
-            format: date-time
-        - name: refunded_at_from
-          in: query
-          description: Payment refund date from
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '2023-03-28T12:21:51Z'
-            format: date-time
-        - name: refunded_at_to
-          in: query
-          description: Payment refund date to
-          required: false
-          explode: true
-          schema:
-            type: string
-            example: '2023-03-28T12:21:51Z'
-            format: date-time
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeesPaginated'
-        '401':
-          description: Unauthorized error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorUnauthorized'
-        '422':
-          description: Unprocessable entity error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiErrorUnprocessableEntity'
   /wallets:
     post:
       tags:
@@ -1649,9 +1639,9 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     get:
       tags:
         - wallets
@@ -1659,8 +1649,8 @@ paths:
       description: Find all wallets for certain customer
       operationId: findAllWallets
       parameters:
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
         - name: external_customer_id
           in: query
           description: External customer ID
@@ -1677,7 +1667,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/WalletsPaginated'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
   '/wallets/{id}':
     parameters:
       - name: id
@@ -1711,11 +1701,11 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     get:
       tags:
         - wallets
@@ -1730,7 +1720,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Wallet'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
     delete:
@@ -1747,7 +1737,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Wallet'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '405':
@@ -1780,9 +1770,9 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
   '/wallets/{id}/wallet_transactions':
     get:
       tags:
@@ -1799,8 +1789,8 @@ paths:
             type: string
             format: uuid
             example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
         - name: status
           in: query
           description: Status (pending or settled)
@@ -1825,7 +1815,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/WalletTransactionsPaginated'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   /credit_notes:
@@ -1852,9 +1842,9 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     get:
       tags:
         - credit_notes
@@ -1862,8 +1852,8 @@ paths:
       description: Find all credit notes in certain organisation
       operationId: findAllCreditNotes
       parameters:
-        - $ref: '#/paths/~1fees/get/parameters/0'
-        - $ref: '#/paths/~1fees/get/parameters/1'
+        - $ref: '#/paths/~1plans/get/parameters/0'
+        - $ref: '#/paths/~1plans/get/parameters/1'
         - name: external_customer_id
           in: query
           description: External customer ID
@@ -1880,7 +1870,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreditNotes'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
   '/credit_notes/{id}':
     parameters:
       - name: id
@@ -1913,11 +1903,11 @@ paths:
         '400':
           $ref: '#/paths/~1plans/post/responses/400'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '422':
-          $ref: '#/paths/~1fees/get/responses/422'
+          $ref: '#/paths/~1plans/post/responses/422'
     get:
       tags:
         - credit_notes
@@ -1932,7 +1922,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreditNote'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   '/credit_notes/{id}/download':
@@ -1959,7 +1949,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreditNote'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
   '/credit_notes/{id}/void':
@@ -1986,18 +1976,142 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreditNote'
         '401':
-          $ref: '#/paths/~1fees/get/responses/401'
+          $ref: '#/paths/~1plans/get/responses/401'
         '404':
           $ref: '#/paths/~1plans/post/responses/404'
         '405':
           $ref: '#/paths/~1wallets~1%7Bid%7D/delete/responses/405'
 components:
   parameters:
+    external_customer_id:
+      name: external_customer_id
+      in: query
+      description: Unique identifier assigned to the customer in your application.
+      required: false
+      explode: true
+      schema:
+        type: string
+        example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+    external_subscription_id:
+      name: external_subscription_id
+      in: query
+      description: External subscription ID
+      required: false
+      explode: true
+      schema:
+        type: string
+        example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
     page:
-      $ref: '#/paths/~1fees/get/parameters/0'
+      $ref: '#/paths/~1plans/get/parameters/0'
     per_page:
-      $ref: '#/paths/~1fees/get/parameters/1'
+      $ref: '#/paths/~1plans/get/parameters/1'
   schemas:
+    AddOnBaseInput:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the add-on.
+          example: Setup Fee
+        code:
+          type: string
+          description: Unique code used to identify the add-on.
+          example: setup_fee
+        amount_cents:
+          type: integer
+          description: 'The cost of the add-on in cents, excluding any applicable taxes, that is billed to a customer. By creating a one-off invoice, you will be able to override this value.'
+          example: 50000
+        amount_currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - description: The currency of the add-on.
+              example: USD
+        description:
+          type: string
+          nullable: true
+          description: The description of the add-on.
+          example: Implementation fee for new customers.
+    AddOnCreateInput:
+      type: object
+      required:
+        - add_on
+      properties:
+        add_on:
+          allOf:
+            - $ref: '#/components/schemas/AddOnBaseInput'
+            - required:
+                - name
+                - code
+                - amount_cents
+                - amount_currency
+    AddOnObject:
+      type: object
+      required:
+        - lago_id
+        - name
+        - code
+        - amount_cents
+        - amount_currency
+        - created_at
+      properties:
+        lago_id:
+          type: string
+          format: uuid
+          description: 'Unique identifier of the add-on, created by Lago.'
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        name:
+          type: string
+          description: The name of the add-on.
+          example: Setup Fee
+        code:
+          type: string
+          description: Unique code used to identify the add-on.
+          example: setup_fee
+        amount_cents:
+          type: integer
+          description: 'The cost of the add-on in cents, excluding any applicable taxes, that is billed to a customer. By creating a one-off invoice, you will be able to override this value.'
+          example: 50000
+        amount_currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - description: The currency of the add-on.
+              example: USD
+        description:
+          type: string
+          nullable: true
+          description: The description of the add-on.
+          example: Implementation fee for new customers.
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the add-on was created. It is expressed in UTC format according to the ISO 8601 datetime standard. This field provides the timestamp for the exact moment when the add-on was initially created.
+          example: '2022-04-29T08:59:51Z'
+    AddOn:
+      type: object
+      required:
+        - add_on
+      properties:
+        add_on:
+          $ref: '#/components/schemas/AddOnObject'
+    AddOnsPaginated:
+      type: object
+      required:
+        - add_ons
+        - meta
+      properties:
+        add_ons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddOnObject'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+    AddOnUpdateInput:
+      type: object
+      required:
+        - add_on
+      properties:
+        add_on:
+          $ref: '#/components/schemas/AddOnBaseInput'
     ApiErrorBadRequest:
       type: object
       required:
@@ -2095,6 +2209,284 @@ components:
         code:
           type: string
           example: object_not_found
+    AppliedAddOn:
+      type: object
+      required:
+        - applied_add_on
+      properties:
+        applied_add_on:
+          $ref: '#/components/schemas/AppliedAddOnObject'
+    AppliedAddOnInput:
+      type: object
+      required:
+        - applied_add_on
+      properties:
+        applied_add_on:
+          type: object
+          required:
+            - external_customer_id
+            - add_on_code
+          properties:
+            external_customer_id:
+              type: string
+              description: The customer external unique identifier (provided by your own application)
+              example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+            add_on_code:
+              type: string
+              description: Unique code used to identify the add-on.
+              example: setup_fee
+            amount_cents:
+              type: integer
+              nullable: true
+              description: 'The cost of the add-on in cents, excluding any applicable taxes, that is billed to a customer. By creating a one-off invoice, you will be able to override this value.'
+              example: 50000
+            amount_currency:
+              allOf:
+                - $ref: '#/components/schemas/Currency'
+                - nullable: true
+                  description: The currency of the add-on.
+                  example: USD
+    AppliedAddOnObject:
+      type: object
+      required:
+        - lago_id
+        - lago_add_on_id
+        - add_on_code
+        - external_customer_id
+        - lago_customer_id
+        - amount_cents
+        - amount_currency
+        - created_at
+      properties:
+        lago_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the applied add-on created by Lago.
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        lago_add_on_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the add-on created by Lago.
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        add_on_code:
+          type: string
+          description: Unique code used to identify the add-on.
+          example: setup_fee
+        lago_customer_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the customer created by Lago.
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        external_customer_id:
+          type: string
+          description: The customer external unique identifier (provided by your own application)
+          example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+        amount_cents:
+          type: integer
+          description: 'The cost of the add-on in cents, excluding any applicable taxes, that is billed to a customer. By creating a one-off invoice, you will be able to override this value.'
+          example: 50000
+        amount_currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - nullable: true
+              description: The currency of the add-on.
+              example: USD
+        created_at:
+          type: string
+          format: date-time
+          example: '2022-09-14T16:35:31Z'
+    AppliedCoupon:
+      type: object
+      required:
+        - applied_coupon
+      properties:
+        applied_coupon:
+          $ref: '#/components/schemas/AppliedCouponObject'
+    AppliedCouponInput:
+      type: object
+      required:
+        - applied_coupon
+      properties:
+        applied_coupon:
+          type: object
+          required:
+            - external_customer_id
+            - coupon_code
+          properties:
+            external_customer_id:
+              type: string
+              description: The customer external unique identifier (provided by your own application)
+              example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+            coupon_code:
+              type: string
+              description: Unique code used to identify the coupon.
+              example: startup_deal
+            frequency:
+              type: string
+              enum:
+                - once
+                - recurring
+              nullable: true
+              description: |-
+                The type of frequency for the coupon. It can have three possible values: `once`, `recurring` or `forever`.
+
+                - If set to `once`, the coupon is applicable only for a single use.
+                - If set to `recurring`, the coupon can be used multiple times for recurring billing periods.
+                - If set to `forever`, the coupon has unlimited usage and can be applied indefinitely.
+              example: recurring
+            frequency_duration:
+              type: integer
+              nullable: true
+              description: Specifies the number of billing periods to which the coupon applies. This field is required only for coupons with a `recurring` frequency type
+              example: 3
+            amount_cents:
+              type: integer
+              nullable: true
+              description: The amount of the coupon in cents. This field is required only for coupon with `fixed_amount` type.
+              example: 2000
+            amount_currency:
+              allOf:
+                - $ref: '#/components/schemas/Currency'
+                - nullable: true
+                  description: The currency of the coupon. This field is required only for coupon with `fixed_amount` type.
+                  example: EUR
+            percentage_rate:
+              type: string
+              format: '^[0-9]+.?[0-9]*$'
+              nullable: true
+              description: The percentage rate of the coupon. This field is required only for coupons with a `percentage` coupon type.
+              example: null
+    AppliedCouponObject:
+      type: object
+      required:
+        - lago_id
+        - lago_coupon_id
+        - coupon_code
+        - coupon_name
+        - external_customer_id
+        - lago_customer_id
+        - status
+        - frequency
+        - created_at
+      properties:
+        lago_id:
+          type: string
+          format: uuid
+          description: 'Unique identifier of the applied coupon, created by Lago.'
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        lago_coupon_id:
+          type: string
+          format: uuid
+          description: 'Unique identifier of the coupon, created by Lago.'
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        coupon_code:
+          type: string
+          description: Unique code used to identify the coupon.
+          example: startup_deal
+        coupon_name:
+          type: string
+          description: The name of the coupon.
+          example: Startup Deal
+        lago_customer_id:
+          type: string
+          format: uuid
+          description: 'Unique identifier of the customer, created by Lago.'
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        external_customer_id:
+          type: string
+          description: The customer external unique identifier (provided by your own application)
+          example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+        status:
+          type: string
+          enum:
+            - active
+            - terminated
+          description: The status of the coupon. Can be either `active` or `terminated`.
+          example: active
+        amount_cents:
+          type: integer
+          nullable: true
+          description: The amount of the coupon in cents. This field is required only for coupon with `fixed_amount` type.
+          example: 2000
+        amount_cents_remaining:
+          type: integer
+          nullable: true
+          description: The remaining amount in cents for a `fixed_amount` coupon with a frequency set to `once`. This field indicates the remaining balance or value that can still be utilized from the coupon.
+          example: 50
+        amount_currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - nullable: true
+              description: The currency of the coupon. This field is required only for coupon with `fixed_amount` type.
+              example: EUR
+        percentage_rate:
+          type: string
+          format: '^[0-9]+.?[0-9]*$'
+          nullable: true
+          description: The percentage rate of the coupon. This field is required only for coupons with a `percentage` coupon type.
+          example: null
+        frequency:
+          type: string
+          enum:
+            - once
+            - recurring
+          description: |-
+            The type of frequency for the coupon. It can have three possible values: `once`, `recurring` or `forever`.
+
+            - If set to `once`, the coupon is applicable only for a single use.
+            - If set to `recurring`, the coupon can be used multiple times for recurring billing periods.
+            - If set to `forever`, the coupon has unlimited usage and can be applied indefinitely.
+          example: recurring
+        frequency_duration:
+          type: integer
+          nullable: true
+          description: Specifies the number of billing periods to which the coupon applies. This field is required only for coupons with a `recurring` frequency type
+          example: 3
+        frequency_duration_remaining:
+          type: integer
+          nullable: true
+          description: The remaining number of billing periods to which the coupon is applicable. This field determines the remaining usage or availability of the coupon based on the remaining billing periods.
+          example: 1
+        expiration_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: 'The date and time after which the coupon will stop applying to customer''s invoices. Once the expiration date is reached, the coupon will no longer be applicable, and any further invoices generated for the customer will not include the coupon discount.'
+          example: '2022-04-29T08:59:51Z'
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the coupon was assigned to a customer. It is expressed in UTC format according to the ISO 8601 datetime standard.
+          example: '2022-04-29T08:59:51Z'
+        terminated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: This field indicates the specific moment when the coupon amount is fully utilized or when the coupon is removed from the customer's coupon list. It is expressed in UTC format according to the ISO 8601 datetime standard.
+          example: '2022-04-29T08:59:51Z'
+    AppliedCouponObjectExtended:
+      allOf:
+        - $ref: '#/components/schemas/AppliedCouponObject'
+        - type: object
+          required:
+            - credits
+          properties:
+            credits:
+              type: array
+              items:
+                $ref: '#/components/schemas/CreditObject'
+    AppliedCouponsPaginated:
+      type: object
+      required:
+        - applied_coupons
+        - meta
+      properties:
+        applied_coupons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppliedCouponObjectExtended'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
     BillableMetric:
       type: object
       required:
@@ -2268,6 +2660,334 @@ components:
             $ref: '#/components/schemas/BillableMetricObject'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
+    Coupon:
+      type: object
+      required:
+        - coupon
+      properties:
+        coupon:
+          $ref: '#/components/schemas/CouponObject'
+    CouponBaseInput:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the coupon.
+          example: Startup Deal
+        code:
+          type: string
+          description: Unique code used to identify the coupon.
+          example: startup_deal
+        description:
+          type: string
+          nullable: true
+          description: Description of the coupon.
+          example: I am a coupon description
+        coupon_type:
+          type: string
+          enum:
+            - fixed_amount
+            - percentage
+          description: |-
+            The type of the coupon. It can have two possible values: `fixed_amount` or `percentage`.
+
+            - If set to `fixed_amount`, the coupon represents a fixed amount discount.
+            - If set to `percentage`, the coupon represents a percentage-based discount.
+          example: fixed_amount
+        amount_cents:
+          type: integer
+          nullable: true
+          description: The amount of the coupon in cents. This field is required only for coupon with `fixed_amount` type.
+          example: 5000
+        amount_currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - description: The currency of the coupon. This field is required only for coupon with `fixed_amount` type.
+              nullable: true
+              example: USD
+        reusable:
+          type: boolean
+          description: 'Indicates whether the coupon can be reused or not. If set to `true`, the coupon is reusable, meaning it can be applied multiple times to the same customer. If set to `false`, the coupon can only be used once and is not reusable. If not specified, this field is set to `true` by default.'
+          example: false
+        percentage_rate:
+          type: string
+          format: '^[0-9]+.?[0-9]*$'
+          nullable: true
+          description: The percentage rate of the coupon. This field is required only for coupons with a `percentage` coupon type.
+          example: null
+        frequency:
+          type: string
+          enum:
+            - once
+            - recurring
+          description: |-
+            The type of frequency for the coupon. It can have three possible values: `once`, `recurring` or `forever`.
+
+            - If set to `once`, the coupon is applicable only for a single use.
+            - If set to `recurring`, the coupon can be used multiple times for recurring billing periods.
+            - If set to `forever`, the coupon has unlimited usage and can be applied indefinitely.
+          example: recurring
+        frequency_duration:
+          type: integer
+          nullable: true
+          description: Specifies the number of billing periods to which the coupon applies. This field is required only for coupons with a `recurring` frequency type
+          example: 6
+        expiration:
+          type: string
+          enum:
+            - no_expiration
+            - time_limit
+          description: |-
+            Specifies the type of expiration for the coupon. It can have two possible values: `time_limit` or `no_expiration`.
+
+            - If set to `time_limit`, the coupon has an expiration based on a specified time limit.
+            - If set to `no_expiration`, the coupon does not have an expiration date and remains valid indefinitely.
+          example: time_limit
+        expiration_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: The expiration date and time of the coupon. This field is required only for coupons with `expiration` set to `time_limit`. The expiration date and time should be specified in UTC format according to the ISO 8601 datetime standard. It indicates the exact moment when the coupon will expire and is no longer valid.
+          example: '2022-08-08T23:59:59Z'
+        applies_to:
+          type: object
+          description: Set coupon limitations to plans or specific metrics.
+          nullable: true
+          properties:
+            plan_codes:
+              type: array
+              nullable: true
+              items:
+                type: string
+              description: 'An array of plan codes to which the coupon is applicable. By specifying the plan codes in this field, you can restrict the coupon''s usage to specific plans only.'
+              example:
+                - startup_plan
+            billable_metric_codes:
+              type: array
+              nullable: true
+              items:
+                type: string
+              description: 'An array of billable metric codes to which the coupon is applicable. By specifying the billable metric codes in this field, you can restrict the coupon''s usage to specific metrics only.'
+              example: []
+    CouponCreateInput:
+      type: object
+      required:
+        - coupon
+      properties:
+        coupon:
+          allOf:
+            - $ref: '#/components/schemas/CouponBaseInput'
+            - required:
+                - name
+                - code
+                - coupon_type
+                - frequency
+    CouponObject:
+      type: object
+      required:
+        - lago_id
+        - name
+        - code
+        - expiration
+        - coupon_type
+        - frequency
+        - created_at
+        - reusable
+        - limited_plans
+        - limited_billable_metrics
+      properties:
+        lago_id:
+          type: string
+          format: uuid
+          description: 'Unique identifier of the coupon, created by Lago.'
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        name:
+          type: string
+          description: The name of the coupon.
+          example: Startup Deal
+        code:
+          type: string
+          description: Unique code used to identify the coupon.
+          example: startup_deal
+        description:
+          type: string
+          nullable: true
+          description: Description of the coupon.
+          example: I am a coupon description
+        coupon_type:
+          type: string
+          enum:
+            - fixed_amount
+            - percentage
+          description: |-
+            The type of the coupon. It can have two possible values: `fixed_amount` or `percentage`.
+
+            - If set to `fixed_amount`, the coupon represents a fixed amount discount.
+            - If set to `percentage`, the coupon represents a percentage-based discount.
+          example: fixed_amount
+        amount_cents:
+          type: integer
+          nullable: true
+          description: The amount of the coupon in cents. This field is required only for coupon with `fixed_amount` type.
+          example: 5000
+        amount_currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - nullable: true
+              description: The currency of the coupon. This field is required only for coupon with `fixed_amount` type.
+              example: USD
+        reusable:
+          type: boolean
+          description: 'Indicates whether the coupon can be reused or not. If set to `true`, the coupon is reusable, meaning it can be applied multiple times to the same customer. If set to `false`, the coupon can only be used once and is not reusable. If not specified, this field is set to `true` by default.'
+          example: true
+        limited_plans:
+          type: boolean
+          description: The coupon is limited to specific plans. The possible values can be `true` or `false`.
+          example: true
+        plan_codes:
+          type: array
+          description: 'An array of plan codes to which the coupon is applicable. By specifying the plan codes in this field, you can restrict the coupon''s usage to specific plans only.'
+          items:
+            type: string
+          example:
+            - startup_plan
+        limited_billable_metrics:
+          type: boolean
+          description: The coupon is limited to specific billable metrics. The possible values can be `true` or `false`.
+          example: false
+        billable_metric_codes:
+          type: array
+          description: 'An array of billable metric codes to which the coupon is applicable. By specifying the billable metric codes in this field, you can restrict the coupon''s usage to specific metrics only.'
+          items:
+            type: string
+          example: []
+        percentage_rate:
+          type: string
+          format: '^[0-9]+.?[0-9]*$'
+          nullable: true
+          description: The percentage rate of the coupon. This field is required only for coupons with a `percentage` coupon type.
+          example: null
+        frequency:
+          type: string
+          description: |-
+            The type of frequency for the coupon. It can have three possible values: `once`, `recurring`, or `forever`.
+
+            - If set to `once`, the coupon is applicable only for a single use.
+            - If set to `recurring`, the coupon can be used multiple times for recurring billing periods.
+            - If set to `forever`, the coupon has unlimited usage and can be applied indefinitely.
+          enum:
+            - once
+            - recurring
+          example: recurring
+        frequency_duration:
+          type: integer
+          nullable: true
+          description: Specifies the number of billing periods to which the coupon applies. This field is required only for coupons with a `recurring` frequency type
+          example: 6
+        expiration:
+          type: string
+          description: |-
+            Specifies the type of expiration for the coupon. It can have two possible values: `time_limit` or `no_expiration`.
+
+            - If set to `time_limit`, the coupon has an expiration based on a specified time limit.
+            - If set to `no_expiration`, the coupon does not have an expiration date and remains valid indefinitely.
+          enum:
+            - no_expiration
+            - time_limit
+          example: time_limit
+        expiration_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: The expiration date and time of the coupon. This field is required only for coupons with `expiration` set to `time_limit`. The expiration date and time should be specified in UTC format according to the ISO 8601 datetime standard. It indicates the exact moment when the coupon will expire and is no longer valid.
+          example: '2022-08-08T23:59:59Z'
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the coupon was created. It is expressed in UTC format according to the ISO 8601 datetime standard. This field provides the timestamp for the exact moment when the coupon was initially created.
+          example: '2022-04-29T08:59:51Z'
+    CouponsPaginated:
+      type: object
+      required:
+        - coupons
+        - meta
+      properties:
+        coupons:
+          type: array
+          items:
+            $ref: '#/components/schemas/CouponObject'
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+    CouponUpdateInput:
+      type: object
+      required:
+        - coupon
+      properties:
+        coupon:
+          allOf:
+            - $ref: '#/components/schemas/CouponBaseInput'
+    CreditObject:
+      type: object
+      required:
+        - lago_id
+        - item
+        - amount_cents
+        - amount_currency
+        - invoice
+        - before_vat
+      properties:
+        lago_id:
+          type: string
+          format: uuid
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        amount_cents:
+          type: integer
+          example: 1200
+        amount_currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - example: EUR
+        before_vat:
+          type: boolean
+          example: false
+        item:
+          type: object
+          required:
+            - lago_id
+            - type
+            - code
+            - name
+          properties:
+            lago_id:
+              type: string
+              format: uuid
+              example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+            type:
+              type: string
+              example: coupon
+            code:
+              type: string
+              example: startup_deal
+            name:
+              type: string
+              example: Startup Deal
+        invoice:
+          type: object
+          required:
+            - lago_id
+            - payment_status
+          properties:
+            lago_id:
+              type: string
+              format: uuid
+              example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+            payment_status:
+              type: string
+              enum:
+                - pending
+                - succeeded
+                - failed
+              example: succeeded
     Currency:
       type: string
       example: USD
@@ -3083,6 +3803,252 @@ components:
           format: date-time
           example: '2022-04-29T08:59:51Z'
           description: 'The creation date of the event''s record in the Lago application, presented in the ISO 8601 datetime format, specifically in Coordinated Universal Time (UTC). It provides the precise timestamp of when the event''s record was created within the Lago application'
+    Fee:
+      type: object
+      required:
+        - fee
+      properties:
+        fee:
+          $ref: '#/components/schemas/FeeObject'
+    FeeObject:
+      type: object
+      required:
+        - item
+        - amount_cents
+        - amount_currency
+        - taxes_amount_cents
+        - taxes_rate
+        - total_amount_cents
+        - total_amount_currency
+        - pay_in_advance
+        - invoiceable
+        - units
+        - unit_amount_cents
+        - payment_status
+      properties:
+        lago_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Unique identifier assigned to the fee within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the fee’s record within the Lago system.
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        lago_group_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Unique identifier assigned to the group that the fee belongs to
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        lago_invoice_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Unique identifier assigned to the invoice that the fee belongs to
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        lago_true_up_fee_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: 'Unique identifier assigned to the true-up fee when a minimum has been set to the charge. This identifier helps to distinguish and manage the true-up fee associated with the charge, which may be applicable when a minimum threshold or limit is set for the charge amount.'
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        lago_true_up_parent_fee_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Unique identifier assigned to the parent fee on which the true-up fee is assigned. This identifier establishes the relationship between the parent fee and the associated true-up fee.
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        lago_subscription_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: 'Unique identifier assigned to the subscription, created by Lago. This field is specifically displayed when the fee type is charge and the payment for the fee is made in advance (`pay_in_advance` is set to true).'
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        lago_customer_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: 'Unique identifier assigned to the customer, created by Lago. This field is specifically displayed when the fee type is charge and the payment for the fee is made in advance (`pay_in_advance` is set to true).'
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        external_customer_id:
+          type: string
+          nullable: true
+          description: Unique identifier assigned to the customer in your application. This field is specifically displayed when the fee type is charge and the payment for the fee is made in advance (`pay_in_advance` is set to true).
+          example: external_id
+        external_subscription_id:
+          type: string
+          nullable: true
+          description: Unique identifier assigned to the subscription in your application. This field is specifically displayed when the fee type is charge and the payment for the fee is made in advance (`pay_in_advance` is set to true).
+          example: external_id
+        amount_cents:
+          type: integer
+          description: 'The cost of this specific fee, excluding any applicable taxes.'
+          example: 100
+        amount_currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - description: The currency of this specific fee. It indicates the monetary unit in which the fee’s cost is expressed.
+              example: EUR
+        taxes_amount_cents:
+          type: integer
+          description: The cost of the tax associated with this specific fee.
+          example: 20
+        taxes_rate:
+          type: string
+          format: '^[0-9]+.?[0-9]*$'
+          description: The tax rate associated with this specific fee.
+          example: '20.0'
+        units:
+          type: string
+          description: The number of units used to charge the customer. This field indicates the quantity or count of units consumed or utilized in the context of the charge. It helps in determining the basis for calculating the fee or cost associated with the usage of the service or product provided to the customer.
+          example: '0.32'
+        total_amount_cents:
+          type: integer
+          description: 'The cost of this specific fee, including any applicable taxes.'
+          example: 120
+        total_amount_currency:
+          allOf:
+            - $ref: '#/components/schemas/Currency'
+            - description: 'The currency of this specific fee, including any applicable taxes.'
+              example: EUR
+        events_count:
+          type: integer
+          description: The number of events that have been sent and used to charge the customer. This field indicates the count or quantity of events that have been processed and considered in the charging process.
+          example: 23
+        pay_in_advance:
+          type: boolean
+          description: 'Flag that indicates whether the fee was paid in advance. It serves as a boolean value, where `true` represents that the fee was paid in advance (straightaway), and `false` indicates that the fee was not paid in arrears (at the end of the period).'
+          example: true
+        invoiceable:
+          type: boolean
+          description: 'Flag that indicates whether the fee was included on the invoice. It serves as a boolean value, where `true` represents that the fee was included on the invoice, and `false` indicates that the fee was not included on the invoice.'
+          example: true
+        from_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: The beginning date of the period that the fee covers. It is applicable only to `subscription` and `charge` fees. This field indicates the start date of the billing period or subscription period associated with the fee.
+          example: '2022-04-29T08:59:51Z'
+        to_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: The ending date of the period that the fee covers. It is applicable only to `subscription` and `charge` fees. This field indicates the end date of the billing period or subscription period associated with the fee.
+          example: '2022-05-29T08:59:51Z'
+        payment_status:
+          type: string
+          enum:
+            - pending
+            - succeeded
+            - failed
+            - refunded
+          description: 'Indicates the payment status of the fee. It represents the current status of the payment associated with the fee. The possible values for this field are `pending`, `succeeded`, `failed` and `refunded`.'
+          example: pending
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: The date and time when the fee was created. It is provided in Coordinated Universal Time (UTC) format.
+          example: '2022-08-24T14:58:59Z'
+        succeeded_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: The date and time when the payment for the fee was successfully processed. It is provided in Coordinated Universal Time (UTC) format.
+          example: '2022-08-24T14:58:59Z'
+        failed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: The date and time when the payment for the fee failed to process. It is provided in Coordinated Universal Time (UTC) format.
+          example: '2022-08-24T14:58:59Z'
+        refunded_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: The date and time when the payment for the fee was refunded. It is provided in Coordinated Universal Time (UTC) format
+          example: '2022-08-24T14:58:59Z'
+        event_transaction_id:
+          type: string
+          nullable: true
+          description: Unique identifier assigned to the transaction. This field is specifically displayed when the fee type is `charge` and the payment for the fee is made in advance (`pay_in_advance` is set to `true`).
+          example: transaction_1234567890
+        item:
+          type: object
+          description: Item attached to the fee
+          required:
+            - type
+            - code
+            - name
+            - lago_item_id
+            - item_type
+          properties:
+            type:
+              type: string
+              enum:
+                - charge
+                - add_on
+                - subscription
+                - credit
+              description: 'The fee type. Possible values are `add-on`, `charge`, `credit` or `subscription`.'
+              example: subscription
+            code:
+              type: string
+              description: 'The code of the fee item. It can be the code of the `add-o`n, the code of the `charge`, the code of the `credit` or the code of the `subscription`.'
+              example: startup
+            name:
+              type: string
+              description: 'The name of the fee item. It can be the name of the `add-on`, the name of the `charge`, the name of the `credit` or the name of the `subscription`.'
+              example: Startup
+            lago_item_id:
+              type: string
+              example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+              description: 'Unique identifier of the fee item, created by Lago. It can be the identifier of the `add-on`, the identifier of the `charge`, the identifier of the `credit` or the identifier of the `subscription`.'
+              format: uuid
+            item_type:
+              type: string
+              enum:
+                - AddOn
+                - BillableMetric
+                - Subscription
+                - WalletTransaction
+              description: 'The type of the fee item. Possible values are `AddOn`, `BillableMetric`, `WalletTransaction` or `Subscription`.'
+              example: Subscription
+    Fees:
+      type: object
+      required:
+        - fees
+      properties:
+        fees:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeeObject'
+    FeesPaginated:
+      allOf:
+        - $ref: '#/components/schemas/Fees'
+        - type: object
+          required:
+            - meta
+          properties:
+            meta:
+              $ref: '#/components/schemas/PaginationMeta'
+    FeeUpdateInput:
+      type: object
+      required:
+        - fee
+      properties:
+        fee:
+          type: object
+          required:
+            - payment_status
+          properties:
+            payment_status:
+              type: string
+              enum:
+                - pending
+                - succeeded
+                - failed
+                - refunded
+              description: 'The payment status of the fee. Possible values are `pending`, `succeeded`, `failed` or `refunded`.'
+              example: succeeded
     GroupObject:
       type: object
       required:
@@ -3663,451 +4629,6 @@ components:
         - Pacific/Pago_Pago
         - Pacific/Port_Moresby
         - Pacific/Tongatapu
-    AddOnObject:
-      type: object
-      required:
-        - lago_id
-        - name
-        - code
-        - amount_cents
-        - amount_currency
-        - created_at
-      properties:
-        lago_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        name:
-          type: string
-          example: example name
-        code:
-          type: string
-          example: example_code
-        description:
-          type: string
-          example: description
-        created_at:
-          type: string
-          format: date-time
-          example: '2022-09-14T16:35:31Z'
-        amount_cents:
-          type: integer
-          example: 1200
-        amount_currency:
-          type: string
-          example: EUR
-    AddOn:
-      type: object
-      required:
-        - add_on
-      properties:
-        add_on:
-          $ref: '#/components/schemas/AddOnObject'
-    AddOnsPaginated:
-      type: object
-      required:
-        - add_ons
-        - meta
-      properties:
-        add_ons:
-          type: array
-          items:
-            $ref: '#/components/schemas/AddOnObject'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-    AddOnInput:
-      type: object
-      required:
-        - add_on
-      properties:
-        add_on:
-          type: object
-          properties:
-            name:
-              type: string
-              example: example name
-            code:
-              type: string
-              example: example_code
-            description:
-              type: string
-              example: description
-            amount_cents:
-              type: integer
-              example: 1200
-            amount_currency:
-              type: string
-              example: EUR
-    AppliedAddOnObject:
-      type: object
-      required:
-        - lago_id
-        - lago_add_on_id
-        - add_on_code
-        - external_customer_id
-        - lago_customer_id
-        - amount_cents
-        - amount_currency
-        - created_at
-      properties:
-        lago_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        lago_add_on_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        add_on_code:
-          type: string
-          example: code
-        lago_customer_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        external_customer_id:
-          type: string
-          example: '1234567'
-        amount_cents:
-          type: integer
-          example: 1200
-        amount_currency:
-          type: string
-          example: EUR
-        created_at:
-          type: string
-          format: date-time
-          example: '2022-09-14T16:35:31Z'
-    AppliedAddOn:
-      type: object
-      required:
-        - applied_add_on
-      properties:
-        applied_add_on:
-          $ref: '#/components/schemas/AppliedAddOnObject'
-    AppliedAddOnInput:
-      type: object
-      required:
-        - applied_add_on
-      properties:
-        applied_add_on:
-          type: object
-          required:
-            - external_customer_id
-            - add_on_code
-          properties:
-            external_customer_id:
-              type: string
-              example: '1234567'
-            add_on_code:
-              type: string
-              example: code
-            amount_cents:
-              type: integer
-              example: 1200
-            amount_currency:
-              type: string
-              example: EUR
-    CouponObject:
-      type: object
-      required:
-        - lago_id
-        - name
-        - code
-        - expiration
-        - coupon_type
-        - frequency
-        - created_at
-      properties:
-        lago_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        name:
-          type: string
-          example: coupon1
-        code:
-          type: string
-          example: example_code
-        coupon_type:
-          type: string
-          description: Coupon type
-          enum:
-            - fixed_amount
-            - percentage
-        amount_cents:
-          type: integer
-          example: 1200
-        amount_currency:
-          type: string
-          example: EUR
-        reusable:
-          type: boolean
-          example: true
-        limited_plans:
-          type: boolean
-          example: true
-        plan_codes:
-          type: array
-          items:
-            type: string
-            example: code1
-        limited_billable_metrics:
-          type: boolean
-          example: true
-        billable_metric_codes:
-          type: array
-          items:
-            type: string
-            example: code2
-        created_at:
-          type: string
-          format: date-time
-          example: '2022-09-14T16:35:31Z'
-        percentage_rate:
-          type: number
-          example: 25
-        frequency:
-          type: string
-          description: Frequency type
-          enum:
-            - once
-            - recurring
-        frequency_duration:
-          type: integer
-          example: 3
-        expiration_at:
-          type: string
-          format: date-time
-          example: '2022-09-14T23:59:59Z'
-        expiration:
-          type: string
-          description: Expiration type
-          enum:
-            - no_expiration
-            - time_limit
-    Coupon:
-      type: object
-      required:
-        - coupon
-      properties:
-        coupon:
-          $ref: '#/components/schemas/CouponObject'
-    CouponsPaginated:
-      type: object
-      required:
-        - coupons
-        - meta
-      properties:
-        coupons:
-          type: array
-          items:
-            $ref: '#/components/schemas/CouponObject'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-    CouponInput:
-      type: object
-      required:
-        - coupon
-      properties:
-        coupon:
-          type: object
-          properties:
-            name:
-              type: string
-              example: coupon1
-            code:
-              type: string
-              example: example_code
-            coupon_type:
-              type: string
-              description: Coupon type
-              enum:
-                - fixed_amount
-                - percentage
-            amount_cents:
-              type: integer
-              example: 1200
-            amount_currency:
-              type: string
-              example: EUR
-            reusable:
-              type: boolean
-              example: true
-            percentage_rate:
-              type: number
-              example: 25
-            frequency:
-              type: string
-              description: Frequency type
-              enum:
-                - once
-                - recurring
-            frequency_duration:
-              type: integer
-              example: 3
-            expiration_at:
-              type: string
-              format: date-time
-              example: '2022-09-14T23:59:59Z'
-            expiration:
-              type: string
-              description: Expiration type
-              enum:
-                - no_expiration
-                - time_limit
-            applies_to:
-              type: object
-              properties:
-                plan_codes:
-                  type: array
-                  items:
-                    type: string
-                    example: code1
-                billable_metric_codes:
-                  type: array
-                  items:
-                    type: string
-                    example: code2
-    AppliedCouponObject:
-      type: object
-      required:
-        - lago_id
-        - lago_coupon_id
-        - coupon_code
-        - external_customer_id
-        - lago_customer_id
-        - status
-        - amount_cents
-        - amount_currency
-        - frequency
-        - created_at
-      properties:
-        lago_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        lago_coupon_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        coupon_code:
-          type: string
-          example: example_code
-        lago_customer_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        external_customer_id:
-          type: string
-          example: '123456'
-        status:
-          type: string
-          description: Status
-          enum:
-            - active
-            - terminated
-        amount_cents:
-          type: integer
-          example: 1200
-        amount_cents_remaining:
-          type: integer
-          example: 800
-        amount_currency:
-          type: string
-          example: EUR
-        percentage_rate:
-          type: number
-          example: 25
-        frequency:
-          type: string
-          description: Frequency type
-          enum:
-            - once
-            - recurring
-        frequency_duration:
-          type: integer
-          example: 3
-        frequency_duration_remaining:
-          type: integer
-          example: 2
-        expiration_at:
-          type: string
-          format: date-time
-          example: '2022-09-14T23:59:59Z'
-        created_at:
-          type: string
-          format: date-time
-          example: '2022-09-14T16:35:31Z'
-        terminated_at:
-          type: string
-          format: date-time
-          example: '2022-09-14T16:35:31Z'
-    AppliedCouponObjectExtended:
-      allOf:
-        - $ref: '#/components/schemas/AppliedCouponObject'
-        - type: object
-          required:
-            - credits
-          properties:
-            credits:
-              type: array
-              items:
-                $ref: '#/components/schemas/CreditObject'
-    AppliedCoupon:
-      type: object
-      required:
-        - applied_coupon
-      properties:
-        applied_coupon:
-          $ref: '#/components/schemas/AppliedCouponObject'
-    AppliedCouponsPaginated:
-      type: object
-      required:
-        - applied_coupons
-        - meta
-      properties:
-        applied_coupons:
-          type: array
-          items:
-            $ref: '#/components/schemas/AppliedCouponObjectExtended'
-        meta:
-          $ref: '#/components/schemas/PaginationMeta'
-    AppliedCouponInput:
-      type: object
-      required:
-        - applied_coupon
-      properties:
-        applied_coupon:
-          type: object
-          required:
-            - external_customer_id
-            - coupon_code
-          properties:
-            external_customer_id:
-              type: string
-              example: '123456'
-            coupon_code:
-              type: string
-              example: example_code
-            frequency:
-              type: string
-              description: Frequency type
-              enum:
-                - once
-                - recurring
-            frequency_duration:
-              type: integer
-              example: 3
-            amount_cents:
-              type: integer
-              example: 1200
-            amount_currency:
-              type: string
-              example: EUR
-            percentage_rate:
-              type: number
-              example: 25
     EventEstimateFeesInput:
       type: object
       required:
@@ -4129,42 +4650,6 @@ components:
               example: '123456'
             properties:
               type: object
-    Fees:
-      type: object
-      required:
-        - fees
-      properties:
-        fees:
-          type: array
-          items:
-            $ref: '#/components/schemas/FeeObject'
-    FeesPaginated:
-      allOf:
-        - $ref: '#/components/schemas/Fees'
-        - type: object
-          required:
-            - meta
-          properties:
-            meta:
-              $ref: '#/components/schemas/PaginationMeta'
-    FeeUpdateInput:
-      type: object
-      required:
-        - invoice
-      properties:
-        invoice:
-          type: object
-          required:
-            - payment_status
-          properties:
-            payment_status:
-              type: string
-              description: Status
-              enum:
-                - pending
-                - succeeded
-                - failed
-                - refunded
     GroupPropertiesObject:
       type: object
       required:
@@ -4387,197 +4872,6 @@ components:
                           example: '123456'
                         values:
                           type: object
-    CreditObject:
-      type: object
-      required:
-        - lago_id
-        - item
-        - amount_cents
-        - amount_currency
-        - invoice
-        - before_vat
-      properties:
-        lago_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        amount_cents:
-          type: integer
-          example: 1200
-        amount_currency:
-          type: string
-          example: EUR
-        before_vat:
-          type: boolean
-          example: false
-        item:
-          type: object
-          required:
-            - lago_id
-            - type
-            - code
-            - name
-          properties:
-            lago_id:
-              type: string
-              format: uuid
-              example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-            type:
-              type: string
-              example: coupon
-            code:
-              type: string
-              example: code
-            name:
-              type: string
-              example: name
-        invoice:
-          type: object
-          required:
-            - lago_id
-            - payment_status
-          properties:
-            lago_id:
-              type: string
-              format: uuid
-              example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-            payment_status:
-              type: string
-              enum:
-                - pending
-                - succeeded
-                - failed
-    FeeObject:
-      type: object
-      required:
-        - lago_id
-        - item
-        - amount_cents
-        - amount_currency
-        - vat_amount_cents
-        - vat_amount_currency
-        - units
-        - payment_status
-        - created_at
-      properties:
-        lago_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        lago_group_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        lago_invoice_id:
-          type: string
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-          format: uuid
-        lago_true_up_fee_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        lago_true_up_parent_fee_id:
-          type: string
-          format: uuid
-          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-        external_subscription_id:
-          type: string
-          example: '54321'
-        amount_cents:
-          type: integer
-          example: 1000
-        amount_currency:
-          type: string
-          example: EUR
-        vat_amount_cents:
-          type: integer
-          example: 200
-        vat_amount_currency:
-          type: string
-          example: EUR
-        units:
-          type: string
-          example: '2.5'
-        total_amount_cents:
-          type: integer
-          example: 1200
-        total_amount_currency:
-          type: string
-          example: EUR
-        events_count:
-          type: integer
-          example: 5
-        pay_in_advance:
-          type: boolean
-          example: true
-        invoiceable:
-          type: boolean
-          example: true
-        from_date:
-          type: string
-          format: date-time
-          example: '2022-08-08T00:00:00Z'
-        to_date:
-          type: string
-          format: date-time
-          example: '2022-08-08T00:00:00Z'
-        payment_status:
-          type: string
-          enum:
-            - pending
-            - succeeded
-            - failed
-            - refunded
-        created_at:
-          type: string
-          example: '2022-09-14T16:35:31Z'
-          format: date-time
-        succeeded_at:
-          type: string
-          example: '2022-09-14T16:35:31Z'
-          format: date-time
-        failed_at:
-          type: string
-          example: '2022-09-14T16:35:31Z'
-          format: date-time
-        refunded_at:
-          type: string
-          example: '2022-09-14T16:35:31Z'
-          format: date-time
-        item:
-          type: object
-          required:
-            - type
-            - code
-            - name
-            - lago_item_id
-            - item_type
-          properties:
-            type:
-              type: string
-              description: Billing time
-              enum:
-                - charge
-                - add_on
-                - subscription
-                - credit
-            code:
-              type: string
-              example: code
-            name:
-              type: string
-              example: name
-            lago_item_id:
-              type: string
-              example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-              format: uuid
-            item_type:
-              type: string
-              enum:
-                - AddOn
-                - BillableMetric
-                - Subscription
-                - WalletTransaction
     InvoiceMetadataObject:
       type: object
       properties:
@@ -5304,13 +5598,13 @@ components:
           schema:
             $ref: '#/components/schemas/ApiErrorForbidden'
     Unauthorized:
-      $ref: '#/paths/~1fees/get/responses/401'
+      $ref: '#/paths/~1plans/get/responses/401'
     NotAllowed:
       $ref: '#/paths/~1wallets~1%7Bid%7D/delete/responses/405'
     NotFound:
       $ref: '#/paths/~1plans/post/responses/404'
     UnprocessableEntity:
-      $ref: '#/paths/~1fees/get/responses/422'
+      $ref: '#/paths/~1plans/post/responses/422'
   securitySchemes:
     bearerAuth:
       type: http

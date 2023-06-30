@@ -1,3 +1,165 @@
 ---
 openapi: "POST /add_ons"
+authMethod: "bearer"
 ---
+
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/add_ons" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "add_on": {
+      "name": "Setup Fee",
+      "code": "setup_fee",
+      "amount_cents": 50000,
+      "amount_currency": "USD",
+      "description": "Implementation fee for new customers."
+    }
+  }'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import AddOn
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+add_on = AddOn(
+  name='Setup Fee',
+  code='setup_fee',
+  amount_cents=50000,
+  amount_currency='USD',
+  description='Implementation fee for new customers.'
+)
+
+try:
+    client.add_ons.create(add_on)
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+
+add_on = {
+  name: 'Setup Fee',
+  code: 'setup_fee',
+  description: 'Implementation fee for new customers.',
+  amount_cents: 50000,
+  amount_currency: 'USD',
+}
+
+client.add_ons.create(add_on)
+```
+
+```js Node.js
+const addOnObject = {
+  name: "Setup Fee",
+  code: "setup_fee",
+  description: "Implementation fee for new customers.",
+  amountCents: 50000,
+  amountCurrency: "USD",
+};
+
+await client.addOns.createAddOn({ addOn: addOnObject });
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+addOnInput := &lago.AddOnInput{
+            Name:          "Setup Fee",
+        Code:           "setup_fee",
+        AmountCents:    50000,
+        AmountCurrency: lago.USD,
+        Description:    "Implementation fee for new customers.",
+}
+
+addOn, err := lagoClient.AddOn().Create(addOnInput)
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// addOn is *lago.AddOn
+fmt.Println(addOn)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class CreateAddOnExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new AddOnsApi(Configuration.Default);
+          var addOnInput = new AddOnInput(); // AddOnInput | Add-on payload
+
+          try
+          {
+              // Create a new add-on
+              AddOn result = apiInstance.CreateAddOn(addOnInput);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling AddOnsApi.CreateAddOn: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\AddOnsApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$add_on_input = new \OpenAPI\Client\Model\AddOnInput(); // \OpenAPI\Client\Model\AddOnInput | Add-on payload
+
+try {
+  $result = $apiInstance->createAddOn($add_on_input);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling AddOnsApi->createAddOn: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>

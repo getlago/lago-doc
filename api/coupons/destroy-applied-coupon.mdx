@@ -1,5 +1,5 @@
 ---
-openapi: "DELETE /coupons/{code}"
+openapi: "DELETE /customers/{external_customer_id}/applied_coupons/{applied_coupon_id}"
 authMethod: "bearer"
 ---
 
@@ -9,7 +9,7 @@ authMethod: "bearer"
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request DELETE "$LAGO_URL/api/v1/coupons/:code" \
+curl --location --request DELETE "$LAGO_URL/api/v1/customers/:external_customer_id/applied_coupons/:applied_coupon_id" \
   --header "Authorization: Bearer $API_KEY"
 ```
 
@@ -20,7 +20,7 @@ from lago_python_client.exceptions import LagoApiError
 client = Client(api_key='__YOUR_API_KEY__')
 
 try:
-    client.coupons.destroy('code')
+    client.applied_coupons.destroy('external_customer_id', 'applied_coupon_id')
 except LagoApiError as e:
     repair_broken_state(e)  # do something on error or raise your own exception
 ```
@@ -30,11 +30,14 @@ require 'lago-ruby-client'
 
 client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
 
-client.coupons.destroy('code')
+client.applied_coupons.destroy('external_customer_id', 'applied_coupon_id')
 ```
 
 ```js Node.js
-await client.coupons.destroyCoupon('code');
+await client.customers.deleteAppliedCoupon(
+  "external_customer_id",
+  "applied_coupon_id"
+);
 ```
 
 ```go Go
@@ -45,14 +48,14 @@ func main() {
 lagoClient := lago.New().
     SetApiKey("__YOUR_API_KEY__")
 
-coupon, err := lagoClient.Coupon().Delete("__YOUR_COUPON_CODE__")
+appliedCoupon, err := lagoClient.Coupon().AppliedCouponDelete('external_customer_id', 'applied_coupon_id')
 if err != nil {
     // Error is *lago.Error
     panic(err)
 }
 
-// coupon is *lago.Coupon
-fmt.Println(coupon)
+// appliedCoupon is *lago.AppliedCoupon
+fmt.Println(appliedCoupon)
 }
 ```
 
@@ -73,18 +76,19 @@ namespace Example
           // Configure HTTP bearer authorization: bearerAuth
           Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
 
-          var apiInstance = new CouponsApi(Configuration.Default);
-          var code = "example_code";  // string | Code of the existing coupon
+          var apiInstance = new AppliedCouponsApi(Configuration.Default);
+          var externalCustomerId = "external_customer_id"; // string | External id of the customer
+          var appliedCouponId = "applied_coupon_id"; // string | Applied Coupon Lago ID
 
           try
           {
-              // Delete a coupon
-              Coupon result = apiInstance.DestroyCoupon(code);
+              // Delete an applied coupon
+              AppliedCoupon result = apiInstance.DestroyAppliedCoupon(externalCustomerId, appliedCouponId);
               Debug.WriteLine(result);
           }
           catch (ApiException e)
           {
-              Debug.Print("Exception when calling CouponsApi.DestroyCoupon: " + e.Message );
+              Debug.Print("Exception when calling AppliedCouponsApi.DestroyAppliedCoupon: " + e.Message );
               Debug.Print("Status Code: "+ e.ErrorCode);
               Debug.Print(e.StackTrace);
           }
@@ -93,29 +97,5 @@ namespace Example
 }
 ```
 
-```php PHP
-<?php
-require_once(__DIR__ . '/vendor/autoload.php');
-
-
-// Configure Bearer authorization: bearerAuth
-$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
-
-
-$apiInstance = new OpenAPI\Client\Api\CouponsApi(
-  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
-  // This is optional, `GuzzleHttp\Client` will be used as default.
-  new GuzzleHttp\Client(),
-  $config
-);
-$code = "example_code"; // string | Code of the existing coupon
-
-try {
-  $result = $apiInstance->destroyCoupon($code);
-  print_r($result);
-} catch (Exception $e) {
-  echo 'Exception when calling CouponsApi->destroyCoupon: ', $e->getMessage(), PHP_EOL;
-}
-```
-
 </RequestExample>
+
