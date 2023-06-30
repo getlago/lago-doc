@@ -1,0 +1,163 @@
+---
+title: "The fee object"
+description: "This object represents a line item of an invoice, handling amount, billed units and item description."
+---
+
+<RequestExample>
+```json The fee object
+{
+  "fee": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_group_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_true_up_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_true_up_parent_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_subscription_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_customer_id": "external_id",
+    "external_subscription_id": "external_id",
+    "amount_cents": 100,
+    "amount_currency": "EUR",
+    "taxes_amount_cents": 20,
+    "taxes_rate": "20.0",
+    "units": "0.32",
+    "total_amount_cents": 120,
+    "total_amount_currency": "EUR",
+    "events_count": 23,
+    "pay_in_advance": true,
+    "invoiceable": true,
+    "from_date": "2022-04-29T08:59:51Z",
+    "to_date": "2022-05-29T08:59:51Z",
+    "payment_status": "pending",
+    "created_at": "2022-08-24T14:58:59Z",
+    "succeeded_at": "2022-08-24T14:58:59Z",
+    "failed_at": "2022-08-24T14:58:59Z",
+    "refunded_at": "2022-08-24T14:58:59Z",
+    "event_transaction_id": "transaction_1234567890",
+    "item": {
+      "type": "subscription",
+      "code": "startup",
+      "name": "Startup",
+      "lago_item_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "item_type": "Subscription"
+    }
+  }
+}
+```
+</RequestExample>
+
+## Attributes
+
+<ResponseField name="fee" type="object">
+  <Expandable title="object" defaultOpen="true">
+    <ResponseField name="lago_id" type="string" required>
+      Unique identifier assigned to the fee within the Lago application. This ID is exclusively created by Lago and serves as a 
+      unique identifier for the fee’s record within the Lago system.
+    </ResponseField>
+    <ResponseField name="lago_group_id" type="string">
+      Unique identifier assigned to the group that the fee belongs to.
+    </ResponseField>
+    <ResponseField name="lago_true_up_fee_id" type="string">
+      Unique identifier assigned to the true-up fee when a minimum has been set to the charge. 
+      This identifier helps to distinguish and manage the true-up fee associated with the charge, which may be applicable when 
+      a minimum threshold or limit is set for the charge amount.
+    </ResponseField>
+    <ResponseField name="lago_true_up_parent_fee_id" type="string">
+      Unique identifier assigned to the parent fee on which the true-up fee is assigned. This identifier establishes the 
+      relationship between the parent fee and the associated true-up fee.
+    </ResponseField>
+    <ResponseField name="amount_cents" type="integer" required>
+      The cost of this specific fee, excluding any applicable taxes.
+    </ResponseField>
+    <ResponseField name="amount_currency" type="string" required>
+      The currency of this specific fee. It indicates the monetary unit in which the fee’s cost is expressed.
+    </ResponseField>
+    <ResponseField name="vat_amount_cents" type="integer" required>
+      The cost of the tax associated with this specific fee.
+    </ResponseField>
+    <ResponseField name="vat_amount_currency" type="string" required>
+      The currency of the tax associated with this specific fee.
+    </ResponseField>
+    <ResponseField name="total_amount_cents" type="integer" required>
+      The cost of this specific fee, including any applicable taxes.
+    </ResponseField>
+    <ResponseField name="total_amount_currency" type="string" required>
+      The currency of this specific fee, including any applicable taxes.
+    </ResponseField>
+    <ResponseField name="units" type="string" required>
+      The number of units used to charge the customer. This field indicates the quantity or count of units consumed or utilized in the context of the charge. It helps in determining the basis for calculating the fee or cost associated with the usage of the service or product provided to the customer.
+    </ResponseField>
+    <ResponseField name="events_count" type="integer">
+      The number of events that have been sent and used to charge the customer. This field indicates the count or quantity of events that have been processed and considered in the charging process.
+    </ResponseField>
+    <ResponseField name="from_date" type="string">
+      The beginning date of the period that the fee covers. It is applicable only to `subscription` and `charge` fees. This field indicates the start date of the billing period or subscription period associated with the fee.
+    </ResponseField>
+    <ResponseField name="to_date" type="string">
+      The ending date of the period that the fee covers. It is applicable only to `subscription` and `charge` fees. This field indicates the end date of the billing period or subscription period associated with the fee.
+    </ResponseField>
+    <ResponseField name="payment_status" type="string" required>
+      Indicates the payment status of the fee. It represents the current status of the payment associated with the fee. 
+      The possible values for this field are `pending`, `succeeded`, `failed`, and `refunded`.
+    </ResponseField>
+    <ResponseField name="pay_in_advance" type="boolean" required>
+      Flag that indicates whether the fee was paid in advance. It serves as a boolean value, where `true` represents that the 
+      fee was paid in advance (straightaway), and `false` indicates that the fee was not paid in arrears (at the end of the period).
+    </ResponseField>
+    <ResponseField name="invoiceable" type="boolean" required>
+      Flag that indicates whether the fee was included on the invoice. It serves as a boolean value, where `true` represents 
+      that the fee was included on the invoice, and `false` indicates that the fee was not included on the invoice.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      The date and time when the fee was created. It is provided in Coordinated Universal Time (UTC) format.
+    </ResponseField>
+    <ResponseField name="succeeded_at" type="string">
+      The date and time when the payment for the fee was successfully processed. It is provided in Coordinated Universal Time (UTC) format.
+    </ResponseField>
+    <ResponseField name="failed_at" type="string">
+      The date and time when the payment for the fee failed to process. It is provided in Coordinated Universal Time (UTC) format.
+    </ResponseField>
+    <ResponseField name="refunded_at" type="string">
+      The date and time when the payment for the fee was refunded. It is provided in Coordinated Universal Time (UTC) format
+    </ResponseField>
+    <ResponseField name="external_subscription_id" type="string">
+      Unique identifier assigned to the subscription in your application. This field is specifically displayed when the fee type is 
+      `charge` and the payment for the fee is made in advance (`pay_in_advance` is set to `true`).
+    </ResponseField>
+    <ResponseField name="lago_subscription_id" type="string">
+      Unique identifier assigned to the subscription, created by Lago. This field is specifically displayed when 
+      the fee type is `charge` and the payment for the fee is made in advance (`pay_in_advance` is set to `true`).
+    </ResponseField>
+    <ResponseField name="external_customer_id" type="string">
+      Unique identifier assigned to the customer in your application. This field is specifically displayed when the fee type 
+      is `charge` and the payment for the fee is made in advance (`pay_in_advance` is set to `true`).
+    </ResponseField>
+    <ResponseField name="lago_customer_id" type="string">
+      Unique identifier assigned to the customer, created by Lago. This field is specifically displayed when the fee type is `charge` 
+      and the payment for the fee is made in advance (`pay_in_advance` is set to `true`).
+    </ResponseField>
+    <ResponseField name="event_transaction_id" type="string">
+      Unique identifier assigned to the transaction. This field is specifically displayed when the fee type is `charge` and the 
+      payment for the fee is made in advance (`pay_in_advance` is set to `true`).
+    </ResponseField>
+    <ResponseField name="item" type="object">
+        <Expandable title="item">
+            <ResponseField name="type" type="string" required>
+                The fee type. Possible values are `add-on`, `charge`, `credit` or `subscription`.
+            </ResponseField>
+            <ResponseField name="code" type="string" required>
+                The code of the fee item. It can be the code of the `add-on`, the code of the `charge`, the code of the `credit` or the code of the `subscription`.
+            </ResponseField>
+            <ResponseField name="name" type="string" required>
+                The name of the fee item. It can be the name of the `add-on`, the name of the `charge`, the name of the `credit` or the name of the `subscription`.
+            </ResponseField>
+            <ResponseField name="lago_item_id" type="string" required>
+                Unique identifier of the fee item, created by Lago. It can be the identifier of the add-on, the identifier of the `charge`, the identifier of the `credit` or the identifier of the `subscription`.
+            </ResponseField>
+            <ResponseField name="item_type" type="string" required>
+                The type of the fee item. Possible values are `AddOn`, `BillableMetric`, `WalletTransaction` or `Subscription`.
+            </ResponseField>
+            </Expandable>
+        </ResponseField>
+  </Expandable>
+</ResponseField>
