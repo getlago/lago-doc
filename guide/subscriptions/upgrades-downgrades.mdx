@@ -1,5 +1,46 @@
 ---
 title: "Upgrades and downgrades"
-description: ""
+description: "Customers have the flexibility to easily upgrade or downgrade their plan at any given moment."
 ---
 
+<Tabs>
+  <Tab title="Dashboard">
+    To perform an upgrade or a downgrade through the user interface:
+    1. Access the **"Customers"** section via the side menu;
+    2. Select a customer from the list;
+    3. In the **"Overview"** tab. By clicking the ellipse icon, you can **"Upgrade/downgrade plan"**;
+    5. Give a name to the new subscription (name that will be displayed on the invoice - optional); and
+    9. Click **"Upgrade/downgrade plan"** to confirm.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Upgrade or downgrade a subscription
+    curl --request POST \
+    --url https://api.getlago.com/api/v1/subscriptions \
+    --header 'Bearer: <bearer>' \
+    --data '{
+        "subscription": {
+            "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+            "plan_code": "new_plan",
+            "external_id": "my_new_sub_123456789"
+            }
+        }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Upgrades behavior
+An upgrade takes place when the subscription fee of the new plan surpasses the subscription fee of the previous plan, 
+regardless of the pricing for usage-based charges.
+
+When a subscription is upgraded:
+- Lago promptly applies the new plan to the customer; and
+- In the case of a subscription that is paid in advance (at the beginning of the period), Lago issues a credit note for the unused days from the former plan.
+
+## Downgrades behavior
+A downgrade takes place when the subscription fee of the new plan is lower than the subscription fee of the previous plan, 
+regardless of the pricing for usage-based charges.
+
+When a subscription is downgraded:
+- The new plan is applied at the end of the current billing period to ensure that your customer fully benefits from the plan they have already paid for. The newly applied plan will be in a pending state.
