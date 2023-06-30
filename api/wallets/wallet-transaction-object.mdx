@@ -1,11 +1,10 @@
 ---
-title: "Wallet transaction object"
-description: "This object represents a wallet transaction object."
+title: "The wallet transaction object"
+description: "This object represents a wallet transaction. It is used for topping up or voiding prepaid credits."
 ---
 
-## Schema[](#schema "Direct link to heading")
-
-```json
+<RequestExample>
+```json The wallet transaction object
 {
   "wallet_transaction": {
     "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac1111",
@@ -19,14 +18,35 @@ description: "This object represents a wallet transaction object."
   }
 }
 ```
+</RequestExample>
 
-| Attributes                                                                    | Description                                                                                          |
-| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **lago_id** `String` Not null                                                 | Unique identifier of the wallet transaction in Lago application.                                     |
-| **lago_wallet_id** `String` Not null                                          | Internal Lago wallet ID.                                                                             |
-| **status** `String` Not null                                                  | Status. **Possible values**\- pending\- settled                                                      |
-| **transaction_type** `String` Not null                                        | Transaction type. **Possible values**\- inbound (increasing balance)\- outbound (decreasing balance) |
-| **credit_amount** `String` Not null                                           | Credits amount.                                                                                      |
-| **amount** `String` Not null                                                  | Amount based on rate and currency.                                                                   |
-| **created_at** `String` Not null <br /> <sub>_ISO 8601 datetime in UTC_</sub> | Date of wallet transaction creation.                                                                 |
-| **settled_at** `String` <br /> <sub>_ISO 8601 datetime in UTC_</sub>          | Date the transaction was settled.                                                                    |
+## Attributes
+
+<ResponseField name="wallet_transaction" type="object">
+  <Expandable title="object" defaultOpen="true">
+    <ResponseField name="lago_id" type="string" required>
+      Unique identifier assigned to the wallet transaction within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the wallet transaction’s record within the Lago system.
+    </ResponseField>
+    <ResponseField name="lago_wallet_id" type="string" required>
+      Unique identifier assigned to the wallet within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the wallet’s record within the Lago system.
+    </ResponseField>
+    <ResponseField name="status" type="string" required>
+      The status of the wallet transaction. Possible values are `pending` or `settled`.
+    </ResponseField>
+    <ResponseField name="transaction_type" type="string" required>
+      The type of transaction. Possible values are `inbound` (increasing the balance) or `outbound` (decreasing the balance).
+    </ResponseField>
+    <ResponseField name="credit_amount" type="string" required>
+      The number of credits used in the wallet transaction.
+    </ResponseField>
+    <ResponseField name="amount" type="string" required>
+      The amount of credits based on the rate and the currency.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" required>
+      The date of the wallet transaction creation, represented in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).
+    </ResponseField>
+    <ResponseField name="settled_at" type="string">
+      The date when wallet transaction is settled, represented in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
