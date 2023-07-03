@@ -1,3 +1,419 @@
 ---
 openapi: "PUT /plans/{code}"
+authMethod: bearer
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "plan": {
+    "name": "Basic",
+    "code": "basic",
+    "interval": "yearly",
+    "description": "This is a basic plan description",
+    "amount_cents": 90000,
+    "amount_currency": "USD",
+    "trial_period": 3.0,
+    "pay_in_advance": true,
+    "bill_charges_monthly": true,
+    "charges": [
+      {
+        "id": "__CHARGE_ID__",
+        "billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "charge_model": "standard",
+        "pay_in_advance": false,
+        "min_amount_cents": 0,
+        "group_properties": [
+          {
+            group_id: "__GROUP_ID__",
+            values: {
+              "amount": "0.10"
+            }
+          }
+        ]
+      },
+      {
+        "id": "__CHARGE_ID__",
+        "billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "charge_model": "graduated",
+        "pay_in_advance": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "graduated_ranges": [
+            {
+              "to_value": 10,
+              "from_value": 0,
+              "flat_amount": "0",
+              "per_unit_amount": "0.00010"
+            },
+            {
+              "to_value": null,
+              "from_value": 11,
+              "flat_amount": "0",
+              "per_unit_amount": "0.0005"
+            }
+          ]
+        }
+      },
+      {
+        "id": "__CHARGE_ID__",
+        "billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "charge_model": "package",
+        "pay_in_advance": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "amount": "100",
+          "free_units": 10000,
+          "package_size": 1000
+        }
+      },
+      {
+        "id": "__CHARGE_ID__",
+        "billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "charge_model": "percentage",
+        "pay_in_advance": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "rate": "0.5",
+          "fixed_amount": "1",
+          "free_units_per_events": 3,
+          "free_units_per_total_aggregation": null
+        }
+      },
+      {
+        "id": "__CHARGE_ID__",
+        "billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "charge_model": "volume",
+        "pay_in_advance": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "volume_ranges": [
+            {
+              "to_value": 10,
+              "from_value": 0,
+              "flat_amount": "0",
+              "per_unit_amount": "0.00010"
+            },
+            {
+              "to_value": null,
+              "from_value": 11,
+              "flat_amount": "0",
+              "per_unit_amount": "0.0005"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import Plan, Charges, Charge
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+standard_charge = Charge(
+  id='id',
+  billable_metric_id='id',
+  charge_model='standard',
+  group_properties=[
+    {
+      group_id='group_id',
+      values={
+        'amount': '0.22'
+      }
+    }
+  ]
+)
+
+graduated_charge = Charge(
+  id='id',
+  billable_metric_id='id,
+  charge_model='graduated',
+  properties=[
+    {
+      'to_value': 10,
+      'from_value': 0,
+      'flat_amount': '0',
+      'per_unit_amount': '0.00010'
+    },
+    {
+      'to_value': None,
+      'from_value': 11,
+      'flat_amount': "0",
+      'per_unit_amount': '0.0005'
+    }
+  ]
+)
+
+package_charge = Charge(
+  id='id',
+  billable_metric_id='id,
+  charge_model='package',
+  properties={
+    'amount': '100',
+    'free_units': 10000,
+    'package_size': 1000
+  }
+)
+
+percentage_charge = Charge(
+  id='id',
+  billable_metric_id='id,
+  charge_model='percentage',
+  properties={
+    'rate': '0.5',
+    'fixed_amount': '1',
+    'free_units_per_events': 3,
+    'free_units_per_total_aggregation': None
+  }
+)
+
+volume_charge = Charge(
+  id='id',
+  billable_metric_id='id,
+  charge_model='volume',
+  properties={
+    'volume_ranges': [
+      {
+        'to_value': 10,
+        'from_value': 0,
+        'flat_amount': '0',
+        'per_unit_amount': '0.00010'
+      },
+      {
+        'to_value': None,
+        'from_value': 11,
+        'flat_amount': '0',
+        'per_unit_amount': '0.0005'
+      }
+    ]
+  }
+)
+
+charges = Charges(__root__=[
+  standard_charge,
+  graduated_charge,
+  package_charge,
+  percentage_charge,
+  volume_charge
+])
+
+plan = Plan(
+  name='name',
+  code='code_first',
+  amount_cents=1000,
+  amount_currency='EUR',
+  description='desc',
+  interval='weekly',
+  pay_in_advance=True,
+  charges=charges
+)
+
+try:
+    client.plans.update(plan, "__identifier__")
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+
+plan = {
+  name: 'plan name',
+  code: 'code',
+  interval: 'monthly',
+  description: 'description',
+  amount_cents: 100,
+  amount_currency: 'EUR',
+  pay_in_advance: false,
+  charges: charges: [
+    {
+      id: 'id',
+      billable_metric_id: 'id',
+      charge_model: 'standard',
+      group_properties: [
+        {
+          group_id: 'group_id',
+          values: {
+            amount: '0.10'
+          }
+        }
+      ]
+    },
+    {
+      id: 'id',
+      billable_metric_id: 'id',
+      charge_model: 'graduated',
+      properties: [
+        {
+          to_value: 10,
+          from_value: 0,
+          flat_amount: '0',
+          per_unit_amount: '0.00010'
+        },
+        {
+          to_value: nil,
+          from_value: 11,
+          flat_amount: '0',
+          per_unit_amount: '0.0005'
+        }
+      ]
+    },
+    {
+      id: 'id',
+      billable_metric_id: 'id',
+      charge_model: 'package',
+      properties: {
+        amount: '100',
+        free_units: 10000,
+        package_size: 1000
+      }
+    },
+    {
+      id: 'id',
+      billable_metric_id: 'id',
+      charge_model: 'percentage',
+      properties: {
+        rate: '0.5',
+        fixed_amount: '1',
+        free_units_per_events: 3,
+        free_units_per_total_aggregation: nil
+      }
+    },
+    {
+      id: 'id',
+      billable_metric_id: 'id',
+      charge_model: 'volume',
+      properties: {
+        volume_ranges: [
+          {
+            to_value: 10,
+            from_value: 0,
+            flat_amount: '0',
+            per_unit_amount: '0.00010'
+          },
+          {
+            to_value: nil,
+            from_value: 11,
+            flat_amount: '0',
+            per_unit_amount: '0.0005'
+          }
+        ]
+      }
+    }
+  ]
+}
+
+client.plans.update(plan, "__identifier__")
+```
+
+```js Node.js
+await client.plans.updatePlan("code", { plan: { amountCents: 2000 } });
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+planInput := &lago.PlanInput{
+    Name:           "Plan Go",
+    Code:           "plan_go",
+    Interval:       lago.PlanMonthly,
+    PayInAdvance:   true,
+    AmountCents:    1500,
+    AmountCurrency: lago.EUR,
+}
+
+planResult, err := lagoClient.Plan().Update(planInput)
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// plan is *lago.Plan
+fmt.Println(plan)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class UpdatePlanExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new PlansApi(Configuration.Default);
+          var code = "example_code";  // string | Code of the existing plan
+          var planInput = new PlanInput(); // PlanInput | Update an existing plan
+
+          try
+          {
+              // Update an existing plan
+              Plan result = apiInstance.UpdatePlan(code, planInput);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling PlansApi.UpdatePlan: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\PlansApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$code = "example_code"; // string | Code of the existing plan
+$plan_input = new \OpenAPI\Client\Model\PlanInput(); // \OpenAPI\Client\Model\PlanInput | Update an existing plan
+
+try {
+  $result = $apiInstance->updatePlan($code, $plan_input);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling PlansApi->updatePlan: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>
