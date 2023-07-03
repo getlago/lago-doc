@@ -1,11 +1,10 @@
 ---
-title: "Plan object"
-description: "This object represents a plan."
+title: "The plan object"
+description: "This object represents a plan. This plan can then be assigned to a customer."
 ---
 
-## Schema[](#schema "Direct link to heading")
-
-```json
+<RequestExample>
+```json The plan object
 {
   "plan": {
     "lago_id": "6bcba20e-cbc8-4975-a47b-2055eef34b22",
@@ -19,12 +18,18 @@ description: "This object represents a plan."
     "trial_period": 3.0,
     "pay_in_advance": true,
     "bill_charges_monthly": true,
+    "active_subscriptions_count": 0,
+    "draft_invoices_count": 0,
     "charges": [
       {
         "lago_id": "27f12d13-4ae0-437b-b822-8771bcd62e3a",
         "lago_billable_metric_id": "b09ce382-ce87-4da4-89f2-78b2060689fc",
+        "billable_metric_code": "bm_code",
         "created_at": "2022-08-24T14:58:59Z",
         "charge_model": "standard",
+        "pay_in_advance": false,
+        "invoiceable": true,
+        "min_amount_cents": 0,
         "group_properties": [
           {
             "group_id": "12345678-4ae0-437b-b822-8771bcd62e3a",
@@ -37,8 +42,12 @@ description: "This object represents a plan."
       {
         "lago_id": "e530f658-c06a-44bb-a413-1fbe3796adb4",
         "lago_billable_metric_id": "b09ce382-ce87-4da4-89f2-78b2060689fc",
+        "billable_metric_code": "bm_code",
         "created_at": "2022-08-24T14:58:59Z",
         "charge_model": "graduated",
+        "pay_in_advance": false,
+        "invoiceable": true,
+        "min_amount_cents": 0,
         "properties": {
           "graduated_ranges": [
             {
@@ -59,8 +68,12 @@ description: "This object represents a plan."
       {
         "lago_id": "108051fc-c71b-47b4-bd86-47436ea6b639",
         "lago_billable_metric_id": "b09ce382-ce87-4da4-89f2-78b2060689fc",
+        "billable_metric_code": "bm_code",
         "created_at": "2022-08-24T14:58:59Z",
         "charge_model": "package",
+        "pay_in_advance": false,
+        "invoiceable": true,
+        "min_amount_cents": 0,
         "properties": {
           "amount": "100",
           "free_units": 10000,
@@ -70,8 +83,12 @@ description: "This object represents a plan."
       {
         "lago_id": "88b878e2-4ba4-4f37-98c9-ca8522a9e574",
         "lago_billable_metric_id": "b09ce382-ce87-4da4-89f2-78b2060689fc",
+        "billable_metric_code": "bm_code",
         "created_at": "2022-08-24T14:58:59Z",
         "charge_model": "percentage",
+        "pay_in_advance": false,
+        "invoiceable": true,
+        "min_amount_cents": 0,
         "properties": {
           "rate": "0.5",
           "fixed_amount": "1",
@@ -82,8 +99,12 @@ description: "This object represents a plan."
       {
         "lago_id": "e530f658-c06a-44bb-a413-1fbe3796555",
         "lago_billable_metric_id": "b09ce382-ce87-4da4-89f2-78b2060689fc",
+        "billable_metric_code": "bm_code",
         "created_at": "2022-08-24T14:58:59Z",
         "charge_model": "volume",
+        "pay_in_advance": false,
+        "invoiceable": true,
+        "min_amount_cents": 0,
         "properties": {
           "volume_ranges": [
             {
@@ -105,94 +126,163 @@ description: "This object represents a plan."
   }
 }
 ```
+</RequestExample>
 
-### Plan attributes[](#plan-attributes "Direct link to heading")
+## Attributes
 
-| Attributes                                                                    | Description                                                                                                         |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **lago_id** `String` Not null                                                 | Unique identifier of the plan in Lago application.                                                                  |
-| **name** `String` Not null                                                    | Plan name.                                                                                                          |
-| **created_at** `String` Not null <br /> <sub>_ISO 8601 datetime in UTC_</sub> | Date of plan creation.                                                                                              |
-| **code** `String` Not null                                                    | Code identifying the plan.                                                                                          |
-| **interval** `String` Not null                                                | Interval that applies on subscription and specifies billing period. **Possible values**\- yearly\- weekly\- monthly |
-| **description** `String`                                                      | Plan description.                                                                                                   |
-| **amount_cents** `Integer` Not null                                           | Amount in cents.                                                                                                    |
-| **amount_currency** `String` Not null                                         | Currency of the amount.                                                                                             |
-| **trial_period** `Float`                                                      | Number of days for free trial.                                                                                      |
-| **pay_in_advance** `Boolean`                                                  | Value should be true for payment in advance and false for payment in arrear.                                        |
-| **bill_charges_monthly** `Boolean`                                            | It should be set to true if monthly billing is needed on yearly plan.                                               |
-
-### Charge attributes[](#charge-attributes "Direct link to heading")
-
-| Attributes                                                                    | Description                                                                                                         |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **lago_id** `String` Not null                                                 | Unique identifier of the charge in Lago application.                                                                |
-| **lago_billable_metric_id** `String` Not null                                 | Unique identifier of the related billable metric in Lago application.                                               |
-| **created_at** `String` Not null <br /> <sub>_ISO 8601 datetime in UTC_</sub> | Date of charge creation.                                                                                            |
-| **charge_model** `String` Not null                                            | Charge model used in event calculations. **Possible values**\- standard\- graduated\- package\- percentage\- volume |
-| **properties** `JSON`                                                         | Extra data. This field will depend on selected charge_model                                                         |
-| **group_properties** `Array`                                                  | Extra data scoped by groups. This field will depend on selected charge_model                                        |
-
-### Group Properties[](#group-properties "Direct link to heading")
-
-| Attributes                     | Description                                                           |
-| ------------------------------ | --------------------------------------------------------------------- |
-| **group_id** `String` Not null | Group id in lago application                                          |
-| **values** `JSON` Not null     | Extra data. This field will depend on selected charge_model and group |
-
-#### Standard charge model[](#standard-charge-model "Direct link to heading")
-
-| Attributes                                                     | Description                  |
-| -------------------------------------------------------------- | ---------------------------- |
-| **amount** `String` Not null <br /> <sub>_Decimal value_</sub> | Price of one aggregated unit |
-
-#### Graduated charge model[](#graduated-charge-model "Direct link to heading")
-
-- Model:
-
-| Attributes                                      | Description                                            |
-| ----------------------------------------------- | ------------------------------------------------------ |
-| **graduated_ranges** `Array of ranges` Not null | Graduated ranges, sorted from bottom to top boundaries |
-
-- Graduated Ranges:
-
-| Attributes                                                              | Description                                                                                       |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **from_value** `Integer` Not null                                       | Lower value of the range.\- Must be 0 or previous range to_value + 1                              |
-| **to_value** `Integer`                                                  | Top value of the range.\- Must be higher than the range from_value.\- Must be null on last range. |
-| **per_unit_amount** `String` Not null <br /> <sub>_Decimal value_</sub> | Amount to apply to each aggregated unit between the boundaries                                    |
-| **flat_amount** `String` Not null <br /> <sub>_Decimal value_</sub>     | Flat amount to add to the result if the range is reached                                          |
-
-#### Package charge model[](#package-charge-model "Direct link to heading")
-
-| Attributes                                                   | Description                                                             |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| **amount** String Not null <br /> <sub>_Decimal value_</sub> | Price of one package                                                    |
-| **package_size** `Integer` Not null                          | Number of aggregated units per package.                                 |
-| **free_units** Integer Not null                              | Number of aggregated units to exclude before applying the charge model. |
-
-#### Percentage charge model[](#percentage-charge-model "Direct link to heading")
-
-| Attributes                                                                      | Description                                                       |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| **rate** `String` Not null <br /> <sub>_Decimal value_</sub>                    | Charge rate that applies to the total amount                      |
-| **fixed_amount** `String` <br /> <sub>_Decimal value_</sub>                     | Fee that applies to each event ingested during the billing period |
-| **free_units_per_events** `Integer`                                             | Number of events that are not subject to the fixed fee            |
-| **free_units_per_total_aggregation** `String` <br /> <sub>_Decimal value_</sub> | Amount that is not subject to the charge rate                     |
-
-#### Volume charge model[](#volume-charge-model "Direct link to heading")
-
-- Model:
-
-| Attributes                                   | Description                                         |
-| -------------------------------------------- | --------------------------------------------------- |
-| **volume_ranges** `Array of ranges` Not null | Volume ranges, sorted from bottom to top boundaries |
-
-- Volume Ranges:
-
-| Attributes                                                              | Description                                                                                       |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **from_value** `Integer` Not null                                       | Lower value of the range.\- Must be 0 or previous range to_value + 1                              |
-| **to_value** `Integer`                                                  | Top value of the range.\- Must be higher than the range from_value.\- Must be null on last range. |
-| **per_unit_amount** `String` Not null <br /> <sub>_Decimal value_</sub> | Amount to apply to each aggregated unit                                                           |
-| **flat_amount** `String` Not null <br /> <sub>_Decimal value_</sub>     | Flat amount to add to the result if the range is reached                                          |
+<ResponseField name="plan" type="object">
+  <Expandable title="object" defaultOpen="true">
+    <ResponseField name="lago_id" type="string" required>
+      Unique identifier of the plan created by Lago.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" required>
+      The date and time when the plan was created. It is expressed in UTC format according to the ISO 8601 datetime standard. This field provides the timestamp for the exact moment when the plan was initially created.
+    </ResponseField>
+    <ResponseField name="name" type="string" required>
+      The name of the plan.
+    </ResponseField>
+    <ResponseField name="code" type="string" required>
+      The code of the plan. It serves as a unique identifier associated with a particular plan. The code is typically used for internal or system-level identification purposes, like assigning a subscription, for instance.
+    </ResponseField>
+    <ResponseField name="interval" type="string" required>
+      The interval used for recurring billing. It represents the frequency at which subscription billing occurs. The interval can be one of the following values: `yearly`, `monthly`, or `weekly`.
+    </ResponseField>
+    <ResponseField name="description" type="string">
+      The description on the plan.
+    </ResponseField>
+    <ResponseField name="amount_cents" type="integer" required>
+      The base cost of the plan, excluding any applicable taxes, that is billed on a recurring basis. This value is defined at 0 if your plan is a pay-as-you-go plan.
+    </ResponseField>
+    <ResponseField name="amount_currency" type="string" required>
+      The currency of the plan. It indicates the monetary unit in which the plan's cost, including taxes and usage-based charges, is expressed.
+    </ResponseField>
+    <ResponseField name="trial_period" type="float">
+      The duration in days during which the base cost of the plan is offered for free.
+    </ResponseField>
+    <ResponseField name="pay_in_advance" type="boolean" required>
+      This field determines the billing timing for the plan. When set to `true`, the base cost of the plan is due at the beginning of each billing period. Conversely, when set to `false`, the base cost of the plan is due at the end of each billing period.
+    </ResponseField>
+    <ResponseField name="bill_charges_monthly" type="boolean">
+      This field, when set to `true`, enables to invoice usage-based charges on monthly basis, even if the cadence of the plan is `yearly`. This allows customers to pay charges overage on a monthly basis. This can be set to true only if the plan’s interval is `yearly`.
+    </ResponseField>
+    <ResponseField name="active_subscriptions_count" type="integer" required>
+      The count of active subscriptions that are currently associated with the plan. This field provides valuable information regarding the impact of deleting the plan. By checking the value of this field, you can determine the number of subscriptions that will be affected if the plan is deleted.
+    </ResponseField>
+    <ResponseField name="draft_invoices_count" type="integer" required>
+      The number of draft invoices that include a subscription attached to the plan. This field provides valuable information about the impact of deleting the plan. By checking the value of this field, you can determine the number of draft invoices that will be affected if the plan is deleted.
+    </ResponseField>
+    <ResponseField name="draft_invoices_count" type="integer" required>
+      The number of draft invoices that include a subscription attached to the plan. This field provides valuable information about the impact of deleting the plan. By checking the value of this field, you can determine the number of draft invoices that will be affected if the plan is deleted.
+    </ResponseField>
+    <ResponseField name="charges" type="array">
+      <Expandable title="charges">
+        <ResponseField name="lago_id" type="string" required>
+          Unique identifier of charge, created by Lago.
+        </ResponseField>
+        <ResponseField name="lago_billable_metric_id" type="string" required>
+          Unique identifier of the billable metric created by Lago.
+        </ResponseField>
+        <ResponseField name="billable_metric_code" type="string" required>
+          Unique code identifying a billable metric.
+        </ResponseField>
+        <ResponseField name="created_at" type="string" required>
+          The date and time when the charge was created. It is expressed in UTC format according to the ISO 8601 datetime standard.
+        </ResponseField>
+        <ResponseField name="charge_model" type="string" required>
+          Specifies the pricing model used for the calculation of the final fee. It can be `standard`, `graduated`, `package`, `percentage`, or `volume`.
+        </ResponseField>
+        <ResponseField name="pay_in_advance" type="boolean">
+          This field determines the billing timing for this specific usage-based charge. When set to `true`, the charge is due and invoiced immediately. Conversely, when set to `false`, the charge is due and invoiced at the end of each billing period.
+        </ResponseField>
+        <ResponseField name="invoiceable" type="boolean">
+          This field specifies whether the charge should be included in a proper invoice. If set to `false`, no invoice will be issued for this charge. You can only set it to `false` when `pay_in_advance` is `true`.
+        </ResponseField>
+        <ResponseField name="min_amount_cents" type="integer">
+          The minimum spending amount required for the charge, measured in cents and excluding any applicable taxes. It indicates the minimum amount that needs to be charged for each billing period.
+        </ResponseField>
+        <ResponseField name="min_amount_cents" type="integer">
+          The minimum spending amount required for the charge, measured in cents and excluding any applicable taxes. It indicates the minimum amount that needs to be charged for each billing period.
+        </ResponseField>
+        <ResponseField name="properties" type="JSON">
+          <Expandable>
+            ### Case of groups and dimensions
+            <ResponseField name="group_properties" type="array">
+              <Expandable>
+                <ResponseField name="group_id" type="string">
+                  Unique identifier of a billable metric group, created by Lago.
+                </ResponseField>
+                <ResponseField name="values" type="string">
+                  List of all thresholds utilized for calculating a charge, scoped by groups used as dimensions for a single charge.
+                </ResponseField>
+                <ResponseField name="amount" type="string" required>
+                  The unit price, excluding tax, for a standard charge model. It is expressed as a decimal value.
+                </ResponseField>
+              </Expandable>
+            </ResponseField>
+            ### Case of graduate pricing model
+            <ResponseField name="graduated_ranges" type="array" required>
+              <Expandable>
+                <ResponseField name="from_value" type="integer" required>
+                  Specifies the lower value of a tier for a `graduated` charge model. It must be either 0 or the previous range's `to_value + 1` to maintain the proper sequence of values.
+                </ResponseField>
+                <ResponseField name="to_value" type="integer" required>
+                  Specifies the highest value of a tier for a `graduated` charge model. 
+                  - This value must be higher than the `from_value` of the same tier.
+                  - This value must be `null` for the last tier.
+                </ResponseField>
+                <ResponseField name="per_unit_amount" type="string" required>
+                  The unit price, excluding tax, for a specific tier of a `graduated` charge model. It is expressed as a decimal value.
+                </ResponseField>
+                <ResponseField name="flat_amount" type="string" required>
+                  The flat amount for a whole tier, excluding tax, for a `graduated` charge model. It is expressed as a decimal value.
+                </ResponseField>
+              </Expandable>
+            </ResponseField>
+            ### Case of package pricing model
+            <ResponseField name="amount" type="string" required>
+              The amount, excluding tax, for a complete set of units in a `package` charge model. It is expressed as a decimal value.
+            </ResponseField>
+            <ResponseField name="package_size" type="integer" required>
+              The quantity of units included in each pack or set for a `package` charge model. It indicates the number of units that are bundled together as a single package or set within the pricing structure.
+            </ResponseField>
+            <ResponseField name="free_units" type="integer" required>
+              The quantity of units that are provided free of charge for each billing period in a `package` charge model. This field specifies the number of units that customers can use without incurring any additional cost during each billing cycle.
+            </ResponseField>
+            ### Case of percentage pricing model
+            <ResponseField name="rate" type="string" required>
+              The percentage rate that is applied to the amount of each transaction for a `percentage` charge model. It is expressed as a decimal value.
+            </ResponseField>
+            <ResponseField name="fixed_amount" type="string">
+              The fixed fee that is applied to each transaction for a `percentage` charge model. It is expressed as a decimal value.
+            </ResponseField>
+            <ResponseField name="free_units_per_events" type="integer" required>
+              The count of transactions that are not impacted by the `percentage` rate and fixed fee in a percentage charge model. This field indicates the number of transactions that are exempt from the calculation of charges based on the specified percentage rate and fixed fee.
+            </ResponseField>
+            <ResponseField name="free_units_per_total_aggregation" type="integer" required>
+              The transaction amount that is not impacted by the `percentage` rate and fixed fee in a percentage charge model. This field indicates the portion of the transaction amount that is exempt from the calculation of charges based on the specified percentage rate and fixed fee.
+            </ResponseField>
+            ### Case of volume pricing model
+            <ResponseField name="volume_ranges" type="array" required>
+              <Expandable>
+                <ResponseField name="from_value" type="integer" required>
+                  Specifies the lower value of a tier for a `volume` charge model. It must be either 0 or the previous range's to_value + 1 to maintain the proper sequence of values.
+                </ResponseField>
+                <ResponseField name="to_value" type="integer" required>
+                  Specifies the highest value of a tier for a `volume` charge model. 
+                    - This value must be higher than the `from_value` of the same tier.
+                    - This value must be `null` for the last tier.
+                </ResponseField>
+                <ResponseField name="per_unit_amount" type="string" required>
+                  The unit price, excluding tax, for a specific tier of a `volume` charge model. It is expressed as a decimal value.
+                </ResponseField>
+                <ResponseField name="flat_amount" type="string" required>
+                  The flat amount for a whole tier, excluding tax, for a `volume` charge model. It is expressed as a decimal value.
+                </ResponseField>
+              </Expandable>
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
