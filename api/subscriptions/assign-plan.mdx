@@ -2,3 +2,168 @@
 openapi: "POST /subscriptions"
 authMethod: "bearer"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "subscription": {
+      "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+      "plan_code": "startup_plan",
+      "external_id": "sub_id_123456789",
+      "name": "Repository A",
+      "subscription_at": "2022-08-08T00:00:00Z",
+      "billing_time": "anniversary"
+    }
+  }'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import Subscription
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+subscription = Subscription(
+  external_customer_id="5eb02857-a71e-4ea2-bcf9-57d8885990ba",
+  plan_code="startup_plan",
+  external_id="sub_id_123456789",
+  name="Repository A",
+  subscription_at="2022-08-08T00:00:00Z",
+  billing_time="anniversary"
+)
+
+try:
+    client.subscriptions.create(subscription)
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+
+client.subscriptions.create(
+  external_customer_id: "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+  plan_code: "startup_plan",
+  external_id: "sub_id_123456789",
+  name: "Repository A",
+  subscription_at: "2022-08-08T00:00:00Z",
+  billing_time: "anniversary"
+)
+```
+
+```js Javascript
+import { Client, SubscriptionObject } from "lago-javascript-client";
+
+const subscriptionObject = {
+  externalCustomerId: "5eb02857-a71e-4ea2-bcf9-57d8885990ba",
+  planCode: "statup_plan",
+  externalId: "sub_id_123456789",
+  name: "Repository A",
+  subscriptionAt: "2022-08-08T00:00:00Z",
+  billingTime: "anniversary" as SubscriptionObject["billingTime"],
+};
+
+await client.subscriptions.createSubscription({
+  subscription: subscriptionObject,
+});
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+subscriptionInput := &lago.SubscriptionInput{
+    ExternalCustomerID: "5eb02857-a71e-4ea2-bcf9-57d8885990ba",
+    PlanCode:           "startup_plan",
+    SubscriptionAt:     "2022-08-08T00:00:00Z",
+    BillingTime:        lago.Anniversary,
+}
+
+subscription, err := lagoClient.Subscription().Create(subscriptionInput)
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// subscription is *lago.Subscription
+fmt.Println(subscription)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class CreateSubscriptionExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new SubscriptionsApi(Configuration.Default);
+          var subscriptionCreateInput = new SubscriptionCreateInput(); // SubscriptionCreateInput | Subscription payload
+
+          try
+          {
+              // Assign a plan to a customer
+              Subscription result = apiInstance.CreateSubscription(subscriptionCreateInput);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling SubscriptionsApi.CreateSubscription: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\SubscriptionsApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$subscription_create_input = new \OpenAPI\Client\Model\SubscriptionCreateInput(); // \OpenAPI\Client\Model\SubscriptionCreateInput | Subscription payload
+
+try {
+  $result = $apiInstance->createSubscription($subscription_create_input);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling SubscriptionsApi->createSubscription: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>
