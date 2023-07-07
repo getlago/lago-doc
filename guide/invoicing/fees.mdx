@@ -3,12 +3,13 @@ title: "Fees"
 description: "A fee is a line item in an invoice."
 ---
 
-There are two types of fees:
+There are few types of fees:
 
-- **Subscription fees** that correspond to the base amount of the plan; 
+- **Subscription fees** that correspond to the base amount of the plan;
 - **Charge fees** that correspond to usage-based charges (i.e. the costs
-  associated with each billable metric); and
-- **True-up fees** that correspond to usage-based charges that don't meet the required spending minimum.
+  associated with each billable metric), this fee can be linked to a true-up fee;
+- **Add-on fees** that correspond to a line item appearing in a one off invoice; and
+- **Credit** that correspond to line item appearing in credit notes.
 
 Information about fees includes (but is not limited to):
 
@@ -17,104 +18,57 @@ Information about fees includes (but is not limited to):
 - Currency; and
 - Taxes.
 
-The fee object is embedded in the invoice object, as illustrated below:
+The fee object is embedded within an invoice or credit note object, making it retrievable on its own.
+This is illustrated below.:
 
 ```json
 {
-  "invoice": {
-    "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-    "sequential_id": 2,
-    "number": "LAG-1234-001-002",
-    "issuing_date": "2022-04-30",
-    "invoice_type": "subscription",
-    "status": "finalized",
-    "payment_status": "succeeded",
-    "currency": "EUR",
-    "fees_amount_cents": 100,
-    "vat_amount_cents": 20,
-    "coupons_amount_cents": 10,
-    "credit_notes_amount_cents": 10,
-    "sub_total_vat_excluded_amount_cents": 100,
-    "sub_total_vat_included_amount_cents": 120,
-    "total_amount_cents": 100,
-    "file_url": "https://getlago.com/invoice/file",
-    "legacy": false,
-    "customer": {
-      "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
-      "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-      "address_line1": "5230 Penfield Ave",
-      "address_line2": null,
-      "city": "Woodland Hills",
-      "country": "US",
-      "created_at": "2022-04-29T08:59:51Z",
-      "email": "dinesh@piedpiper.test",
-      "legal_name": "Coleman-Blair",
-      "legal_number": "49-008-2965",
-      "logo_url": "http://hooli.com/logo.png",
-      "name": "Gavin Belson",
-      "phone": "1-171-883-3711 x245",
-      "state": "CA",
-      "url": "http://hooli.com",
-      "vat_rate": 20.0,
-      "zipcode": "91364"
+  "fee": {
+    "lago_id": "e7e0ee24-7ef3-4b19-8bbf-fb0e75f5c79b",
+    "lago_group_id": null,
+    "lago_invoice_id": "ffbafe19-2b8d-4376-9510-314566b90724",
+    "lago_true_up_fee_id": null,
+    "lago_true_up_parent_fee_id": null,
+    "item": {
+      "type": "add_on",
+      "code": "test",
+      "name": "Test ",
+      "lago_item_id": "1e8d90cb-e305-438b-86b5-a566e97209d0",
+      "item_type": "AddOn"
     },
-    "subscriptions": [
+    "pay_in_advance": false,
+    "invoiceable": true,
+    "amount_cents": 10000,
+    "amount_currency": "USD",
+    "taxes_amount_cents": 3000,
+    "taxes_rate": 30.0,
+    "total_amount_cents": 13000,
+    "total_amount_currency": "USD",
+    "units": "1.0",
+    "description": "",
+    "unit_amount_cents": 10000,
+    "events_count": null,
+    "payment_status": "pending",
+    "created_at": "2023-07-06T21:01:41Z",
+    "succeeded_at": null,
+    "failed_at": null,
+    "refunded_at": null,
+    "vat_amount_cents": 3000,
+    "vat_amount_currency": "USD",
+    "applied_taxes": [
       {
-          "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
-          "external_id": "susbcription_external_id",
-          "lago_customer_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
-          "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-          "canceled_at": "2022-04-29T08:59:51Z",
-          "created_at": "2022-04-29T08:59:51Z",
-          "plan_code": "new_code",
-          "started_at": "2022-04-29T08:59:51Z",
-          "status": "active",
-          "terminated_at": null
-      }
-    ],
-    "fees": [
-      {
-        "lago_id": "6be23c42-47d2-45a3-9770-5b3572f225c3",
-        "lago_group_id": null,
-        "lago_true_up_fee_id": null,
-        "lago_true_up_parent_fee_id": null,
-        "item": {
-          "type": "subscription",
-          "code": "plan_code",
-          "name": "Plan"
-        },
-        "amount_cents": 100,
-        "amount_currency": "EUR",
-        "vat_amount_cents": 20,
-        "vat_amount_currency": "EUR",
-        "total_amount_cents": 120,
-        "total_amount_currency": "EUR",
-        "units": "0.32",
-        "events_count": 23
+        "lago_id": "3bdac336-af27-4be4-a4a5-58433f401708",
+        "lago_fee_id": "e7e0ee24-7ef3-4b19-8bbf-fb0e75f5c79b",
+        "lago_tax_id": "38325421-2145-4b79-bff1-d38a702afe3a",
+        "tax_name": "TVA",
+        "tax_code": "french_standard_vat",
+        "tax_rate": 20.0,
+        "tax_description": "French standard VAT",
+        "amount_cents": 2000,
+        "amount_currency": "USD",
+        "created_at": "2023-07-06T21:01:41Z"
       }
     ]
-  },
-  "credits": [
-    {
-      "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
-      "item": {
-        "lago_id": "b7ab2926-1de8-4428-9bcd-779314ac129b",
-        "type": "coupon",
-        "code": "coupon_code",
-        "name": "Coupon",
-      },
-      "amount_cents": 100,
-      "amount_currency": "EUR",
-      "before_vat": false
-    }
-  ],
-  "metadata": [
-    {
-      "lago_id": "27f12d13-4ae0-437b-b822-8771bcd62e3a",
-      "key": "digital_ref_id",
-      "value": "INV-0123456-98765",
-      "created_at": "2022-04-29T08:59:51Z"
-    }
-  ]
+  }
 }
 ```
