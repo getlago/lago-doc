@@ -34,26 +34,26 @@ Consider the following example:
       Here are few examples of billable metrics you can create:
       <CodeGroup>
         ```bash Storage example with a single group
-            LAGO_URL="https://api.getlago.com"
-            API_KEY="__YOUR_API_KEY__"
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
 
-            curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-              --header "Authorization: Bearer $API_KEY" \
-              --header 'Content-Type: application/json' \
-              --data-raw '{
-                "billable_metric": {
-                  "name": "Storage",
-                  "code": "storage",
-                  "description": "Number of GB used",
-                  "aggregation_type": "sum_agg",
-                  "field_name": "gb",
-                  "recurring": false,
-                  "group": {
-                    "key": "provider",
-                    "value": ["AWS", "Google", "Azure"]
-                  }
-                }
-              }'
+        curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+          --header "Authorization: Bearer $API_KEY" \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "billable_metric": {
+              "name": "Storage",
+              "code": "storage",
+              "description": "Number of GB used",
+              "aggregation_type": "sum_agg",
+              "field_name": "gb",
+              "recurring": false,
+              "group": {
+                "key": "provider",
+                "value": ["AWS", "Google", "Azure"]
+              }
+            }
+          }'
         ```
       </CodeGroup>
   </Tab>
@@ -69,16 +69,16 @@ curl --location --request POST "$LAGO_URL/api/v1/events" \
 --header "Authorization: Bearer $API_KEY" \
 --header 'Content-Type: application/json' \
 --data-raw '{
-      "event": {
-          "transaction_id": "event_001",
-          "external_customer_id": "customer_1234",
-          "code": "compute",
-          "timestamp": 1668461043,
-          "properties": {
-            "hours": 0.07,
-            "provider": "Azure"
-          }
+    "event": {
+      "transaction_id": "event_001",
+      "external_customer_id": "customer_1234",
+      "code": "compute",
+      "timestamp": 1668461043,
+      "properties": {
+        "hours": 0.07,
+        "provider": "Azure"
       }
+    }
   }'
 ```
 
@@ -112,43 +112,44 @@ for each region available for each provider.
       Here are few examples of billable metrics you can create:
       <CodeGroup>
         ```bash Storage example with a single group
-            LAGO_URL="https://api.getlago.com"
-            API_KEY="__YOUR_API_KEY__"
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
 
-            curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-              --header "Authorization: Bearer $API_KEY" \
-              --header 'Content-Type: application/json' \
-              --data-raw '{
-                "billable_metric": {
-                  "name": "Storage",
-                  "code": "storage",
-                  "description": "Number of GB used",
-                  "aggregation_type": "sum_agg",
-                  "field_name": "gb",
-                  "recurring": false,
-                  "group": {
+        curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+          --header "Authorization: Bearer $API_KEY" \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "billable_metric": {
+              "name": "Storage",
+              "code": "storage",
+              "description": "Number of GB used",
+              "aggregation_type": "sum_agg",
+              "field_name": "gb",
+              "recurring": false,
+              "group": {
+                {
+                  "key": "provider",
+                  "values": [
                     {
-                      "key": "provider",
-                      "values": [
-                        {
-                          "name": "AWS",
-                          "key": "region",
-                          "values": ["Europe", "Africa", "Asia"]
-                        },
-                        {
-                          "name": "Google",
-                          "key": "region",
-                          "values": ["Europe", "North America"]
-                        },
-                        {
-                          "name": "Azure",
-                          "key": "region",
-                          "values": ["North America", "Asia"]
-                        }
-                      ]
+                      "name": "AWS",
+                      "key": "region",
+                      "values": ["Europe", "Africa", "Asia"]
+                    },
+                    {
+                      "name": "Google",
+                      "key": "region",
+                      "values": ["Europe", "North America"]
+                    },
+                    {
+                      "name": "Azure",
+                      "key": "region",
+                      "values": ["North America", "Asia"]
                     }
+                  ]
                 }
-              }'
+              }
+            }
+          }'
         ```
       </CodeGroup>
   </Tab>
@@ -164,19 +165,18 @@ curl --location --request POST "$LAGO_URL/api/v1/events" \
 --header "Authorization: Bearer $API_KEY" \
 --header 'Content-Type: application/json' \
 --data-raw '{
-      "event": {
-          "transaction_id": "event_002",
-          "external_customer_id": "customer_1234",
-          "code": "compute",
-          "timestamp": 1668461044,
-          "properties": {
-            "hours": 0.13,
-            "provider": "AWS",
-            "region": "Europe"
-          }
-      }
-  }'
-
+  "event": {
+    "transaction_id": "event_002",
+    "external_customer_id": "customer_1234",
+    "code": "compute",
+    "timestamp": 1668461044,
+    "properties": {
+      "hours": 0.13,
+      "provider": "AWS",
+      "region": "Europe"
+    }
+  }
+}'
 ```
 
 You can also create billable metrics with dimensions
