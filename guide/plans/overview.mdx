@@ -17,71 +17,72 @@ you must assign a Plan to a customer.
 
 **But first, let's define the structure of a Plan:**
 <Tabs>
-  <Tab title="Dashboard">
-   1. [The Plan basic informations](#plan-structure)
-      - A Plan `name`
-      - A Plan `code`
-      - A Plan `description`
-   2. [The Plan model](/guide/plans/plan-model)
-      - A Plan `interval`
-      - A Plan base `amount` with the `currency`
-      - Boolean to define if the Plan is paid **in advance** or **in arrears**
-      - A Plan `trial period` in days
-   3. [The additional charges](/guide/plans/charges) for this Plan (any Billable metrics
-      that have been created)
-      - A Charge `model`
-      - A Charge `amount` and its `currency` (automatically inherited from the
-      currency of the Plan)
-      - A Charge spending minimum
-      - Boolean to define if the Charge is paid **in advance** or **in arrears**
+   <Tab title="Dashboard">
+      1. [The Plan basic informations](#plan-structure)
+         - A Plan `name`
+         - A Plan `code`
+         - A Plan `description`
+      2. [The Plan model](/guide/plans/plan-model)
+         - A Plan `interval`
+         - A Plan base `amount` with the `currency`
+         - Boolean to define if the Plan is paid **in advance** or **in arrears**
+         - A Plan `trial period` in days
+      3. [The additional charges](/guide/plans/charges) for this Plan (any Billable metrics
+         that have been created)
+         - A Charge `model`
+         - A Charge `amount` and its `currency` (automatically inherited from the
+         currency of the Plan)
+         - A Charge spending minimum
+         - Boolean to define if the Charge is paid **in advance** or **in arrears**
   </Tab>
   <Tab title="API">
       <CodeGroup>
-        ```bash Premium Plan Example
-            LAGO_URL="https://api.getlago.com"
-            API_KEY="__YOUR_API_KEY__"
+      ```bash Premium Plan Example
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
 
-            curl --location --request POST "$LAGO_URL/api/v1/plans" \
-            --header "Authorization: Bearer $API_KEY" \
-            --header 'Content-Type: application/json' \
-            --data-raw '{
-            "plan": {
-               "name": "Premium",
-               "code": "premium",
-               "interval": "monthly",
-               "description": "Premium plan for SMB customers",
-               "amount_cents": 50000,
-               "amount_currency": "USD",
-               "trial_period": 3.0,
-               "pay_in_advance": true,
-               "bill_charges_monthly": true,
-               "charges": [
-                  {
-                  "billable_metric_id": "__BILLABLE_METRIC_ID__",
-                  "charge_model": "graduated",
-                  "pay_in_advance": false,
-                  "invoiceable": true,
-                  "min_amount_cents": 0,
-                  "properties": {
-                     "graduated_ranges": [
-                        {
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+         "plan": {
+            "name": "Premium",
+            "code": "premium",
+            "interval": "monthly",
+            "description": "Premium plan for SMB customers",
+            "amount_cents": 50000,
+            "amount_currency": "USD",
+            "trial_period": 3.0,
+            "pay_in_advance": true,
+            "bill_charges_monthly": true,
+            "charges": [
+               {
+               "billable_metric_id": "__BILLABLE_METRIC_ID__",
+               "charge_model": "graduated",
+               "pay_in_advance": false,
+               "invoiceable": true,
+               "min_amount_cents": 0,
+               "properties": {
+                  "graduated_ranges": [
+                     {
                         "to_value": 10,
                         "from_value": 0,
                         "flat_amount": "0",
                         "per_unit_amount": "0.001"
-                        },
-                        {
+                     },
+                     {
                         "to_value": null,
                         "from_value": 11,
                         "flat_amount": "0",
                         "per_unit_amount": "0.0005"
-                        }
-                     ]
-                  }
-               ]
+                     }
+                  ]
+               }
             }
-         }'
-        ```
+            ]
+         }
+      }'
+      ```
       </CodeGroup>
   </Tab>
 </Tabs>

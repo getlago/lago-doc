@@ -18,26 +18,26 @@ description: "A subscription is created when a plan is assigned to a customer.
     9. Click **"Add plan"** to confirm.
   </Tab>
   <Tab title="API">
-      <CodeGroup>
-        ```bash Assign a plan to a customer
-            LAGO_URL="https://api.getlago.com"
-            API_KEY="__YOUR_API_KEY__"
+    <CodeGroup>
+    ```bash Assign a plan to a customer
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
 
-            curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
-            --header "Authorization: Bearer $API_KEY" \
-            --header 'Content-Type: application/json' \
-            --data-raw '{
-                "subscription": {
-                "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-                "plan_code": "premium",
-                "external_id": "my_sub_12345789",
-                "name": "Repository 1",
-                "subscription_at": "2022-08-08T00:00:00Z",
-                "billing_time": "anniversary"
-                }
-            }'
-        ```
-      </CodeGroup>
+    curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "subscription": {
+        "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "plan_code": "premium",
+        "external_id": "my_sub_12345789",
+        "name": "Repository 1",
+        "subscription_at": "2022-08-08T00:00:00Z",
+        "billing_time": "anniversary"
+      }
+    }'
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
 
@@ -90,41 +90,42 @@ However, you can decide to start a subscription **in the past** or **in the futu
 
 <Tabs>
   <Tab title="Start date in the past">
-      If the start date of the subscription is in the past, the subscription is considered active.
-      <Info>
-      Lago will not generate any invoices for past periods already completed.
-      </Info>
+    If the start date of the subscription is in the past, the subscription is considered active.
+    
+    <Info>
+    Lago will not generate any invoices for past periods already completed.
+    </Info>
 
-      The invoicing process varies depending on the [plan model](/guide/plans/plan-model) and [billing cycle](#billing-cycles):
-      - If the plan includes a subscription fee to be paid in advance, it will be considered as **already paid for the current period**. The next invoice will include the usage-based charges for the current period and the subscription fee for the next period (see example 1 below); and
-      - If the plan includes a subscription fee to be paid in arrears, it will be **included in the next invoice**, together with the usage-based charges for the current period (see example 2 below).
+    The invoicing process varies depending on the [plan model](/guide/plans/plan-model) and [billing cycle](#billing-cycles):
+    - If the plan includes a subscription fee to be paid in advance, it will be considered as **already paid for the current period**. The next invoice will include the usage-based charges for the current period and the subscription fee for the next period (see example 1 below); and
+    - If the plan includes a subscription fee to be paid in arrears, it will be **included in the next invoice**, together with the usage-based charges for the current period (see example 2 below).
 
-      **Example 1:** Start date in the past and subscription fee to be paid in advance
-          <Frame caption="Illustration for start date in the past and subscription fee in advance">
-            <img src="/guide/subscriptions/images/subscription-past-advance-0bedeeb9f9918608568ea7db6479e4ef.png" />
-        </Frame>
+    **Example 1:** Start date in the past and subscription fee to be paid in advance
+    <Frame caption="Illustration for start date in the past and subscription fee in advance">
+      <img src="/guide/subscriptions/images/subscription-past-advance-0bedeeb9f9918608568ea7db6479e4ef.png" />
+    </Frame>
 
-      **Example 2:** Start date in the past and subscription fee to be paid in arrears
-          <Frame caption="Illustration for start date in the past and subscription fee in advance">
-            <img src="/guide/subscriptions/images/subscription-past-arrears-b4f22483b4ae3a358c0b27305e49a766.png" />
-        </Frame>
+    **Example 2:** Start date in the past and subscription fee to be paid in arrears
+    <Frame caption="Illustration for start date in the past and subscription fee in advance">
+      <img src="/guide/subscriptions/images/subscription-past-arrears-b4f22483b4ae3a358c0b27305e49a766.png" />
+    </Frame>
   </Tab>
   <Tab title="Start date in the future">
-      If the start date of the subscription is in the future, the subscription is considered pending.
+    If the start date of the subscription is in the future, the subscription is considered pending.
 
-      The invoicing process varies depending on the [plan model](/guide/plans/plan-model) and [billing cycle](#billing-cycles):
-      - If the plan includes a subscription fee to be paid in advance, when the subscription becomes active, Lago will automatically generate an **invoice for the subscription fee**. Usage-based charges will be included in the next invoice, generated at the end of the billing period (see example 3 below); and
-      - If the plan includes a subscription fee to be paid in arrears, when the subscription becomes active, **there will be no invoice**. The subscription fee and usage-based charges will be included in the invoice generated at the end of the billing period (see example 4 below).
+    The invoicing process varies depending on the [plan model](/guide/plans/plan-model) and [billing cycle](#billing-cycles):
+    - If the plan includes a subscription fee to be paid in advance, when the subscription becomes active, Lago will automatically generate an **invoice for the subscription fee**. Usage-based charges will be included in the next invoice, generated at the end of the billing period (see example 3 below); and
+    - If the plan includes a subscription fee to be paid in arrears, when the subscription becomes active, **there will be no invoice**. The subscription fee and usage-based charges will be included in the invoice generated at the end of the billing period (see example 4 below).
 
-      **Example 3:** Start date in the future and subscription fee to be paid in advance
-          <Frame caption="Illustration for start date in the future and subscription fee in advance">
-            <img src="/guide/subscriptions/images/subscription-future-advance-e0c8d632579fe11dfc530987d86ca211.png" />
-        </Frame>
+    **Example 3:** Start date in the future and subscription fee to be paid in advance
+    <Frame caption="Illustration for start date in the future and subscription fee in advance">
+      <img src="/guide/subscriptions/images/subscription-future-advance-e0c8d632579fe11dfc530987d86ca211.png" />
+    </Frame>
 
-      **Example 4:** Start date in the future and subscription fee to be paid in arrears
-          <Frame caption="Illustration for start date in the future and subscription fee in arrears">
-            <img src="/guide/subscriptions/images/subscription-future-arrears-8b99c7c98e2f8223d6282fd5f47a665a.png" />
-        </Frame>
+    **Example 4:** Start date in the future and subscription fee to be paid in arrears
+    <Frame caption="Illustration for start date in the future and subscription fee in arrears">
+      <img src="/guide/subscriptions/images/subscription-future-arrears-8b99c7c98e2f8223d6282fd5f47a665a.png" />
+    </Frame>
   </Tab>
 </Tabs>
 
