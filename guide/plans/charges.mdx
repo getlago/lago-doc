@@ -44,46 +44,46 @@ billed in arrears.
     </Frame>
   </Tab>
   <Tab title="API">
-        Define `pay_in_advance : false` on a charge to bill it in arrears:
-      <CodeGroup>
-        ```bash Define a charge as paid in arrears
-            LAGO_URL="https://api.getlago.com"
-            API_KEY="__YOUR_API_KEY__"
+    Define `pay_in_advance : false` on a charge to bill it in arrears:
+    <CodeGroup>
+      ```bash Define a charge as paid in arrears
+          LAGO_URL="https://api.getlago.com"
+          API_KEY="__YOUR_API_KEY__"
 
-            curl --location --request POST "$LAGO_URL/api/v1/plans" \
-            --header "Authorization: Bearer $API_KEY" \
-            --header 'Content-Type: application/json' \
-            --data-raw '{
-              "plan": {
-                "name": "Premium",
-                "code": "premium",
-                "interval": "monthly",
-                "description": "Premium plan for SMB companies",
-                "amount_cents": 50000,
-                "amount_currency": "USD",
-                "trial_period": 0.0,
-                "pay_in_advance": true,
-                "bill_charges_monthly": true,
-                "charges": [
-                  {
-                    "billable_metric_id": "1111_2222_3333_4444",
-                    "charge_model": "percentage",
-                    "pay_in_advance": false,
-                    "invoiceable": true,
-                    "min_amount_cents": 100,
-                    "properties": {
-                      "rate": "0.5",
-                      "fixed_amount": "1",
-                      "free_units_per_events": 3,
-                      "free_units_per_total_aggregation": null
-                    }
+          curl --location --request POST "$LAGO_URL/api/v1/plans" \
+          --header "Authorization: Bearer $API_KEY" \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "plan": {
+              "name": "Premium",
+              "code": "premium",
+              "interval": "monthly",
+              "description": "Premium plan for SMB companies",
+              "amount_cents": 50000,
+              "amount_currency": "USD",
+              "trial_period": 0.0,
+              "pay_in_advance": true,
+              "bill_charges_monthly": true,
+              "charges": [
+                {
+                  "billable_metric_id": "1111_2222_3333_4444",
+                  "charge_model": "percentage",
+                  "pay_in_advance": false,
+                  "invoiceable": true,
+                  "min_amount_cents": 100,
+                  "properties": {
+                    "rate": "0.5",
+                    "fixed_amount": "1",
+                    "free_units_per_events": 3,
+                    "free_units_per_total_aggregation": null
                   }
-                ]
-              }
-            }'
-        ```
-      </CodeGroup>
-  </Tab>
+                }
+              ]
+            }
+          }'
+      ```
+    </CodeGroup>
+</Tab>
 </Tabs>
 
 
@@ -92,52 +92,54 @@ With this payment option, charges are invoiced immediately upon any changes in u
 where you need to bill customers instantly for usage-based actions, such as new user seat or integrations.
 <Tabs>
   <Tab title="Dashboard">
-     You can easily manage this billing settings through the user interface. Within the UI, you will find options to customize 
-     the invoice cadence by setting a charge as invoiced in arrears.
-     <Frame caption="Define a charge paid in arrears">
+      You can easily manage this billing settings through the user interface. Within the UI, you will find options to customize 
+      the invoice cadence by setting a charge as invoiced in arrears.
+
+      <Frame caption="Define a charge paid in arrears">
         <img src="/guide/plans/images/charge-in-advance-5a13fc011d78a058f7767519c5817961.png" />
-    </Frame>
+      </Frame>
   </Tab>
   <Tab title="API">
-        Define `pay_in_advance : true` on a charge to bill it in advance:
-      <CodeGroup>
-        ```bash Define a charge as paid in advance
-            LAGO_URL="https://api.getlago.com"
-            API_KEY="__YOUR_API_KEY__"
+    Define `pay_in_advance : true` on a charge to bill it in advance:
 
-            curl --location --request POST "$LAGO_URL/api/v1/plans" \
-            --header "Authorization: Bearer $API_KEY" \
-            --header 'Content-Type: application/json' \
-            --data-raw '{
-              "plan": {
-                "name": "Premium",
-                "code": "premium",
-                "interval": "monthly",
-                "description": "Premium plan for SMB companies",
-                "amount_cents": 50000,
-                "amount_currency": "USD",
-                "trial_period": 0.0,
-                "pay_in_advance": true,
-                "bill_charges_monthly": true,
-                "charges": [
-                  {
-                    "billable_metric_id": "1111_2222_3333_4444",
-                    "charge_model": "percentage",
-                    "pay_in_advance": true,
-                    "invoiceable": true,
-                    "min_amount_cents": 100,
-                    "properties": {
-                      "rate": "0.5",
-                      "fixed_amount": "1",
-                      "free_units_per_events": 3,
-                      "free_units_per_total_aggregation": null
-                    }
-                  }
-                ]
-              }
-            }'
-        ```
-      </CodeGroup>
+    <CodeGroup>
+    ```bash Define a charge as paid in advance
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "plan": {
+        "name": "Premium",
+        "code": "premium",
+        "interval": "monthly",
+        "description": "Premium plan for SMB companies",
+        "amount_cents": 50000,
+        "amount_currency": "USD",
+        "trial_period": 0.0,
+        "pay_in_advance": true,
+        "bill_charges_monthly": true,
+        "charges": [
+          {
+            "billable_metric_id": "1111_2222_3333_4444",
+            "charge_model": "percentage",
+            "pay_in_advance": true,
+            "invoiceable": true,
+            "min_amount_cents": 100,
+            "properties": {
+              "rate": "0.5",
+              "fixed_amount": "1",
+              "free_units_per_events": 3,
+              "free_units_per_total_aggregation": null
+            }
+          }
+        ]
+      }
+    }'
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
 
@@ -146,13 +148,13 @@ where you need to bill customers instantly for usage-based actions, such as new 
 Here is the full list of usage-based charges pricing models provided by Lago.
 <Tabs>
   <Tab title="Standard">
-      Select the standard charge model if you want to charge the **same price for each
-      unit** consumed.
+    Select the standard charge model if you want to charge the **same price for each
+    unit** consumed.
 
-      Imagine that your API company charges $0.05 per API call (i.e. your billable
-      metric). By selecting the standard charge model, you will define a fixed unit
-      price. If a customer makes 1,000 API calls during the billing period, the total
-      invoice amount will be $0.05 x 1,000 API calls = $50.
+    Imagine that your API company charges $0.05 per API call (i.e. your billable
+    metric). By selecting the standard charge model, you will define a fixed unit
+    price. If a customer makes 1,000 API calls during the billing period, the total
+    invoice amount will be $0.05 x 1,000 API calls = $50.
   </Tab>
   <Tab title="Graduated">
     Select the graduated charge model if you want to define **several price tiers**.
@@ -168,77 +170,75 @@ Here is the full list of usage-based charges pricing models provided by Lago.
     <Frame caption="Configuration of the graduated charge model" >
       <img src="/guide/plans/images/graduated-charge-pricing-model-65dd3d428a7a5aaeb486e851adf029e7.png" />
     </Frame>
-    
   </Tab>
   <Tab title="Package">
-      Select the package charge model if you want to apply a **fixed price to a range
-      of units**. You also have the ability to offer free units.
+    Select the package charge model if you want to apply a **fixed price to a range
+    of units**. You also have the ability to offer free units.
 
-      Let's take back the example of our API company. You may want to charge $5 per
-      100 units and offer the first 100 units. In this example, 201 units would cost
-      $0 (first 100 units) + $5 (next 100 units) + $5 (last unit) = $10.
+    Let's take back the example of our API company. You may want to charge $5 per
+    100 units and offer the first 100 units. In this example, 201 units would cost
+    $0 (first 100 units) + $5 (next 100 units) + $5 (last unit) = $10.
 
     <Frame  caption="Configuration of the package charge model" >
       <img src="/guide/plans/images/package-pricing-charge-model-ff1836a27a037aaf14819bbdb70c836b.png"/>
     </Frame>
-
   </Tab>
-   <Tab title="Percentage">
-      Select the percentage charge model if you want to apply a **percentage and a
-      fixed fee on transactions** (e.g. bank transfers, ATM withdrawals, etc.).
+  <Tab title="Percentage">
+    Select the percentage charge model if you want to apply a **percentage and a
+    fixed fee on transactions** (e.g. bank transfers, ATM withdrawals, etc.).
 
-      This charge model is generally used with billable metrics that allow users to
-      calculate the total amount of transactions (e.g. `sum` aggregation type and
-      `amount` defined as the event property -
-      [learn more](/aggregation-types#2-sum)).
+    This charge model is generally used with billable metrics that allow users to
+    calculate the total amount of transactions (e.g. `sum` aggregation type and
+    `amount` defined as the event property -
+    [learn more](/aggregation-types#2-sum)).
 
-      You can define several parameters for the percentage charge model, including:
+    You can define several parameters for the percentage charge model, including:
 
-      - **Percentage rate**: charge rate that applies to the total amount (e.g. 1.2%
-        on transactions);
-      - **Fixed fee (optional)**: fee that applies to each event ingested during the
-        billing period (e.g. $0.10 per transaction);
-      - **Free units (events - optional)**: number of events that are not subject to
-        the fixed fee; and
-      - **Free units (total amount - optional)**: amount that is not subject to the
-        charge rate.
+    - **Percentage rate**: charge rate that applies to the total amount (e.g. 1.2%
+      on transactions);
+    - **Fixed fee (optional)**: fee that applies to each event ingested during the
+      billing period (e.g. $0.10 per transaction);
+    - **Free units (events - optional)**: number of events that are not subject to
+      the fixed fee; and
+    - **Free units (total amount - optional)**: amount that is not subject to the
+      charge rate.
 
-      When free units are defined for both the total amount and number of events, Lago
-      performs checks each time a new event is ingested to determine whether the free
-      units still apply. In the illustration below for instance, the first 3 events or
-      $500 are free.
+    When free units are defined for both the total amount and number of events, Lago
+    performs checks each time a new event is ingested to determine whether the free
+    units still apply. In the illustration below for instance, the first 3 events or
+    $500 are free.
 
-      <Frame  caption="Configuration of the percentage charge model">
-        <img src="/guide/plans/images/percentage-model-b2657bc04ac57c27cfe3bc3b830fd8dc.png"/>
-      </Frame>
+    <Frame  caption="Configuration of the percentage charge model">
+      <img src="/guide/plans/images/percentage-model-b2657bc04ac57c27cfe3bc3b830fd8dc.png"/>
+    </Frame>
 
-      Consider the following list of events:
+    Consider the following list of events:
 
-      | Event         | Amount | Total number of events         | Total amount     | Result     |
-      | ------------- | ------ | ------------------------------ | ---------------- | ---------- |
-      | Transaction 1 | $200   | 1 free event (out of 3)        | $200 ($500 free) | No charges |
-      | Transaction 2 | $100   | 2 free events (out of 3)       | $300 ($500 free) | No charges |
-      | Transaction 3 | $100   | 3 free events (out of 3)       | $400 ($500 free) | No charges |
-      | Transaction 4 | $50    | 4 events (free units exceeded) | $450 ($500 free) | Charge     |
+    | Event         | Amount | Total number of events         | Total amount     | Result     |
+    | ------------- | ------ | ------------------------------ | ---------------- | ---------- |
+    | Transaction 1 | $200   | 1 free event (out of 3)        | $200 ($500 free) | No charges |
+    | Transaction 2 | $100   | 2 free events (out of 3)       | $300 ($500 free) | No charges |
+    | Transaction 3 | $100   | 3 free events (out of 3)       | $400 ($500 free) | No charges |
+    | Transaction 4 | $50    | 4 events (free units exceeded) | $450 ($500 free) | Charge     |
 
-      Therefore, for the fourth transaction, the charge will be $0.10 x 1 event + 1.2%
-      of $50 = $0.70.
+    Therefore, for the fourth transaction, the charge will be $0.10 x 1 event + 1.2%
+    of $50 = $0.70.
   </Tab>
-     <Tab title="Volume">
-        Select the volume charge model if you want to define several price tiers but
-        want to apply a **single unit price based on the total volume**. You can also
-        apply a **flat fee** in addition to the unit price.
+    <Tab title="Volume">
+      Select the volume charge model if you want to define several price tiers but
+      want to apply a **single unit price based on the total volume**. You can also
+      apply a **flat fee** in addition to the unit price.
 
-        Consider the following example, where each unit represents an API call:
+      Consider the following example, where each unit represents an API call:
 
-        | Tier   | First unit | Last unit | Unit price | Fixed fee |
-        | ------ | ---------- | --------- | ---------- | --------- |
-        | Tier 1 | 0          | 10,000    | $0.0010    | $10       |
-        | Tier 2 | 10,001     | 50,000    | $0.0008    | $10       |
-        | Tier 3 | 50,001     | 100,000   | $0.0006    | $10       |
-        | Tier 4 | 100,001    | ∞         | $0.0004    | $10       |
+      | Tier   | First unit | Last unit | Unit price | Fixed fee |
+      | ------ | ---------- | --------- | ---------- | --------- |
+      | Tier 1 | 0          | 10,000    | $0.0010    | $10       |
+      | Tier 2 | 10,001     | 50,000    | $0.0008    | $10       |
+      | Tier 3 | 50,001     | 100,000   | $0.0006    | $10       |
+      | Tier 4 | 100,001    | ∞         | $0.0004    | $10       |
 
-        In this case, 65,000 API calls would cost 65,000 x $0.0006 + $10 = $49.
+      In this case, 65,000 API calls would cost 65,000 x $0.0006 + $10 = $49.
   </Tab>
 </Tabs>
 
@@ -272,45 +272,45 @@ To define a charge spending minimum:
     5. Define a spending minimum **amount**.
   </Tab>
   <Tab title="API">
-        Use the `min_amount_cents` field on a charge:
-      <CodeGroup>
-        ```bash Spending minimum for a charge
-            LAGO_URL="https://api.getlago.com"
-            API_KEY="__YOUR_API_KEY__"
+    Use the `min_amount_cents` field on a charge:
+    <CodeGroup>
+    ```bash Spending minimum for a charge
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
 
-            curl --location --request POST "$LAGO_URL/api/v1/plans" \
-            --header "Authorization: Bearer $API_KEY" \
-            --header 'Content-Type: application/json' \
-            --data-raw '{
-              "plan": {
-                "name": "Premium",
-                "code": "premium",
-                "interval": "monthly",
-                "description": "Premium plan for SMB companies",
-                "amount_cents": 50000,
-                "amount_currency": "USD",
-                "trial_period": 0.0,
-                "pay_in_advance": true,
-                "bill_charges_monthly": true,
-                "charges": [
-                  {
-                    "billable_metric_id": "1111_2222_3333_4444",
-                    "charge_model": "percentage",
-                    "pay_in_advance": false,
-                    "invoiceable": true,
-                    "min_amount_cents": 100,
-                    "properties": {
-                      "rate": "0.5",
-                      "fixed_amount": "1",
-                      "free_units_per_events": 3,
-                      "free_units_per_total_aggregation": null
-                    }
-                  }
-                ]
-              }
-            }'
-        ```
-      </CodeGroup>
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "plan": {
+        "name": "Premium",
+        "code": "premium",
+        "interval": "monthly",
+        "description": "Premium plan for SMB companies",
+        "amount_cents": 50000,
+        "amount_currency": "USD",
+        "trial_period": 0.0,
+        "pay_in_advance": true,
+        "bill_charges_monthly": true,
+        "charges": [
+          {
+            "billable_metric_id": "1111_2222_3333_4444",
+            "charge_model": "percentage",
+            "pay_in_advance": false,
+            "invoiceable": true,
+            "min_amount_cents": 100,
+            "properties": {
+              "rate": "0.5",
+              "fixed_amount": "1",
+              "free_units_per_events": 3,
+              "free_units_per_total_aggregation": null
+            }
+          }
+        ]
+      }
+    }'
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
 
@@ -341,45 +341,46 @@ To define if a charge is invoiceable or not:
       </Frame>
   </Tab>
   <Tab title="API">
-        Use the `invoiceable : false` for a charge paid in advance:
-      <CodeGroup>
-        ```bash Define a charge as invoiceable or not
-            LAGO_URL="https://api.getlago.com"
-            API_KEY="__YOUR_API_KEY__"
+    Use the `invoiceable : false` for a charge paid in advance:
+    
+    <CodeGroup>
+    ```bash Define a charge as invoiceable or not
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
 
-            curl --location --request POST "$LAGO_URL/api/v1/plans" \
-            --header "Authorization: Bearer $API_KEY" \
-            --header 'Content-Type: application/json' \
-            --data-raw '{
-              "plan": {
-                "name": "Premium",
-                "code": "premium",
-                "interval": "monthly",
-                "description": "Premium plan for SMB companies",
-                "amount_cents": 50000,
-                "amount_currency": "USD",
-                "trial_period": 0.0,
-                "pay_in_advance": true,
-                "bill_charges_monthly": true,
-                "charges": [
-                  {
-                    "billable_metric_id": "1111_2222_3333_4444",
-                    "charge_model": "percentage",
-                    "pay_in_advance": true,
-                    "invoiceable": false,
-                    "min_amount_cents": 100,
-                    "properties": {
-                      "rate": "0.5",
-                      "fixed_amount": "1",
-                      "free_units_per_events": 3,
-                      "free_units_per_total_aggregation": null
-                    }
-                  }
-                ]
-              }
-            }'
-        ```
-      </CodeGroup>
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "plan": {
+        "name": "Premium",
+        "code": "premium",
+        "interval": "monthly",
+        "description": "Premium plan for SMB companies",
+        "amount_cents": 50000,
+        "amount_currency": "USD",
+        "trial_period": 0.0,
+        "pay_in_advance": true,
+        "bill_charges_monthly": true,
+        "charges": [
+          {
+            "billable_metric_id": "1111_2222_3333_4444",
+            "charge_model": "percentage",
+            "pay_in_advance": true,
+            "invoiceable": false,
+            "min_amount_cents": 100,
+            "properties": {
+              "rate": "0.5",
+              "fixed_amount": "1",
+              "free_units_per_events": 3,
+              "free_units_per_total_aggregation": null
+            }
+          }
+        ]
+      }
+    }'
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
 
