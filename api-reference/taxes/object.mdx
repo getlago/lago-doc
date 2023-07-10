@@ -1,0 +1,53 @@
+---
+title: "The billable metric object"
+description: "This object represents a billable metric that is a pricing component of your application."
+---
+
+<RequestExample>
+```json The billable metric object
+{
+    "tax": {
+        "lago_id": "8a3b83f1-39d1-4579-b1a6-51435fb8f498",
+        "name": "TVA",
+        "code": "french_standard_vat",
+        "rate": 20.0,
+        "description": "French standard VAT",
+        "applied_to_organization": true,
+        "customers_count": 0,
+        "created_at": "2023-07-10T12:00:02Z"
+    }
+}
+```
+</RequestExample>
+
+## Attributes
+
+<ResponseField name="tax" type="object">
+  <Expandable title="object"  defaultOpen="true">
+    <ResponseField name="lago_id" type="string" | null>
+      Unique identifier of the tax created by Lago.
+    </ResponseField>
+    <ResponseField name="name" type="string" required>
+      Name of the tax.
+    </ResponseField>
+    <ResponseField name="code" type="string" required>
+      Unique code used to identify the tax associated with the API
+      request.
+    </ResponseField>
+    <ResponseField name="rate" type="float" required>
+      The percentage rate of the tax
+    </ResponseField>
+    <ResponseField name="description" type="string | null">
+      Internal description of the tax.
+    </ResponseField>
+    <ResponseField name="applied_to_organization" type="boolean required">
+      Set to `true` if the tax is used as one of the organization's default. 
+    </ResponseField>
+    <ResponseField name="customers_count" type="integer required">
+      Number of customers this tax is applied to (directly or via the organization's default).
+    </ResponseField>
+    <ResponseField name="created_at" type="string" required>
+      Creation date of the tax.
+    </ResponseField>
+  </Expandable>
+</ResponseField>

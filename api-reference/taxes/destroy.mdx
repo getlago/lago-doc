@@ -1,0 +1,105 @@
+---
+openapi: "DELETE /taxes/{code}"
+authMethod: "bearer"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request DELETE "$LAGO_URL/api/v1/taxes/:code" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.taxes.destroy('code')
+except LagoApiError as e:
+    repair_broken_state(e)
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+
+client.taxes.destroy('code')
+```
+
+```js Javascript
+await client.taxes.destroyTax('code')
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+  lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+
+  tax, err := lagoClient.Tax().Delete("__YOUR_TAX_CODE__")
+  if err != nil {
+    panic(err)
+  }
+
+  fmt.Println(tax)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+    public class DestroyTaxExample
+    {
+        public static void Main()
+        {
+            Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+            Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+            var apiInstance = new TaxesApi(Configuration.Default);
+            var code = "example_code";  // string | Code of the existing tax
+
+            try
+            {
+                Tax result = apiInstance.DestroyTax(code);
+            }
+            catch (ApiException e)
+            {
+            }
+        }
+    }
+}
+```
+
+```php PHP
+equire_once(__DIR__ . '/vendor/autoload.php');
+
+
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+$apiInstance = new OpenAPI\Client\Api\TaxesApi(
+    new GuzzleHttp\Client(),
+    $config
+);
+$code = "example_code"; // string | Code of the existing tax
+
+try {
+    $result = $apiInstance->destroyTax($code);
+} catch (Exception $e) {
+}
+```
+
+</RequestExample>

@@ -1,0 +1,114 @@
+---
+openapi: "GET /taxes"
+authMethod: "bearer"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v1/taxes?per_page=2&page=1" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.taxes.find_all({'per_page': 2, 'page': 1})
+except LagoApiError as e:
+    repair_broken_state(e) 
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+
+client.taxes.get_all({ per_page: 2, page: 3 })
+```
+
+```js Javascript
+await client.taxes.findAllTaxes({ perPage: 2, page: 3 });
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+  lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+
+  taxListInput := &lago.TaxListInput{
+    PerPage: 1,
+    Page: 1,
+  }
+
+  taxResult, err := lagoClient.Tax().GetList(taxListInput)
+  if err != nil {
+    panic(err)
+  }
+
+  fmt.Println(taxResult)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class FindAllTaxesExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new TaxesApi(Configuration.Default);
+          var page = 2; 
+          var perPage = 20; 
+
+          try
+          {
+              Taxes result = apiInstance.FindAllTaxes(page, perPage);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+          }
+      }
+   }
+}
+```
+
+```php PHP
+require_once(__DIR__ . '/vendor/autoload.php');
+
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+$apiInstance = new OpenAPI\Client\Api\TaxesApi(
+  new GuzzleHttp\Client(),
+  $config
+);
+$page = 2;
+$per_page = 20;
+
+try {
+  $result = $apiInstance->findAllTaxes($page, $per_page);
+  print_r($result);
+} catch (Exception $e) {
+  echo $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>
