@@ -1,21 +1,28 @@
 ---
 title: "Terminate a subscription"
-description: "You can terminate a subscription at any time. This will cancel the active subscription."
+description: "You can terminate a subscription at any time, whether it's active or pending."
 ---
+
+## Terminate an active subscription
 
 <Tabs>
   <Tab title="Dashboard">
     To perform an upgrade or a downgrade through the user interface:
     1. Access the **"Customers"** section via the side menu;
     2. Select a customer from the list;
-    3. In the **"Overview"** tab. By clicking the ellipse icon, you can **"Terminate subscription"**; and
-    9. Click **"Terminate subscription"** to cancel a subscription.
+    3. In the **"Overview"** tab, select an active subscription; and
+    4. Click **"Terminate subscription"**; and to terminate an active subscription.
   </Tab>
   <Tab title="API">
     <CodeGroup>
-    ```bash Terminate a subscription
-    curl --request DELETE \
-    --url https://api.getlago.com/api/v1/subscriptions/sub_1234567890
+    ```bash Terminate an active subscription
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      EXTERNAL_ID="__YOUR_SUBSCRIPTION_ID__"
+
+      curl --location --request DELETE "$LAGO_URL/api/v1/subscriptions/$EXTERNAL_ID" \
+        --header "Authorization: Bearer $API_KEY"
+
     ```
     </CodeGroup>
   </Tab>
@@ -24,3 +31,33 @@ description: "You can terminate a subscription at any time. This will cancel the
 When a subscription is terminated:
 - Lago automatically generates an invoice for any outstanding usage-based charges that have not been invoiced yet;
 - If the subscription fee for the plan has been paid in advance, Lago automatically issues a credit note for the unused number of days.
+
+## Terminate an active subscription
+
+<Tabs>
+  <Tab title="Dashboard">
+    To perform an upgrade or a downgrade through the user interface:
+    1. Access the **"Customers"** section via the side menu;
+    2. Select a customer from the list;
+    3. In the **"Overview"** tab, select a pending subscription (subscription set in the future or pending downgrade); and
+    4. Click **"Terminate subscription"**; and to cancel a pending subscription subscription.
+    
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Terminate a pending subscription
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+        EXTERNAL_ID="__YOUR_SUBSCRIPTION_ID__"
+
+        curl --location --request DELETE "$LAGO_URL/api/v1/subscriptions/$EXTERNAL_ID?status=pending" \
+          --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+    <Warning>
+      To ensure the termination of a pending subscription, it is crucial to include the `?status=pending` filter in your endpoint. 
+      Neglecting to do so will render any termination attempts ineffective.
+    </Warning>
