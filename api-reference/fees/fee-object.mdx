@@ -19,7 +19,7 @@ description: "This object represents a line item of an invoice, handling amount,
     "amount_cents": 100,
     "amount_currency": "EUR",
     "taxes_amount_cents": 20,
-    "taxes_rate": "20.0",
+    "taxes_rate": 20,
     "units": "0.32",
     "total_amount_cents": 120,
     "total_amount_currency": "EUR",
@@ -40,7 +40,21 @@ description: "This object represents a line item of an invoice, handling amount,
       "name": "Startup",
       "lago_item_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
       "item_type": "Subscription"
-    }
+    },
+    "applied_taxes": [
+      {
+        "lago_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_tax_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "tax_name": "TVA",
+        "tax_code": "french_standard_vat",
+        "tax_rate": 25,
+        "tax_description": "French standard VAT",
+        "amount_cents": 2000,
+        "amount_currency": "USD",
+        "created_at": "2022-09-14T16:35:31Z"
+      }
+    ]
   }
 }
 ```
@@ -72,11 +86,11 @@ description: "This object represents a line item of an invoice, handling amount,
     <ResponseField name="amount_currency" type="string" required>
       The currency of this specific fee. It indicates the monetary unit in which the fee’s cost is expressed.
     </ResponseField>
-    <ResponseField name="vat_amount_cents" type="integer" required>
+    <ResponseField name="taxes_amount_cents" type="integer" required>
       The cost of the tax associated with this specific fee.
     </ResponseField>
-    <ResponseField name="vat_amount_currency" type="string" required>
-      The currency of the tax associated with this specific fee.
+    <ResponseField name="taxes_rate" type="number" required>
+      The tax rate associated with this specific fee.
     </ResponseField>
     <ResponseField name="total_amount_cents" type="integer" required>
       The cost of this specific fee, including any applicable taxes.
@@ -141,23 +155,57 @@ description: "This object represents a line item of an invoice, handling amount,
       payment for the fee is made in advance (`pay_in_advance` is set to `true`).
     </ResponseField>
     <ResponseField name="item" type="object">
-        <Expandable title="item">
-            <ResponseField name="type" type="string" required>
-                The fee type. Possible values are `add-on`, `charge`, `credit` or `subscription`.
-            </ResponseField>
-            <ResponseField name="code" type="string" required>
-                The code of the fee item. It can be the code of the `add-on`, the code of the `charge`, the code of the `credit` or the code of the `subscription`.
-            </ResponseField>
-            <ResponseField name="name" type="string" required>
-                The name of the fee item. It can be the name of the `add-on`, the name of the `charge`, the name of the `credit` or the name of the `subscription`.
-            </ResponseField>
-            <ResponseField name="lago_item_id" type="string" required>
-                Unique identifier of the fee item, created by Lago. It can be the identifier of the add-on, the identifier of the `charge`, the identifier of the `credit` or the identifier of the `subscription`.
-            </ResponseField>
-            <ResponseField name="item_type" type="string" required>
-                The type of the fee item. Possible values are `AddOn`, `BillableMetric`, `WalletTransaction` or `Subscription`.
-            </ResponseField>
-            </Expandable>
+      <Expandable title="item">
+        <ResponseField name="type" type="string" required>
+          The fee type. Possible values are `add-on`, `charge`, `credit` or `subscription`.
         </ResponseField>
+        <ResponseField name="code" type="string" required>
+          The code of the fee item. It can be the code of the `add-on`, the code of the `charge`, the code of the `credit` or the code of the `subscription`.
+        </ResponseField>
+        <ResponseField name="name" type="string" required>
+          The name of the fee item. It can be the name of the `add-on`, the name of the `charge`, the name of the `credit` or the name of the `subscription`.
+        </ResponseField>
+        <ResponseField name="lago_item_id" type="string" required>
+          Unique identifier of the fee item, created by Lago. It can be the identifier of the add-on, the identifier of the `charge`, the identifier of the `credit` or the identifier of the `subscription`.
+        </ResponseField>
+        <ResponseField name="item_type" type="string" required>
+          The type of the fee item. Possible values are `AddOn`, `BillableMetric`, `WalletTransaction` or `Subscription`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="applied_taxes" type="object">
+      <Expandable title="applied_taxes">
+        <ResponseField name="lago_id" type="string" required>
+          Unique identifier of the applied tax, created by Lago.
+        </ResponseField>
+        <ResponseField name="lago_tax_id" type="string" required>
+          Unique identifier of the tax, created by Lago.
+        </ResponseField>
+        <ResponseField name="tax_name" type="string" required>
+          Name of the tax.
+        </ResponseField>
+        <ResponseField name="tax_code" type="string" required>
+          Unique code used to identify the tax associated with the API request.
+        </ResponseField>
+        <ResponseField name="tax_rate" type="number" required>
+          The rate of the tax.
+        </ResponseField>
+        <ResponseField name="tax_description" type="string">
+          Internal description of the tax.
+        </ResponseField>
+        <ResponseField name="amount_cents" type="integer" required>
+          Amount of the tax.
+        </ResponseField>
+        <ResponseField name="amount_currency" type="string" required>
+          The currency of the tax.
+        </ResponseField>
+        <ResponseField name="created_at" type="string" required>
+          The date and time when the applied tax was created. It is expressed in UTC format according to the ISO 8601 datetime standard. This field provides the timestamp for the exact moment when the applied tax was initially created.
+        </ResponseField>    
+        <ResponseField name="lago_fee_id" type="string" required>
+          Unique identifier of the fee, created by Lago.
+        </ResponseField>           
+      </Expandable>
+    </ResponseField>
   </Expandable>
 </ResponseField>
