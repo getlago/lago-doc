@@ -30,6 +30,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
         "charge_model": "standard",
         "pay_in_advance": false,
         "min_amount_cents": 0,
+        "prorated": true,
         "group_properties": [
           {
             group_id: "__GROUP_ID__",
@@ -45,6 +46,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
         "charge_model": "graduated",
         "pay_in_advance": false,
         "min_amount_cents": 0,
+        "prorated": false,
         "properties": {
           "graduated_ranges": [
             {
@@ -68,6 +70,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
         "charge_model": "package",
         "pay_in_advance": false,
         "min_amount_cents": 0,
+        "prorated": false,
         "properties": {
           "amount": "100",
           "free_units": 10000,
@@ -80,6 +83,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
         "charge_model": "percentage",
         "pay_in_advance": false,
         "min_amount_cents": 0,
+        "prorated": false,
         "properties": {
           "rate": "0.5",
           "fixed_amount": "1",
@@ -93,6 +97,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
         "charge_model": "volume",
         "pay_in_advance": false,
         "min_amount_cents": 0,
+        "prorated": true,
         "properties": {
           "volume_ranges": [
             {
@@ -126,6 +131,7 @@ standard_charge = Charge(
   id='id',
   billable_metric_id='id',
   charge_model='standard',
+  prorated=true,
   group_properties=[
     {
       group_id='group_id',
@@ -140,6 +146,7 @@ graduated_charge = Charge(
   id='id',
   billable_metric_id='id,
   charge_model='graduated',
+  prorated=false,
   properties=[
     {
       'to_value': 10,
@@ -160,6 +167,7 @@ package_charge = Charge(
   id='id',
   billable_metric_id='id,
   charge_model='package',
+  prorated=false,
   properties={
     'amount': '100',
     'free_units': 10000,
@@ -171,6 +179,7 @@ percentage_charge = Charge(
   id='id',
   billable_metric_id='id,
   charge_model='percentage',
+  prorated=false,
   properties={
     'rate': '0.5',
     'fixed_amount': '1',
@@ -183,6 +192,7 @@ volume_charge = Charge(
   id='id',
   billable_metric_id='id,
   charge_model='volume',
+  prorated=true,
   properties={
     'volume_ranges': [
       {
@@ -239,6 +249,8 @@ plan = {
   amount_cents: 100,
   amount_currency: 'EUR',
   pay_in_advance: false,
+  prorated: false,
+
   charges: charges: [
     {
       id: 'id',
@@ -257,6 +269,7 @@ plan = {
       id: 'id',
       billable_metric_id: 'id',
       charge_model: 'graduated',
+      prorated: false,
       properties: [
         {
           to_value: 10,
@@ -276,6 +289,7 @@ plan = {
       id: 'id',
       billable_metric_id: 'id',
       charge_model: 'package',
+      prorated: false,
       properties: {
         amount: '100',
         free_units: 10000,
@@ -286,6 +300,7 @@ plan = {
       id: 'id',
       billable_metric_id: 'id',
       charge_model: 'percentage',
+      prorated: false,
       properties: {
         rate: '0.5',
         fixed_amount: '1',
@@ -297,6 +312,7 @@ plan = {
       id: 'id',
       billable_metric_id: 'id',
       charge_model: 'volume',
+      prorated: true,
       properties: {
         volume_ranges: [
           {

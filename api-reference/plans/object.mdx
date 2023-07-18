@@ -30,6 +30,7 @@ description: "This object represents a plan. This plan can then be assigned to a
         "invoiceable": true,
         "pay_in_advance": false,
         "min_amount_cents": 3000,
+        "prorated": false,
         "properties": {
           "amount": "30",
           "free_units": 100,
@@ -46,6 +47,7 @@ description: "This object represents a plan. This plan can then be assigned to a
         "invoiceable": true,
         "pay_in_advance": false,
         "min_amount_cents": 0,
+        "prorated": true,
         "properties": {
           "graduated_ranges": [
             {
@@ -73,6 +75,7 @@ description: "This object represents a plan. This plan can then be assigned to a
         "invoiceable": true,
         "pay_in_advance": true,
         "min_amount_cents": 0,
+        "prorated": false,
         "properties": {},
         "group_properties": [
           {
@@ -104,6 +107,7 @@ description: "This object represents a plan. This plan can then be assigned to a
         "invoiceable": true,
         "pay_in_advance": false,
         "min_amount_cents": 0,
+        "prorated": true,
         "properties": {
           "volume_ranges": [
             {
@@ -131,6 +135,7 @@ description: "This object represents a plan. This plan can then be assigned to a
         "invoiceable": false,
         "pay_in_advance": true,
         "min_amount_cents": 0,
+        "prorated": false,
         "properties": {
           "rate": "1",
           "fixed_amount": "0.5",
@@ -217,8 +222,12 @@ description: "This object represents a plan. This plan can then be assigned to a
         <ResponseField name="min_amount_cents" type="integer">
           The minimum spending amount required for the charge, measured in cents and excluding any applicable taxes. It indicates the minimum amount that needs to be charged for each billing period.
         </ResponseField>
-        <ResponseField name="min_amount_cents" type="integer">
-          The minimum spending amount required for the charge, measured in cents and excluding any applicable taxes. It indicates the minimum amount that needs to be charged for each billing period.
+        <ResponseField name="prorated" type="boolean" required>
+          Specifies whether a charge is prorated based on the remaining number of days in the billing period or billed fully. If not defined, this argument is set to `false` by default.
+          - If set to `true`, the charge is prorated based on the remaining days in the current billing period. 
+          - If set to `false`, the charge is billed in full.
+
+          Note that only `charge_model` set to `standard` and `volume` can be prorated.
         </ResponseField>
         <ResponseField name="properties" type="JSON">
           <Expandable>
