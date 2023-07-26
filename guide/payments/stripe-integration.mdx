@@ -34,8 +34,9 @@ Lago, either via the user interface or [the API](/api-reference/customers/create
 When adding customer information, you must:
 
 1. Define Stripe as the **default payment provider**;
-2. Leave the field associated with the **Stripe customer ID** blank; and
-3. **Enable** the option to automatically create the customer in Stripe.
+2. Leave the field associated with the **Stripe customer ID** blank;
+3. **Enable** the option to automatically create the customer in Stripe; and
+4. Define payment method options for this customer. Possible values are `card` and `sepa_debit`.
 
 The customer will automatically be added to Stripe. Stripe will then return the
 customer ID, which will be stored in Lago.
@@ -52,15 +53,67 @@ customer record, either via the user interface or
 information, you must:
 
 1. Define Stripe as the **default payment provider**;
-2. Provide the **Stripe customer ID**; and
-3. **Disable** the option to automatically create the customer in Stripe.
+2. Provide the **Stripe customer ID**;
+3. **Disable** the option to automatically create the customer in Stripe; and
+4. Define payment method options for this customer. Possible values are `card` and `sepa_debit`.
 
 
 <Frame caption="Migration of an existing Stripe customer">
   <img src="/guide/payments/images/stripe-customer-migration.png" />
 </Frame>
 
+## Payment methods[](#payment-methods "Direct link to heading")
+Lago's direct integration with Stripe supports two native payment methods: **Sepa Debits (SDD)** and **Card payments**.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Create or update an existing customer;
+    2. Assign Stripe as payment provider; and
+    3. Define payment method options: **Card**, **Sepa Debit** or **both**.
+
+  <Warning>
+    Note that Sepa Direct Debits are only available for invoices in EUR currency.
+  </Warning>
+
+  <Frame caption="Payment method options available for Stripe native connection">
+    <img src="/guide/payments/images/payment-options-stripe.png" />
+  </Frame>
+
+
+
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Define provider payment methods
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/customers" \
+          --header "Authorization: Bearer $API_KEY" \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "customer": {
+              "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+              "address_line1": "5230 Penfield Ave",
+              "billing_configuration": {
+                "invoice_grace_period": 3,
+                "payment_provider": "stripe",
+                "provider_customer_id": "cus_12345",
+                "sync": true,
+                "sync_with_provider": true,
+                "provider_payment_methods": ["card","sepa_debit"]
+              }
+            }
+          }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
 ## Stripe Checkout: storing customer's payment method information
+<Info>
+  Checkout page shows only selected payment methods for customers.
+</Info>
 When Lago automatically creates a customer in Stripe, you will receive a checkout link from Lago to facilitate the storage of your customer's payment method information.
 
 The payload sent by Lago will have the following structure, with the checkout link stored under `checkout_url`:
