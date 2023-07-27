@@ -26,6 +26,7 @@ description: "This object represents a line item of an invoice, handling amount,
     "events_count": 23,
     "pay_in_advance": true,
     "invoiceable": true,
+    "prorated": false,
     "from_date": "2022-04-29T08:59:51Z",
     "to_date": "2022-05-29T08:59:51Z",
     "payment_status": "pending",
@@ -121,6 +122,13 @@ description: "This object represents a line item of an invoice, handling amount,
     <ResponseField name="invoiceable" type="boolean" required>
       Flag that indicates whether the fee was included on the invoice. It serves as a boolean value, where `true` represents 
       that the fee was included on the invoice, and `false` indicates that the fee was not included on the invoice.
+    </ResponseField>
+    <ResponseField name="prorated" type="boolean" required>
+      Specifies whether a charge is prorated based on the remaining number of days in the billing period or billed fully. If not defined, this argument is set to `false` by default.
+      - If set to `true`, the charge is prorated based on the remaining days in the current billing period. 
+      - If set to `false`, the charge is billed in full.
+
+      Note that only a `charge_model` sets to `standard` or `volume` can be prorated.
     </ResponseField>
     <ResponseField name="created_at" type="string">
       The date and time when the fee was created. It is provided in Coordinated Universal Time (UTC) format.

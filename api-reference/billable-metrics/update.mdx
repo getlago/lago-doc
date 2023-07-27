@@ -18,6 +18,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/billable_metrics/:code" \
       "code": "storage",
       "description": "GB of storage used in my application",
       "aggregation_type": "sum_agg",
+      "recurring": false,
       "field_name": "gb",
       "group": {
         "key": "provider",
@@ -44,6 +45,7 @@ billable_metric = BillableMetric(
   code='storage',
   description='GB of storage used in my application',
   aggregation_type='sum_agg',
+  recurring=false,
   field_name='gb',
   group=group
 )
@@ -64,6 +66,7 @@ client.billable_metrics.update({
   code: 'storage',
   description: 'GB of storage used in my application',
   aggregation_type: 'sum_agg',
+  recurring: false,
   field_name: 'gb',
   group: {
       key: 'region',
@@ -76,6 +79,7 @@ client.billable_metrics.update({
 const newBillableMetricObject = {
   name: "Storage",
   code: "storage",
+  recurring: false,
   aggregationType: "sum_agg",
   fieldName: "gb",
 };
@@ -99,6 +103,7 @@ func main() {
     Description:     "GB of storage used in my application"
     AggregationType: lago.SumAggregation,
     FieldName:       "gb",
+    Recurring:       false,
     Group: map[string]interface{}{
         "key": "region",
         "values": [3]string{"us-east-1", "us-east-2", "eu-west-1"},

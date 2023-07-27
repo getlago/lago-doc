@@ -29,8 +29,102 @@ $0.000123456789123).
 Please note that charges are invoiced in `amount_cents`. Therefore, Lago
 automatically rounds prices (e.g. USD 1102 `amount_cents` \= $11.02).
 
+## Metered vs Recurring charges[](#metered-recurring "Direct link to heading")
+You have the flexibility to define the nature of charges associated with your products or services. Specifically, you can 
+**determine whether a charge is metered or recurring**. Understanding the distinction between these two types of charges is crucial for 
+effectively managing your billing processes. In this documentation, we will delve into the differences between metered and 
+recurring charges and their implications within the Lago system.
 
-## Charges paid in arrears[](#charges-arrears "Direct link to heading")
+### 1. Metered charges[](#metered "Direct link to heading")
+
+<Tabs>
+  <Tab title="Dashboard">
+  When you create a metered billable metric in Lago by setting the `recurring` parameter to `false`, an important behavior comes into play. 
+  At the end of each billing period, the accumulated number of units associated with the metric is automatically reset to 0. 
+  This means that the counting or measuring of units starts fresh with each new billing cycle. This is ideal for billing components with results
+  that are not persisted billing periods over billing periods. 
+
+  In the API tab beside, consider the example of a **Storage billing unit**. If you need to **track the Gigabytes stored during a month**, 
+  it's important to note that this value should be reset to 0 at the beginning of each new month.
+
+  </Tab>
+  <Tab title="API">
+    Create a billable metric with `recurring` sets to `false`.
+    <CodeGroup>
+      ```bash Metered billable metric
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+            "billable_metric": {
+            "name": "Storage",
+            "code": "storage",
+            "description": "GB of storage used in my application",
+            "aggregation_type": "sum_agg",
+            "recurring": false,
+            "field_name": "gb",
+            "group": {
+                "key": "region",
+                "value": ["us-east-1", "us-east-2", "eu-west-1"]
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+### 2. Recurring charges[](#recurring "Direct link to heading")
+
+<Tabs>
+  <Tab title="Dashboard">
+  When you create a recurring billable metric in Lago with the recurring parameter set to true, an important behavior comes 
+  into effect. At the end of each billing period, the accumulated number of units calculated from the previous billing period is 
+  carried forward to the next billing period.
+
+  This means that the counting or measurement of units starts based on the last recorded value from the previous billing cycle. 
+  This behavior is particularly useful for billing components or services where the results need to persist from one billing period 
+  to another.
+
+  In the API tab, let's consider the example of a **Seats billing unit**. If you need to **track the number of active seats**, it's crucial to 
+  note that this value should persist month over month. The recurring billing behavior ensures that the count of active seats is 
+  maintained and carried forward to subsequent billing periods, providing accurate and continuous tracking of your subscription seats.
+  </Tab>
+  <Tab title="API">
+    Create a billable metric with `recurring` sets to `true`.
+    <CodeGroup>
+      ```bash Recurring billable metric
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+            "billable_metric": {
+            "name": "Seats",
+            "code": "seats",
+            "description": "Active seats.",
+            "aggregation_type": "count_unique",
+            "recurring": true,
+            "field_name": "seat_id",
+            "group": {
+                "key": "type",
+                "value": ["admin", "viewer", "editor"]
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## In-arrears vs In-advance charges[](#advance-arrears "Direct link to heading")
+
+### 1. Charges paid in arrears[](#charges-arrears "Direct link to heading")
 If you opt for charges to be settled in arrears, they will be invoiced at the end of the billing period based on 
 the actual usage during that period. This payment option is ideal for usage types like storage, API calls, or compute, 
 where it is more practical to wait until the end of the period before billing. By default, all charges are configured to be 
@@ -87,7 +181,7 @@ billed in arrears.
 </Tabs>
 
 
-## Charges paid in advance[](#charges-advance "Direct link to heading")
+### 2. Charges paid in advance[](#charges-advance "Direct link to heading")
 With this payment option, charges are invoiced immediately upon any changes in usage. It is particularly useful for scenarios 
 where you need to bill customers instantly for usage-based actions, such as new user seat or integrations.
 <Tabs>
@@ -144,7 +238,7 @@ where you need to bill customers instantly for usage-based actions, such as new 
 </Tabs>
 
 
-## Charge models[](#charge-models "Direct link to heading")
+## Available charge models[](#charge-models "Direct link to heading")
 Here is the full list of usage-based charges pricing models provided by Lago.
 <Tabs>
   <Tab title="Standard">
@@ -242,6 +336,149 @@ Here is the full list of usage-based charges pricing models provided by Lago.
   </Tab>
 </Tabs>
 
+## Prorated vs fully-billed charges[](#prorated-fully "Direct link to heading")
+You can **determine whether a charge is prorated or fully-billed**. Understanding the distinction between these two types of 
+charges is crucial for effectively managing your billing processes. In this documentation, we will delve into the differences 
+between prorated and fully-billed charges and their implications within the Lago system.
+
+### 1. Prorated charges[](#prorated "Direct link to heading")
+
+<Tabs>
+  <Tab title="Dashboard">
+  <Warning>
+    Only charges that are [recurring](#2-recurring-charges) (billable metric with `recurring` argument sets to `true`) with a `charge_model` defined to `standard` or `volume` can be prorated.
+  </Warning>
+
+  When creating a prorated charge in Lago with the `prorated` parameter set to `true`, an important behavior is triggered. 
+  Adding a new unit during the billing period results in the amount due for that unit being prorated based on the number of 
+  days it was used.
+
+  This means that your customers will only be charged for the actual number of days they utilized a billing unit. Let's **consider 
+  the example of prorated `Seats`**, where each seat costs $10. If a new seat is added on June 10th, the unit will be prorated for 22 days, resulting in a corresponding prorated charge for that duration. This ensures fair and accurate billing based on the 
+  usage period.
+
+  *Example: (1 Seat x $10), used for 22 days = $7.33*
+
+  By leveraging prorated charges in Lago, you can provide transparent and cost-effective billing for services that are added or 
+  removed mid-billing cycle, adjusting the charges according to the actual duration of usage.
+
+  </Tab>
+  <Tab title="API">
+    Create a charge that is prorated by setting `prorated` to `true`.
+    <Warning>
+      Only charges that are [recurring](#2-recurring-charges) (billable metric with `recurring` argument sets to `true`) with a `charge_model` defined to `standard` or `volume` can be prorated.
+    </Warning>
+    <CodeGroup>
+      ```bash Prorated charges
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Startup",
+            "code": "startup",
+            "interval": "monthly",
+            "description": "This is a basic plan description",
+            "amount_cents": 10000,
+            "amount_currency": "USD",
+            "trial_period": 3.0,
+            "pay_in_advance": true,
+            "bill_charges_monthly": false,
+            "charges": [
+              {
+                "billable_metric_id": "__BILLABLE_METRIC_ID__",
+                "charge_model": "standard",
+                "pay_in_advance": true,
+                "invoiceable": true,
+                "min_amount_cents": 0,
+                "prorated": true,
+                "group_properties": [
+                  {
+                    "group_id": "__GROUP_ID__",
+                    "values": {
+                      "amount": "10"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+### 2. Fully-billed charges[](#fully-billed "Direct link to heading")
+<Tabs>
+  <Tab title="Dashboard">
+    <Warning>
+      Note that metered charges (billable metrics with `recurring` sets to `false`) are automatically fully-billed.
+    </Warning>
+
+  When creating a fully-billed charge in Lago with the `prorated` parameter set to `false`, an important behavior occurs. 
+  If a new unit is added during the billing period, the amount due for that unit is billed in full, regardless of the number of 
+  days it was used.
+
+  This means that your customers will be charged for the entire billing period, even if they only utilized the billing unit for a 
+  few days. **Let's consider the example of fully-billed Seats**, where each seat costs $10. If a new seat is added on June 10th, it will 
+  be billed for the full billing period. For instance, if there is one seat that was used for 22 days in the billing period, the 
+  charge would be calculated as follows: 
+
+  *(1 Seat x $10), used for 22 days = $10.*
+
+  By utilizing fully-billed charges in Lago, you ensure that you do not lose revenue by billing customers for the entire billing period, 
+  regardless of the actual duration of usage.
+  </Tab>
+  <Tab title="API">
+    Create a charge that is billed fully by setting `prorated` to `false`.
+
+    <CodeGroup>
+      ```bash Fully-billed charges
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Startup",
+            "code": "startup",
+            "interval": "monthly",
+            "description": "This is a basic plan description",
+            "amount_cents": 10000,
+            "amount_currency": "USD",
+            "trial_period": 3.0,
+            "pay_in_advance": true,
+            "bill_charges_monthly": false,
+            "charges": [
+              {
+                "billable_metric_id": "__BILLABLE_METRIC_ID__",
+                "charge_model": "standard",
+                "pay_in_advance": true,
+                "invoiceable": true,
+                "min_amount_cents": 0,
+                "prorated": false,
+                "group_properties": [
+                  {
+                    "group_id": "__GROUP_ID__",
+                    "values": {
+                      "amount": "10"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
 
 ## Charge spending minimum[](#charge-spending-minimum "Direct link to heading")
 <Info>**Premium feature ✨**: only users with a premium license can define a charge spending minimum. 
