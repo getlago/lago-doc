@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Lago API documentation
   description: Lago API allows your application to push customer information and metrics (events) from your application to the billing application.
-  version: 0.39.0-beta
+  version: 0.41.0-beta
   license:
     name: AGPLv3
   contact:
@@ -85,6 +85,11 @@ tags:
     externalDocs:
       description: Find out more
       url: 'https://doc.getlago.com/docs/api/webhooks/message-signature#1-retrieve-the-public-key'
+  - name: webhook_endpoints
+    description: Everything about Webhook Endpoints
+    externalDocs:
+      description: Find out more
+      url: 'https://doc.getlago.com/docs/api/webhook_endpoints/webhook-endpoint-object'
 paths:
   /add_ons:
     post:
@@ -1546,7 +1551,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PlanInput'
+              $ref: '#/components/schemas/PlanCreateInput'
         required: true
       responses:
         '200':
@@ -1601,7 +1606,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PlanInput'
+              $ref: '#/components/schemas/PlanUpdateInput'
         required: true
       responses:
         '200':
@@ -1848,7 +1853,7 @@ paths:
                     name: TVA
                     code: french_standard_vat
                     description: French standard VAT
-                    rate: '20.0'
+                    rate: 20
                     applied_to_organization: true
                     customers_count: 0
                     created_at: '2023-07-06T14:35:58Z'
@@ -1856,7 +1861,7 @@ paths:
                     name: TVA
                     code: french_reduced_vat
                     description: French reduce VAT
-                    rate: '5.0'
+                    rate: 5
                     applied_to_organization: false
                     customers_count: 0
                     created_at: '2023-07-06T14:45:23Z'
@@ -2155,6 +2160,185 @@ paths:
                 example: MEgCQQCo9+BpMRYQ/dL3DS2CyJxRF+j6ctbT3/Qp84+KeFhnii7NT7fELilKUSnxS30WAvQCCo2yU1orfgqr41mM70MBAgMBAAE=
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /webhook_endpoints:
+    post:
+      tags:
+        - webhook_endpoints
+      summary: Create a webhook_endpoint
+      description: This endpoint is used to create a webhook endpoint.
+      operationId: createWebhookEndpoint
+      requestBody:
+        description: Webhook Endpoint payload
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                webhook_endpoint:
+                  type: object
+                  required:
+                    - webhook_url
+                  properties:
+                    webhook_url:
+                      type: string
+                      description: The URL of the webhook endpoint.
+                      example: 'https://foo.bar'
+        required: true
+      responses:
+        '200':
+          description: Webhook Endpoint created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - webhook_endpoint
+                properties:
+                  webhook_endpoint:
+                    type: object
+                    required:
+                      - lago_id
+                      - lago_organization_id
+                      - webhook_url
+                      - created_at
+                    properties:
+                      lago_id:
+                        type: string
+                        format: uuid
+                        description: Unique identifier assigned to the wallet within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the webhook endpoint's record within the Lago system.
+                        example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+                      lago_organization_id:
+                        type: string
+                        format: uuid
+                        description: Unique identifier assigned to the organization attached to the webhook endpoint within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the organization’s record within the Lago system.
+                        example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+                      webhook_url:
+                        type: string
+                        description: The name of the wallet.
+                        example: Prepaid
+                      created_at:
+                        type: string
+                        format: date-time
+                        description: 'The date of the webhook endpoint creation, represented in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).'
+                        example: '2022-04-29T08:59:51Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    get:
+      tags:
+        - webhook_endpoints
+      summary: List all webhook endpoints
+      description: This endpoint is used to list all webhook endpoints.
+      operationId: findAllWebhookEndpoints
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: WebhookEndpoints
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - webhook_endpoints
+                  - meta
+                properties:
+                  webhook_endpoints:
+                    type: array
+                    items:
+                      $ref: '#/paths/~1webhook_endpoints/post/responses/200/content/application~1json/schema/properties/webhook_endpoint'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  '/webhook_endpoints/{lago_id}':
+    parameters:
+      - name: lago_id
+        in: path
+        description: Unique identifier assigned to the webhook endpoint within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the webhook endpoint's record within the Lago system.
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+    put:
+      tags:
+        - webhook_endpoints
+      summary: Update a webhook endpoint
+      description: This endpoint is used to update an existing webhook endpoint.
+      operationId: updateWebhookEndpoint
+      requestBody:
+        description: Webhook Endpoint update payload
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                webhook_endpoint:
+                  type: object
+                  required:
+                    - webhook_url
+                  properties:
+                    webhook_url:
+                      type: string
+                      description: The URL of the webhook endpoint.
+                      example: 'https://foo.bar'
+        required: true
+      responses:
+        '200':
+          description: Webhook Endpoint updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1webhook_endpoints/post/responses/200/content/application~1json/schema'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    get:
+      tags:
+        - webhook_endpoints
+      summary: Retrieve a webhook endpoint
+      description: This endpoint is used to retrieve an existing webhook endpoint.
+      operationId: findWebhookEndpoint
+      responses:
+        '200':
+          description: WebhookEndpoint
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1webhook_endpoints/post/responses/200/content/application~1json/schema'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - webhook_endpoints
+      summary: Delete a webhook endpoint
+      description: This endpoint is used to delete an existing webhook endpoint.
+      operationId: destroyWebhookEndpoint
+      responses:
+        '200':
+          description: Webhook Endpoint deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1webhook_endpoints/post/responses/200/content/application~1json/schema'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/NotAllowed'
 components:
   parameters:
     external_customer_id:
@@ -2707,8 +2891,8 @@ components:
           example: french_standard_vat
         tax_rate:
           type: number
-          description: The rate of the tax.
-          example: 25
+          description: The percentage rate of the tax
+          example: 20
         tax_description:
           type: string
           description: Internal description of the taxe
@@ -2741,6 +2925,7 @@ components:
         - name
         - code
         - aggregation_type
+        - recurring
         - created_at
         - active_subscriptions_count
         - draft_invoices_count
@@ -2764,6 +2949,15 @@ components:
           example: GB of storage used in my application
           description: Internal description of the billable metric.
           nullable: true
+        recurring:
+          type: boolean
+          example: false
+          description: |-
+            Defines if the billable metric is persisted billing period over billing period.
+
+            - If set to `true`: the accumulated number of units calculated from the previous billing period is persisted to the next billing period.
+            - If set to `false`: the accumulated number of units is reset to 0 at the end of the billing period.
+            - If not defined in the request, default value is `false`.
         created_at:
           type: string
           format: date-time
@@ -2813,6 +3007,15 @@ components:
           example: GB of storage used in my application
           description: Internal description of the billable metric.
           nullable: true
+        recurring:
+          type: boolean
+          example: false
+          description: |-
+            Defines if the billable metric is persisted billing period over billing period.
+
+            - If set to `true`: the accumulated number of units calculated from the previous billing period is persisted to the next billing period.
+            - If set to `false`: the accumulated number of units is reset to 0 at the end of the billing period.
+            - If not defined in the request, default value is `false`.
         field_name:
           type: string
           example: gb
@@ -2945,6 +3148,15 @@ components:
           type: boolean
           description: 'This field specifies whether the charge should be included in a proper invoice. If set to `false`, no invoice will be issued for this charge. You can only set it to `false` when `pay_in_advance` is `true`.'
           example: true
+        prorated:
+          type: boolean
+          example: false
+          description: |-
+            Specifies whether a charge is prorated based on the remaining number of days in the billing period or billed fully.
+
+            - If set to `true`, the charge is prorated based on the remaining days in the current billing period.
+            - If set to `false`, the charge is billed in full.
+            - If not defined in the request, default value is `false`.
         min_amount_cents:
           type: integer
           description: 'The minimum spending amount required for the charge, measured in cents and excluding any applicable taxes. It indicates the minimum amount that needs to be charged for each billing period.'
@@ -4198,6 +4410,15 @@ components:
           type: string
           example: fr
           description: 'The document locale, specified in the ISO 639-1 format. This field represents the language or locale used for the documents issued by Lago'
+        provider_payment_methods:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: 'Specifies the available payment methods that can be used for this customer when `payment_provider` is set to `stripe`. The `provider_payment_methods` field is an array that allows multiple payment options to be defined. If this field is not explicitly set, all the payment methods are selected. For now, possible values are `card` and `sepa_debit`.'
+          example:
+            - card
+            - sepa_debit
     CustomerChargeUsageObject:
       type: object
       required:
@@ -4298,7 +4519,7 @@ components:
                 nullable: true
               value:
                 type: string
-                example: eruope
+                example: europe
                 description: The group value.
               units:
                 type: string
@@ -4591,11 +4812,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/CustomerMetadata'
-        taxes:
-          description: List of customer taxes
-          type: array
-          items:
-            $ref: '#/components/schemas/TaxObject'
     CustomerObjectExtended:
       allOf:
         - $ref: '#/components/schemas/CustomerObject'
@@ -4605,6 +4821,11 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/CustomerMetadata'
+            taxes:
+              description: List of customer taxes
+              type: array
+              items:
+                $ref: '#/components/schemas/TaxObject'
     CustomersPaginated:
       type: object
       required:
@@ -5701,7 +5922,195 @@ components:
       properties:
         plan:
           $ref: '#/components/schemas/PlanObject'
-    PlanInput:
+    PlanCreateInput:
+      type: object
+      required:
+        - plan
+      properties:
+        plan:
+          type: object
+          properties:
+            name:
+              type: string
+              example: Startup
+              description: The name of the plan.
+            code:
+              type: string
+              example: startup
+              description: 'The code of the plan. It serves as a unique identifier associated with a particular plan. The code is typically used for internal or system-level identification purposes, like assigning a subscription, for instance.'
+            interval:
+              type: string
+              description: 'The interval used for recurring billing. It represents the frequency at which subscription billing occurs. The interval can be one of the following values: `yearly`, `monthly`, or `weekly`.'
+              example: monthly
+              enum:
+                - weekly
+                - monthly
+                - yearly
+            description:
+              type: string
+              description: The description on the plan.
+              example: Plan for early stage startups.
+            amount_cents:
+              type: integer
+              description: 'The base cost of the plan, excluding any applicable taxes, that is billed on a recurring basis. This value is defined at 0 if your plan is a pay-as-you-go plan.'
+              example: 10000
+            amount_currency:
+              allOf:
+                - $ref: '#/components/schemas/Currency'
+                - description: 'The currency of the plan. It indicates the monetary unit in which the plan''s cost, including taxes and usage-based charges, is expressed.'
+                  example: USD
+            trial_period:
+              type: number
+              description: The duration in days during which the base cost of the plan is offered for free.
+              example: 5
+            pay_in_advance:
+              type: boolean
+              description: 'This field determines the billing timing for the plan. When set to `true`, the base cost of the plan is due at the beginning of each billing period. Conversely, when set to `false`, the base cost of the plan is due at the end of each billing period.'
+              example: true
+            bill_charges_monthly:
+              type: boolean
+              description: 'This field, when set to `true`, enables to invoice usage-based charges on monthly basis, even if the cadence of the plan is yearly. This allows customers to pay charges overage on a monthly basis. This can be set to true only if the plan’s interval is `yearly`.'
+              nullable: true
+              example: null
+            charges:
+              type: array
+              description: Additional usage-based charges for this plan.
+              items:
+                type: object
+                properties:
+                  billable_metric_id:
+                    type: string
+                    format: uuid
+                    description: Unique identifier of the billable metric created by Lago.
+                    example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+                  charge_model:
+                    type: string
+                    description: 'Specifies the pricing model used for the calculation of the final fee. It can be `standard`, `graduated`, `package`, `percentage` or `volume`.'
+                    enum:
+                      - standard
+                      - graduated
+                      - package
+                      - percentage
+                      - volume
+                    example: standard
+                  pay_in_advance:
+                    type: boolean
+                    example: false
+                    description: 'This field determines the billing timing for this specific usage-based charge. When set to `true`, the charge is due and invoiced immediately. Conversely, when set to false, the charge is due and invoiced at the end of each billing period.'
+                  invoiceable:
+                    type: boolean
+                    description: 'This field specifies whether the charge should be included in a proper invoice. If set to false, no invoice will be issued for this charge. You can only set it to `false` when `pay_in_advance` is `true`.'
+                    example: true
+                  prorated:
+                    type: boolean
+                    example: false
+                    description: |-
+                      Specifies whether a charge is prorated based on the remaining number of days in the billing period or billed fully.
+
+                      - If set to `true`, the charge is prorated based on the remaining days in the current billing period.
+                      - If set to `false`, the charge is billed in full.
+                      - If not defined in the request, default value is `false`.
+                  min_amount_cents:
+                    type: integer
+                    description: 'The minimum spending amount required for the charge, measured in cents and excluding any applicable taxes. It indicates the minimum amount that needs to be charged for each billing period.'
+                    example: 0
+                  properties:
+                    allOf:
+                      - $ref: '#/components/schemas/ChargeProperties'
+                      - description: List of all thresholds utilized for calculating the charge.
+                  group_properties:
+                    type: array
+                    description: 'All charge information, sorted by groups.'
+                    items:
+                      type: object
+                      required:
+                        - group_id
+                        - values
+                      properties:
+                        group_id:
+                          type: string
+                          description: 'Unique identifier of a billable metric group, created by Lago.'
+                          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+                        values:
+                          allOf:
+                            - $ref: '#/components/schemas/ChargeProperties'
+                            - description: 'List of all thresholds utilized for calculating a charge, scoped by groups used as dimensions for a single charge.'
+              example:
+                - billable_metric_id: 1a901a90-1a90-1a90-1a90-1a901a901a91
+                  charge_model: package
+                  invoiceable: true
+                  pay_in_advance: false
+                  prorated: false
+                  min_amount_cents: 3000
+                  properties:
+                    amount: '30'
+                    free_units: 100
+                    package_size: 1000
+                  group_properties: []
+                - billable_metric_id: 1a901a90-1a90-1a90-1a90-1a901a901a92
+                  charge_model: graduated
+                  invoiceable: true
+                  pay_in_advance: false
+                  prorated: false
+                  min_amount_cents: 0
+                  properties:
+                    graduated_ranges:
+                      - to_value: 10
+                        from_value: 0
+                        flat_amount: '10'
+                        per_unit_amount: '0.5'
+                      - to_value: null
+                        from_value: 11
+                        flat_amount: '0'
+                        per_unit_amount: '0.4'
+                  group_properties: []
+                - billable_metric_id: 1a901a90-1a90-1a90-1a90-1a901a901a93
+                  charge_model: standard
+                  invoiceable: true
+                  pay_in_advance: true
+                  prorated: false
+                  min_amount_cents: 0
+                  properties: {}
+                  group_properties:
+                    - group_id: 1a901a90-1a90-1a90-1a90-1a901a901a01
+                      values:
+                        amount: '10'
+                    - group_id: 1a901a90-1a90-1a90-1a90-1a901a901a02
+                      values:
+                        amount: '5'
+                    - group_id: 1a901a90-1a90-1a90-1a90-1a901a901a03
+                      values:
+                        amount: '8'
+                - billable_metric_id: 1a901a90-1a90-1a90-1a90-1a901a901a94
+                  charge_model: volume
+                  invoiceable: true
+                  pay_in_advance: false
+                  prorated: false
+                  min_amount_cents: 0
+                  properties:
+                    volume_ranges:
+                      - from_value: 0
+                        to_value: 100
+                        flat_amount: '0'
+                        per_unit_amount: '0'
+                      - from_value: 101
+                        to_value: null
+                        flat_amount: '0'
+                        per_unit_amount: '0.5'
+                  group_properties: []
+                - billable_metric_id: 1a901a90-1a90-1a90-1a90-1a901a901a95
+                  charge_model: percentage
+                  invoiceable: false
+                  pay_in_advance: true
+                  prorated: false
+                  min_amount_cents: 0
+                  properties:
+                    rate: '1'
+                    fixed_amount: '0.5'
+                    free_units_per_events: 5
+                    free_units_per_total_aggregation: '500'
+                  group_properties: []
+    PlanUpdateInput:
       type: object
       required:
         - plan
@@ -5785,6 +6194,15 @@ components:
                     type: boolean
                     description: 'This field specifies whether the charge should be included in a proper invoice. If set to false, no invoice will be issued for this charge. You can only set it to `false` when `pay_in_advance` is `true`.'
                     example: true
+                  prorated:
+                    type: boolean
+                    example: false
+                    description: |-
+                      Specifies whether a charge is prorated based on the remaining number of days in the billing period or billed fully.
+
+                      - If set to `true`, the charge is prorated based on the remaining days in the current billing period.
+                      - If set to `false`, the charge is billed in full.
+                      - If not defined in the request, default value is `false`.
                   min_amount_cents:
                     type: integer
                     description: 'The minimum spending amount required for the charge, measured in cents and excluding any applicable taxes. It indicates the minimum amount that needs to be charged for each billing period.'
@@ -5815,6 +6233,7 @@ components:
                   charge_model: package
                   invoiceable: true
                   pay_in_advance: false
+                  prorated: false
                   min_amount_cents: 3000
                   properties:
                     amount: '30'
@@ -5825,6 +6244,7 @@ components:
                   charge_model: graduated
                   invoiceable: true
                   pay_in_advance: false
+                  prorated: false
                   min_amount_cents: 0
                   properties:
                     graduated_ranges:
@@ -5841,6 +6261,7 @@ components:
                   charge_model: standard
                   invoiceable: true
                   pay_in_advance: true
+                  prorated: false
                   min_amount_cents: 0
                   properties: {}
                   group_properties:
@@ -5857,6 +6278,7 @@ components:
                   charge_model: volume
                   invoiceable: true
                   pay_in_advance: false
+                  prorated: false
                   min_amount_cents: 0
                   properties:
                     volume_ranges:
@@ -5873,6 +6295,7 @@ components:
                   charge_model: percentage
                   invoiceable: false
                   pay_in_advance: true
+                  prorated: false
                   min_amount_cents: 0
                   properties:
                     rate: '1'
@@ -5966,6 +6389,7 @@ components:
               charge_model: package
               invoiceable: true
               pay_in_advance: false
+              prorated: false
               min_amount_cents: 3000
               properties:
                 amount: '30'
@@ -5979,6 +6403,7 @@ components:
               charge_model: graduated
               invoiceable: true
               pay_in_advance: false
+              prorated: false
               min_amount_cents: 0
               properties:
                 graduated_ranges:
@@ -5998,6 +6423,7 @@ components:
               charge_model: standard
               invoiceable: true
               pay_in_advance: true
+              prorated: false
               min_amount_cents: 0
               properties: {}
               group_properties:
@@ -6017,6 +6443,7 @@ components:
               charge_model: volume
               invoiceable: true
               pay_in_advance: false
+              prorated: false
               min_amount_cents: 0
               properties:
                 volume_ranges:
@@ -6036,6 +6463,7 @@ components:
               charge_model: percentage
               invoiceable: false
               pay_in_advance: true
+              prorated: false
               min_amount_cents: 0
               properties:
                 rate: '1'
@@ -6322,10 +6750,9 @@ components:
           description: Internal description of the taxe
           example: French standard VAT
         rate:
-          type: string
-          format: '^[0-9]+.?[0-9]*$'
+          type: number
           description: The percentage rate of the tax
-          example: '20.0'
+          example: 20
         applied_to_organization:
           type: boolean
           description: Set to `true` if the tax is used as one of the organization's default
