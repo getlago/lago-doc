@@ -1,0 +1,142 @@
+---
+openapi: "PUT /webhook_endpoints/{lago_id}"
+authMethod: "bearer"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PUT "$LAGO_URL/api/v1/webhook_endpoints/:lago_id" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "webhook_endpoint": {
+      "webhook_url": "https://foo.bar"
+    }
+  }'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import WebhookEndpoint
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+webhook_endpoint = WebhookEndpoint(
+  webhook_url='https://foo.bar'
+)
+
+try:
+    client.webhook_endpoints.update(webhook_endpoint, '__WEBHOOK_ENDPOINT_ID__')
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+
+client.webhook_endpoints.update({
+    webhook_url: 'https://foo.bar'
+}, '__WEBHOOK_ENDPOINT_ID__')
+```
+
+```js Javascript
+await client.webhook_endpoints.updateWebhookEndpoint("webhook-endpoint-id", {
+  webhookEndpoint: { webhookUrl: "https://foo.bar" },
+});
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+webhookEndpointInput := &lago.WebhookEndpointInput{
+    WebhookURL: "https://foo.bar"
+}
+
+webhookEndpoint, err := lagoClient.WebhookEndpoint().Update(webhookEndpointInput, "__WEBHOOK_ENDPOINT_ID__")
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// webhookEndpoint is *lago.WebhookEndpoint
+fmt.Println(webhookEndpoint)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class UpdateWebhookEndpointExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new WebhookEndpointsApi(Configuration.Default);
+          var id = "321da83c-c007-4fbb-afcd-b00c07c41ssd";  // string | Lago ID of the existing wallet
+          var webhookEndpointUpdateInput = new WebhookEndpointUpdateInput(); // WebhookEndpointUpdateInput | Update an existing webhook endpoint
+
+          try
+          {
+              // Update an existing webhook endpoint
+              WebhookEndpoint result = apiInstance.UpdateWebhookEndpoint(id, webhookEndpointUpdateInput);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling WebhookEndpointsApi.UpdateWebhookEndpoint: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\WebhookEndpointsApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$id = "321da83c-c007-4fbb-afcd-b00c07c41ssd"; // string | Lago ID of the existing wallet
+$webhook_endpoint_update_input = new \OpenAPI\Client\Model\WebhookEndpointUpdateInput(); // \OpenAPI\Client\Model\WebhookEndpointUpdateInput | Update an existing webhook endpoint
+
+try {
+  $result = $apiInstance->updateWebhookEndpoint($id, $webhook_endpoint_update_input);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling WebhookEndpointsApi->updateWebhookEndpoint: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>
