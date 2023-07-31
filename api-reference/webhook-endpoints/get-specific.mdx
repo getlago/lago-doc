@@ -1,0 +1,121 @@
+---
+openapi: "GET /webhook_endpoints/{lago_id}"
+authMethod: "bearer"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v1/webhook_endpoints/:id" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.webhook_endpoints.find('id')
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+
+client.webhook_endpoints.get('id')
+```
+
+```js Javascript
+await client.webhookEndpoints.findWebhookEndpoint('webhook-endpoint-id')
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+webhookEndpoint, err := lagoClient.WebhookEndpoint().Get("__ID__")
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// webhookEndpoint is *lago.WebhookEndpoint
+fmt.Println(webhookEndpoint)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class FindWebhookEndpointExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new WebhookEndpointsApi(Configuration.Default);
+          var id = "321da83c-c007-4fbb-afcd-b00c07c41ssd";  // string | Lago ID of the existing webhook endpoint
+
+          try
+          {
+              // Find Webhook Endpoint
+              WebhookEndpoint result = apiInstance.FindWebhookEndpoint(id);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling WebhookEndpointsApi.FindWebhookEndpoint: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\WebhookEndpointsApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$id = "321da83c-c007-4fbb-afcd-b00c07c41ssd"; // string | Lago ID of the existing wallet
+
+try {
+  $result = $apiInstance->findWebhookEndpoint($id);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling WebhookEndpointsApi->findWebhookEndpoint: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>
