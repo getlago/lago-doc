@@ -1,6 +1,7 @@
 ---
-openapi: "GET /webhook_endpoints/{lago_id}"
+openapi: "POST /webhook_endpoints"
 authMethod: "bearer"
+title: "Create a webhook endpoint"
 ---
 
 <RequestExample>
@@ -9,18 +10,29 @@ authMethod: "bearer"
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request GET "$LAGO_URL/api/v1/webhook_endpoints/:id" \
-  --header "Authorization: Bearer $API_KEY"
+curl --location --request POST "$LAGO_URL/api/v1/webhook_endpoints" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "webhook_endpoint": {
+      "webhook_url": "https://foo.bar"
+    }
+  }'
 ```
 
 ```python Python
 from lago_python_client.client import Client
 from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import WebhookEndpoint
 
 client = Client(api_key='__YOUR_API_KEY__')
 
+webhook_endpoint = WebhookEndpoint(
+  webhook_url='https://foo.bar'
+)
+
 try:
-    client.webhook_endpoints.find('id')
+    client.webhook_endpoints.create(webhook_endpoint)
 except LagoApiError as e:
     repair_broken_state(e)  # do something on error or raise your own exception
 ```
@@ -30,11 +42,17 @@ require 'lago-ruby-client'
 
 client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
 
-client.webhook_endpoints.get('id')
+client.webhook_endpoints.create({
+    webhook_url: 'https://foo.bar',
+})
 ```
 
 ```js Javascript
-await client.webhookEndpoints.findWebhookEndpoint('webhook-endpoint-id')
+await client.webhookEndpoints.createWebhookEndpoint({
+  webhookEndpoint: {
+    webhookUrl: "https://foo.bar"
+  },
+});
 ```
 
 ```go Go
@@ -45,7 +63,11 @@ func main() {
 lagoClient := lago.New().
     SetApiKey("__YOUR_API_KEY__")
 
-webhookEndpoint, err := lagoClient.WebhookEndpoint().Get("__ID__")
+webhookEndpointInput := &lago.WebhookEndpointInput{
+    WebhookURL: "https://foo.bar"
+}
+
+webhookEndpoint, err := lagoClient.WebhookEndpoint().Create(webhookEndpointInput)
 if err != nil {
     // Error is *lago.Error
     panic(err)
@@ -65,7 +87,7 @@ using Org.OpenAPITools.Model;
 
 namespace Example
 {
-  public class FindWebhookEndpointExample
+  public class CreateWebhookEndpointExample
   {
       public static void Main()
       {
@@ -74,17 +96,17 @@ namespace Example
           Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
 
           var apiInstance = new WebhookEndpointsApi(Configuration.Default);
-          var id = "321da83c-c007-4fbb-afcd-b00c07c41ssd";  // string | Lago ID of the existing webhook endpoint
+          var webhookEndpointInput = new WebhookEndpointInput(); // WebhookEndpointInput | WebhookEndpoint payload
 
           try
           {
-              // Find Webhook Endpoint
-              WebhookEndpoint result = apiInstance.FindWebhookEndpoint(id);
+              // Create a new wallet
+              WebhookEndpoint result = apiInstance.CreateWebhookEndpoint(webhookEndpointInput);
               Debug.WriteLine(result);
           }
           catch (ApiException e)
           {
-              Debug.Print("Exception when calling WebhookEndpointsApi.FindWebhookEndpoint: " + e.Message );
+              Debug.Print("Exception when calling WebhookEndpointsApi.CreateWebhookEndpoint: " + e.Message );
               Debug.Print("Status Code: "+ e.ErrorCode);
               Debug.Print(e.StackTrace);
           }
@@ -108,13 +130,13 @@ $apiInstance = new OpenAPI\Client\Api\WebhookEndpointsApi(
   new GuzzleHttp\Client(),
   $config
 );
-$id = "321da83c-c007-4fbb-afcd-b00c07c41ssd"; // string | Lago ID of the existing wallet
+$webhook_endpoint_input = new \OpenAPI\Client\Model\WebhookEndpointInput(); // \OpenAPI\Client\Model\WebhookEndpointInput | WebhookEndpoint payload
 
 try {
-  $result = $apiInstance->findWebhookEndpoint($id);
+  $result = $apiInstance->createWebhookEndpoint($webhook_endpoint_input);
   print_r($result);
 } catch (Exception $e) {
-  echo 'Exception when calling WebhookEndpointsApi->findWebhookEndpoint: ', $e->getMessage(), PHP_EOL;
+  echo 'Exception when calling WebhookEndpointsApi->createWebhookEndpoint: ', $e->getMessage(), PHP_EOL;
 }
 ```
 

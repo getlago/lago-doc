@@ -1,6 +1,7 @@
 ---
-openapi: "POST /webhook_endpoints"
+openapi: "GET /webhook_endpoints"
 authMethod: "bearer"
+title: "Retrieve a webhook endpoint"
 ---
 
 <RequestExample>
@@ -9,29 +10,18 @@ authMethod: "bearer"
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request POST "$LAGO_URL/api/v1/webhook_endpoints" \
-  --header "Authorization: Bearer $API_KEY" \
-  --header 'Content-Type: application/json' \
-  --data-raw '{
-    "webhook_endpoint": {
-      "webhook_url": "https://foo.bar"
-    }
-  }'
+curl --location --request GET "$LAGO_URL/api/v1/webhook_endpoints?per_page=2&page=1" \
+  --header "Authorization: Bearer $API_KEY"
 ```
 
 ```python Python
 from lago_python_client.client import Client
 from lago_python_client.exceptions import LagoApiError
-from lago_python_client.models import WebhookEndpoint
 
 client = Client(api_key='__YOUR_API_KEY__')
 
-webhook_endpoint = WebhookEndpoint(
-  webhook_url='https://foo.bar'
-)
-
 try:
-    client.webhook_endpoints.create(webhook_endpoint)
+    client.webhook_endpoints.find_all({'per_page': 2, 'page': 1})
 except LagoApiError as e:
     repair_broken_state(e)  # do something on error or raise your own exception
 ```
@@ -41,16 +31,13 @@ require 'lago-ruby-client'
 
 client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
 
-client.webhook_endpoints.create({
-    webhook_url: 'https://foo.bar',
-})
+client.webhook_endpoints.get_all({ per_page: 2, page: 3 })
 ```
 
 ```js Javascript
-await client.webhookEndpoints.createWebhookEndpoint({
-  webhookEndpoint: {
-    webhookUrl: "https://foo.bar"
-  },
+await client.webhookEndpoints.findAllWebhookEndpoints({
+  perPage: 2,
+  page: 3,
 });
 ```
 
@@ -62,18 +49,19 @@ func main() {
 lagoClient := lago.New().
     SetApiKey("__YOUR_API_KEY__")
 
-webhookEndpointInput := &lago.WebhookEndpointInput{
-    WebhookURL: "https://foo.bar"
+webhookEndpointListInput := &lago.WebhookEndpointListInput{
+    PerPage: 10,
+    Page: 1
 }
 
-webhookEndpoint, err := lagoClient.WebhookEndpoint().Create(webhookEndpointInput)
+webhookEndpointResult, err := lagoClient.WebhookEndpoint().GetList(WebhookEndpointListInput)
 if err != nil {
     // Error is *lago.Error
     panic(err)
 }
 
-// webhookEndpoint is *lago.WebhookEndpoint
-fmt.Println(webhookEndpoint)
+// webhookEndpointResult is *lago.WebhookEndpointResult
+fmt.Println(webhookEndpointResult)
 }
 ```
 
@@ -86,7 +74,7 @@ using Org.OpenAPITools.Model;
 
 namespace Example
 {
-  public class CreateWebhookEndpointExample
+  public class FindAllWebhookEndpointsExample
   {
       public static void Main()
       {
@@ -95,17 +83,18 @@ namespace Example
           Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
 
           var apiInstance = new WebhookEndpointsApi(Configuration.Default);
-          var webhookEndpointInput = new WebhookEndpointInput(); // WebhookEndpointInput | WebhookEndpoint payload
+          var page = 2;  // int? | Number of page (optional) 
+          var perPage = 20;  // int? | Number of records per page (optional) 
 
           try
           {
-              // Create a new wallet
-              WebhookEndpoint result = apiInstance.CreateWebhookEndpoint(webhookEndpointInput);
+              // Find webhook endpoints
+              WebhookEndpoints result = apiInstance.FindAllWebhookEndpoints(page, perPage);
               Debug.WriteLine(result);
           }
           catch (ApiException e)
           {
-              Debug.Print("Exception when calling WebhookEndpointsApi.CreateWebhookEndpoint: " + e.Message );
+              Debug.Print("Exception when calling WebhookEndpointsApi.FindAllWebhookEndpoints: " + e.Message );
               Debug.Print("Status Code: "+ e.ErrorCode);
               Debug.Print(e.StackTrace);
           }
@@ -129,13 +118,14 @@ $apiInstance = new OpenAPI\Client\Api\WebhookEndpointsApi(
   new GuzzleHttp\Client(),
   $config
 );
-$webhook_endpoint_input = new \OpenAPI\Client\Model\WebhookEndpointInput(); // \OpenAPI\Client\Model\WebhookEndpointInput | WebhookEndpoint payload
+$page = 2; // int | Number of page
+$per_page = 20; // int | Number of records per page
 
 try {
-  $result = $apiInstance->createWebhookEndpoint($webhook_endpoint_input);
+  $result = $apiInstance->findAllWebhookEndpoints($page, $per_page);
   print_r($result);
 } catch (Exception $e) {
-  echo 'Exception when calling WebhookEndpointsApi->createWebhookEndpoint: ', $e->getMessage(), PHP_EOL;
+  echo 'Exception when calling WebhookEndpointsApi->findAllWebhookEndpoints: ', $e->getMessage(), PHP_EOL;
 }
 ```
 
