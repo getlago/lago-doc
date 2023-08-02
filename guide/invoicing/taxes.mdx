@@ -91,6 +91,64 @@ To apply tax objects to the organization:
   </Tab>
 </Tabs>
 
+### Taxes at the plan and charges level
+
+Follow these steps to apply tax objects to a plan:
+<Tabs>
+  <Tab title="Dashboard">
+    1. Ensure that you have already created the necessary taxes on your account.
+    2. Navigate to the **Plan** section and click on **Add a plan**.
+    3. In the **Plan settings** section, click on **Add a tax rate**.
+    4. If you have usage-based charges, expand the **More options** section for the charge and click on **Add a tax rate** to define taxes specific to that charge.
+    5. **Note**: If taxes are defined on charges, they will override the tax rate defined at the plan level.
+    6. Complete the process of creating your plan and apply it to customers to generate an invoice.
+    <Frame caption="Add a tax on the charge">
+    <img src="/guide/invoicing/images/tax-on-charges.png" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+      <CodeGroup>
+      ```bash Add taxes to a plan and to charges
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "plan": {
+          "name": "Starter",
+          "code": "starter",
+          "interval": "monthly",
+          "description": "",
+          "amount_cents": 9900,
+          "amount_currency": "USD",
+          "trial_period": "",
+          "pay_in_advance": true,
+          "bill_charges_monthly": null,
+          "tax_codes": ["french_standard_vat"]
+          "charges": [
+            {
+              "lago_billable_metric_id": "61ddebee-f8ac-4794-90cf-d626b55ab0ed",
+              "billable_metric_code": "user_seat",
+              "charge_model": "standard",
+              "invoiceable": true,
+              "pay_in_advance": false,
+              "prorated": false,
+              "min_amount_cents": 0,
+              "tax_codes":["french_standard_vat"]
+              "properties": {
+                "amount": "0.10"
+              }
+            }	
+          ]
+        }
+      }'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
 
 ### Taxes at the customer level
 
@@ -130,7 +188,8 @@ When taxes are defined at the organization level, customers who do not have spec
 
 When an invoice is generated, the tax hierarchy is as follows:
 1. Lago applies the tax objects defined at the customer level;
-2. If there are no taxes at the customer level, Lago applies the tax objects defined at the organization level; and
+2. If there are no taxes at the customer level, Lago applies the tax objects defined at the charge and plan level; and
+3. If there are no taxes at the charge or plan level, Lago applies the tax objects defined at the organization level; and
 3. If there are no taxes at the organization level, Lago applies a 0% tax rate (visible on the invoice).
 
 <Frame caption="Tax hierarchy">
