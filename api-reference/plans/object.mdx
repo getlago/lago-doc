@@ -18,6 +18,7 @@ description: "This object represents a plan. This plan can then be assigned to a
     "trial_period": 5,
     "pay_in_advance": true,
     "bill_charges_monthly": "boolean",
+    "tax_codes": ["french_standard_vat"],
     "active_subscriptions_count": "integer",
     "draft_invoices_count": "integer",
     "charges": [
@@ -31,6 +32,7 @@ description: "This object represents a plan. This plan can then be assigned to a
         "pay_in_advance": false,
         "min_amount_cents": 3000,
         "prorated": false,
+        "tax_codes": ["french_standard_vat"],
         "properties": {
           "amount": "30",
           "free_units": 100,
@@ -187,6 +189,9 @@ description: "This object represents a plan. This plan can then be assigned to a
     <ResponseField name="bill_charges_monthly" type="boolean">
       This field, when set to `true`, enables to invoice usage-based charges on monthly basis, even if the cadence of the plan is `yearly`. This allows customers to pay charges overage on a monthly basis. This can be set to true only if the plan’s interval is `yearly`.
     </ResponseField>
+    <ResponseField name="tax_code" type="string">
+      List of unique code used to identify the taxes.
+    </ResponseField>
     <ResponseField name="active_subscriptions_count" type="integer" required>
       The count of active subscriptions that are currently associated with the plan. This field provides valuable information regarding the impact of deleting the plan. By checking the value of this field, you can determine the number of subscriptions that will be affected if the plan is deleted.
     </ResponseField>
@@ -228,6 +233,9 @@ description: "This object represents a plan. This plan can then be assigned to a
           - If set to `false`, the charge is billed in full.
 
           Note that only a `charge_model` sets to `standard` and `volume` can be prorated.
+        </ResponseField>
+        <ResponseField name="tax_code" type="string">
+        List of unique code used to identify the taxes.
         </ResponseField>
         <ResponseField name="properties" type="JSON">
           <Expandable>
