@@ -15,7 +15,8 @@ curl --location --request PUT "$LAGO_URL/api/v1/webhook_endpoints/:lago_id" \
   --header 'Content-Type: application/json' \
   --data-raw '{
     "webhook_endpoint": {
-      "webhook_url": "https://foo.bar"
+      "webhook_url": "https://foo.bar",
+      "signature_algo": "hmac"
     }
   }'
 ```
@@ -28,7 +29,8 @@ from lago_python_client.models import WebhookEndpoint
 client = Client(api_key='__YOUR_API_KEY__')
 
 webhook_endpoint = WebhookEndpoint(
-  webhook_url='https://foo.bar'
+  webhook_url='https://foo.bar',
+  signature_algo: 'hmac'
 )
 
 try:
@@ -43,7 +45,8 @@ require 'lago-ruby-client'
 client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
 
 client.webhook_endpoints.update({
-    webhook_url: 'https://foo.bar'
+    webhook_url: 'https://foo.bar',
+    signature_algo: 'hmac'
 }, '__WEBHOOK_ENDPOINT_ID__')
 ```
 

@@ -10,12 +10,44 @@ To add a webhook endpoint via the Lago app, follow these steps:
 1. Go to the **Developers** section via the sidebar;
 2. Open the **Webhooks** tab;
 3. Click **Add a webhook**;
-4. Enter the webhook URL; and
-5. Click **Add webhook** to confirm.
+4. Enter the webhook URL;
+5. Choose the webhook signature between JWT and HMAC; and
+6. Click **Add webhook** to confirm.
 
 <Info>
 Note that you can add up to 5 webhook endpoints.
 </Info>
+
+## The webhook signature
+By creating a webhook endpoint, you have two signature options.
+<Tabs>
+  <Tab title="Dashboard">
+    - The first is `JWT`, with a possibly lengthy payload header and potential size limits. 
+    - The second is `HMAC`, which features a shorter payload header and no size restrictions.
+
+  <Frame caption="Webhook endpoint signature">
+    <img src="/guide/images/webhook-signature.png" />
+  </Frame>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Choosing the webhook signature
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/webhook_endpoints" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "webhook_endpoint": {
+          "webhook_url": "https://foo.bar",
+          "signature_algo": "hmac
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
 
 ## Accessing the webhook logs
 
