@@ -21,15 +21,19 @@ Lago workspace.
 
 ## Signature[](#signature "Direct link to heading")
 
-Allong with the payload the message contains a `X-Lago-Signature` HTTP header.
+Allong with the payload the message contains both `X-Lago-Signature` and `X-Lago-Signature-Algorithm` HTTP header.
 
-It is used to ensure the message is Coming from Lago and that the message has
-not been altered.
+It is used to ensure the message is Coming from Lago and that the message has not been altered.
 
-To verify the signature, you must decode the signature and compare the result
-with the body of the webhook.
+To verify the signature, you must decode the signature and compare the result with the body of the webhook.
 
-### 1\. Retrieve the public key[](#1-retrieve-the-public-key "Direct link to heading")
+You can choose between 2 differents signatures algorithm during your webhook endpoints creation, `hmac` or `jwt`.
+Please note that `jwt` is our original signature and is used by default.
+
+
+### JWT Signature
+
+#### 1\. Retrieve the public key[](#1-retrieve-the-public-key "Direct link to heading")
 
 <CodeGroup>
 
@@ -73,7 +77,7 @@ webhooks_public_key = response.body
   webhook.
 </Tip>
 
-### 2\. Decode and validate the signature[](#2-decode-and-validate-the-signature "Direct link to heading")
+#### 2\. Decode and validate the signature[](#2-decode-and-validate-the-signature "Direct link to heading")
 
 <CodeGroup>
 
@@ -126,4 +130,51 @@ decoded_signature = JWT.decode(
 decoded_signature['data'] == request.body
 ```
 
+</CodeGroup>
+
+### HMAC Signature
+
+#### Decode and validate the signature
+
+<CodeGroup>
+
+  ```py Python
+  import hmac
+  import hashlib
+  import base64
+
+  encoded_body = hmac.new(
+    str(YOUR_ORGANIZATION_API_KEY),
+    msg=request.body,
+    digestmod=hashlib.sha256
+  ).hexdigest().upper()
+  encoded_body_bytes = encoded_body.encode("ascii")
+  base64_encoded_body = base64.b64encode(encoded_body_bytes)
+  base64_encoded_body_string = base64_bytes.decode("ascii")
+
+  request.headers.get('X-Lago-Signature') == base64_encoded_body_string
+  ```
+
+  ```js Node.js
+  import crypto from 'crypto';
+
+  const signature = request.header('X-Lago-Signature')
+  const hmac = crypto.createHmac('sha256', 'YOUR_ORGANIZATION_API_KEY')
+
+  hmac.update(request.body)
+
+  const encodedBody = hmac.digest().toString('base64')
+
+  signature == encodedBody
+  ```
+
+  ```ruby Ruby
+  require 'openssl'
+
+  signature =  request.headers['X-Lago-Signature']
+  hmac = OpenSSL::HMAC.digest('sha-256', 'YOUR_ORGANIZATION_API_KEY', request.body)
+  base64_hmac = Base64.strict_encode64(hmac)
+
+  base64_hmac == signature
+  ```
 </CodeGroup>
