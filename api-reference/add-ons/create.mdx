@@ -19,7 +19,8 @@ curl --location --request POST "$LAGO_URL/api/v1/add_ons" \
       "code": "setup_fee",
       "amount_cents": 50000,
       "amount_currency": "USD",
-      "description": "Implementation fee for new customers."
+      "description": "Implementation fee for new customers.",
+      "tax_codes": ["french_reduced_vat"]
     }
   }'
 ```
@@ -36,7 +37,8 @@ add_on = AddOn(
   code='setup_fee',
   amount_cents=50000,
   amount_currency='USD',
-  description='Implementation fee for new customers.'
+  description='Implementation fee for new customers.',
+  tax_codes= ['french_standard_vat']
 )
 
 try:
@@ -56,6 +58,7 @@ add_on = {
   description: 'Implementation fee for new customers.',
   amount_cents: 50000,
   amount_currency: 'USD',
+  tax_codes: ['french_standard_vat']
 }
 
 client.add_ons.create(add_on)
@@ -68,6 +71,7 @@ const addOnObject = {
   description: "Implementation fee for new customers.",
   amountCents: 50000,
   amountCurrency: "USD",
+  taxCodes: ["french_standard_vat"]
 };
 
 await client.addOns.createAddOn({ addOn: addOnObject });
@@ -82,7 +86,7 @@ lagoClient := lago.New().
     SetApiKey("__YOUR_API_KEY__")
 
 addOnInput := &lago.AddOnInput{
-            Name:          "Setup Fee",
+        Name:           "Setup Fee",
         Code:           "setup_fee",
         AmountCents:    50000,
         AmountCurrency: lago.USD,
