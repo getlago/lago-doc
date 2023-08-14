@@ -91,6 +91,41 @@ To apply tax objects to the organization:
   </Tab>
 </Tabs>
 
+
+### Taxes at the customer level
+
+To apply tax objects to a specific customer:
+<Tabs>
+  <Tab title="Dashboard">
+    1. Access the customer settings page through the **Customer** details page > **Settings** tab;
+    2. In the **Tax rates** section, click **"Add a tax"** to add a new tax;
+    3. Select the tax object you want to apply; and
+    4. Repeat the action if you want to add another tax.
+    <Frame caption="Add a tax on the customer">
+    <img src="/guide/invoicing/images/tax-on-customer.png" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+      <CodeGroup>
+      ```bash Premium Plan Example
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request PUT "$LAGO_URL/api/v1/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "code": "acme_inc",
+          "taxes": ["french_vat"]
+        }
+      }'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+
 ### Taxes at the plan and charges level
 
 Follow these steps to apply tax objects to a plan:
@@ -149,41 +184,45 @@ Follow these steps to apply tax objects to a plan:
   </Tab>
 </Tabs>
 
+### Taxes at the add-on level
 
-### Taxes at the customer level
-
-To apply tax objects to a specific customer:
+Follow these steps to apply tax objects to a add-on:
 <Tabs>
   <Tab title="Dashboard">
-    1. Access the customer settings page through the **Customer** details page > **Settings** tab;
-    2. In the **Tax rates** section, click **"Add a tax"** to add a new tax;
-    3. Select the tax object you want to apply; and
-    4. Repeat the action if you want to add another tax.
-    <Frame caption="Add a tax on the customer">
-    <img src="/guide/invoicing/images/tax-on-customer.png" />
+    1. Make sure you have already set up the required taxes within your account.
+    2. Navigate to the "Add-ons" section and click on "Add an add-on."
+    3. Within the "Add-on settings" area, click on "Add a tax rate."
+    4. Finish creating your add-on and apply it to customers using a one-off invoice to generate the invoice.
+    <Frame caption="Add a tax on the add-on">
+    <img src="/guide/invoicing/images/tax-on-add-on.png"/>
     </Frame>
   </Tab>
   <Tab title="API">
       <CodeGroup>
-      ```bash Premium Plan Example
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
-
-      curl --location --request PUT "$LAGO_URL/api/v1/customers" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "customer": {
-          "code": "acme_inc",
-          "taxes": ["french_vat"]
+      ```bash Add taxes to an add-on
+      {
+        "add_on": {
+          "name": "Setup fee",
+          "code": "setup_fee",
+          "amount_cents": 100000,
+          "amount_currency": "USD",
+          "description": "",
+          "tax_codes": ["french_standard_vat"]
         }
-      }'
+      }
       ```
       </CodeGroup>
   </Tab>
 </Tabs>
 
-### Tax hierarchy
+<Tip>
+  Keep in mind that tax rates defined at the add-on level can be overridden when creating a one-off invoice.
+</Tip>
+
+
+## Tax hierarchy
+
+### Invoice linked to a subscription
 When an invoice linked to a subscription is generated, 
 the taxation process follows a hierarchy that determines how taxes are applied to different fees:
 
@@ -191,3 +230,16 @@ the taxation process follows a hierarchy that determines how taxes are applied t
 2. Taxes defined at the **customer** level will override the organization-level taxes and impact all invoice fees (subscription & charges).
 3. Taxes defined at the **plan** level will override the customer-level taxes and impact all invoice fees (subscription & charges).
 4. Taxes defined at the **charge** level will override the plan-level taxes but will impact only the fee associated with that particular charge.
+
+
+### Invoice linked to a one-off-invoice
+When an invoice linked to a one-off is generated, the taxation process follows a hierarchy that determines how taxes are applied to different fees:
+
+1. Taxes defined at the **organization** level will impact all invoice fees
+2. Taxes defined at the **customer** level will override the organization-level taxes and impact all invoice fees
+3. Taxes defined at the **add-on** level will override the customer-level taxes and impact only the fee associated with that particular add-on
+4. While creating a one-off invoice, taxes defined at the **fees** level will override add-on-level taxes but will solely impact the fee associated with that particular add-on.
+
+### Invoice linked to prepaid credit
+
+Since we treat the purchase of credits as an upfront payment before usage, invoices generated for prepaid credit purchases will not include any taxes.
