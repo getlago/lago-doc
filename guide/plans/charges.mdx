@@ -318,7 +318,7 @@ Here is the full list of usage-based charges pricing models provided by Lago.
     Therefore, for the fourth transaction, the charge will be $0.10 x 1 event + 1.2%
     of $50 = $0.70.
   </Tab>
-    <Tab title="Volume">
+  <Tab title="Volume">
       Select the volume charge model if you want to define several price tiers but
       want to apply a **single unit price based on the total volume**. You can also
       apply a **flat fee** in addition to the unit price.
@@ -333,6 +333,32 @@ Here is the full list of usage-based charges pricing models provided by Lago.
       | Tier 4 | 100,001    | ∞         | $0.0004    | $10       |
 
       In this case, 65,000 API calls would cost 65,000 x $0.0006 + $10 = $49.
+  </Tab>
+  <Tab title="Graduated percentage">
+      Select the graduated percentage model if you want to define several percentage tiers. You can also
+      apply a **flat fee** per tier and a **fixed fee** per transaction (per event) in addition to the rate.
+      Note that the **rate** is the only mandatory value. It's particularly useful for fintech charging graduated rates for a feature.
+
+      Consider the following example, where each unit represents an API call:
+
+      | Tier   | First unit | Last unit | Rate       | Fixed fee | Flat fee |
+      | ------ | ---------- | --------- | ---------- | --------- | -------- |
+      | Tier 1 | $0         | $1000     | 1%         | $0.5      | $200     |
+      | Tier 2 | $1,001     | $10,000   | 2%         | $0.4      | $300     |
+      | Tier 3 | 10,001     | ∞         | 3%         | $0.3      | $400     |
+
+      A first transaction at $500 would cost (500 units x 1%) + ($0.50 fixed fee x 1 transaction) + $200 flat fee = $205.50.
+      A second transaction at $550 would cost [(500 units x 1%) + ($0.40 fixed fee x 1 transaction)] + [(50 units x 2%) + $300 flat fee] = $306.40.
+      A third transaction at $4000 would cost (4000 x 2%) + ($0.40 fixed fee x 1 transaction) = $80.40
+
+      <Tip>
+        **The fixed fee applies to individual events, each representing a transaction.** 
+        When a transaction spans two tiers, the Lago billing engine only charges the fixed fee of the higher tier.
+      </Tip>
+
+      <Tip>
+        Unlike the fixed fee, **the flat fee is applied to the entire tier**, rather than per transaction.
+      </Tip>
   </Tab>
 </Tabs>
 
