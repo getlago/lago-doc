@@ -145,6 +145,43 @@ description: "This object represents a plan. This plan can then be assigned to a
           "free_units_per_total_aggregation": "500"
         },
         "group_properties": []
+      },
+      {
+        "lago_id": "fcdfdbd0-ded2-420b-b51f-d5c3422181a0",
+        "lago_billable_metric_id": "89f2cdb6-2323-4b0f-9854-5323f432c0b6",
+        "billable_metric_code": "transfer",
+        "created_at": "2023-08-17T19:11:47Z",
+        "charge_model": "graduated_percentage",
+        "invoiceable": true,
+        "pay_in_advance": true,
+        "prorated": false,
+        "min_amount_cents": 200000,
+        "properties": {
+          "graduated_percentage_ranges": [
+            {
+              "rate": "1",
+              "to_value": 1000,
+              "from_value": 0,
+              "flat_amount": "200",
+              "fixed_amount": "0.5"
+            },
+            {
+              "rate": "2",
+              "to_value": 10000,
+              "from_value": 1001,
+              "flat_amount": "300",
+              "fixed_amount": "0.4"
+            },
+            {
+              "rate": "3",
+              "to_value": null,
+              "from_value": 10001,
+              "flat_amount": "400",
+              "fixed_amount": "0.3"
+            }
+          ]
+        },
+        "group_properties": []
       }
     ]
   }
@@ -253,7 +290,7 @@ description: "This object represents a plan. This plan can then be assigned to a
                 </ResponseField>
               </Expandable>
             </ResponseField>
-            ### Case of graduate pricing model
+            ### Case of graduated pricing model
             <ResponseField name="graduated_ranges" type="array" required>
               <Expandable>
                 <ResponseField name="from_value" type="integer" required>
@@ -311,6 +348,28 @@ description: "This object represents a plan. This plan can then be assigned to a
                 </ResponseField>
                 <ResponseField name="flat_amount" type="string" required>
                   The flat amount for a whole tier, excluding tax, for a `volume` charge model. It is expressed as a decimal value.
+                </ResponseField>
+              </Expandable>
+            </ResponseField>
+            ### Case of graduated percentage pricing model
+            <ResponseField name="graduated_percentage_ranges" type="array" required>
+              <Expandable>
+                <ResponseField name="from_value" type="integer" required>
+                  Specifies the lower value of a tier for a `graduated percentage` charge model. It must be either 0 or the previous range's to_value + 1 to maintain the proper sequence of values.
+                </ResponseField>
+                <ResponseField name="to_value" type="integer" required>
+                  Specifies the highest value of a tier for a `graduated percentage` charge model. 
+                    - This value must be higher than the `from_value` of the same tier.
+                    - This value must be `null` for the last tier.
+                </ResponseField>
+                <ResponseField name="rate" type="string" required>
+                  The percentage rate that is applied to the amount of each transaction for a `graduated percentage` charge model. It is expressed as a decimal value, and only set for a specific tier.
+                </ResponseField>
+                <ResponseField name="fixed_amount" type="string" required>
+                  The fixed amount applies to individual events, each representing a transaction, excluding tax, for a `graduated percentage` charge model.  When a transaction spans two tiers, the Lago billing engine only charges the fixed fee of the higher tier.
+                </ResponseField>
+                <ResponseField name="flat_amount" type="string" required>
+                  The flat amount for a whole tier, excluding tax, for a `graduated percentage` charge model. It is expressed as a decimal value.
                 </ResponseField>
               </Expandable>
             </ResponseField>
