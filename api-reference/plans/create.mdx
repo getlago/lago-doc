@@ -117,6 +117,39 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
             }
           ]
         }
+      },
+      {
+        "billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "charge_model": "graduated_percentage",
+        "pay_in_advance": true,
+        "invoiceable": true,
+        "min_amount_cents": 0,
+        "prorated": false,
+        "properties": {
+          "graduated_percentage_ranges": [
+            {
+              "rate": "1",
+              "to_value": 1000,
+              "from_value": 0,
+              "flat_amount": "200",
+              "fixed_amount": "0.5"
+            },
+            {
+              "rate": "2",
+              "to_value": 10000,
+              "from_value": 1001,
+              "flat_amount": "300",
+              "fixed_amount": "0.4"
+            },
+            {
+              "rate": "3",
+              "to_value": null,
+              "from_value": 10001,
+              "flat_amount": "400",
+              "fixed_amount": "0.3"
+            }
+          ]
+        }
       }
     ]
   }
@@ -215,6 +248,37 @@ volume_charge = Charge(
         'from_value': 11,
         'flat_amount': '0',
         'per_unit_amount': '0.0005'
+      }
+    ]
+  }
+)
+
+graduated_percentage_charge = Charge(
+  billable_metric_id='id,
+  charge_model='graduated_percentage',
+  prorated=true,
+  properties={
+    'graduated_percentage_ranges': [
+      {
+        "rate": "1",
+        "to_value": 1000,
+        "from_value": 0,
+        "flat_amount": "200",
+        "fixed_amount": "0.5"
+      },
+      {
+        "rate": "2",
+        "to_value": 10000,
+        "from_value": 1001,
+        "flat_amount": "300",
+        "fixed_amount": "0.4"
+      },
+      {
+        "rate": "3",
+        "to_value": null,
+        "from_value": 10001,
+        "flat_amount": "400",
+        "fixed_amount": "0.3"
       }
     ]
   }
@@ -342,6 +406,36 @@ plan = {
             from_value: 11,
             flat_amount: '0',
             per_unit_amount: '0.0005'
+          }
+        ]
+      }
+    },
+    {
+      billable_metric_id: 'id',
+      charge_model: 'graduated_percentage',
+      prorated: false,
+      properties: {
+        graduated_percentage_ranges: [
+          {
+            "rate": "1",
+            "to_value": 1000,
+            "from_value": 0,
+            "flat_amount": "200",
+            "fixed_amount": "0.5"
+          },
+          {
+            "rate": "2",
+            "to_value": 10000,
+            "from_value": 1001,
+            "flat_amount": "300",
+            "fixed_amount": "0.4"
+          },
+          {
+            "rate": "3",
+            "to_value": null,
+            "from_value": 10001,
+            "flat_amount": "400",
+            "fixed_amount": "0.3"
           }
         ]
       }
