@@ -129,24 +129,21 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
           "graduated_percentage_ranges": [
             {
               "rate": "1",
-              "to_value": 1000,
               "from_value": 0,
-              "flat_amount": "200",
-              "fixed_amount": "0.5"
+              "to_value": 1000,
+              "flat_amount": "200"
             },
             {
               "rate": "2",
-              "to_value": 10000,
               "from_value": 1001,
-              "flat_amount": "300",
-              "fixed_amount": "0.4"
+              "to_value": 10000,
+              "flat_amount": "300"
             },
             {
               "rate": "3",
-              "to_value": null,
               "from_value": 10001,
-              "flat_amount": "400",
-              "fixed_amount": "0.3"
+              "to_value": null,
+              "flat_amount": "400"
             }
           ]
         }
@@ -263,22 +260,19 @@ graduated_percentage_charge = Charge(
         "rate": "1",
         "from_value": 0,
         "to_value": 1000,
-        "flat_amount": "200",
-        "fixed_amount": "0.5"
+        "flat_amount": "200"
       },
       {
         "rate": "2",
         "from_value": 1001,
         "to_value": 10000,
-        "flat_amount": "300",
-        "fixed_amount": "0.4"
+        "flat_amount": "300"
       },
       {
         "rate": "3",
         "from_value": 10001,
         "to_value": null,
-        "flat_amount": "400",
-        "fixed_amount": "0.3"
+        "flat_amount": "400"
       }
     ]
   }
@@ -289,7 +283,8 @@ charges = Charges(__root__=[
   graduated_charge,
   package_charge,
   percentage_charge,
-  volume_charge
+  volume_charge,
+  graduated_percentage_charge
 ])
 
 plan = Plan(
@@ -418,24 +413,21 @@ plan = {
         graduated_percentage_ranges: [
           {
             "rate": "1",
-            "to_value": 1000,
             "from_value": 0,
-            "flat_amount": "200",
-            "fixed_amount": "0.5"
+            "to_value": 1000,
+            "flat_amount": "200"
           },
           {
             "rate": "2",
-            "to_value": 10000,
             "from_value": 1001,
-            "flat_amount": "300",
-            "fixed_amount": "0.4"
+            "to_value": 10000,
+            "flat_amount": "300"
           },
           {
             "rate": "3",
-            "to_value": null,
             "from_value": 10001,
-            "flat_amount": "400",
-            "fixed_amount": "0.3"
+            "to_value": null,
+            "flat_amount": "400"
           }
         ]
       }
@@ -554,12 +546,40 @@ const volumeChargeObject = {
   },
 };
 
+const graduatePercentageChargeObject = {
+  lagoId: null,
+  billableMetricCode: null,
+  createdAt: null,
+  lagoBillableMetricId: "id",
+  chargeModel: "graduated_percentage" as ChargeObject["chargeModel"],
+  payInAdvance: false,
+  minAmountCents: 0,
+  prorated: true,
+  properties: {
+    volumeRanges: [
+      {
+        fromValue: 0,
+        toValue: 10,
+        rate: "1",
+        flatAmount: "100"
+      },
+      {
+        fromValue: 11,
+        toValue: null,
+        rate: "2",
+        flatAmount: "0"
+      },
+    ],
+  },
+};
+
 const charges = [
   standardChargeObject,
   packageChargeObject,
   graduatedChargeObject,
   percentageChargeObject,
   volumeChargeObject,
+  graduatePercentageChargeObject
 ];
 
 const planObject: PlanInput = {
