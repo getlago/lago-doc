@@ -117,6 +117,36 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
             }
           ]
         }
+      },
+      {
+        "billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "charge_model": "graduated_percentage",
+        "pay_in_advance": true,
+        "invoiceable": true,
+        "min_amount_cents": 0,
+        "prorated": false,
+        "properties": {
+          "graduated_percentage_ranges": [
+            {
+              "rate": "1",
+              "from_value": 0,
+              "to_value": 1000,
+              "flat_amount": "200"
+            },
+            {
+              "rate": "2",
+              "from_value": 1001,
+              "to_value": 10000,
+              "flat_amount": "300"
+            },
+            {
+              "rate": "3",
+              "from_value": 10001,
+              "to_value": null,
+              "flat_amount": "400"
+            }
+          ]
+        }
       }
     ]
   }
@@ -155,14 +185,14 @@ graduated_charge = Charge(
   prorated=false,
   properties=[
     {
-      'to_value': 10,
       'from_value': 0,
+      'to_value': 10,
       'flat_amount': '0',
       'per_unit_amount': '0.00010'
     },
     {
-      'to_value': None,
       'from_value': 11,
+      'to_value': None,
       'flat_amount': "0",
       'per_unit_amount': '0.0005'
     }
@@ -205,16 +235,44 @@ volume_charge = Charge(
   properties={
     'volume_ranges': [
       {
-        'to_value': 10,
         'from_value': 0,
+        'to_value': 10,
         'flat_amount': '0',
         'per_unit_amount': '0.00010'
       },
       {
-        'to_value': None,
         'from_value': 11,
+        'to_value': None,
         'flat_amount': '0',
         'per_unit_amount': '0.0005'
+      }
+    ]
+  }
+)
+
+graduated_percentage_charge = Charge(
+  billable_metric_id='id,
+  charge_model='graduated_percentage',
+  prorated=true,
+  properties={
+    'graduated_percentage_ranges': [
+      {
+        "rate": "1",
+        "from_value": 0,
+        "to_value": 1000,
+        "flat_amount": "200"
+      },
+      {
+        "rate": "2",
+        "from_value": 1001,
+        "to_value": 10000,
+        "flat_amount": "300"
+      },
+      {
+        "rate": "3",
+        "from_value": 10001,
+        "to_value": null,
+        "flat_amount": "400"
       }
     ]
   }
@@ -225,7 +283,8 @@ charges = Charges(__root__=[
   graduated_charge,
   package_charge,
   percentage_charge,
-  volume_charge
+  volume_charge,
+  graduated_percentage_charge
 ])
 
 plan = Plan(
@@ -345,6 +404,33 @@ plan = {
           }
         ]
       }
+    },
+    {
+      billable_metric_id: 'id',
+      charge_model: 'graduated_percentage',
+      prorated: false,
+      properties: {
+        graduated_percentage_ranges: [
+          {
+            "rate": "1",
+            "from_value": 0,
+            "to_value": 1000,
+            "flat_amount": "200"
+          },
+          {
+            "rate": "2",
+            "from_value": 1001,
+            "to_value": 10000,
+            "flat_amount": "300"
+          },
+          {
+            "rate": "3",
+            "from_value": 10001,
+            "to_value": null,
+            "flat_amount": "400"
+          }
+        ]
+      }
     }
   ]
 }
@@ -460,12 +546,40 @@ const volumeChargeObject = {
   },
 };
 
+const graduatePercentageChargeObject = {
+  lagoId: null,
+  billableMetricCode: null,
+  createdAt: null,
+  lagoBillableMetricId: "id",
+  chargeModel: "graduated_percentage" as ChargeObject["chargeModel"],
+  payInAdvance: false,
+  minAmountCents: 0,
+  prorated: true,
+  properties: {
+    volumeRanges: [
+      {
+        fromValue: 0,
+        toValue: 10,
+        rate: "1",
+        flatAmount: "100"
+      },
+      {
+        fromValue: 11,
+        toValue: null,
+        rate: "2",
+        flatAmount: "0"
+      },
+    ],
+  },
+};
+
 const charges = [
   standardChargeObject,
   packageChargeObject,
   graduatedChargeObject,
   percentageChargeObject,
   volumeChargeObject,
+  graduatePercentageChargeObject
 ];
 
 const planObject: PlanInput = {
