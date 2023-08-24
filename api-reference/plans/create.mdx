@@ -18,139 +18,267 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
     "name": "Startup",
     "code": "startup",
     "interval": "monthly",
-    "description": "This is a basic plan description",
-    "amount_cents": 10000,
+    "description": null,
+    "amount_cents": 1000,
     "amount_currency": "USD",
-    "trial_period": 3.0,
+    "trial_period": 10,
     "pay_in_advance": true,
-    "bill_charges_monthly": false,
+    "bill_charges_monthly": null,
     "tax_codes": ["french_standard_vat"],
     "charges": [
       {
-        "billable_metric_id": "__BILLABLE_METRIC_ID__",
-        "charge_model": "standard",
-        "pay_in_advance": false,
+        "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "billable_metric_code": "api_request",
+        "charge_model": "graduated",
         "invoiceable": true,
+        "pay_in_advance": false,
+        "prorated": false,
         "min_amount_cents": 0,
-        "prorated": true,
-        "tax_codes": ["french_standard_vat"],
+        "properties": {
+          "graduated_ranges": [
+            {
+              "from_value": 0,
+              "to_value": 10000,
+              "per_unit_amount": "0.02",
+              "flat_amount": "50"
+            },
+            {
+              "from_value": 10001,
+              "to_value": null,
+              "per_unit_amount": "0.01",
+              "flat_amount": "100"
+            }
+          ]
+        },
+        "taxes": []
+      },
+      {
+        "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "billable_metric_code": "requests",
+        "charge_model": "package",
+        "invoiceable": true,
+        "pay_in_advance": false,
+        "prorated": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "amount": "30",
+          "free_units": 1000,
+          "package_size": 10000
+        },
+        "taxes": []
+      },
+      {
+        "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "billable_metric_code": "payments",
+        "charge_model": "percentage",
+        "invoiceable": true,
+        "pay_in_advance": false,
+        "prorated": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "rate": "0.15",
+          "fixed_amount": "0.5",
+          "free_units_per_events": 5,
+          "free_units_per_total_aggregation": "500"
+        },
+        "taxes": []
+      },
+      {
+        "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "billable_metric_code": "seat",
+        "charge_model": "standard",
+        "invoiceable": true,
+        "pay_in_advance": false,
+        "prorated": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "amount": "10"
+        },
+        "taxes": []
+      },
+      {
+        "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "billable_metric_code": "sms_sent",
+        "charge_model": "volume",
+        "invoiceable": true,
+        "pay_in_advance": false,
+        "prorated": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "volume_ranges": [
+            {
+              "from_value": 0,
+              "to_value": 1000,
+              "per_unit_amount": "0.75",
+              "flat_amount": "0"
+            },
+            {
+              "from_value": 1001,
+              "to_value": null,
+              "per_unit_amount": "0.50",
+              "flat_amount": "0"
+            }
+          ]
+        },
+        "taxes": []
+      },
+      {
+        "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "billable_metric_code": "api_request_groups",
+        "charge_model": "graduated",
+        "invoiceable": true,
+        "pay_in_advance": false,
+        "prorated": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "graduated_ranges": [
+            {
+              "from_value": 0,
+              "to_value": null,
+              "per_unit_amount": "0",
+              "flat_amount": "0"
+            }
+          ]
+        },
         "group_properties": [
           {
             "group_id": "__GROUP_ID__",
             "values": {
-              "amount": "0.10"
+              "graduated_ranges": [
+                {
+                  "from_value": 0,
+                  "to_value": 20000,
+                  "per_unit_amount": "0.02",
+                  "flat_amount": "50"
+                },
+                {
+                  "from_value": 20001,
+                  "to_value": null,
+                  "per_unit_amount": "0.01",
+                  "flat_amount": "100"
+                }
+              ]
             }
           }
-        ]
+        ],
+        "taxes": []
       },
       {
-        "billable_metric_id": "__BILLABLE_METRIC_ID__",
-        "charge_model": "graduated",
-        "pay_in_advance": false,
-        "invoiceable": true,
-        "min_amount_cents": 0,
-        "prorated": false,
-        "properties": {
-          "graduated_ranges": [
-            {
-              "to_value": 10,
-              "from_value": 0,
-              "flat_amount": "0",
-              "per_unit_amount": "0.001"
-            },
-            {
-              "to_value": null,
-              "from_value": 11,
-              "flat_amount": "0",
-              "per_unit_amount": "0.0005"
-            }
-          ]
-        }
-      },
-      {
-        "billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "billable_metric_code": "request_groups",
         "charge_model": "package",
-        "pay_in_advance": false,
         "invoiceable": true,
-        "min_amount_cents": 0,
+        "pay_in_advance": false,
         "prorated": false,
+        "min_amount_cents": 0,
         "properties": {
-          "amount": "100",
-          "free_units": 10000,
-          "package_size": 1000
-        }
+          "amount": "0",
+          "free_units": 0,
+          "package_size": 1
+        },
+        "group_properties": [
+          {
+            "group_id": "__GROUP_ID__",
+            "values": {
+              "amount": "30",
+            "free_units": 1000,
+            "package_size": 10000
+            }
+          }
+        ],
+        "taxes": []
       },
       {
-        "billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "billable_metric_code": "payment_groups",
         "charge_model": "percentage",
-        "pay_in_advance": false,
         "invoiceable": true,
-        "min_amount_cents": 0,
+        "pay_in_advance": false,
         "prorated": false,
+        "min_amount_cents": 0,
         "properties": {
-          "rate": "0.5",
-          "fixed_amount": "1",
-          "free_units_per_events": 3,
-          "free_units_per_total_aggregation": null
-        }
+          "rate": "0"
+        },
+        "group_properties": [
+          {
+            "group_id": "__GROUP_ID__",
+            "values": {
+              "rate": "0.15",
+            "fixed_amount": "0.5",
+            "free_units_per_events": 5,
+            "free_units_per_total_aggregation": "500"
+            }
+          }
+        ],
+        "taxes": []
       },
       {
-        "billable_metric_id": "__BILLABLE_METRIC_ID__",
-        "charge_model": "volume",
-        "pay_in_advance": false,
+        "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "billable_metric_code": "seats_groups",
+        "charge_model": "standard",
         "invoiceable": true,
+        "pay_in_advance": false,
+        "prorated": false,
         "min_amount_cents": 0,
-        "prorated": true,
+        "properties": {
+          "amount": "0"
+        },
+        "group_properties": [
+          {
+            "group_id": "__GROUP_ID__",
+            "values": {
+              "amount": "15"
+            }
+          }
+        ],
+        "taxes": []
+      },
+      {
+        "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
+        "billable_metric_code": "sms_sent_groups",
+        "charge_model": "volume",
+        "invoiceable": true,
+        "pay_in_advance": false,
+        "prorated": false,
+        "min_amount_cents": 0,
         "properties": {
           "volume_ranges": [
             {
-              "to_value": 10,
               "from_value": 0,
-              "flat_amount": "0",
-              "per_unit_amount": "0.00010"
-            },
-            {
               "to_value": null,
-              "from_value": 11,
-              "flat_amount": "0",
-              "per_unit_amount": "0.0005"
+              "per_unit_amount": "0",
+              "flat_amount": "0"
             }
           ]
-        }
-      },
-      {
-        "billable_metric_id": "__BILLABLE_METRIC_ID__",
-        "charge_model": "graduated_percentage",
-        "pay_in_advance": true,
-        "invoiceable": true,
-        "min_amount_cents": 0,
-        "prorated": false,
-        "properties": {
-          "graduated_percentage_ranges": [
-            {
-              "rate": "1",
-              "from_value": 0,
-              "to_value": 1000,
-              "flat_amount": "200"
-            },
-            {
-              "rate": "2",
-              "from_value": 1001,
-              "to_value": 10000,
-              "flat_amount": "300"
-            },
-            {
-              "rate": "3",
-              "from_value": 10001,
-              "to_value": null,
-              "flat_amount": "400"
+        },
+        "group_properties": [
+          {
+            "group_id": "__GROUP_ID__",
+            "values": {
+              "volume_ranges": [
+                {
+                  "from_value": 0,
+                  "to_value": 2000,
+                  "per_unit_amount": "0.75",
+                  "flat_amount": "0"
+                },
+                {
+                  "from_value": 2001,
+                  "to_value": null,
+                  "per_unit_amount": "0.50",
+                  "flat_amount": "0"
+                }
+              ]
             }
-          ]
-        }
+          }
+        ],
+        "taxes": []
       }
-    ]
+    ],
+    "taxes": []
   }
-}'
+}
+'
 ```
 
 ```python Python
