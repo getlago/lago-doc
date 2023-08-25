@@ -80,7 +80,9 @@ description: "This object represents a plan. This plan can then be assigned to a
           "rate": "0.15",
           "fixed_amount": "0.5",
           "free_units_per_events": 5,
-          "free_units_per_total_aggregation": "500"
+          "free_units_per_total_aggregation": "500",
+          "per_transaction_min_amount": "1.75",
+          "per_transaction_max_amount": "2"
         },
         "taxes": []
       },
@@ -208,7 +210,9 @@ description: "This object represents a plan. This plan can then be assigned to a
         "prorated": false,
         "min_amount_cents": 0,
         "properties": {
-          "rate": "0"
+          "rate": "0",
+          "per_transaction_min_amount": "1.75",
+          "per_transaction_max_amount": "2"
         },
         "group_properties": [
           {
@@ -433,11 +437,17 @@ description: "This object represents a plan. This plan can then be assigned to a
             <ResponseField name="fixed_amount" type="string">
               The fixed fee that is applied to each transaction for a `percentage` charge model. It is expressed as a decimal value.
             </ResponseField>
-            <ResponseField name="free_units_per_events" type="integer" required>
+            <ResponseField name="free_units_per_events" type="integer">
               The count of transactions that are not impacted by the `percentage` rate and fixed fee in a percentage charge model. This field indicates the number of transactions that are exempt from the calculation of charges based on the specified percentage rate and fixed fee.
             </ResponseField>
-            <ResponseField name="free_units_per_total_aggregation" type="integer" required>
+            <ResponseField name="free_units_per_total_aggregation" type="integer">
               The transaction amount that is not impacted by the `percentage` rate and fixed fee in a percentage charge model. This field indicates the portion of the transaction amount that is exempt from the calculation of charges based on the specified percentage rate and fixed fee.
+            </ResponseField>
+            <ResponseField name="per_transaction_min_amount" type="string">
+              Specifies the minimum allowable spending for a single transaction, defined in cents. Working as a transaction floor. Cannot be greater than the `per_transaction_max_amount` value.
+            </ResponseField>
+            <ResponseField name="per_transaction_max_amount" type="string">
+              Specifies the maximum allowable spending for a single transaction, defined in cents. Working as a transaction cap. Cannot be lower than the `per_transaction_min_amount` value.
             </ResponseField>
             ### Case of volume pricing model
             <ResponseField name="volume_ranges" type="array" required>
