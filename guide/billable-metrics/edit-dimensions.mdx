@@ -1,0 +1,57 @@
+---
+title: "Edit dimensions"
+description: "When setting up your pricing, you may want to add or remove dimensions from your billable metric."
+---
+
+You can edit billable metric groups associated with existing subscriptions. 
+It's important to note that making changes to these metric groups can have an impact on all plans where this billable metric is defined as a charge. 
+Here's an example to illustrate the impact of editing a billable metric:
+```json
+From Payload A: 
+{
+  "billable_metric": {
+    "name": "gigabyte",
+    "code": "gigabyte",
+    "aggregation_type": "sum_agg",
+    "field_name": "total",
+    "group": {
+      "key": "region",
+      "values": [
+        "usa",
+        "europe",
+      ]
+    }
+  }
+}
+
+To Payload B:
+{
+  "billable_metric": {
+    "name": "gigabyte",
+    "code": "gigabyte",
+    "aggregation_type": "sum_agg",
+    "field_name": "total",
+    "group": {
+      "key": "region",
+      "values": [
+        "USA",
+        "europe",
+        "africa"
+      ]
+    }
+  }
+}
+```
+
+Note that each group is case-sensitive and has its own `group_id`, upon which Lago bases its logic. 
+Here's how Lago handles these changes:
+1. Since `"region: europe"` remains the same between both payloads; <br /> its `group_id` remains unchanged.
+2. As `"region: usa"` is present in Payload A but not in Payload B; <br /> its `group_id` is removed from the billable metric.
+3. As `"region: USA"` is not present in Payload A but is present in Payload B; <br /> its `group_id` will be created in the billable metric.
+4. Similarly, as `"region: africa"` is not present in Payload A but is present in Payload B; <br /> its `group_id` will be created in the billable metric.
+
+
+When this billable metric is associated with charges, editing it will impact all plans where it is defined.
+- If an existing `group_id` remains the same (case 1), Lago will retain the group definitions in all associated charges.
+- If an existing `group_id` is removed from the billable metric (case 2), Lago will remove the group definition in all associated charges.
+- If a new `group_id` is created in the billable metric (case 3 and 4), Lago will not automatically add the new group to all associated charges; you will need to add them manually.
