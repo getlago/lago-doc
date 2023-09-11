@@ -1,0 +1,70 @@
+---
+title: "COUNT"
+---
+
+The count aggregation type is straightforward. It tallies the exact number of events received during a period.
+
+## COUNT billable metric
+
+<Tabs>
+  <Tab title="Dashboard">
+    Here is how you can create a count aggregation from the UI:
+    1. Access the **"Billable metrics"** section via the side menu;
+    2. Create a new billable metric;
+    3. Define a name, a code and an optional description;
+    4. Select **"count"** as the aggregation type;
+    5. Apply dimension groups if any; and
+    5. Click **"Add billable metric"**.
+
+<Info>
+   This billable metric is `metered` only, meaning it cannot be recurring, and the number 
+   of billing units resets to 0 at the end of each period.
+</Info>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+            "billable_metric": {
+            "name": "API Request",
+            "code": "api_requests",
+            "description": "Number of API requests.",
+            "aggregation_type": "count_agg",
+            "group": {}
+        }
+    }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Calculation example
+Lago calculates the `COUNT(events.code)` for the two following events received.
+
+```json
+//Event received #1
+{
+    "transaction_id": "transaction_1",
+    "external_customer_id": "1",
+    "timestamp": "2022-03-16T00:00:00Z",
+    "code": "api_requests",
+    "properties": {}
+}
+
+//Event received #2
+{
+    "transaction_id": "transaction_2",
+    "external_customer_id": "1",
+    "timestamp": "2022-03-17T00:00:00Z",
+    "code": "api_requests",
+    "properties": {}
+}
+```
+
+In that case, with this aggregation type, Lago simply counts the number events received, **resulting in a billable value of 2 units.**
