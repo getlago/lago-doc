@@ -9,9 +9,10 @@ supported by Lago.
 | Aggregation      | Description                                                                | Transcription                                  |
 | ---------------- | -------------------------------------------------------------------------- | ---------------------------------------------- |
 | **COUNT**        | Count the number of times an incoming event occurs                         | `COUNT(events.code)`                            |
-| **SUM**          | Sum a defined property for incoming events                                 | `SUM(events.properties.property_name)`            |
+| **COUNT UNIQUE** | Count the number of unique value of a defined property for incoming events | `COUNT_DISTINCT(events.properties.property_name)` |
+| **LATEST**       | Get the latest value of a defined property for incoming events             | `LAST_VALUE (events.properties.property_name) OVER ( [PARTITION BY events.timestamp])` |
 | **MAX**          | Get the maximum value of a defined property for incoming events            | `MAX(events.properties.property_name)`           |
-| **UNIQUE COUNT** | Count the number of unique value of a defined property for incoming events | `COUNT_DISTINCT(events.properties.property_name)` |
+| **SUM**          | Sum a defined property for incoming events                                 | `SUM(events.properties.property_name)`            |
 
 <Note>Except the `COUNT` (that is counting the number of times an event occurs), the
 other types aggregate over a single property of the event. **The result of this
