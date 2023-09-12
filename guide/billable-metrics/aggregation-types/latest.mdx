@@ -1,10 +1,10 @@
 ---
-title: "MAX"
+title: "LATEST"
 ---
 
-The max aggregation type selects the highest value of a specified event property from all received events.
+The latest aggregation type selects the most recent value of a specified event property from all received events.
 
-## MAX billable metric
+## LATEST billable metric
 
 <Tabs>
   <Tab title="Dashboard">
@@ -12,7 +12,7 @@ The max aggregation type selects the highest value of a specified event property
     1. Access the **"Billable metrics"** section via the side menu;
     2. Create a new billable metric;
     3. Define a name, a code and an optional description;
-    4. Select **"max"** as the aggregation type;
+    4. Select **"latest"** as the aggregation type;
     5. Define the property to aggregate;
     6. Apply dimension groups if any; and
     7. Click **"Add billable metric"**.
@@ -35,7 +35,7 @@ This billable metric is `metered` only, meaning it cannot be recurring, and the 
             "name": "API Request",
             "code": "api_requests",
             "description": "Number of API requests.",
-            "aggregation_type": "max_agg",
+            "aggregation_type": "latest_agg",
             "field_name": "total_requests",
             "group": {}
         }
@@ -46,7 +46,7 @@ This billable metric is `metered` only, meaning it cannot be recurring, and the 
 </Tabs>
 
 ## Calculation example
-Lago calculates the `MAX(events.properties.property_name)` for the two following events received. 
+Lago calculates the `LAST_VALUE (events.properties.property_name) OVER ( [PARTITION BY events.timestamp])` for the two following events received. 
 
 ```json
 //Event received #1
@@ -72,4 +72,4 @@ Lago calculates the `MAX(events.properties.property_name)` for the two following
 }
 ```
 
-In that case, with this aggregation type, Lago takes the higest value of `total_requests` property from all events, **resulting in a billable value of 20 units.**
+In that case, with this aggregation type, Lago takes the latest value of `total_requests` property from all events, **resulting in a billable value of 10 units.**
