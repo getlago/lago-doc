@@ -13,6 +13,7 @@ supported by Lago.
 | **LATEST**       | Get the latest value of a defined property for incoming events             | `LAST_VALUE(events.properties.property_name) OVER ([PARTITION BY events.timestamp])` |
 | **MAX**          | Get the maximum value of a defined property for incoming events            | `MAX(events.properties.property_name)`           |
 | **SUM**          | Sum a defined property for incoming events                                 | `SUM(events.properties.property_name)`            |
+| **WEIGHTED SUM** | Sum a defined property for incoming events, prorated based on time used per period | `SUM(events.properties.property_name) / (DATEDIFF(SECOND, timestamp.event_1, timestamp.event_2) + 1) * (DATEDIFF(SECOND, 'period_start', 'period_end') + 1)`|
 
 <Note>Except the `COUNT` (that is counting the number of times an event occurs), the
 other types aggregate over a single property of the event. **The result of this
