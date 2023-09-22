@@ -1,0 +1,97 @@
+---
+title: "Metered vs Recurring"
+description:
+  "Usage-based charges can be either metered or recurring"
+---
+
+You have the flexibility to define the nature of charges associated with your products or services. Specifically, you can 
+**determine whether a charge is metered or recurring**. Understanding the distinction between these two types of charges is crucial for 
+effectively managing your billing processes. In this documentation, we will delve into the differences between metered and 
+recurring charges and their implications within the Lago system.
+
+## Metered charges[](#metered "Direct link to heading")
+
+<Tabs>
+  <Tab title="Dashboard">
+  When you create a metered billable metric in Lago by setting the `recurring` parameter to `false`, an important behavior comes into play. 
+  At the end of each billing period, the accumulated number of units associated with the metric is automatically reset to 0. 
+  This means that the counting or measuring of units starts fresh with each new billing cycle. This is ideal for billing components with results
+  that are not persisted billing periods over billing periods. 
+
+  In the API tab beside, consider the example of a **Storage billing unit**. If you need to **track the Gigabytes stored during a month**, 
+  it's important to note that this value should be reset to 0 at the beginning of each new month.
+
+  </Tab>
+  <Tab title="API">
+    Create a billable metric with `recurring` sets to `false`.
+    <CodeGroup>
+      ```bash Metered billable metric
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+            "billable_metric": {
+            "name": "Storage",
+            "code": "storage",
+            "description": "GB of storage used in my application",
+            "aggregation_type": "sum_agg",
+            "recurring": false,
+            "field_name": "gb",
+            "group": {
+                "key": "region",
+                "value": ["us-east-1", "us-east-2", "eu-west-1"]
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Recurring charges[](#recurring "Direct link to heading")
+
+<Tabs>
+  <Tab title="Dashboard">
+  When you create a recurring billable metric in Lago with the recurring parameter set to true, an important behavior comes 
+  into effect. At the end of each billing period, the accumulated number of units calculated from the previous billing period is 
+  carried forward to the next billing period.
+
+  This means that the counting or measurement of units starts based on the last recorded value from the previous billing cycle. 
+  This behavior is particularly useful for billing components or services where the results need to persist from one billing period 
+  to another.
+
+  In the API tab, let's consider the example of a **Seats billing unit**. If you need to **track the number of active seats**, it's crucial to 
+  note that this value should persist month over month. The recurring billing behavior ensures that the count of active seats is 
+  maintained and carried forward to subsequent billing periods, providing accurate and continuous tracking of your subscription seats.
+  </Tab>
+  <Tab title="API">
+    Create a billable metric with `recurring` sets to `true`.
+    <CodeGroup>
+      ```bash Recurring billable metric
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+            "billable_metric": {
+            "name": "Seats",
+            "code": "seats",
+            "description": "Active seats.",
+            "aggregation_type": "count_unique",
+            "recurring": true,
+            "field_name": "seat_id",
+            "group": {
+                "key": "type",
+                "value": ["admin", "viewer", "editor"]
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+  </Tab>
+</Tabs>

@@ -1,0 +1,74 @@
+---
+title: "Invoiceable vs Uninvoiceable"
+description:
+  "In-advance charges can be either invoiceable or not."
+---
+
+<Info>**Premium feature ✨**: only users with a premium license can define whether or not a charge is invoiceable. 
+Please **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+If a charge needs to be `paid in advance`, you can choose whether or not it generates an invoice.
+
+The `"invoiceable": false` option is **particularly relevant for fintech companies that want to charge customers instantly 
+without issuing an invoice**. This feature can be useful for banking transactions like ATM withdrawals, FX transfers and other 
+similar scenarios.
+
+By setting the invoiceable parameter to false, you can streamline the payment process, eliminating the step of generating 
+invoices for these specific charges.
+
+To define if a charge is invoiceable or not: 
+<Tabs>
+  <Tab title="Dashboard">
+    1. Go to a **Plan**;
+    2. Add a usage-based **charge**;
+    3. Define a price model;
+    4. Define this charge as **paid in advance**; and
+    5. Untick **generate an invoice for each event**.
+
+      <Frame  caption="Configure a charge as non invoiceable">
+        <img src="/guide/plans/images/instant-charge.png"/>
+      </Frame>
+  </Tab>
+  <Tab title="API">
+    Use the `invoiceable : false` for a charge paid in advance:
+    
+    <CodeGroup>
+    ```bash Define a charge as invoiceable or not
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "plan": {
+        "name": "Premium",
+        "code": "premium",
+        "interval": "monthly",
+        "description": "Premium plan for SMB companies",
+        "amount_cents": 50000,
+        "amount_currency": "USD",
+        "trial_period": 0.0,
+        "pay_in_advance": true,
+        "bill_charges_monthly": true,
+        "charges": [
+          {
+            "billable_metric_id": "1111_2222_3333_4444",
+            "charge_model": "percentage",
+            "pay_in_advance": true,
+            "invoiceable": false,
+            "min_amount_cents": 100,
+            "properties": {
+              "rate": "0.5",
+              "fixed_amount": "1",
+              "free_units_per_events": 3,
+              "free_units_per_total_aggregation": null
+            }
+          }
+        ]
+      }
+    }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
