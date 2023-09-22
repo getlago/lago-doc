@@ -15,6 +15,7 @@ description: "This object represents a billable metric that is a pricing compone
     "field_name": "gb",
     "recurring": false,
     "aggregation_type": "sum_agg",
+    "weighted_interval": "seconds",
     "group": {
       "key": "region",
       "values": [
@@ -63,7 +64,12 @@ description: "This object represents a billable metric that is a pricing compone
     </ResponseField>
     <ResponseField name="aggregation_type" type="enum<string>" required>
       Aggregation method used to compute usage for this billable metric.
-      Possible values are `count_agg`, `sum_agg`, `max_agg`, `unique_count_agg` or `latest_agg`.
+      Possible values are `count_agg`, `sum_agg`, `max_agg`, `unique_count_agg`, `latest_agg` or `weighted_sum_agg`.
+    </ResponseField>
+    <ResponseField name="weighted_interval" type="string">
+      Parameter exclusively utilized in conjunction with the `weighted_sum_agg` aggregation type. 
+      It serves to adjust the aggregation result by assigning weights and proration to the result based on time intervals. 
+      When this field is not provided, the default time interval is assumed to be in `seconds`.
     </ResponseField>
     <ResponseField name="group" type="object">
       <Expandable title="object">

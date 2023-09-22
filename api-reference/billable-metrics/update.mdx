@@ -21,6 +21,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/billable_metrics/:code" \
       "aggregation_type": "sum_agg",
       "recurring": false,
       "field_name": "gb",
+      "weighted_interval": "seconds",
       "group": {
         "key": "provider",
         "value": ["us-east-1", "us-east-2", "eu-west-1"]
@@ -48,6 +49,7 @@ billable_metric = BillableMetric(
   aggregation_type='sum_agg',
   recurring=false,
   field_name='gb',
+  weighted_interval= 'seconds',
   group=group
 )
 
@@ -69,6 +71,7 @@ client.billable_metrics.update({
   aggregation_type: 'sum_agg',
   recurring: false,
   field_name: 'gb',
+  weighted_interval: 'seconds',
   group: {
       key: 'region',
       values: %w[us-east-1 us-east-2 eu-west-1]
@@ -82,6 +85,7 @@ const newBillableMetricObject = {
   code: "storage",
   recurring: false,
   aggregationType: "sum_agg",
+  weightedInterval: "seconds",
   fieldName: "gb",
 };
 
@@ -105,6 +109,7 @@ func main() {
     AggregationType: lago.SumAggregation,
     FieldName:       "gb",
     Recurring:       false,
+    WeightedInterval: "seconds",
     Group: map[string]interface{}{
         "key": "region",
         "values": [3]string{"us-east-1", "us-east-2", "eu-west-1"},
