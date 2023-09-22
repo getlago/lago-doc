@@ -13,9 +13,10 @@ description: "A subscription is created when a plan is assigned to a customer.
     4. Select a plan (that you can overwrite if needed - [see below](#overwriting-a-plan));
     5. Give a name to the subscription (name that will be displayed on the invoice - optional);
     5. Give an id to the subscription (define your own subscription identifier - optional);
-    7. Set a subscription date (start date of the subscription - [see below](#subscription-date));
-    8. Choose whether the subscription should be renewed at the beginning of the period or on its anniversary date (see [below](#billing-cycles)); and
-    9. Click **"Add plan"** to confirm.
+    7. Set a subscription start date (start date of the subscription - [see below](#subscription-start-date));
+    8. Set a subscription end date (start date of the subscription - [see below](#subscription-end-date) - optional);
+    9. Choose whether the subscription should be renewed at the beginning of the period or on its anniversary date (see [below](#billing-cycles)); and
+    10. Click **"Add plan"** to confirm.
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -82,7 +83,7 @@ Optimize billing for your customers by assigning subscriptions based on either c
   </Tab>
 </Tabs>
 
-## Subscription date
+## Subscription start date
 By default, the subscription starts the day it is created. However, you can set a subscription date in the past or in the future. 
 The subscription date displayed in the app is based on the organization's timezone.
 However, you can decide to start a subscription **in the past** or **in the future**.
@@ -125,6 +126,57 @@ However, you can decide to start a subscription **in the past** or **in the futu
     <Frame caption="Illustration for start date in the future and subscription fee in arrears">
       <img src="/guide/subscriptions/images/subscription-future-arrears-8b99c7c98e2f8223d6282fd5f47a665a.png" />
     </Frame>
+  </Tab>
+</Tabs>
+
+## Subscription end date
+By default, if no subscription end date is specified, **the subscription will automatically renew** at the end of the period.
+
+However, if you define an end date, the subscription will terminate on that date without renewal. This is valuable for contracts with specific termination dates.
+
+Keep in mind, 15 days before the subscription ends, a webhook alert, called `alert.subscription_to_be_terminated`, will remind you. You then have two choices:
+1. Allow the subscription to continue until the end date and finalize it; or
+2. Adjust the subscription end date if the contract has been renegotiated.
+
+<Info>
+  Ensure that the subscription end date is set to a date later than the subscription start date.
+</Info>
+
+<Tabs>
+  <Tab title="Dashboard">
+  Here is how you can define a susbcription end date from the UI:
+
+    1. Access the **"Customers"** section via the side menu;
+    2. Select a customer from the list;
+    3. In the **"Overview"** tab, click **"Add a plan"** on the right;
+    4. Set a subscription start date;
+    5. Set a subscription end date;
+    6. Choose between calendar or anniversary billing;
+    7. Click **"Add plan"** to confirm.
+  </Tab>
+  <Tab title="API">
+  Use the `ending_at` field on the subscriptions endpoint.
+    <CodeGroup>
+    ```bash Define a subscription end date
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "subscription": {
+        "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "plan_code": "premium",
+        "external_id": "my_sub_12345789",
+        "name": "Repository 1",
+        "subscription_at": "2022-08-08T00:00:00Z",
+        "ending_at": "2023-08-08T00:00:00Z",
+        "billing_time": "anniversary"
+      }
+    }'
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
 
