@@ -1,0 +1,123 @@
+---
+title: "Arrears vs Advance"
+description:
+  "Usage-based charges can be either charged in advance or in arrears"
+---
+
+You have the flexibility to define the nature of charges associated with your products or services. Specifically, you can 
+**determine whether a charge has to be paid in arrears (at the end of the period), or in advance (immediately on event ingestion)**.
+
+
+## Charges paid in arrears[](#charges-arrears "Direct link to heading")
+If you opt for charges to be settled in arrears, they will be invoiced at the end of the billing period based on 
+the actual usage during that period. This payment option is ideal for usage types like storage, API calls, or compute, 
+where it is more practical to wait until the end of the period before billing. By default, all charges are configured to be 
+billed in arrears.
+<Tabs>
+  <Tab title="Dashboard">
+     You can easily manage this billing settings through the user interface. Within the UI, you will find options to customize 
+     the invoice cadence by setting a charge as invoiced in arrears.
+     <Frame caption="Define a charge paid in arrears">
+        <img src="/guide/plans/images/charge-in-arrears-1d16763a9e4212018386d79e400eea2a.png" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+    Define `pay_in_advance : false` on a charge to bill it in arrears:
+    <CodeGroup>
+      ```bash Define a charge as paid in arrears
+          LAGO_URL="https://api.getlago.com"
+          API_KEY="__YOUR_API_KEY__"
+
+          curl --location --request POST "$LAGO_URL/api/v1/plans" \
+          --header "Authorization: Bearer $API_KEY" \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "plan": {
+              "name": "Premium",
+              "code": "premium",
+              "interval": "monthly",
+              "description": "Premium plan for SMB companies",
+              "amount_cents": 50000,
+              "amount_currency": "USD",
+              "trial_period": 0.0,
+              "pay_in_advance": true,
+              "bill_charges_monthly": true,
+              "charges": [
+                {
+                  "billable_metric_id": "1111_2222_3333_4444",
+                  "charge_model": "percentage",
+                  "pay_in_advance": false,
+                  "invoiceable": true,
+                  "min_amount_cents": 100,
+                  "properties": {
+                    "rate": "0.5",
+                    "fixed_amount": "1",
+                    "free_units_per_events": 3,
+                    "free_units_per_total_aggregation": null
+                  }
+                }
+              ]
+            }
+          }'
+      ```
+    </CodeGroup>
+</Tab>
+</Tabs>
+
+
+## Charges paid in advance[](#charges-advance "Direct link to heading")
+With this payment option, charges are invoiced immediately upon any changes in usage. It is particularly useful for scenarios 
+where you need to bill customers instantly for usage-based actions, such as new user seat or integrations.
+<Tabs>
+  <Tab title="Dashboard">
+      You can easily manage this billing settings through the user interface. Within the UI, you will find options to customize 
+      the invoice cadence by setting a charge as invoiced in arrears.
+
+      <Frame caption="Define a charge paid in arrears">
+        <img src="/guide/plans/images/charge-in-advance-5a13fc011d78a058f7767519c5817961.png" />
+      </Frame>
+  </Tab>
+  <Tab title="API">
+    Define `pay_in_advance : true` on a charge to bill it in advance:
+
+    <CodeGroup>
+    ```bash Define a charge as paid in advance
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "plan": {
+        "name": "Premium",
+        "code": "premium",
+        "interval": "monthly",
+        "description": "Premium plan for SMB companies",
+        "amount_cents": 50000,
+        "amount_currency": "USD",
+        "trial_period": 0.0,
+        "pay_in_advance": true,
+        "bill_charges_monthly": true,
+        "charges": [
+          {
+            "billable_metric_id": "1111_2222_3333_4444",
+            "charge_model": "percentage",
+            "pay_in_advance": true,
+            "invoiceable": true,
+            "min_amount_cents": 100,
+            "properties": {
+              "rate": "0.5",
+              "fixed_amount": "1",
+              "free_units_per_events": 3,
+              "free_units_per_total_aggregation": null
+            }
+          }
+        ]
+      }
+    }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+

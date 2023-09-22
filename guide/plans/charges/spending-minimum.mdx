@@ -1,0 +1,73 @@
+---
+title: "Spending minimums"
+---
+
+<Info>**Premium feature ✨**: only users with a premium license can define a charge spending minimum. 
+Please **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+Usage-based charges are always paid at the end of the billing period, based on the amount of consumption that occurred. However, you 
+could possibly need to define a spending minimum that a customer needs to commit to.
+
+If your customer spends less than the committed amount, you will **charge a true-up fee equal to the difference between the commitment 
+and the actual usage**. Please note that this true-up fee is tied to the initial charge but will appear as a separate line item in an 
+invoice or in a credit note.
+
+**Spending minimums and true-up fees are always prorated based on the number of days used in the subscription**. This ensures 
+fairness if your customer signs up at the end of the month, upgrades to a new plan, or terminates an ongoing subscription 
+before the end of the period.
+
+In the example below, a customer is billed based on Monthly Tracked Users (MTU), with a standard pricing of \$0.010 per tracked users. 
+However, the customer is committed to a spending minimum of \$100. If the total consumption of MTUs for the period is \$50, a true-up fee 
+of \$50 will be charged.
+
+To define a charge spending minimum:
+<Tabs>
+  <Tab title="Dashboard">
+    1. Go to a **Plan**;
+    2. Add a usage-based **charge**;
+    3. Define a price model;
+    4. Click the add a **spending minimum** button; and
+    5. Define a spending minimum **amount**.
+  </Tab>
+  <Tab title="API">
+    Use the `min_amount_cents` field on a charge:
+    <CodeGroup>
+    ```bash Spending minimum for a charge
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "plan": {
+        "name": "Premium",
+        "code": "premium",
+        "interval": "monthly",
+        "description": "Premium plan for SMB companies",
+        "amount_cents": 50000,
+        "amount_currency": "USD",
+        "trial_period": 0.0,
+        "pay_in_advance": true,
+        "bill_charges_monthly": true,
+        "charges": [
+          {
+            "billable_metric_id": "1111_2222_3333_4444",
+            "charge_model": "percentage",
+            "pay_in_advance": false,
+            "invoiceable": true,
+            "min_amount_cents": 100,
+            "properties": {
+              "rate": "0.5",
+              "fixed_amount": "1",
+              "free_units_per_events": 3,
+              "free_units_per_total_aggregation": null
+            }
+          }
+        ]
+      }
+    }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
