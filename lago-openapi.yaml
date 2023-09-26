@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Lago API documentation
   description: Lago API allows your application to push customer information and metrics (events) from your application to the billing application.
-  version: 0.46.1-beta
+  version: 0.48.0-beta
   license:
     name: AGPLv3
   contact:
@@ -1646,6 +1646,23 @@ paths:
         schema:
           type: string
           example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+    get:
+      tags:
+        - subscriptions
+      summary: Retrieve a subscription
+      description: This endpoint retrieves a specific subscription.
+      operationId: findSubscription
+      responses:
+        '200':
+          description: Subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
     put:
       tags:
         - subscriptions
@@ -2734,7 +2751,7 @@ components:
           nullable: true
         aggregation_type:
           type: string
-          description: 'Aggregation method used to compute usage for this billable metric. Possible values are `count_agg`, `sum_agg`, `max_agg` or `unique_count_agg`.'
+          description: Aggregation method used to compute usage for this billable metric.
           example: sum_agg
           enum:
             - count_agg
@@ -2742,6 +2759,7 @@ components:
             - max_agg
             - unique_count_agg
             - weighted_sum_agg
+            - latest_agg
         weighted_interval:
           type: string
           enum:
@@ -2796,13 +2814,14 @@ components:
         aggregation_type:
           type: string
           example: sum_agg
-          description: 'Aggregation method used to compute usage for this billable metric. Possible values are `count_agg`, `sum_agg`, `max_agg` or `unique_count_agg`.'
+          description: Aggregation method used to compute usage for this billable metric.
           enum:
             - count_agg
             - sum_agg
             - max_agg
             - unique_count_agg
             - weighted_sum_agg
+            - latest_agg
         weighted_interval:
           type: string
           enum:
@@ -6394,6 +6413,11 @@ components:
               enum:
                 - calendar
                 - anniversary
+            ending_at:
+              type: string
+              format: date-time
+              example: '2022-10-08T00:00:00Z'
+              description: 'The effective end date of the subscription. If this field is set to null, the subscription will automatically renew. This date should be provided in ISO 8601 datetime format, and use Coordinated Universal Time (UTC).'
             subscription_at:
               type: string
               format: date-time
@@ -6412,6 +6436,11 @@ components:
               example: Repository B
               nullable: true
               description: 'The display name of the subscription on an invoice. This field allows for customization of the subscription''s name for billing purposes, especially useful when a single customer has multiple subscriptions using the same plan.'
+            ending_at:
+              type: string
+              format: date-time
+              example: '2022-10-08T00:00:00Z'
+              description: 'The effective end date of the subscription. If this field is set to null, the subscription will automatically renew. This date should be provided in ISO 8601 datetime format, and use Coordinated Universal Time (UTC).'
             subscription_at:
               type: string
               format: date-time
@@ -6495,6 +6524,11 @@ components:
           example: '2022-08-08T00:00:00Z'
           description: The effective start date of the subscription. This field can be null if the subscription is `pending` or `canceled`. This date should be provided in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).
           nullable: true
+        ending_at:
+          type: string
+          format: date-time
+          example: '2022-10-08T00:00:00Z'
+          description: 'The effective end date of the subscription. If this field is set to null, the subscription will automatically renew. This date should be provided in ISO 8601 datetime format, and use Coordinated Universal Time (UTC).'
         subscription_at:
           type: string
           format: date-time
