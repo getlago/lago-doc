@@ -2,7 +2,7 @@
 title: "The customer usage object"
 description:
   "This object represents the usage-based charges associated with one of your
-  customers for the current billing period. It allows you to monitor customer
+  customers for a defined billing period. It allows you to monitor customer
   usage throughout the period."
 ---
 
@@ -19,11 +19,13 @@ description:
     "total_amount_currency": "EUR",
     "vat_amount_cents": 0,
     "vat_amount_currency": "EUR",
+    "lago_invoice_id": "90c71204-7834-478e-9552-6a7077fdfce8",
     "charges_usage": [
       {
         "units": "1.0",
         "amount_cents": 123,
         "amount_currency": "EUR",
+        "events_count": "5.0",
         "charge": {
           "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
           "charge_model": "graduated"
@@ -81,6 +83,10 @@ description:
     <ResponseField name="vat_amount_currency" type="string" required>
       The currency of the customer’s current usage tax.
     </ResponseField>
+    <ResponseField name="lago_invoice_id" type="string">
+      A unique identifier associated with the invoice related to this particular usage record.
+      In cases where no invoice has been generated for this particular usage, the field value will be null.
+    </ResponseField>
     <ResponseField name="charges_usage" type="array" required>
       <Expandable title="charges_usage">
         <ResponseField name="units" type="string" required>
@@ -91,6 +97,10 @@ description:
         </ResponseField>
         <ResponseField name="amount_currency" type="string" required>
           The currency of a usage item consumed by the customer.
+        </ResponseField>
+        <ResponseField name="events_count" type="string" required>
+          The quantity of usage events that have been recorded for a particular charge during the specified time period. 
+          These events may also be referred to as the number of transactions in some contexts.
         </ResponseField>
         <ResponseField name="charge" type="object" required>
           <Expandable title="charge">

@@ -1,8 +1,8 @@
 ---
-openapi: "GET /customers/{external_customer_id}/current_usage"
+openapi: "GET /customers/{external_customer_id}/past_usage"
 authMethod: "bearer"
-title: "Retrieve current usage"
-description: "Retrieve real-time customer usage data for the current open billing period."
+title: "Retrieve past usage"
+description: "Fetch historical customer usage data for closed billing periods."
 ---
 
 <RequestExample>
@@ -13,7 +13,7 @@ API_KEY="__YOUR_API_KEY__"
 EXTERNAL_CUSTOMER_ID="__EXTERNAL_CUSTOMER_ID__"
 EXTERNAL_SUBSCRIPTION_ID="__EXTERNAL_SUBSCRIPTION_ID__"
 
-curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/current_usage?external_subscription_id=$EXTERNAL_SUBSCRIPTION_ID" \
+curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/past_usage?external_subscription_id=$EXTERNAL_SUBSCRIPTION_ID" \
 --header "Authorization: Bearer $API_KEY" \
 --header 'Content-Type: application/json'
 ```
@@ -26,7 +26,7 @@ client = Client(api_key='__YOUR_API_KEY__')
 
 customer_usage = None
 try:
-    customer_usage = client.customers.current_usage('external_customer_id', 'external_subscription_id')
+    customer_usage = client.customers.past_usage('external_customer_id', 'external_subscription_id')
 except LagoApiError as e:
     repair_broken_state(e)  # do something on error or raise your own exception
 ```
@@ -35,13 +35,13 @@ except LagoApiError as e:
 require 'lago-ruby-client'
 
 client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
-customer_usage = client.customer.current_usage(
+customer_usage = client.customer.past_usage(
   'external_customer_id', 'external_subscription_id'
 )
 ```
 
 ```js Javascript
-await client.customers.findCustomerCurrentUsage(
+await client.customers.findCustomerPastUsage(
   "customer_external_id",
   { external_subscription_id: "external_subscription_id" }
 );
@@ -55,7 +55,7 @@ await client.customers.findCustomerCurrentUsage(
     lagoClient := lago.New().
       SetApiKey("__YOUR_API_KEY__")
 
-    customerUsage, err := lagoClient.Customer().CurrentUsage("__YOUR_CUSTOMER_ID__")
+    customerUsage, err := lagoClient.Customer().PastUsage("__YOUR_CUSTOMER_ID__")
     if err != nil {
       // Error is *lago.Error
       panic(err)
@@ -75,7 +75,7 @@ using Org.OpenAPITools.Model;
 
 namespace Example
 {
-  public class FindCustomerCurrentUsageExample
+  public class FindCustomerPastUsageExample
   {
       public static void Main()
       {
@@ -89,13 +89,13 @@ namespace Example
 
           try
           {
-              // Find customer current usage
-              CustomerUsage result = apiInstance.FindCustomerCurrentUsage(customerExternalId, externalSubscriptionId);
+              // Find customer past usage
+              CustomerUsage result = apiInstance.FindCustomerPastUsage(customerExternalId, externalSubscriptionId);
               Debug.WriteLine(result);
           }
           catch (ApiException e)
           {
-              Debug.Print("Exception when calling CustomersApi.FindCustomerCurrentUsage: " + e.Message );
+              Debug.Print("Exception when calling CustomersApi.FindCustomerPastUsage: " + e.Message );
               Debug.Print("Status Code: "+ e.ErrorCode);
               Debug.Print(e.StackTrace);
           }
@@ -123,10 +123,10 @@ $customer_external_id = "12345"; // string | External ID of the existing custome
 $external_subscription_id = "54321"; // string | External subscription ID
 
 try {
-  $result = $apiInstance->findCustomerCurrentUsage($customer_external_id, $external_subscription_id);
+  $result = $apiInstance->findCustomerPastUsage($customer_external_id, $external_subscription_id);
   print_r($result);
 } catch (Exception $e) {
-  echo 'Exception when calling CustomersApi->findCustomerCurrentUsage: ', $e->getMessage(), PHP_EOL;
+  echo 'Exception when calling CustomersApi->findCustomerPastUsage: ', $e->getMessage(), PHP_EOL;
 }
 ```
 
