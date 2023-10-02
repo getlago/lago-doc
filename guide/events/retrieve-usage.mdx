@@ -1,0 +1,38 @@
+---
+title: "Retrieving usage"
+description: "Learn how to retrieve usage data for both current and past billing periods."
+---
+
+## Retrieve current usage
+Current usage fetches real-time customer data for the open billing period. 
+Keep in mind that since this period isn't closed yet, invoice details may evolve over time.
+
+<RequestExample>
+    ```bash Retrieve current usage
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    EXTERNAL_CUSTOMER_ID="__EXTERNAL_CUSTOMER_ID__"
+    EXTERNAL_SUBSCRIPTION_ID="__EXTERNAL_SUBSCRIPTION_ID__"
+
+    curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/current_usage?external_subscription_id=$EXTERNAL_SUBSCRIPTION_ID" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json'
+    ```
+</RequestExample>
+
+## Retrieve past usage
+Retrieving historical customer usage data provides usage details for closed billing periods. 
+This data remains unchanged unless you're in a grace period, where past usage can be adjusted for a draft invoice.
+
+<RequestExample>
+    ```bash Retrieve past usage
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    EXTERNAL_CUSTOMER_ID="__EXTERNAL_CUSTOMER_ID__"
+    EXTERNAL_SUBSCRIPTION_ID="__EXTERNAL_SUBSCRIPTION_ID__"
+
+    curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/past_usage?external_subscription_id=$EXTERNAL_SUBSCRIPTION_ID" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json'
+    ```
+</RequestExample>
