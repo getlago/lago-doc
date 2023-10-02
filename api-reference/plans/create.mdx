@@ -21,6 +21,7 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
     "description": null,
     "amount_cents": 1000,
     "amount_currency": "USD",
+    "invoice_display_name": "",
     "trial_period": 10,
     "pay_in_advance": true,
     "bill_charges_monthly": null,
@@ -34,6 +35,7 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "New name on invoice 1",
         "properties": {
           "graduated_ranges": [
             {
@@ -60,6 +62,7 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "",
         "properties": {
           "amount": "30",
           "free_units": 1000,
@@ -75,6 +78,7 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "New name on invoice 2",
         "properties": {
           "rate": "0.15",
           "fixed_amount": "0.5",
@@ -93,6 +97,7 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "",
         "properties": {
           "amount": "10"
         },
@@ -106,6 +111,7 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "",
         "properties": {
           "volume_ranges": [
             {
@@ -132,6 +138,7 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "",
         "properties": {
           "graduated_ranges": [
             {
@@ -297,6 +304,7 @@ standard_charge = Charge(
   pay_in_advance=false,
   min_amount_cents=0,
   prorated= true,
+  invoice_display_name= "New display name",
   tax_codes= ['french_standard_vat'],
   group_properties=[
     {
@@ -314,6 +322,7 @@ graduated_charge = Charge(
   pay_in_advance=false,
   min_amount_cents=0,
   prorated=false,
+  invoice_display_name= "",
   properties=[
     {
       'from_value': 0,
@@ -336,6 +345,7 @@ package_charge = Charge(
   pay_in_advance=false,
   min_amount_cents=0,
   prorated=false,
+  invoice_display_name= "",
   properties={
     'amount': '100',
     'free_units': 10000,
@@ -349,6 +359,7 @@ percentage_charge = Charge(
   pay_in_advance=false,
   min_amount_cents=0,
   prorated=false,
+  invoice_display_name= "",
   properties={
     'rate': '0.5',
     'fixed_amount': '1',
@@ -365,6 +376,7 @@ volume_charge = Charge(
   pay_in_advance=false,
   min_amount_cents=0,
   prorated=true,
+  invoice_display_name= "",
   properties={
     'volume_ranges': [
       {
@@ -387,6 +399,7 @@ graduated_percentage_charge = Charge(
   billable_metric_id='id,
   charge_model='graduated_percentage',
   prorated=true,
+  invoice_display_name= "",
   properties={
     'graduated_percentage_ranges': [
       {
@@ -429,6 +442,7 @@ plan = Plan(
   interval='monthly',
   pay_in_advance=True,
   tax_codes= ['french_standard_vat'],
+  invoice_display_name= "",
   charges=charges
 )
 
@@ -451,6 +465,7 @@ plan = {
   amount_cents: 10000,
   amount_currency: 'USD',
   pay_in_advance: false,
+  invoice_display_name: '',
   tax_codes: ['french_standard_vat'],
   charges: [
     {
@@ -459,6 +474,7 @@ plan = {
       pay_in_advance: false,
       min_amount_cents: 0,
       prorated: true,
+      invoice_display_name: 'New invoice display name',
       tax_codes: ['french_standard_vat'],
       group_properties: [
         {
@@ -475,6 +491,7 @@ plan = {
       pay_in_advance: false,
       min_amount_cents: 0,
       prorated: false,
+      invoice_display_name: '',
       properties: [
         {
           to_value: 10,
@@ -496,6 +513,7 @@ plan = {
       pay_in_advance: false,
       min_amount_cents: 0,
       prorated: false,
+      invoice_display_name: '',
       properties: {
         amount: '100',
         free_units: 10000,
@@ -508,6 +526,7 @@ plan = {
       pay_in_advance: false,
       min_amount_cents: 0,
       prorated: false,
+      invoice_display_name: '',
       properties: {
         rate: '0.5',
         fixed_amount: '1',
@@ -523,6 +542,7 @@ plan = {
       pay_in_advance: false,
       min_amount_cents: 0,
       prorated: true,
+      invoice_display_name: '',
       properties: {
         volume_ranges: [
           {
@@ -544,6 +564,7 @@ plan = {
       billable_metric_id: 'id',
       charge_model: 'graduated_percentage',
       prorated: false,
+      invoice_display_name: '',
       properties: {
         graduated_percentage_ranges: [
           {
@@ -585,6 +606,7 @@ const standardChargeObject = {
   payInAdvance: false,
   minAmountCents: 0,
   prorated: true,
+  invoiceDisplayName: "New invoice display name",
   taxCodes: ["french_standard_vat"],
   groupProperties: [
     {
@@ -605,6 +627,7 @@ const graduatedChargeObject = {
   payInAdvance: false,
   minAmountCents: 0,
   prorated: false,
+  invoiceDisplayName: "",
   properties: [
     {
       toValue: 10,
@@ -630,6 +653,7 @@ const packageChargeObject = {
   payInAdvance: false,
   minAmountCents: 0,
   prorated: false,
+  invoiceDisplayName: "",
   properties: {
     amount: "100",
     freeUnits: 10000,
@@ -646,6 +670,7 @@ const percentageChargeObject = {
   payInAdvance: false,
   minAmountCents: 0,
   prorated: false,
+  invoiceDisplayName: "",
   properties: {
     rate: "0.5",
     fixedAmount: "1",
@@ -665,6 +690,7 @@ const volumeChargeObject = {
   payInAdvance: false,
   minAmountCents: 0,
   prorated: true,
+  invoiceDisplayName: "",
   properties: {
     volumeRanges: [
       {
@@ -692,6 +718,7 @@ const graduatePercentageChargeObject = {
   payInAdvance: false,
   minAmountCents: 0,
   prorated: true,
+  invoiceDisplayName: "",
   properties: {
     volumeRanges: [
       {
@@ -729,6 +756,7 @@ const planObject: PlanInput = {
     payInAdvance: true,
     trialPeriod: 2,
     description: "This is a startup plan.",
+    invoiceDisplayName: "",
     billChargesMonthly: false,
     taxCodes: ["french_standard_vat"],
     charges: charges,
@@ -753,6 +781,7 @@ planInput := &lago.PlanInput{
     Interval:       lago.PlanMonthly,
     PayInAdvance:   true,
     AmountCents:    10000,
+    InvoiceDisplayName: "",
     AmountCurrency: lago.USD,
 }
 
