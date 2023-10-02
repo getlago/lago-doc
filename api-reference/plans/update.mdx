@@ -25,6 +25,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
     "pay_in_advance": true,
     "bill_charges_monthly": null,
     "tax_codes": ["french_standard_vat"],
+    "invoice_display_name": "",
     "charges": [
       {
         "lago_billable_metric_id": "__BILLABLE_METRIC_ID__",
@@ -34,6 +35,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "My new charge display name",
         "properties": {
           "graduated_ranges": [
             {
@@ -60,6 +62,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "",
         "properties": {
           "amount": "30",
           "free_units": 1000,
@@ -75,6 +78,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "",
         "properties": {
           "rate": "0.15",
           "fixed_amount": "0.5",
@@ -93,6 +97,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "",
         "properties": {
           "amount": "10"
         },
@@ -106,6 +111,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/plans/__plan_code__" \
         "pay_in_advance": false,
         "prorated": false,
         "min_amount_cents": 0,
+        "invoice_display_name": "",
         "properties": {
           "volume_ranges": [
             {
@@ -311,6 +317,7 @@ graduated_charge = Charge(
   billable_metric_id='id,
   charge_model='graduated',
   prorated=false,
+  invoice_display_name= 'My new charge display name',
   properties=[
     {
       'from_value': 0,
@@ -332,6 +339,7 @@ package_charge = Charge(
   billable_metric_id='id,
   charge_model='package',
   prorated=false,
+  invoice_display_name= '',
   properties={
     'amount': '100',
     'free_units': 10000,
@@ -344,6 +352,7 @@ percentage_charge = Charge(
   billable_metric_id='id,
   charge_model='percentage',
   prorated=false,
+  invoice_display_name= '',
   properties={
     'rate': '0.5',
     'fixed_amount': '1',
@@ -359,6 +368,7 @@ volume_charge = Charge(
   billable_metric_id='id,
   charge_model='volume',
   prorated=true,
+  invoice_display_name= '',
   properties={
     'volume_ranges': [
       {
@@ -382,6 +392,7 @@ graduated_percentage_charge = Charge(
   billable_metric_id='id,
   charge_model='graduated_percentage',
   prorated=true,
+  invoice_display_name= '',
   properties={
     'graduated_percentage_ranges': [
       {
@@ -423,6 +434,7 @@ plan = Plan(
   description='desc',
   interval='weekly',
   pay_in_advance=True,
+  invoice_display_name= '',
   charges=charges
 )
 
@@ -446,12 +458,13 @@ plan = {
   amount_currency: 'EUR',
   pay_in_advance: false,
   prorated: false,
-
+  invoice_display_name: '',
   charges: charges: [
     {
       id: 'id',
       billable_metric_id: 'id',
       charge_model: 'standard',
+      invoice_display_name: 'My new charge display name',
       group_properties: [
         {
           group_id: 'group_id',
@@ -466,6 +479,7 @@ plan = {
       billable_metric_id: 'id',
       charge_model: 'graduated',
       prorated: false,
+      invoice_display_name: '',
       properties: [
         {
           to_value: 10,
@@ -486,6 +500,7 @@ plan = {
       billable_metric_id: 'id',
       charge_model: 'package',
       prorated: false,
+      invoice_display_name: '',
       properties: {
         amount: '100',
         free_units: 10000,
@@ -497,6 +512,7 @@ plan = {
       billable_metric_id: 'id',
       charge_model: 'percentage',
       prorated: false,
+      invoice_display_name: '',
       properties: {
         rate: '0.5',
         fixed_amount: '1',
@@ -511,6 +527,7 @@ plan = {
       billable_metric_id: 'id',
       charge_model: 'volume',
       prorated: true,
+      invoice_display_name: '',
       properties: {
         volume_ranges: [
           {
@@ -533,6 +550,7 @@ plan = {
       billable_metric_id: 'id',
       charge_model: 'graduated_percentage',
       prorated: false,
+      invoice_display_name: '',
       properties: {
         graduated_percentage_ranges: [
           {
@@ -580,6 +598,7 @@ planInput := &lago.PlanInput{
     Interval:       lago.PlanMonthly,
     PayInAdvance:   true,
     AmountCents:    1500,
+    InvoiceDisplayName: "",
     AmountCurrency: lago.EUR,
 }
 
