@@ -113,3 +113,81 @@ Congratulations! You're ready to sync real-time data from Lago to Salesforce! ðŸ
   <img src="/integrations/data/images/add-salesforce-webhook-url.gif" />
 </Frame>
 
+
+## Connect Lago to Salesforce CRM
+To establish a connection between your Lago instance and the Salesforce Package, follow these steps:
+
+1. Access Salesforce and locate the **App Launcher**;
+2. Find and open the Lago app you recently installed;
+3. Within the Lago Base Configuration tab:
+  - Provide your **Lago API Key** (located in Lago's Developer Section)
+  - Enter your Lago **API base URL** (e.g., https://api.getlago.com/). Exclude the `api/v1` at the end of the URL
+4. **"Save and validate"** your connection; and
+5. Optionally click the **"Start Sync Data"** to backfill historical data from Lago to Salesforce;
+
+<Warning>
+Please note that data synchronization is available only for Lago customers with an `external_salesforce_id` and an existing Salesforce Account.
+</Warning>
+
+<Frame caption="Connect your Lago instance to Salesforce Lago App">
+  <img src="/integrations/data/images/salesforce-package-api-connection.gif" />
+</Frame>
+
+
+## Real-time data sync from Lago to Salesforce CRM
+
+If your webhook endpoint is configured correctly, your billing data will flow seamlessly in real-time.
+
+### 1. Customers data
+To synchronize Lago Customer data with Salesforce Accounts (native object), ensure that your 
+Salesforce Account is created first, and that the Lago Customer's external_salesforce_id is populated.
+
+<Warning>
+Billing data will not sync unless these requirements are met. 
+Lago will not create an Account in Salesforce without prior specification.
+</Warning>
+
+<Frame caption="Salesforce Account with Lago Customer information">
+  <img src="/integrations/data/images/lago-synced-account-salesforce.png" />
+</Frame>
+
+### 2. Subscriptions data
+Whenever a subscription is created for a Lago Customer, the subscription details will be automatically 
+synced in real-time with Salesforce using the `Lago Subscriptions` custom object.
+
+Here is a list of Subscription fields that are automatically synced. 
+Note that this subcription is automatically linked to a Salesforce Account:
+
+- Subscription Id;
+- Subscription Name;
+- Subscription Start Date;
+- Subscription Status;
+- Subscription Termination Date (synced when the subscription is terminated);
+- Subscription Billing Time (either `calendar` or `anniversary`); and
+- Plan Code.
+
+<Frame caption="Sync subscriptions data from Lago to Salesforce">
+  <img src="/integrations/data/images/sync-lago-subscriptions-salesforce.gif" />
+</Frame>
+
+### 3. Invoices data
+Whenever an invoice is issued for a Lago Customer, the invoice details will be automatically 
+synced in real-time with Salesforce using the `Lago Invoices` custom object.
+
+Here is a list of Subscription fields that are automatically synced: 
+- Invoices Number;
+- Invoice Payment Status;
+- Invoice Type (`subscription` or `one-off`);
+- Invoice Issuing Date;
+- Invoice Amount;
+- Invoice File Url; and
+- Invoice Currency.
+
+<Frame caption="Sync invoices data from Lago to Salesforce">
+  <img src="/integrations/data/images/sync-lago-invoices-salesforce.gif" />
+</Frame>
+
+
+### 4. Credit notes data
+Whenever a credit note is issued for a Lago Invoice, the credit note details will be automatically 
+synced in real-time with Salesforce using the `Lago CreditNotes` custom object.
