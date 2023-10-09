@@ -140,19 +140,11 @@ decoded_signature['data'] == request.body
 
   ```py Python
   import hmac
-  import hashlib
   import base64
 
-  encoded_body = hmac.new(
-    str(YOUR_ORGANIZATION_API_KEY),
-    msg=request.body,
-    digestmod=hashlib.sha256
-  ).hexdigest().upper()
-  encoded_body_bytes = encoded_body.encode("ascii")
-  base64_encoded_body = base64.b64encode(encoded_body_bytes)
-  base64_encoded_body_string = base64_bytes.decode("ascii")
-
-  request.headers.get('X-Lago-Signature') == base64_encoded_body_string
+  calc_sig = hmac.new(LAGO_API_KEY, request.body.encode(), 'sha256').digest()
+  base64_sig = base64.b64encode(calc_sig).decode()
+  request.headers.get('X-Lago-Signature') == base64_sig
   ```
 
   ```js Node.js
