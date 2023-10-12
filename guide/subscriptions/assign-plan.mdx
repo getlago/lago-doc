@@ -202,21 +202,92 @@ When multiple subscriptions are linked to a customer, Lago will automatically co
 
 It is possible to link to the same customer subscriptions that are based on different billing cycles (e.g. a subscription based on calendar dates and another based on the anniversary date).
 
-## Overwriting a plan
-By assigning a subscription, you can use an existing plan as a template to create a new plan for your customer.
-
-When assigning a plan to a customer via the user interface:
-1. Select an existing plan;
-2. Click **"Overwrite"**, next to the plan name;
-3. Choose a name and a code for the new plan;
-4. Modify the plan model and charges according to your needs; and
-5. Click **"Duplicate plan"** to confirm.
-
-To start a subscription, the currency of the new plan must match the currency associated with the customer.
+## Overriding a plan
 
 <Info>
-Overwriting a plan has no impact on the original plan or existing subscriptions.
+
+**PREMIUM FEATURE** ✨
+
+This feature is only available to users with a premium license. Please
+**[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago
+Self-Hosted Premium.
+
 </Info>
+
+By assigning a subscription to a customer, you gain the flexibility to customize certain aspects of the initially selected plan. 
+This enables you to maintain a consistent plan structure for all customers while tailoring individualized discounts through price adjustments per customer.
+
+<Tabs>
+  <Tab title="Dashboard">
+  To perform a plan overrides, assign a plan to a customer and you’ll be able to make modifications to the following elements:
+
+  1. Subscription invoice display name
+  2. Subscription fee
+  3. Plan currency
+  4. Plan trial period
+  5. Plan taxes
+  6. Charges properties (please note that the charge model cannot be modified)
+  7. Charge group definitions & properties (if applicable)
+  8. Charge minimum spending
+  9. Charge taxes
+  10. Charge invoice display name
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Override a plan
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+      "subscription": {
+        "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "plan_code": "premium",
+        "external_id": "my_new_sub_123456789",
+        "name": "",
+        "subscription_at": "2022-08-08T00:00:00Z",
+        "ending_at": "2023-08-08T00:00:00Z",
+        "billing_time": "anniversary",
+        "plan_overrides": {
+          "name": "new_plan",
+          "invoice_display_name": "Subscription fee",
+          "description": "Overriden plan for customer X",
+          "amount_cents": 10000,
+          "amount_currency": "USD",
+          "trial_period": "0",
+          "tax_codes": [
+            "vat_10"
+          ],
+          "charges": [
+            {
+              "id": "cac4cff7-e2d9-41e2-83e5-7947d91f0eb5",
+              "invoice_display_name": "Cards - custom price",
+              "billable_metric_code": "cards",
+              "min_amount_cents": 0,
+              "properties": {
+                "amount": "10"
+              },
+              "group_properties": [],
+              "taxes": []
+            }
+          ]
+        }
+      }
+    }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+It's crucial to note that all overridden plans will remain associated with the initial plan but won't be visible in the plans list. 
+To access an overridden plan, simply click on the specific subscription item in the customer details view.
+
+Moreover, all invoices generated from this subscription will be based from the overridden plan, not the initial plan. 
+Additionally, any coupons restricted to a plan code will apply to both the initial and overridden plans.
+
+Importantly, any changes made to the initial plans will not impact the subscriptions linked to overridden plans.
 
 ## Deleting a plan
 You could [delete a plan](/api-reference/plans/destroy) linked to existing subscriptions.
