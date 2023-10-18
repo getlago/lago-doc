@@ -1,0 +1,50 @@
+---
+title: "Void invoices"
+---
+
+Voiding an invoice is akin to deleting or canceling it in principle.
+Yet, voiding preserves a paper trail, enabling you to locate the invoice by its number.
+Voided invoices are considered as having zero value for reporting and are not payable.
+Importantly, this status is final, meaning the invoice's status remains unalterable.
+
+Once you void an invoice, it remains accessible through the UI views and shows a status `voided` indicating it has been voided.
+You can void an invoice only when it's in a `finalized` status, and the payment status is not `succeeded`.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To void an invoice using the user interface:
+    1. Go to the "Invoices" list;
+    2. Click the ellipse "..." button of a finalized invoice;
+    3. Select **"Void Invoice"**; and
+    4. Confirm the invoice you wish to void.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Void an existing invoice
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      INVOICE_ID="__YOUR_INVOICE_ID__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/invoices/$INVOICE_ID/void" \
+        --header "Authorization: Bearer $API_KEY"
+
+    ```
+    </CodeGroup>
+
+  </Tab>
+</Tabs>
+
+## Invoice voiding restrictions
+
+You cannot void an invoice when:
+
+- The invoice is in a `draft` status, which means it hasn't been finalized yet.
+- The payment status of the invoice is `succeeded`, indicating that the payment has been successfully processed.
+- A credit note has already been issued for the same invoice, as this would create accounting conflicts.
+- It has already been voided before.
+
+## Invoice voiding with applied discounts
+
+- Coupons applied to an invoice that is voided will be forfeited and lost.
+- Prepaid credits from wallets linked to a voided invoice are refunded, provided the wallet is still active and not terminated.
+- Credit notes applied to a voided invoice are refunded to the credit note wallet.
