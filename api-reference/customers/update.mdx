@@ -39,7 +39,6 @@ curl --location --request POST "$LAGO_URL/api/v1/customers" \
         "sync": true,
         "sync_with_provider": true,
         "document_locale": "fr",
-        "vat_rate": 12.5,
         "provider_payment_methods": ["card","sepa_debit"]
       },
       "metadata": [
@@ -48,7 +47,8 @@ curl --location --request POST "$LAGO_URL/api/v1/customers" \
           "value": "123456789",
           "display_in_invoice": true
         }
-      ]
+      ],
+      "tax_codes": ["french_standard_vat"]
     }
   }'
 ```
@@ -90,8 +90,7 @@ customer = Customer(
     provider_customer_id="cus_12345",
     sync=true,
     sync_with_provider=true,
-    document_locale="fr",
-    vat_rate=12.5
+    document_locale="fr"
   ),
   metadata=MetadataList(__root__=[metadata_object])
 )
@@ -132,7 +131,6 @@ client.customers.create(
     sync: true,
     sync_with_provider: true,
     document_locale: "fr",
-    vat_rate: 12.5,
     provider_payment_methods: ["card","sepa_debit"]
   },
   metadata: [
@@ -141,7 +139,8 @@ client.customers.create(
       value: '123456789',
       display_in_invoice: true
     }
-  ]
+  ],
+  tax_codes: ["french_standard_vat"]
 )
 ```
 
@@ -172,8 +171,7 @@ const customerObject = {
     providerCustomerId: "cus_12345",
     sync: true,
     syncWithProvider: true,
-    documentLocale: "fr",
-    vatRate: 12.5,
+    documentLocale: "fr"
   },
   metadata: [
     {
@@ -217,8 +215,7 @@ customerInput := &lago.CustomerInput{
     PaymentProvider: lago.PaymentProviderStripe,
     ProviderCustomerID: "cus_123456789",
     SyncWithProvider: true,
-    DocumentLocale: "fr",
-    VatRate: 20.0
+    DocumentLocale: "fr"
     },
     Metadata: [
     &CustomerMetadataInput{
