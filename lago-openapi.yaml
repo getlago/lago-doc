@@ -1285,7 +1285,7 @@ paths:
       tags:
         - invoices
       summary: List all invoices
-      description: This endpoint is used for retrievign all invoices.
+      description: This endpoint is used for retrieving all invoices.
       operationId: findAllInvoices
       parameters:
         - $ref: '#/components/parameters/page'
@@ -4926,8 +4926,14 @@ components:
             properties:
               type: object
               description: 'This field represents additional properties associated with the event, which are utilized in the calculation of the final fee. This object becomes mandatory when the targeted billable metric employs a `sum_agg`, `max_agg`, or `unique_count_agg` aggregation method. However, when using a simple `count_agg`, this object is not required.'
-              additionalProperties:
-                type: string
+              additionalProperties: true
+              properties:
+                operation_type:
+                  type: string
+                  description: 'The `operation_type` field is only necessary when adding or removing a specific unit when the targeted billable metric adopts a `unique_count_agg` aggregation method. In other cases, the `operation_type` field is not required. The valid values for the `operation_type` field are `add` or `remove`, which indicate whether the unit is being added or removed from the unique count aggregation, respectively.'
+                  enum:
+                    - add
+                    - remove
               example:
                 gb: 10
     EventObject:
@@ -4997,7 +5003,7 @@ components:
           type: string
           format: date-time
           example: '2022-04-29T08:59:51Z'
-          description: 'The creation date of the event''s record in the Lago application, presented in the ISO 8601 datetime format, specifically in Coordinated Universal Time (UTC). It provides the precise timestamp of when the event''s record was created within the Lago application'
+          description: 'The creation date of the event record in the Lago application, presented in the ISO 8601 datetime format, specifically in Coordinated Universal Time (UTC). It provides the precise timestamp of when the event''s record was created within the Lago application'
     Fee:
       type: object
       required:
@@ -6655,12 +6661,12 @@ components:
               type: string
               format: date-time
               example: '2022-10-08T00:00:00Z'
-              description: 'The effective end date of the subscription. If this field is set to null, the subscription will automatically renew. This date should be provided in ISO 8601 datetime format, and use Coordinated Universal Time (UTC).'
+              description: 'The effective end date of the subscription. If this field is set to null, the subscription will automatically renew. This date should be provided in ISO 8601 datetime format in seconds and expressed in Coordinated Universal Time (UTC).'
             subscription_at:
               type: string
               format: date-time
               example: '2022-08-08T00:00:00Z'
-              description: 'The start date for the subscription, allowing for the creation of subscriptions that can begin in the past or future. Please note that it cannot be used to update the start date of a pending subscription or schedule an upgrade/downgrade. The start_date should be provided in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).'
+              description: 'The start date for the subscription, allowing for the creation of subscriptions that can begin in the past or future. Please note that it cannot be used to update the start date of a pending subscription or schedule an upgrade/downgrade. The start_date should be provided in ISO 8601 datetime format in seconds and expressed in Coordinated Universal Time (UTC).'
             plan_overrides:
               $ref: '#/components/schemas/PlanOverridesObject'
     SubscriptionUpdateInput:
@@ -6680,12 +6686,12 @@ components:
               type: string
               format: date-time
               example: '2022-10-08T00:00:00Z'
-              description: 'The effective end date of the subscription. If this field is set to null, the subscription will automatically renew. This date should be provided in ISO 8601 datetime format, and use Coordinated Universal Time (UTC).'
+              description: 'The effective end date of the subscription. If this field is set to null, the subscription will automatically renew. This date should be provided in ISO 8601 datetime format in seconds and expressed in Coordinated Universal Time (UTC).'
             subscription_at:
               type: string
               format: date-time
               example: '2022-08-08T00:00:00Z'
-              description: The start date and time of the subscription. This field can only be modified for pending subscriptions that have not yet started. This date should be provided in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).
+              description: The start date and time of the subscription. This field can only be modified for pending subscriptions that have not yet started. This date should be provided in ISO 8601 datetime format in seconds and expressed in Coordinated Universal Time (UTC).
             plan_overrides:
               $ref: '#/components/schemas/PlanOverridesObject'
     SubscriptionObject:
@@ -6753,34 +6759,34 @@ components:
           type: string
           format: date-time
           example: '2022-08-08T00:00:00Z'
-          description: 'The creation date of the subscription, represented in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC). This date provides a timestamp indicating when the subscription was initially created.'
+          description: 'The creation date of the subscription, represented in ISO 8601 datetime format in seconds and expressed in Coordinated Universal Time (UTC). This date provides a timestamp indicating when the subscription was initially created.'
         canceled_at:
           type: string
           format: date-time
           example: '2022-09-14T16:35:31Z'
-          description: The cancellation date of the subscription. This field is not null when the subscription is `canceled`. This date should be provided in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).
+          description: The cancellation date of the subscription. This field is not null when the subscription is `canceled`. This date should be provided in ISO 8601 datetime format in seconds and expressed in Coordinated Universal Time (UTC).
           nullable: true
         started_at:
           type: string
           format: date-time
           example: '2022-08-08T00:00:00Z'
-          description: The effective start date of the subscription. This field can be null if the subscription is `pending` or `canceled`. This date should be provided in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).
+          description: The effective start date of the subscription. This field can be null if the subscription is `pending` or `canceled`. This date should be provided in ISO 8601 datetime format in seconds and expressed in Coordinated Universal Time (UTC).
           nullable: true
         ending_at:
           type: string
           format: date-time
           example: '2022-10-08T00:00:00Z'
-          description: 'The effective end date of the subscription. If this field is set to null, the subscription will automatically renew. This date should be provided in ISO 8601 datetime format, and use Coordinated Universal Time (UTC).'
+          description: 'The effective end date of the subscription. If this field is set to null, the subscription will automatically renew. This date should be provided in ISO 8601 datetime format in seconds and expressed in Coordinated Universal Time (UTC).'
         subscription_at:
           type: string
           format: date-time
           example: '2022-08-08T00:00:00Z'
-          description: The anniversary date and time of the initial subscription. This date serves as the basis for billing subscriptions with `anniversary` billing time. The `anniversary_date` should be provided in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC).
+          description: The anniversary date and time of the initial subscription. This date serves as the basis for billing subscriptions with `anniversary` billing time. The `anniversary_date` should be provided in ISO 8601 datetime format in seconds and expressed in Coordinated Universal Time (UTC).
         terminated_at:
           type: string
           format: date-time
           example: '2022-09-14T16:35:31Z'
-          description: The termination date of the subscription. This field is not null when the subscription is `terminated`. This date should be provided in ISO 8601 datetime format and expressed in Coordinated Universal Time (UTC)
+          description: The termination date of the subscription. This field is not null when the subscription is `terminated`. This date should be provided in ISO 8601 datetime format in seconds and expressed in Coordinated Universal Time (UTC)
           nullable: true
         previous_plan_code:
           type: string
@@ -6796,7 +6802,7 @@ components:
           type: string
           format: date-time
           example: null
-          description: 'The date when the plan will be downgraded, represented in ISO 8601 date format.'
+          description: 'The date when the plan will be downgraded, represented in ISO 8601 date format in seconds.'
           nullable: true
     SubscriptionsPaginated:
       type: object
