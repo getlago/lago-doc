@@ -2,6 +2,16 @@
 title: "Outstanding invoices"
 ---
 
+<Info>
+
+**PREMIUM FEATURE** ✨
+
+This dashboard is only available to users with a premium license. Please
+**[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago
+Self-Hosted Premium.
+
+</Info>
+
 Our dashboard empowers you with insights into the number of invoices and their respective values across all payment statuses.
 This means you can easily track the count of invoices with failed, pending, or successful payment statuses.
 
@@ -34,7 +44,7 @@ This feature proves valuable when you need to initiate a new payment intent or t
                 SELECT
                     DATE_TRUNC('month', o.created_at) AS start_month
                 FROM organizations o
-                WHERE o.id = 'dfe27099-c2c0-4d64-9f08-3a7e26e00e1d'
+                WHERE o.id = '__YOUR_ORGANIZATION_ID__'
             )
 
             --- Generate a series of months
@@ -60,7 +70,7 @@ This feature proves valuable when you need to initiate a new payment intent or t
                     COALESCE(COUNT(*), 0) AS number_invoices,
                     COALESCE(SUM(i.total_amount_cents::float), 0) AS amount_cents
                 FROM invoices i
-                WHERE i.organization_id = 'dfe27099-c2c0-4d64-9f08-3a7e26e00e1d'
+                WHERE i.organization_id = '__YOUR_ORGANIZATION_ID__'
                     AND i.status = 1 --- ONLY FINALIZED INVOICES
                 GROUP BY payment_status, month, currency
             )

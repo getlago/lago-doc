@@ -2,6 +2,16 @@
 title: "Invoiced usage"
 ---
 
+<Info>
+
+**PREMIUM FEATURE** ✨
+
+This dashboard is only available to users with a premium license. Please
+**[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago
+Self-Hosted Premium.
+
+</Info>
+
 Invoiced usage represents the quantified value of consumption-based metrics that have been formally invoiced.
 This usage can encompass a wide spectrum, including both metered and recurring usage-based metrics.
 It doesn't matter whether these charges are settled in advance or in arrears, or whether they involve proration.
@@ -39,7 +49,7 @@ invoicing processes.
             SELECT
                 DATE_TRUNC('month', o.created_at) AS start_month
             FROM organizations o
-            WHERE o.id = 'dfe27099-c2c0-4d64-9f08-3a7e26e00e1d'
+            WHERE o.id = '__YOUR_ORGANIZATION_ID__'
         ),
 
         -- Generate a series of future months
@@ -64,7 +74,7 @@ invoicing processes.
             LEFT JOIN customers c ON c.id = s.customer_id
             WHERE f.invoiceable_type = 'Charge'
                 AND f.fee_type = 0
-                AND c.organization_id = 'dfe27099-c2c0-4d64-9f08-3a7e26e00e1d'
+                AND c.organization_id = '__YOUR_ORGANIZATION_ID__'
         ),
 
         -- Get total revenue for all billable metrics
