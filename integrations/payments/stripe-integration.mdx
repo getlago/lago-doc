@@ -144,7 +144,24 @@ The payload sent by Lago will have the following structure, with the checkout li
 Note: The checkout link automatically expires after 24 hours!
 </Warning>
 
-By utilizing this provided checkout link, your customers can perform a pre-authorization payment. It's important to note that the pre-authorization payment will not collect any funds from the customer. Once the pre-authorization is confirmed, Lago will send the payment method details and securely store them into Stripe for future transactions.
+By utilizing this provided checkout link, your customers can perform a pre-authorization payment. 
+It's important to note that the pre-authorization payment will not collect any funds from the customer. 
+Once the pre-authorization is confirmed, Lago will send the payment method details and securely store them into Stripe for future transactions.
+
+
+## Regenerate checkout link on demand
+In cases where your end customer has not had the opportunity to complete the checkout process to inform their payment method 
+or wishes to modify the saved payment information, you can generate a new checkout link using the designated [endpoint](/api-reference/customers/psp-checkout-url).
+
+```json
+POST /api/v1/customers/:customer_external_id/checkout_url
+```
+
+Upon successful generation, the new checkout link will be available in the endpoint response, and it will not be delivered through a webhook message. 
+It is important to note that the new link will inherit the same expiration setting as the original one.
+
+It is crucial to be aware that if a customer is not associated with any payment provider, the response will contain an error message.
+
 
 ## Default payment method
 When you add a new payment method in Stripe, **Lago automatically sets it as the default**. 

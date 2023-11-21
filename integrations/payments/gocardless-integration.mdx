@@ -164,3 +164,16 @@ If the payment fails, the status of the payment will switch from `pending` to
   be automatically resubmitted, in which case Lago will automatically update the
   invoice payment status.
 </Tip>
+
+## Regenerate checkout link on demand
+In cases where your end customer has not had the opportunity to complete the checkout process to inform their payment method 
+or wishes to modify the saved payment information, you can generate a new checkout link using the designated [endpoint](/api-reference/customers/psp-checkout-url).
+
+```json
+POST /api/v1/customers/:customer_external_id/checkout_url
+```
+
+Upon successful generation, the new checkout link will be available in the endpoint response, and it will not be delivered through a webhook message. 
+It is important to note that the new link will inherit the same expiration setting as the original one.
+
+It is crucial to be aware that if a customer is not associated with any payment provider, the response will contain an error message.
