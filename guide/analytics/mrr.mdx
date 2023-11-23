@@ -14,8 +14,8 @@ Self-Hosted Premium.
 
 Monthly Recurring Revenue (MRR) serves as a crucial indicator of your subscription-based revenue stream.
 It encapsulates the total monthly revenue derived from subscriptions that is recurring. It's important to highlight that our MRR calculation
-method does not take into account all types of discounts, be it credit notes, coupons, or credits. We take a holistic
-approach to provide you with an accurate representation of your recurring revenue, before applying any discounts.
+method takes into account all types of coupons and taxes. We take a holistic approach to provide you with an accurate representation 
+of your recurring revenue.
 
 It's worth noting that Lago's MRR calculations solely pertain to `subscription` fees. Usage-based metrics,
 whether recurring or metered, are not factored into the MRR calculations. This distinction ensures that your MRR figures
@@ -24,10 +24,15 @@ performance.
 
 **Here's our MRR calculation method:**
 
-- For `monthly` invoices, we record the revenue during the month of issuance.
-- For `yearly` invoices, we evenly distribute the revenue over 12 months. If the invoice is paid in arrears, it's spread across the past 12 months; if paid in advance, it's distributed over the next 12 months.
-- For `quarterly` invoices, we divide the revenue equally over 3 months. If paid in arrears, it's allocated to the past 3 months, while if paid in advance, it's distributed over the next 3 months.
-- For `weekly` invoices, we calculate the monthly revenue total, divide it by the number of weekly invoices issued, and then multiply by 4.33 (the average number of weeks in a month). This provides an equitable distribution of revenue.
+- Revenue from `monthly` subscription invoices is included in the MRR for the month in which the invoice is issued.
+- Revenue from `quarterly` subscription invoices is distributed evenly over three months. This distribution applies to fees paid in advance (allocated to the next remaining months depending on calendar or anniversary billing) as well as to fees paid in arrears (allocated to the preceding months depending on calendar or anniversary billing).
+- Revenue from `yearly` subscription invoices is distributed evenly over twelve months. This allocation is applicable for fees paid in advance (spread over the next  remaining months depending on calendar or anniversary billing) and for fees paid in arrears (spread over the previous months depending on calendar or anniversary billing).
+- Revenue from `weekly` subscription invoices, the total revenue from all invoices issued within a month is summed up. This total is then divided by the number of invoices issued during that month, and the result is multiplied by 4.33, representing the average number of weeks in a month.
+
+<Info>
+Please note that the UI's MRR total summary displays the MRR from the most recently **completed** billing month.
+</Info>
+
 
 <Tabs>
   <Tab title="Dashboard"> 
@@ -60,145 +65,177 @@ performance.
     <CodeGroup>
     ```sql SQL Query used by Lago
       --- Organization creation date is the start of this report
-      WITH organization_creation_date AS (
-          SELECT
-              DATE_TRUNC('month', o.created_at) AS month
-          FROM organizations o
-          WHERE o.id = '__YOUR_ORGANIZATION_ID__'
-      ),
+        WITH organization_creation_date AS (
+            SELECT
+                DATE_TRUNC('month', o.created_at) AS month
+            FROM organizations o
+            WHERE o.id = '__YOUR_ORGANIZATION_ID__'
+        ),
 
-      --- Generate series of months
-      all_months AS (
-          SELECT
-              *
-          FROM generate_series(
-              (SELECT min(month) FROM organization_creation_date),
-              date_trunc('month', now()) + interval '10 years',
-              interval '1 month'
-          ) AS month
-      ),
+        --- Generate series of month
+        all_months AS (
+            SELECT
+                *
+            FROM generate_series(
+                (SELECT min(month) FROM organization_creation_date),
+                date_trunc('month', now()) + interval '10 years',
+                interval '1 month'
+            ) AS month
+        ),
 
-      --- Get invoice details for recurring subscriptions with finalized invoices
-      invoice_details AS (
-          SELECT
-              f.invoice_id,
-              (f.amount_cents + f.taxes_amount_cents)::numeric AS amount_cents,
-              f.amount_currency AS currency,
-              i.issuing_date,
-              p.pay_in_advance,
-              CASE
-                  WHEN p.interval = 0 THEN 'weekly'
-                  WHEN p.interval = 1 THEN 'monthly'
-                  WHEN p.interval = 2 THEN 'yearly'
-                  WHEN p.interval = 3 THEN 'quarterly'
-              END AS plan_interval
-          FROM fees f
-          LEFT JOIN subscriptions s ON s.id = f.subscription_id
-          LEFT JOIN invoice_subscriptions isub ON isub.subscription_id = s.id
-          LEFT JOIN invoices i ON i.id = isub.invoice_id
-          LEFT JOIN customers c ON c.id = s.customer_id
-          LEFT JOIN plans p ON p.id = s.plan_id
-          WHERE fee_type = 2 --- Only subscription fees
-              AND c.organization_id = '__YOUR_ORGANIZATION_ID__'
-              AND i.status = 1 --- Only finalized invoices
-      ),
+        --- Get invoice details for recurring subscriptions with finalized invoices and number of months billed
+        invoice_details AS (
+            SELECT
+                f.subscription_id,
+                f.invoice_id,
+                c.name,
+                ((f.amount_cents - f.precise_coupons_amount_cents) + f.taxes_amount_cents) AS amount_cents,
+                f.amount_currency AS currency,
+                i.issuing_date,
+                (EXTRACT(DAY FROM CAST(properties ->> 'to_datetime' AS timestamp) - CAST(properties ->> 'from_datetime' AS timestamp)) 
+                + EXTRACT(HOUR FROM CAST(properties ->> 'to_datetime' AS timestamp) - CAST(properties ->> 'from_datetime' AS timestamp)) / 24 
+                + EXTRACT(MINUTE FROM CAST(properties ->> 'to_datetime' AS timestamp) - CAST(properties ->> 'from_datetime' AS timestamp)) / 1440) / 30.44 AS billed_months,
+                p.pay_in_advance,
+                CASE
+                    WHEN p.interval = 0 THEN 'weekly'
+                    WHEN p.interval = 1 THEN 'monthly'
+                    WHEN p.interval = 2 THEN 'yearly'
+                    WHEN p.interval = 3 THEN 'quarterly'
+                END AS plan_interval
+            FROM fees f
+            LEFT JOIN invoices i ON f.invoice_id = i.id
+            LEFT JOIN customers c ON c.id = i.customer_id
+            LEFT JOIN organizations o ON o.id = c.organization_id
+            LEFT JOIN subscriptions s ON f.subscription_id = s.id
+            LEFT JOIN plans p ON p.id = s.plan_id
+            WHERE fee_type = 2
+                AND c.organization_id = '__YOUR_ORGANIZATION_ID__'
+                AND i.status = 1
+            ORDER BY issuing_date ASC
+        )
 
-      --- Distribute quarterly revenue for the next 3 months
-      quarterly_advance AS (
-          SELECT
-              DATE_TRUNC('month', issuing_date) + interval '1 month' * generate_series(0, 2) AS month,
-              amount_cents / 3 AS amount_cents,
-              currency
-          FROM invoice_details
-          WHERE pay_in_advance = TRUE
-              AND plan_interval = 'quarterly'
-      ),
+        --- Distribute quarterly revenue prorated for the next months
+        ,quarterly_advance AS (
+            SELECT
+                DATE_TRUNC('month', issuing_date) + INTERVAL '1 month' * gs.month_index AS month,
+                CASE 
+                    WHEN gs.month_index = 0 THEN (amount_cents / billed_months) * (DATE_PART('day', DATE_TRUNC('month', issuing_date + INTERVAL '1 month') - issuing_date) / DATE_PART('day', DATE_TRUNC('month', issuing_date + INTERVAL '1 month') - DATE_TRUNC('month', issuing_date)))
+                    WHEN gs.month_index = CEIL(billed_months) - 1 THEN (amount_cents - (amount_cents / billed_months) * (FLOOR(billed_months) - 1 + (DATE_PART('day', DATE_TRUNC('month', issuing_date + INTERVAL '1 month') - issuing_date) / DATE_PART('day', DATE_TRUNC('month', issuing_date + INTERVAL '1 month') - DATE_TRUNC('month', issuing_date)))))
+                    ELSE amount_cents / billed_months
+                END AS amount_cents,
+                currency,
+                name
+            FROM invoice_details,
+            LATERAL GENERATE_SERIES(0, CEIL(billed_months) - 1) AS gs(month_index)
+            WHERE pay_in_advance = TRUE
+                AND plan_interval = 'quarterly'
+        )
 
-      --- Distribute quarterly revenue for the past 3 months
-      quarterly_arrears AS (
-          SELECT
-              DATE_TRUNC('month', issuing_date) - interval '1 month' * generate_series(2, 0, -1) AS month,
-              amount_cents / 3 AS amount_cents,
-              currency
-          FROM invoice_details
-          WHERE pay_in_advance = FALSE
-              AND plan_interval = 'quarterly'
-      ),
+        --- Distribute quarterly revenue prorated for the past months
+        ,quarterly_arrears AS (
+            SELECT
+                DATE_TRUNC('month', issuing_date) - INTERVAL '1 month' * gs.month_index AS month,
+                CASE 
+                    WHEN gs.month_index < CEIL(billed_months::numeric) - 1 THEN 
+                        amount_cents::numeric / billed_months::numeric
+                    ELSE 
+                        amount_cents::numeric - (amount_cents::numeric / billed_months::numeric) * (CEIL(billed_months::numeric) - 1)
+                END AS amount_cents,
+                currency,
+                name
+            FROM invoice_details,
+            LATERAL GENERATE_SERIES(0, CEIL(billed_months::numeric) - 1) AS gs(month_index)
+            WHERE pay_in_advance = FALSE
+                AND plan_interval = 'quarterly'
+        )
 
-      --- Distribute yearly revenue for the next 12 months
-      yearly_advance AS (
-          SELECT
-              DATE_TRUNC('month', issuing_date) + interval '1 month' * generate_series(0, 11) AS month,
-              amount_cents / 12 AS amount_cents,
-              currency
-          FROM invoice_details
-          WHERE pay_in_advance = TRUE
-              AND plan_interval = 'yearly'
-      ),
+        --- Distribute yearly revenue prorated for the next months
+        ,yearly_advance AS (
+            SELECT
+                DATE_TRUNC('month', issuing_date) + INTERVAL '1 month' * gs.month_index AS month,
+                CASE 
+                    WHEN gs.month_index = 0 THEN (amount_cents / billed_months) * (DATE_PART('day', DATE_TRUNC('month', issuing_date + INTERVAL '1 month') - issuing_date) / DATE_PART('day', DATE_TRUNC('month', issuing_date + INTERVAL '1 month') - DATE_TRUNC('month', issuing_date)))
+                    WHEN gs.month_index = CEIL(billed_months) - 1 THEN (amount_cents - (amount_cents / billed_months) * (FLOOR(billed_months) - 1 + (DATE_PART('day', DATE_TRUNC('month', issuing_date + INTERVAL '1 month') - issuing_date) / DATE_PART('day', DATE_TRUNC('month', issuing_date + INTERVAL '1 month') - DATE_TRUNC('month', issuing_date)))))
+                    ELSE amount_cents / billed_months
+                END AS amount_cents,
+                currency,
+                name
+            FROM invoice_details,
+            LATERAL GENERATE_SERIES(0, CEIL(billed_months) - 1) AS gs(month_index)
+            WHERE pay_in_advance = TRUE
+                AND plan_interval = 'yearly'
+        )
 
-      --- Distribute yearly revenue for the past 12 months
-      yearly_arrears AS (
-          SELECT
-              DATE_TRUNC('month', issuing_date) - interval '1 month' * generate_series(11, 0, -1) AS month,
-              amount_cents / 12 AS amount_cents,
-              currency
-          FROM invoice_details
-          WHERE pay_in_advance = FALSE
-              AND plan_interval = 'yearly'
-      ),
+        --- Distribute yearly revenue prorated for the past months
+        ,yearly_arrears AS (
+            SELECT
+                DATE_TRUNC('month', issuing_date) - INTERVAL '1 month' * gs.month_index AS month,
+                CASE 
+                    WHEN gs.month_index < CEIL(billed_months::numeric) - 1 THEN 
+                        amount_cents::numeric / billed_months::numeric
+                    ELSE 
+                        amount_cents::numeric - (amount_cents::numeric / billed_months::numeric) * (CEIL(billed_months::numeric) - 1)
+                END AS amount_cents,
+                currency,
+                name
+            FROM invoice_details,
+            LATERAL GENERATE_SERIES(0, CEIL(billed_months::numeric) - 1) AS gs(month_index)
+            WHERE pay_in_advance = FALSE
+                AND plan_interval = 'yearly'
+        )
 
-      --- Distribute monthly revenue for the current month of issuing
-      monthly AS (
-          SELECT
-              DATE_TRUNC('month', issuing_date) - interval '1 month' * generate_series(0, 0, -1) AS month,
-              amount_cents,
-              currency
-          FROM invoice_details
-          WHERE plan_interval = 'monthly'
-      ),
+        --- Distribute monthly revenue for the current month of issuing
+        ,monthly AS (
+            SELECT
+                DATE_TRUNC('month', issuing_date) - interval '1 month' * generate_series(0, 0, -1) AS month,
+                amount_cents,
+                currency
+            FROM invoice_details
+            WHERE plan_interval = 'monthly'
+        )
 
-      --- Distribute weekly revenue by dividing number of invoices in a month by 4.33 (average number of weeks in a month)
-      weekly AS (
-          SELECT
-              DATE_TRUNC('month', issuing_date) - interval '1 month' * generate_series(0, 0, -1) AS month,
-              currency,
-              (SUM(amount_cents) / COUNT(*)) * 4.33 AS amount_cents
-          FROM invoice_details
-          WHERE plan_interval = 'weekly'
-          GROUP BY month, currency
-      ),
+        --- Distribute weekly revenue by dividing number of invoices in a month by 4.33 (average number of weeks in a month)
+        ,weekly AS (
+            SELECT
+                DATE_TRUNC('month', issuing_date) - interval '1 month' * generate_series(0, 0, -1) AS month,
+                currency,
+                (SUM(amount_cents) / COUNT(*)) * 4.33 AS amount_cents
+            FROM invoice_details
+            WHERE plan_interval = 'weekly'
+            GROUP BY month, currency
+        )
 
-      --- Consolidate revenue for all billing intervals
-      consolidated_mrr AS (
-          SELECT month, amount_cents::numeric, currency
-          FROM quarterly_arrears
-          UNION ALL
-          SELECT month, amount_cents::numeric, currency
-          FROM quarterly_advance
-          UNION ALL
-          SELECT month, amount_cents::numeric, currency
-          FROM yearly_arrears
-          UNION ALL
-          SELECT month, amount_cents::numeric, currency
-          FROM yearly_advance
-          UNION ALL
-          SELECT month, amount_cents::numeric, currency
-          FROM monthly
-          UNION ALL
-          SELECT month, amount_cents::numeric, currency
-          FROM weekly
-      )
+        ,consolidated_mrr AS (
+            SELECT month, amount_cents::numeric, currency
+            FROM quarterly_arrears
+            UNION ALL
+            SELECT month, amount_cents::numeric, currency
+            FROM quarterly_advance
+            UNION ALL
+            SELECT month, amount_cents::numeric, currency
+            FROM yearly_arrears
+            UNION ALL
+            SELECT month, amount_cents::numeric, currency
+            FROM yearly_advance
+            UNION ALL
+            SELECT month, amount_cents::numeric, currency
+            FROM monthly
+            UNION ALL
+            SELECT month, amount_cents::numeric, currency
+            FROM weekly
+        )
 
-      SELECT
-          am.month,
-          cm.currency,
-          COALESCE(SUM(cm.amount_cents),0) AS amount_cents
-      FROM all_months am
-      LEFT JOIN consolidated_mrr cm ON cm.month = am.month
-      WHERE am.month <= DATE_TRUNC('month', CURRENT_DATE)
-          ---AND cm.currency = '' --- Filter by currency if needed
-      GROUP BY am.month, cm.currency
-      ORDER BY am.month ASC
+        SELECT
+            am.month,
+            cm.currency,
+            COALESCE(SUM(cm.amount_cents),0) AS amount_cents
+        FROM all_months am
+        LEFT JOIN consolidated_mrr cm ON cm.month = am.month
+        WHERE am.month <= DATE_TRUNC('month', CURRENT_DATE)
+            AND am.month >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '11 months') --- LAST 12 MONTHS
+            ---AND cm.currency = ''
+        GROUP BY am.month, cm.currency
+        ORDER BY am.month ASC
     ```
     </CodeGroup>
 
