@@ -49,7 +49,7 @@ In essence, it's the amount you should expect to receive every month.
                 SELECT
                     DATE_TRUNC('month', o.created_at) AS start_month
                 FROM organizations o
-                WHERE o.id = '03d8c1d4-ba10-4cf6-993a-39c698664f38'
+                WHERE o.id = '__YOUR_ORGANIZATION_ID__'
             ),
 
             --- Generate a number of date series in the future
@@ -73,7 +73,7 @@ In essence, it's the amount you should expect to receive every month.
                 FROM invoices i
                 LEFT JOIN customers c ON i.customer_id = c.id
                 LEFT JOIN credit_notes cn ON cn.invoice_id = i.id
-                WHERE i.organization_id = '03d8c1d4-ba10-4cf6-993a-39c698664f38'
+                WHERE i.organization_id = '__YOUR_ORGANIZATION_ID__'
                     AND i.status = 1
                     ---AND c.external_id = 'hooli_1234' --- FILTER BY CUSTOMER
                 GROUP BY i.id, i.issuing_date, i.total_amount_cents, i.currency
@@ -91,7 +91,7 @@ In essence, it's the amount you should expect to receive every month.
                 FROM fees f
                 LEFT JOIN subscriptions s ON f.subscription_id = s.id
                 LEFT JOIN customers c ON c.id = s.customer_id
-                WHERE c.organization_id = '03d8c1d4-ba10-4cf6-993a-39c698664f38'
+                WHERE c.organization_id = '__YOUR_ORGANIZATION_ID__'
                     AND f.invoice_id IS NULL
                     AND f.pay_in_advance IS TRUE
                     ---AND c.external_id = 'hooli_1234' --- FILTER BY CUSTOMER
