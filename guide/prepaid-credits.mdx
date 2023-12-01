@@ -31,25 +31,25 @@ wallets.
     </Info>
   </Tab>
   <Tab title="API">
-  ```bash Create a credit wallet
-  LAGO_URL="https://api.getlago.com"
-  API_KEY="__YOUR_API_KEY__"
+    ```bash Create a credit wallet
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
 
-  curl --location --request POST "$LAGO_URL/api/v1/wallets" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "wallet": {
-        "name": "Prepaid credits",
-        "rate_amount": "1.0",
-        "paid_credits": "20.0",
-        "granted_credits": "10.0",
-        "currency": "USD",
-        "expiration_at": "2022-07-07",
-        "external_customer_id": "hooli_1234"
-      }
-    }'
-  ```
+    curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "wallet": {
+          "external_customer_id": "hooli_1234",
+          "name": "Prepaid credits",
+          "rate_amount": "1.0",
+          "paid_credits": "100.0",
+          "granted_credits": "50.0",
+          "currency": "USD",
+          "expiration_at": "2022-07-07"
+        }
+      }'
+    ```
   </Tab>
 </Tabs>
 
@@ -59,6 +59,98 @@ wallets.
     credits are added to the wallet when payment is confirmed (see below).
 
     Each customer can only have one active wallet.
+
+## Setup recurring top-ups
+
+When creating or editing a wallet, you have the option to enable recurring top-ups based on either an `interval` or a `threshold` trigger.
+
+### Interval trigger
+For an `interval` trigger, specify the frequency of the automatic top-up: `weekly`, `monthly`, `quarterly` or `yearly`.
+
+Once the interval is defined, the system will automatically perform a top-up:
+- Weekly, on the same day each week (e.g., every Monday).
+- Monthly, on the same date each month (e.g., every 2nd of the month).
+- Quarterly, on the same date every three months (e.g., every 2nd of the quarter).
+- Yearly, on the same date every year (e.g., every 2nd of January).
+
+<Info>The reference day for the top-up is determined by the wallet creation date.</Info>
+
+<Tabs>
+  <Tab title="Dashboard">
+    To setup a `interval`` recurring top-up through the user interface:
+    1. Create or edit a wallet
+    2. Trigger on the option `Activate recurring top-up`
+    3. Select `interval` as recurring type
+    4. Define your interval
+  </Tab>
+  <Tab title="API">
+    ```bash Setup an interval recurring top-up
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "wallet": {
+          "external_customer_id": "hooli_1234",
+          "name": "Prepaid credits",
+          "rate_amount": "1.0",
+          "paid_credits": "100.0",
+          "granted_credits": "50.0",
+          "currency": "USD",
+          "expiration_at": "2022-07-07",
+          "recurring_transaction_rules": [
+            {
+              "rule_type": "interval",
+              "interval": "weekly"
+            }
+          ]
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+### Threshold trigger
+With a `threshold` trigger, set a specific number of `credits` that will trigger an automatic top-up. After each wallet transaction, Lago monitors the balance, and if it falls below the defined credit threshold, an automatic top-up is initiated.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To setup a `interval`` recurring top-up through the user interface:
+    1. Create or edit a wallet
+    2. Trigger on the option `Activate recurring top-up`
+    3. Select `threshold` as recurring type
+    4. Define the credits threshold
+  </Tab>
+  <Tab title="API">
+    ```bash Set a recurring top-up on creation
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "wallet": {
+          "external_customer_id": "hooli_1234",
+          "name": "Prepaid credits",
+          "rate_amount": "1.0",
+          "paid_credits": "100.0",
+          "granted_credits": "50.0",
+          "currency": "USD",
+          "expiration_at": "2022-07-07",
+          "recurring_transaction_rules": [
+            {
+              "rule_type": "threshold",
+              "threshold_credits": "100.0"
+            }
+          ]
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
 
 ## Credit purchases and top-ups[](#credit-purchases-and-top-ups "Direct link to heading")
 
@@ -80,23 +172,24 @@ Payment must be made in order for credits to be added to the customer's wallet
     <Info>Coupons **do not apply** to credit purchases and top-ups.</Info>
   </Tab>
   <Tab title="API">
-  ```bash Top up a credit wallet
-  LAGO_URL="https://api.getlago.com"
-  API_KEY="__YOUR_API_KEY__"
+    ```bash Top up a credit wallet
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
 
-  curl --location --request POST "$LAGO_URL/api/v1/wallet_transactions" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "wallet_transaction": {
-        "wallet_id": "wallet_1234567890",
-        "paid_credits": "20.0",
-        "granted_credits": "10.0"
-      }
-    }'
-  ```
+    curl --location --request POST "$LAGO_URL/api/v1/wallet_transactions" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "wallet_transaction": {
+          "wallet_id": "wallet_1234567890",
+          "paid_credits": "20.0",
+          "granted_credits": "10.0"
+        }
+      }'
+    ```
   </Tab>
 </Tabs>
+
 
 ## Application scope[](#application-scope "Direct link to heading")
 
