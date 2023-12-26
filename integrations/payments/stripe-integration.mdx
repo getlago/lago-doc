@@ -178,9 +178,13 @@ Lago, a payment intent will automatically be created. Stripe will record the
 invoice ID and process the payment. If the payment is successful, the status of
 the payment will switch from `pending` to `succeeded`.
 
+
 If the payment fails, the status of the payment will switch from `pending` to
 `failed` and Lago will generate an `invoice.payment_failure`
 [webhook](/api-reference/webhooks/messages).
+
+
+If the new invoice amount falls below the [minimum amount supported by Stripe](https://stripe.com/docs/currencies#minimum-and-maximum-charge-amounts), the payment status will remain as `pending`.
 
 <Warning>
   A valid payment method for the customer must be defined in Stripe for the
