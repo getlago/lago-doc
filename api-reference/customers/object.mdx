@@ -34,6 +34,7 @@ description:
     "billing_configuration": {
       "invoice_grace_period": 3,
       "payment_provider": "stripe",
+      "payment_provider_code": "stripe_eu",
       "provider_customer_id": "cus_12345",
       "sync_with_provider": true,
       "document_locale": "fr",
@@ -162,6 +163,9 @@ description:
           This field is required if you intend to assign a
           `provider_customer_id`.
         </ResponseField>
+        <ResponseField name="payment_provider_code" type="string">
+          Unique code used to identify a payment provider connection.
+        </ResponseField>
         <ResponseField name="provider_customer_id" type="string">
           The customer ID within the payment provider's system. If this field is
           not provided, Lago has the option to create a new customer record
@@ -188,7 +192,6 @@ description:
         <ResponseField name="provider_payment_methods" type="array">
           Specifies the available payment method(s) that can be used for this customer when `payment_provider` is set to `stripe`. 
           The `provider_payment_methods` field is an array that allows multiple payment options to be defined. If this field is not set by the user, `card` is selected by default.
-          
           Possible values include `card` and `sepa_debit`.
         </ResponseField>
       </Expandable>
