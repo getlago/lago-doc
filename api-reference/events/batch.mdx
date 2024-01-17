@@ -2,14 +2,8 @@
 openapi: "POST /events/batch"
 authMethod: "bearer"
 title: "Batch usage events"
-description: "This endpoint is deprecated. It is used for transmitting usage measurement events to multiple subscriptions belonging to the same customer."
 ---
 
-<Warning>
-  This endpoint is deprecated and will be removed on November 30, 2023.
-  
-  In addition, please note that you cannot use the batch endpoint for charges that are paid in advance.
-</Warning>
 
 <RequestExample>
 
@@ -21,15 +15,18 @@ curl --location --request POST "$LAGO_URL/api/v1/events/batch" \
 --header "Authorization: Bearer $API_KEY" \
 --header 'Content-Type: application/json' \
 --data-raw '{
-      "event": {
-          "transaction_id": "__UNIQUE_ID__",
-          "external_subscription_ids": ["__SUBSCRIPTION_ID_1__", "__SUBSCRIPTION_ID_2__"],
-          "code": "__BILLABLE_METRIC_CODE__",
-          "timestamp": $(date +%s),
-          "properties": {
-            "custom_field": 12
-          }
+	"events": [
+      {
+        "transaction_id": "__UNIQUE_ID__",
+        "external_customer_id": "__YOUR_CUSTOMER_ID__",
+        "external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
+        "code": "__BILLABLE_METRIC_CODE__",
+        "timestamp": $(date +%s),
+        "properties": {
+          "custom_field": 12
+        }
       }
+    ]
   }'
 ```
 
@@ -40,16 +37,28 @@ from lago_python_client.models import BatchEvent
 
 client = Client(api_key='__YOUR_API_KEY__')
 
-event = BatchEvent(
-  external_subscription_ids=["__SUBSCRIPTION_ID_1__", "__SUBSCRIPTION_ID_2__"],
-  transaction_id="__UNIQUE_ID__",
-  code="__BILLABLE_METRIC_CODE__",
-  timestamp=1650893379,
-  properties={"custom_field": "custom"}
-)
-
+# Create a list of events
+events = [
+    BatchEvent(
+        transaction_id="__UNIQUE_ID_1__",
+        external_customer_id="__CUSTOMER_ID_1__",
+        external_subscription_id="__SUBSCRIPTION_ID_1__",
+        code="__BILLABLE_METRIC_CODE__",
+        timestamp=1650893379,
+        properties={"custom_field": "custom"}
+    ),
+    BatchEvent(
+        transaction_id="__UNIQUE_ID_2__",
+        external_subscription_id="__SUBSCRIPTION_ID_2__",
+        external_customer_id="__CUSTOMER_ID_2__",
+        code="__BILLABLE_METRIC_CODE__",
+        timestamp=1650893380,
+        properties={"custom_field": "custom"}
+    )
+    # Add more events as needed
+]
 try:
-    client.events.batch_create(event)
+    client.events.batch_create(events)
 except LagoApiError as e:
     repair_broken_state(e)  # do something on error or raise your own exception
 ```
@@ -57,29 +66,59 @@ except LagoApiError as e:
 ```ruby Ruby
 require 'lago-ruby-client'
 
-client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
 
-client.events.batch_create(
-  transaction_id: "__UNIQUE_ID__",
-  external_subscription_ids: ["__SUBSCRIPTION_ID_1__", "__SUBSCRIPTION_ID_2__"],
-  code:  "__BILLABLE_METRIC_CODE__",
-  timestamp: Time.now.to_i,
-  properties: {
-    custom_field: 12
+# Create an array of event hashes
+events = [
+  {
+    transaction_id: "__UNIQUE_ID_1__",
+    external_customer_id: "__CUSTOMER_ID_1__",
+    external_subscription_id: "__SUBSCRIPTION_ID_1__",
+    code: "__BILLABLE_METRIC_CODE__",
+    timestamp: Time.now.to_i,
+    properties: {
+      custom_field: "custom value 1"
+    }
+  },
+  {
+    transaction_id: "__UNIQUE_ID_2__",
+    external_customer_id: "__CUSTOMER_ID_2__",
+    external_subscription_id: "__SUBSCRIPTION_ID_2__",
+    code: "__BILLABLE_METRIC_CODE__",
+    timestamp: Time.now.to_i,
+    properties: {
+      custom_field: "custom value 2"
+    }
   }
-)
+  # Add more events as needed
+]
+
+client.events.batch_create(events)
 ```
 
 ```js Javascript
-const batchEvent = {
-  transaction_id: "__UNIQUE_TRANSACTION_ID__",
-  external_subscription_ids: ["__SUBSCRIPTION_ID_1__", "__SUBSCRIPTION_ID_2__"],
-  code: "__BILLABLE_METRIC_CODE__",
-  timestamp: 1650893379,
-  properties: { customField: "custom" },
-};
+const batchEvent = [
+  {
+    transaction_id: "__UNIQUE_TRANSACTION_ID_1__",
+    external_customer_id: "__CUSTOMER_ID_1__",
+    external_subscription_id: "__SUBSCRIPTION_ID_1__",
+    code: "__BILLABLE_METRIC_CODE__",
+    timestamp: 1650893379,
+    properties: { customField: "custom1" },
+  },
+  {
+    transaction_id: "__UNIQUE_TRANSACTION_ID_2__",
+    external_customer_id: "__CUSTOMER_ID_2__",
+    external_subscription_id: "__SUBSCRIPTION_ID_2__",
+    code: "__BILLABLE_METRIC_CODE__",
+    timestamp: 1650893380,
+    properties: { customField: "custom2" },
+  },
+  // Add more events as needed
+];
 
-await client.events.createBatchEvents({ event: batchEvent });
+await client.events.createBatchEvents({ events: batchEvent });
+
 ```
 
 ```csharp C#
