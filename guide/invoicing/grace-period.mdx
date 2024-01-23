@@ -23,63 +23,6 @@ grace period of three days.
   <img src="/guide/invoicing/images/grace-period-timeline-299de2425036f803f20825e8a42ab401.png" />
 </Frame>
 
-## Application scope and possible actions[](#application-scope-and-possible-actions "Direct link to heading")
-
-The grace period applies to **subscription invoices**. It does not apply to
-invoices related to add-ons or credit purchases.
-
-The creation of a `draft` invoice triggers the `invoice.drafted`
-[webhook](/api-reference/webhooks/messages).
-
-When a subscription invoice is in `draft` status, you can:
-
-- **Add usage records** by sending events with a `timestamp` within the relevant
-  billing period;
-- **Apply coupons** to the customer's account; and
-- **Add credits** to the customer's wallet and credit note wallet.
-
-In order to add usage to an invoice that is in `draft` status, the `timestamp`
-of the [events](/guide/events/ingesting-usage) must be
-within the billing period. Consider the following example:
-
-> The billing period started on January 1st and ended on January 31st. We have
-> defined a 3-day grace period and today is February 2nd.
->
-> On February 1st, Lago automatically generated a `draft` invoice for the period
-> January 1st to January 31st.
->
-> We want to send additional usage records for this invoice. To do so, the
-> timestamp of our events must be included in the period January 1st to January
-> 31st.
->
-> `1673457300` (i.e. January 11th, 2023) is a valid timestamp, therefore the
-> event will be included in the `draft` invoice.
->
-> However, `1675354500` (i.e. February 2nd, 2023) is outside the billing period
-> under consideration, therefore the event will not be included in the `draft`
-> invoice, it will be included in the next invoice.
-
-After sending events, you can **go to the invoice list and refresh** the
-corresponding `draft` invoice to ensure your new events have been taken into
-account.
-
-When all changes have been made, you can either wait for the grace period to
-expire (the invoice status will automatically switch to `finalized`) or you can
-**finalize the invoice manually** through the user interface or the API.
-
-When an invoice is `finalized`, it can no longer be edited. Finalizing an
-invoice triggers the `invoice.created` webhook.
-
-<Frame caption="Draft invoice in the Lago app">
-  <img src="/guide/invoicing/images/grace-period-draft-invoice-0a9ccbd1d7dc1b87faeb5a44abf484e1.png" />
-</Frame>
-
-<Info>
-  Coupons and credits that are applied/added during the grace period will not
-  appear on `draft` invoices but will be automatically deducted from the
-  customer's next `finalized` invoice.
-</Info>
-
 ## Define a grace period at organization level[](#define-a-grace-period-at-organization-level "Direct link to heading")
 
 The organization's grace period applies to all customers by default.
@@ -232,3 +175,75 @@ The organization's grace period applies to all customers by default.
 The customer's grace period overrides the organization's grace period. It only
 applies to the customer with whom it is associated.
 
+
+## Application scope and possible actions[](#application-scope-and-possible-actions "Direct link to heading")
+
+The grace period applies to **subscription invoices**. It does not apply to
+invoices related to add-ons or credit purchases.
+
+The creation of a `draft` invoice triggers the `invoice.drafted`
+[webhook](/api-reference/webhooks/messages).
+
+When a subscription invoice is in `draft` status, you can:
+
+- **Add usage records** by sending events with a `timestamp` within the relevant
+  billing period;
+- **Edit a specific fee** by adjusting the total amount or the total units;
+- **Apply coupons** to the customer's account; and
+- **Add credits** to the customer's wallet and credit note wallet.
+
+### Edit a specific fee
+To edit a specific fee, follow these steps in the Dashboard:
+
+1. Open a draft invoice's details page;
+2. Click the 'three dots' icon next to the desired fee;
+3. Change the invoice's display name if needed; and/or
+4. Select either `Total amount` or `Total unit` for adjustment;
+5. For `Total amount`, enter units and unit amount. Note: This will overwrite existing fee details.
+6. For `Total unit`, input new units. Lago will then automatically recalculate the fee based on the charge model.
+
+This action is exclusive to the Dashboard.
+
+
+### Add usage records
+In order to add usage to an invoice that is in `draft` status, the `timestamp`
+of the [events](/guide/events/ingesting-usage) must be
+within the billing period. Consider the following example:
+
+> The billing period started on January 1st and ended on January 31st. We have
+> defined a 3-day grace period and today is February 2nd.
+>
+> On February 1st, Lago automatically generated a `draft` invoice for the period
+> January 1st to January 31st.
+>
+> We want to send additional usage records for this invoice. To do so, the
+> timestamp of our events must be included in the period January 1st to January
+> 31st.
+>
+> `1673457300` (i.e. January 11th, 2023) is a valid timestamp, therefore the
+> event will be included in the `draft` invoice.
+>
+> However, `1675354500` (i.e. February 2nd, 2023) is outside the billing period
+> under consideration, therefore the event will not be included in the `draft`
+> invoice, it will be included in the next invoice.
+
+After sending events, you can **go to the invoice list and refresh** the
+corresponding `draft` invoice to ensure your new events have been taken into
+account.
+
+When all changes have been made, you can either wait for the grace period to
+expire (the invoice status will automatically switch to `finalized`) or you can
+**finalize the invoice manually** through the user interface or the API.
+
+When an invoice is `finalized`, it can no longer be edited. Finalizing an
+invoice triggers the `invoice.created` webhook.
+
+<Frame caption="Draft invoice in the Lago app">
+  <img src="/guide/invoicing/images/grace-period-draft-invoice-0a9ccbd1d7dc1b87faeb5a44abf484e1.png" />
+</Frame>
+
+<Info>
+  Coupons and credits that are applied/added during the grace period will not
+  appear on `draft` invoices but will be automatically deducted from the
+  customer's next `finalized` invoice.
+</Info>
