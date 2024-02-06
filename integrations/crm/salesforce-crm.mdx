@@ -148,7 +148,7 @@ you can customize it directly in Salesforce:
 ## II. Sync data from Lago to Salesforce
 If your webhook endpoint is configured correctly, your **billing data will flow seamlessly in real-time**.
 
-### Sync Lago customers to Salesforce
+### Sync customers to Salesforce
 To synchronize Lago Customer data with Salesforce Accounts (native object), ensure that your 
 Salesforce Account is created first, and that the Lago Customer's `external_salesforce_id` is explicitly populated.
 
@@ -167,7 +167,7 @@ and populate the Lago customer field called `external_salesforce_id`.
   <img src="/integrations/data/images/lago-synced-account-salesforce.png" />
 </Frame>
 
-### Sync Lago subscriptions to Salesforce
+### Sync subscriptions to Salesforce
 
 <Frame caption="Sync subscriptions data from Lago to Salesforce">
   <img src="/integrations/data/images/sync-lago-subscriptions-salesforce.gif" />
@@ -187,7 +187,7 @@ Note that this subcription is automatically linked to a Salesforce Account:
 - Subscription Billing Time (either `calendar` or `anniversary`); and
 - Plan Code.
 
-### Sync Lago invoices to Salesforce
+### Sync invoices to Salesforce
 <Frame caption="Sync invoices data from Lago to Salesforce">
   <img src="/integrations/data/images/sync-lago-invoices-salesforce.gif" />
 </Frame>
@@ -205,10 +205,70 @@ Here is a list of Subscription fields that are automatically synced:
 - Invoice Currency.
 
 
-### Sync Lago credit notes to Salesforce
+### Sync credit notes to Salesforce
 Whenever a credit note is issued for a Lago Invoice, the credit note details will be automatically 
 synced in real-time with Salesforce using the `Lago CreditNotes` custom object.
 
 
+## III. Actions from Salesforce to Lago
+Beyond just syncing data from Lago to Salesforce, you can also initiate actions in Lago directly from Salesforce. 
+You can leverage Salesforce `Flows` to execute actions in Lago. Lago provides two customizable templates for creating customers from Salesforce Accounts 
+and directly assigning subscriptions to customers from Salesforce.
+
+### Flow 1: Create customers
+<Frame caption="Use Lago template to create a customer on Account creation">
+  <img src="/integrations/images/lago-salesforce-flows-template.png" />
+</Frame>
 
 
+To create a customer in Lago upon the creation of a Salesforce Account, utilize the Flow template provided by Lago.
+
+1. Log into your Salesforce instance;
+2. Access the Setup section via the settings wheel icon in Salesforce;
+3. Find and select `Flows` under Process Automation in the sidebar;
+4. Locate and open the `Lago Template - Create Customer in Lago on Account Create`;
+5. Click 'Save As' to create and save your own version of the template; and
+6. Do not forget to click the `Activate` button to activate your flow. 
+
+You have the **flexibility to modify various aspects of this flow, including the trigger conditions and field mappings**. 
+By default, the action is initiated when a Lago ID is absent. Additionally, you can customize how fields are mapped from your Salesforce instance to Lago.
+
+<Frame caption="Customize the flow">
+  <img src="/integrations/images/account-customer-flow.gif" />
+</Frame>
+
+
+### Flow 2: Create subscriptions
+Assigning a plan to a customer, adjusting negotiated prices, and initiating the subscription upon winning an opportunity represents a key action from Salesforce to Lago. 
+This enables sales teams to remain within Salesforce, their primary tool, and activate billing processes directly, without the need to switch platforms.
+
+To assign a subscription and set prices in Lago directly from Salesforce, use the provided Lago Flow template.
+
+1. Log into your Salesforce instance;
+2. Access the Setup section via the settings wheel icon in Salesforce;
+3. Find and select `Flows` under Process Automation in the sidebar;
+4. Locate and open the `Lago Template - Create Subscription in Lago on Opp Closed`;
+5. Click 'Save As' to create and save your own version of the template; and
+6. Do not forget to click the `Activate` button to activate your flow.
+
+<Steps>
+  <Step title="Validate the flow">
+    The default setting triggers plan assignment when a Salesforce Account links to a Lago customer and the **opportunity status changes to closed-won**. 
+    You can customize this flow to suit your specific needs. Moreover, you have the option to adjust the subscription fields being synchronized from Salesforce to Lago.
+    <Frame caption="Customize the flow">
+      <img src="/integrations/images/sync-subscriptions-salesforce-lago-flow.gif" />
+    </Frame>
+  
+  </Step>
+  <Step title="Assign subscription and override prices">
+    1. Create an opportunity by assigning an expected closed date and a stage;
+    2. Add a Lago plan to this opportunity **as a product** (Salesforce will automatically retrieve all plans from Lago in `Standard Price Book`);
+    3. Specify `1` for the quantity of the plan;
+    4. Use the custom UI to either assign this plan directly or to override prices; and
+    5. Click on 'Lago Override Plan' to finalize the subscription assignment.
+
+    <Info>
+      By default, the subscription is created when the opportunity is `closed-won`. You can assign multiple subscriptions for the same opportunity.
+    </Info>
+  </Step>
+</Steps>
