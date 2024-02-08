@@ -18,7 +18,8 @@ This integration is only available to users with a specific paying add-on. Pleas
   <img src="/integrations/data/images/salesforce-crm-integration.png" />
 </Frame>
 
-## Install Salesforce CRM Package
+## I. Integration configuration
+### Install Salesforce CRM Package
 To gain premium access to our Salesforce Package application, please don't hesitate to contact us. 
 You can initiate the installation process **by clicking on the provided link**, which will direct you to the installation 
 page where you can follow step-by-step instructions for a seamless integration. If you have any questions or need assistance 
@@ -43,80 +44,82 @@ However, rest assured that you will receive an email confirmation once the insta
 </Info>
 
 
-## Set up a webhook url to sync real time data
+### Webhook config: sync real-time data
 After installation in Salesforce CRM, set up a webhook URL in Salesforce to receive real-time data from Lago. 
 This involves **configuring a new "Site" in Salesforce's setup section**. 
 Note that the four main actions described below should be performed by a Salesforce Admin and is only required during the initial setup.
 
-### 1. Access the Site section in Salesforce
-1. Click the gear icon in the upper right to access **Salesforce Setup**;
-2. Search and navigate to the Sites section; and
-3. Create a new Site (see picture below).
+<Steps titleSize="h3">
+  <Step title="Access the Site section in Salesforce" titleSize="h3">
+    1. Click the gear icon in the upper right to access **Salesforce Setup**;
+    2. Search and navigate to the Sites section; and
+    3. Create a new Site (see picture below).
 
-<Frame caption="Create a new Site in Salesforce">
-  <img src="/integrations/data/images/create-new-site-salesforce.png" />
-</Frame>
+    <Frame caption="Create a new Site in Salesforce">
+      <img src="/integrations/data/images/create-new-site-salesforce.png" />
+    </Frame>
+  </Step>
+  <Step title="Create a new Site in Salesforce" titleSize="h3">
+    When creating a new site, follow these steps:
+    1. Set a unique **Site Label**;
+    2. Specify a unique **Site Name**;
+    3. Optionally, add a **Site Description**;
+    4. Ensure the **Site Contact** and **Default Record Owner** are filled;
+    5. Set the **Default Web Address** prefix to `getPushNotification`;
+    6. Choose `SiteLogin` as the **Active Site Home Page**; and
+    7. Don't forget to **save the new site**: and
+    8. **Activate the newly created site** by going to the Site Details and clicking the `Activate` button.
+
+    <Frame caption="New site creation flow in Salesforce">
+      <img src="/integrations/data/images/new-site-creation-flow-salesforce.png" />
+    </Frame>
+  </Step>
+  <Step title="Edit Public Access Settings in Salesforce" titleSize="h3">
+    To edit Public Access Settings for your new Site:
+    1. Visit the site and click **Public Access Settings**; 
+    2. In the **Enabled Apex Class Access** section, click "edit";
+    3. Add `LagoWebHookSubscriptionController` to **Enabled Apex Classes**; and
+    4. Save your changes.
+
+    <Frame caption="Edit Salesforce's site Public Access Settings">
+      <img src="/integrations/data/images/edit-public-access-settings-salesforce.png" />
+    </Frame>
+  </Step>
+    <Step title="Paste the Webhook URL into Your Lago App" titleSize="h3">
+      To set up the webhook URL for real-time data syncing between Lago and Salesforce, follow these steps:
+      1. Return to your newly created site;
+      2. Locate the **Custom URLs** section;
+      3. Copy the **domain name** *(e.g., lago.my.salesforce-sites.com)*;
+      4. Add the `https://` prefix to this domain name (e.g., `https://lago.my.salesforce-sites.com`); and
+      5. Append `/services/apexrest/lago/api/Webhooks/incoming/pushDetails/` to the domain name (e.g., `https://lago.my.salesforce-sites.com/services/apexrest/lago/api/Webhooks/incoming/pushDetails/`).
+
+      <Frame caption="Find Salesforce's site domain name">
+        <img src="/integrations/data/images/find-domain-url-salesforce.png" />
+      </Frame>
+
+      Now, go to your Lago app and past this webhook into the webhook’s settings:
+
+      1. Within Lago, navigate to **Developers**;
+      2. Visit the **Webhooks** tab;
+      3. Choose `HMAC` as the **mandatory signature type**;
+      4. Paste your Salesforce webhook URL; and
+      5. Save this webhook endpoint.
+
+      Congratulations! You're ready to sync real-time data from Lago to Salesforce! 🎉
+
+      <Frame caption="Paste Salesforce webhook URL to Lago">
+        <img src="/integrations/data/images/add-salesforce-webhook-url.gif" />
+      </Frame>
+  </Step>
+</Steps>
 
 
-### 2. Create a new Site in Salesforce
-When creating a new site, follow these steps:
-1. Set a unique **Site Label**;
-2. Specify a unique **Site Name**;
-3. Optionally, add a **Site Description**;
-4. Ensure the **Site Contact** and **Default Record Owner** are filled;
-5. Set the **Default Web Address** prefix to `getPushNotification`;
-6. Choose `SiteLogin` as the **Active Site Home Page**; and
-7. Don't forget to **save the new site**: and
-8. **Activate the newly created site** by going to the Site Details and clicking the `Activate` button.
-
-<Frame caption="New site creation flow in Salesforce">
-  <img src="/integrations/data/images/new-site-creation-flow-salesforce.png" />
-</Frame>
-
-### 3. Edit Public Access Settings in Salesforce
-
-To edit Public Access Settings for your new Site:
-1. Visit the site and click **Public Access Settings**; 
-2. In the **Enabled Apex Class Access** section, click "edit";
-3. Add `LagoWebHookSubscriptionController` to **Enabled Apex Classes**; and
-4. Save your changes.
-
-<Frame caption="Edit Salesforce's site Public Access Settings">
-  <img src="/integrations/data/images/edit-public-access-settings-salesforce.png" />
-</Frame>
-
-### 4. Paste the Webhook URL into Your Lago App
-To set up the webhook URL for real-time data syncing between Lago and Salesforce, follow these steps:
-1. Return to your newly created site;
-2. Locate the **Custom URLs** section;
-3. Copy the **domain name** *(e.g., lago.my.salesforce-sites.com)*;
-4. Add the `https://` prefix to this domain name (e.g., `https://lago.my.salesforce-sites.com`); and
-5. Append `/services/apexrest/lago/api/Webhooks/incoming/pushDetails/` to the domain name (e.g., `https://lago.my.salesforce-sites.com/services/apexrest/lago/api/Webhooks/incoming/pushDetails/`).
-
-<Frame caption="Find Salesforce's site domain name">
-  <img src="/integrations/data/images/find-domain-url-salesforce.png" />
-</Frame>
-
-Now, go to your Lago app and past this webhook into the webhook’s settings:
-
-1. Within Lago, navigate to **Developers**;
-2. Visit the **Webhooks** tab;
-3. Choose `HMAC` as the **mandatory signature type**;
-4. Paste your Salesforce webhook URL; and
-5. Save this webhook endpoint.
-
-Congratulations! You're ready to sync real-time data from Lago to Salesforce! 🎉
-
-<Frame caption="Paste Salesforce webhook URL to Lago">
-  <img src="/integrations/data/images/add-salesforce-webhook-url.gif" />
-</Frame>
-
-
-## Connect Lago to Salesforce CRM
+### Establish and finalize connection
 <Frame caption="Connect your Lago instance to Salesforce Lago App">
   <img src="/integrations/data/images/salesforce-package-api-connection.gif" />
 </Frame>
 
+**Option 1: Configure a standard API Base URL**
 To establish a connection between your Lago instance and the Salesforce Package, follow these steps:
 
 1. Access Salesforce and locate the **App Launcher**;
@@ -132,10 +135,20 @@ To establish a connection between your Lago instance and the Salesforce Package,
 Please note that data synchronization is available only for Lago customers with an `external_salesforce_id` and an existing Salesforce Account.
 </Warning>
 
-## Real-time data sync from Lago to Salesforce CRM
-If your webhook endpoint is configured correctly, your billing data will flow seamlessly in real-time.
+**Option 2: Configure a custom API Base URL**
+If you use your own Lago API base URL (self-hosting) or one for a different server instance, 
+you can customize it directly in Salesforce: 
+1. Navigate to Salesforce's Setup;
+2. Search for and select Remote Site Settings;
+3. Find and access the remote site for the Lago App;
+4. Click the Edit button to modify the remote site's details;
+5. Update the Remote Site URL with your preferred URL; and
+6. Save the changes.
 
-### 1. Customers data
+## II. Sync data from Lago to Salesforce
+If your webhook endpoint is configured correctly, your **billing data will flow seamlessly in real-time**.
+
+### Sync customers to Salesforce
 To synchronize Lago Customer data with Salesforce Accounts (native object), ensure that your 
 Salesforce Account is created first, and that the Lago Customer's `external_salesforce_id` is explicitly populated.
 
@@ -154,7 +167,7 @@ and populate the Lago customer field called `external_salesforce_id`.
   <img src="/integrations/data/images/lago-synced-account-salesforce.png" />
 </Frame>
 
-### 2. Subscriptions data
+### Sync subscriptions to Salesforce
 
 <Frame caption="Sync subscriptions data from Lago to Salesforce">
   <img src="/integrations/data/images/sync-lago-subscriptions-salesforce.gif" />
@@ -174,7 +187,7 @@ Note that this subcription is automatically linked to a Salesforce Account:
 - Subscription Billing Time (either `calendar` or `anniversary`); and
 - Plan Code.
 
-### 3. Invoices data
+### Sync invoices to Salesforce
 <Frame caption="Sync invoices data from Lago to Salesforce">
   <img src="/integrations/data/images/sync-lago-invoices-salesforce.gif" />
 </Frame>
@@ -192,17 +205,70 @@ Here is a list of Subscription fields that are automatically synced:
 - Invoice Currency.
 
 
-### 4. Credit notes data
+### Sync credit notes to Salesforce
 Whenever a credit note is issued for a Lago Invoice, the credit note details will be automatically 
 synced in real-time with Salesforce using the `Lago CreditNotes` custom object.
 
 
-## Configure your custom API Base URL[](#configure-customer-api-url "Direct link to heading")
-If you use your own Lago API base URL (self-hosting) or one for a different server instance, 
-you can customize it directly in Salesforce: 
-1. Navigate to Salesforce's Setup;
-2. Search for and select Remote Site Settings;
-3. Find and access the remote site for the Lago App;
-4. Click the Edit button to modify the remote site's details;
-5. Update the Remote Site URL with your preferred URL; and
-6. Save the changes.
+## III. Actions from Salesforce to Lago
+Beyond just syncing data from Lago to Salesforce, you can also initiate actions in Lago directly from Salesforce. 
+You can leverage Salesforce `Flows` to execute actions in Lago. Lago provides two customizable templates for creating customers from Salesforce Accounts 
+and directly assigning subscriptions to customers from Salesforce.
+
+### Flow 1: Create customers
+<Frame caption="Use Lago template to create a customer on Account creation">
+  <img src="/integrations/images/lago-salesforce-flows-template.png" />
+</Frame>
+
+
+To create a customer in Lago upon the creation of a Salesforce Account, utilize the Flow template provided by Lago.
+
+1. Log into your Salesforce instance;
+2. Access the Setup section via the settings wheel icon in Salesforce;
+3. Find and select `Flows` under Process Automation in the sidebar;
+4. Locate and open the `Lago Template - Create Customer in Lago on Account Create`;
+5. Click 'Save As' to create and save your own version of the template; and
+6. Do not forget to click the `Activate` button to activate your flow. 
+
+You have the **flexibility to modify various aspects of this flow, including the trigger conditions and field mappings**. 
+By default, the action is initiated when a Lago ID is absent. Additionally, you can customize how fields are mapped from your Salesforce instance to Lago.
+
+<Frame caption="Customize the flow">
+  <img src="/integrations/images/account-customer-flow.gif" />
+</Frame>
+
+
+### Flow 2: Create subscriptions
+Assigning a plan to a customer, adjusting negotiated prices, and initiating the subscription upon winning an opportunity represents a key action from Salesforce to Lago. 
+This enables sales teams to remain within Salesforce, their primary tool, and activate billing processes directly, without the need to switch platforms.
+
+To assign a subscription and set prices in Lago directly from Salesforce, use the provided Lago Flow template.
+
+1. Log into your Salesforce instance;
+2. Access the Setup section via the settings wheel icon in Salesforce;
+3. Find and select `Flows` under Process Automation in the sidebar;
+4. Locate and open the `Lago Template - Create Subscription in Lago on Opp Closed`;
+5. Click 'Save As' to create and save your own version of the template; and
+6. Do not forget to click the `Activate` button to activate your flow.
+
+<Steps>
+  <Step title="Validate the flow">
+    The default setting triggers plan assignment when a Salesforce Account links to a Lago customer and the **opportunity status changes to closed-won**. 
+    You can customize this flow to suit your specific needs. Moreover, you have the option to adjust the subscription fields being synchronized from Salesforce to Lago.
+    <Frame caption="Customize the flow">
+      <img src="/integrations/images/sync-subscriptions-salesforce-lago-flow.gif" />
+    </Frame>
+  
+  </Step>
+  <Step title="Assign subscription and override prices">
+    1. Create an opportunity by assigning an expected closed date and a stage;
+    2. Add a Lago plan to this opportunity **as a product** (Salesforce will automatically retrieve all plans from Lago in `Standard Price Book`);
+    3. Specify `1` for the quantity of the plan;
+    4. Use the custom UI to either assign this plan directly or to override prices; and
+    5. Click on 'Lago Override Plan' to finalize the subscription assignment.
+
+    <Info>
+      By default, the subscription is created when the opportunity is `closed-won`. You can assign multiple subscriptions for the same opportunity.
+    </Info>
+  </Step>
+</Steps>
