@@ -12,37 +12,59 @@ description:
   "customer_usage": {
     "from_datetime": "2022-07-01T00:00:00Z",
     "to_datetime": "2022-07-31T23:59:59Z",
-    "issuing_date": "2022-08-01",
+    "issuing_date": "2022-08-01T23:59:59Z",
+    "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "currency": "EUR",
     "amount_cents": 123,
-    "amount_currency": "EUR",
+    "taxes_amount_cents": 200,
     "total_amount_cents": 123,
-    "total_amount_currency": "EUR",
-    "vat_amount_cents": 0,
-    "vat_amount_currency": "EUR",
-    "lago_invoice_id": "90c71204-7834-478e-9552-6a7077fdfce8",
     "charges_usage": [
       {
         "units": "1.0",
+        "events_count": 10,
         "amount_cents": 123,
         "amount_currency": "EUR",
-        "events_count": "5.0",
         "charge": {
-          "lago_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-          "charge_model": "graduated"
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "charge_model": "graduated",
+          "invoice_display_name": "Setup"
         },
         "billable_metric": {
-          "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
           "name": "Storage",
           "code": "storage",
-          "aggregation_type": "sum"
+          "aggregation_type": "sum_agg"
         },
         "groups": [
           {
-            "lago_id": "a78f2185-1474-4a64-95bf-bcd96623fec5",
+            "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
             "key": null,
             "value": "europe",
             "units": "0.9",
+            "events_count": 10,
             "amount_cents": 1000
+          }
+        ],
+        "grouped_usage": [
+          {
+            "amount_cents": 1000,
+            "events_count": 10,
+            "units": "0.9",
+            "grouped_by": {
+              "additionalProp1": "string",
+              "additionalProp2": "string",
+              "additionalProp3": "string"
+            },
+            "groups": [
+              {
+                "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+                "key": null,
+                "value": "europe",
+                "units": "0.9",
+                "events_count": 10,
+                "amount_cents": 1000
+              }
+            ]
           }
         ]
       }
@@ -150,6 +172,43 @@ description:
             </ResponseField>
             <ResponseField name="amount_cents" type="integer" required>
               The amount in cents, tax excluded, consumed for a specific group related to a charge item.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="grouped_usage" type="object" required>
+          <Expandable title="grouped_usage">
+            <ResponseField name="amount_cents" type="integer" required>
+              The amount in cents, tax excluded, consumed for a specific group related to a charge item.
+            </ResponseField>
+            <ResponseField name="events_count" type="string" required>
+              The quantity of usage events that have been recorded for a particular charge during the specified time period. 
+              These events may also be referred to as the number of transactions in some contexts.
+            </ResponseField>
+            <ResponseField name="units" type="string" required>
+              The number of units consumed by the customer for a specific charge item.
+            </ResponseField>
+            <ResponseField name="grouped_by" type="string" required>
+              Key value list of event properties aggregated by the charge model
+            </ResponseField>
+            <ResponseField name="group" type="object" required>
+              <Expandable title="group">
+                <ResponseField name="lago_id" type="string" required>
+                  Unique identifier assigned to the group within the Lago application. 
+                  This ID is exclusively created by Lago and serves as a unique identifier for the group record within the Lago system.
+                </ResponseField>
+                <ResponseField name="key" type="string" required>
+                  The group key, only returned for groups with two dimensions. 
+                </ResponseField>
+                <ResponseField name="value" type="string" required>
+                  The group value.
+                </ResponseField>
+                <ResponseField name="units" type="string" required>
+                  The number of units consumed for a specific group related to a charge item.
+                </ResponseField>
+                <ResponseField name="amount_cents" type="integer" required>
+                  The amount in cents, tax excluded, consumed for a specific group related to a charge item.
+                </ResponseField>
+              </Expandable>
             </ResponseField>
           </Expandable>
         </ResponseField>
