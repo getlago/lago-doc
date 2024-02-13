@@ -109,27 +109,33 @@ description: "This object represents a plan. This plan can then be assigned to a
         "pay_in_advance": true,
         "prorated": false,
         "min_amount_cents": 0,
-        "properties": {},
+        "properties": {
+          "amount": "10",
+          "grouped_by": ["role"]
+        },
         "group_properties": [
           {
             "group_id": "1a901a90-1a90-1a90-1a90-1a901a901a01",
             "invoice_display_name": "Europe",
             "values": {
-              "amount": "10"
+              "amount": "10",
+              "grouped_by": ["role"]
             }
           },
           {
             "group_id": "1a901a90-1a90-1a90-1a90-1a901a901a02",
             "invoice_display_name": "USA",
             "values": {
-              "amount": "5"
+              "amount": "5",
+              "grouped_by": ["role"]
             }
           },
           {
             "group_id": "1a901a90-1a90-1a90-1a90-1a901a901a03",
             "invoice_display_name": "Africa",
             "values": {
-              "amount": "8"
+              "amount": "8",
+              "grouped_by": ["role"]
             }
           }
         ]
@@ -290,7 +296,6 @@ description: "This object represents a plan. This plan can then be assigned to a
           Specifies whether a charge is prorated based on the remaining number of days in the billing period or billed fully. If not defined, this argument is set to `false` by default.
           - If set to `true`, the charge is prorated based on the remaining days in the current billing period.
           - If set to `false`, the charge is billed in full.
-
           Note that only a `charge_model` sets to `standard`, `graduated` and `volume` can be prorated.
         </ResponseField>
         <ResponseField name="tax_code" type="string">
@@ -397,6 +402,13 @@ description: "This object represents a plan. This plan can then be assigned to a
                   The flat amount for a whole tier, excluding tax, for a `graduated percentage` charge model. It is expressed as a decimal value.
                 </ResponseField>
               </Expandable>
+            </ResponseField>
+            ### Case of standard pricing model
+            <ResponseField name="amount" type="string" required>
+              The unit price, excluding tax, for a `standard` charge model. It is expressed as a decimal value.
+            </ResponseField>
+            <ResponseField name="grouped_by" type="array">
+              The list of event properties that are used to group the events on the invoice for a `standard` charge model.
             </ResponseField>
           </Expandable>
         </ResponseField>
