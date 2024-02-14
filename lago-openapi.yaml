@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Lago API documentation
   description: Lago API allows your application to push customer information and metrics (events) from your application to the billing application.
-  version: 0.53.0-beta
+  version: 0.56.0-beta
   license:
     name: AGPLv3
   contact:
@@ -1194,7 +1194,6 @@ paths:
           $ref: '#/components/responses/UnprocessableEntity'
   /events/batch:
     post:
-      deprecated: true
       tags:
         - events
       summary: Batch multiple events
@@ -1657,6 +1656,53 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+  '/invoices/{lago_id}/payment_url':
+    post:
+      tags:
+        - invoices
+      summary: Generate a Invoice Payment URL
+      description: This endpoint generates the Payment URL of a Invoice.
+      parameters:
+        - $ref: '#/components/parameters/lago_invoice_id'
+      operationId: invoicePaymentUrl
+      responses:
+        '200':
+          description: Payment URL has been generated
+          content:
+            application/json:
+              schema:
+                type: object
+                description: .
+                properties:
+                  invoice_payment_details:
+                    type: object
+                    properties:
+                      lago_customer_id:
+                        type: string
+                        example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+                        description: Unique identifier assigned to the customer within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the customer's record within the Lago system
+                      lago_invoice_id:
+                        type: string
+                        example: 1e501a90-1a90-1a90-1a90-1a901a901a80
+                        description: Unique identifier assigned to the invoice within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the invoice's record within the Lago system
+                      external_customer_id:
+                        type: string
+                        example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
+                        description: The customer external unique identifier (provided by your own application)
+                      payment_provider:
+                        type: string
+                        example: stripe
+                        description: The Payment Provider name linked to the Customer.
+                      payment_url:
+                        type: string
+                        example: 'https://foo.bar'
+                        description: The generated Payment URL for the Invoice.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
   '/invoices/{lago_id}/retry_payment':
     post:
       tags:
@@ -3391,6 +3437,13 @@ components:
           description: Specifies the minimum allowable spending for a single transaction. Working as a transaction floor.
           nullable: true
           example: '1.75'
+        grouped_by:
+          type: array
+          description: The list of event properties that are used to group the events on the invoice for a `standard` charge model.
+          items:
+            type: string
+          example:
+            - agent_name
         volume_ranges:
           type: array
           description: 'Volume ranges, sorted from bottom to top tiers, used for a `volume` charge model.'
@@ -4673,6 +4726,77 @@ components:
           example:
             - card
             - sepa_debit
+    CustomerChargeGroupedUsageObject:
+      type: array
+      description: 'Array of aggregated fees, grouped by the event properties defined in a `standard` charge model.'
+      required:
+        - amount_cents
+        - events_count
+        - units
+        - grouped_by
+        - groups
+      items:
+        type: object
+        properties:
+          amount_cents:
+            type: integer
+            example: 1000
+            description: 'The amount in cents, tax excluded, consumed for a specific group related to a charge item.'
+          events_count:
+            type: integer
+            example: 10
+            description: The quantity of usage events that have been recorded for a particular charge during the specified time period. These events may also be referred to as the number of transactions in some contexts.
+          units:
+            type: string
+            pattern: '^[0-9]+.?[0-9]*$'
+            example: '0.9'
+            description: The number of units consumed for a specific group related to a charge item.
+          grouped_by:
+            type: object
+            description: Key value list of event properties aggregated by the charge model
+            additionalProperties:
+              type: string
+          groups:
+            $ref: '#/components/schemas/CustomerChargeGroupsUsageObject'
+    CustomerChargeGroupsUsageObject:
+      type: array
+      description: 'Array of group object, representing multiple dimensions for a charge item.'
+      required:
+        - lago_id
+        - value
+        - units
+        - events_count
+        - amount_cents
+      items:
+        type: object
+        properties:
+          lago_id:
+            type: string
+            format: uuid
+            example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+            description: Unique identifier assigned to the group within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the group record within the Lago system.
+          key:
+            type: string
+            example: null
+            description: 'The group key, only returned for groups with two dimensions.'
+            nullable: true
+          value:
+            type: string
+            example: europe
+            description: The group value.
+          units:
+            type: string
+            pattern: '^[0-9]+.?[0-9]*$'
+            example: '0.9'
+            description: The number of units consumed for a specific group related to a charge item.
+          events_count:
+            type: integer
+            example: 10
+            description: The quantity of usage events that have been recorded for a particular charge during the specified time period. These events may also be referred to as the number of transactions in some contexts.
+          amount_cents:
+            type: integer
+            example: 1000
+            description: 'The amount in cents, tax excluded, consumed for a specific group related to a charge item.'
     CustomerChargeUsageObject:
       type: object
       required:
@@ -4760,44 +4884,9 @@ components:
                 - unique_count_agg
               example: sum_agg
         groups:
-          type: array
-          description: 'Array of group object, representing multiple dimensions for a charge item.'
-          required:
-            - lago_id
-            - value
-            - units
-            - events_count
-            - amount_cents
-          items:
-            type: object
-            properties:
-              lago_id:
-                type: string
-                format: uuid
-                example: 1a901a90-1a90-1a90-1a90-1a901a901a90
-                description: Unique identifier assigned to the group within the Lago application. This ID is exclusively created by Lago and serves as a unique identifier for the group record within the Lago system.
-              key:
-                type: string
-                example: null
-                description: 'The group key, only returned for groups with two dimensions.'
-                nullable: true
-              value:
-                type: string
-                example: europe
-                description: The group value.
-              units:
-                type: string
-                pattern: '^[0-9]+.?[0-9]*$'
-                example: '0.9'
-                description: The number of units consumed for a specific group related to a charge item.
-              events_count:
-                type: integer
-                example: 10
-                description: The quantity of usage events that have been recorded for a particular charge during the specified time period. These events may also be referred to as the number of transactions in some contexts.
-              amount_cents:
-                type: integer
-                example: 1000
-                description: 'The amount in cents, tax excluded, consumed for a specific group related to a charge item.'
+          $ref: '#/components/schemas/CustomerChargeGroupsUsageObject'
+        grouped_usage:
+          $ref: '#/components/schemas/CustomerChargeGroupedUsageObject'
     CustomerCreateInput:
       type: object
       required:
@@ -5769,6 +5858,11 @@ components:
                 - WalletTransaction
               description: 'The type of the fee item. Possible values are `AddOn`, `BillableMetric`, `WalletTransaction` or `Subscription`.'
               example: Subscription
+            grouped_by:
+              type: object
+              description: Key value list of event properties aggregated by the charge model
+              additionalProperties:
+                type: string
         applied_taxes:
           type: array
           description: List of fee applied taxes
