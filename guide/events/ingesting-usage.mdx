@@ -34,8 +34,7 @@ event is JSON with the following fields:
 
 ```json
 {
-  "external_customer_id": "__CUSTOMER_ID__", // (Required) Unique identifier of your customer performing the action
-  "external_subscription_id": "__SUBSCRIPTION_ID__" // (Optional) Required only in case of multiple plans for a single customer
+  "external_subscription_id": "__SUBSCRIPTION_ID__" // (Required) Required only in case of multiple plans for a single customer
   "code": "__EVENT_CODE__", // (Required) Your Billable metric's Code
   "timestamp": 1650893379, // (Required) UNIX Timestamp when the event happened
   "properties": {
@@ -66,18 +65,11 @@ event is JSON with the following fields:
       event \*(example: `api_searches_2022-04-01T03:49:23Z`).
     </Tip>
   </Accordion>
-  <Accordion title="2. The external customer_id">
-      The `external_customer_id` specifies which one of your customers is triggering
-      the event associated with your billing. For now **a customer can only have one
-      ID** and we don't manage aliases, parents and child IDs (for instance, billing
-      subsidiaries). By receiving an event, if an `external_customer_id` is new to
-      Lago, it will be created in the Customers list.
-  </Accordion>
-  <Accordion title="3. The external subscription_id">
+  <Accordion title="2. The external subscription_id">
     In most cases, this field is optional and should be filled out only when a customer has multiple plans and subscriptions.
     Providing this information helps Lago target usage accurately for the appropriate plan.
   </Accordion>
-  <Accordion title="4. The event code">
+  <Accordion title="3. The event code">
     The event `code` represents the unique code of the Billable metric you want to
     start ingest measurements on. This code is required for all events received in
     Lago. For instance, you can start ingesting events for Billable metrics with
@@ -85,7 +77,7 @@ event is JSON with the following fields:
     example)_, `atm_withdrawals` _(fintech example)_, or anything you need to define
     as a paying feature.
   </Accordion>
-  <Accordion title="5. The event timestamp">
+  <Accordion title="4. The event timestamp">
     The event timestamp is the date when the billing event occurs in your
     application and sent to Lago. This event must be a
     **[UNIX Timestamp](https://www.unixtimestamp.com/).** For instance, you could
@@ -96,7 +88,7 @@ event is JSON with the following fields:
     timestamp on your own, Lago automatically defines the reception date of the
     event as the event timestamp.
   </Accordion>
-  <Accordion title="6. The event properties">
+  <Accordion title="5. The event properties">
     Event properties are useful to send more context in usage events. Moreover, they
     are also very useful when you need to aggregate a Billable metrics for `SUM`,
     `MAX` and `UNIQUE COUNT`. Event properties can be `strings`, `integers`,
@@ -108,6 +100,7 @@ event is JSON with the following fields:
   </Accordion>
 </AccordionGroup>
 
+<Warning>If you were using the `external_customer_id` to send usage measurement, note that this field is deprecated and is no longer supported or maintained. Please use the `external_subscription_id` instead.</Warning>
 
 ## Idempotency and retries[](#idempotency-and-retries "Direct link to heading")
 
