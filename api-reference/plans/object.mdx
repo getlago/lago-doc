@@ -21,6 +21,16 @@ description: "This object represents a plan. This plan can then be assigned to a
     "bill_charges_monthly": null,
     "active_subscriptions_count": 0,
     "draft_invoices_count": 0,
+    "minimum_commitment": {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "plan_code": "premium",
+      "amount_cents": 100000,
+      "invoice_display_name": "Minimum Commitment (C1)",
+      "interval": "monthly",
+      "created_at": "2022-04-29T08:59:51Z",
+      "updated_at": "2022-04-29T08:59:51Z",
+      "taxes": []
+    },
     "charges": [
       {
         "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a91",
@@ -262,10 +272,39 @@ description: "This object represents a plan. This plan can then be assigned to a
     <ResponseField name="draft_invoices_count" type="integer" required>
       The number of draft invoices that include a subscription attached to the plan. This field provides valuable information about the impact of deleting the plan. By checking the value of this field, you can determine the number of draft invoices that will be affected if the plan is deleted.
     </ResponseField>
+    <ResponseField name="minimum_commitment" type="object">
+      <Expandable title="minimum_commitment">
+         <ResponseField name="lago_id" type="string" required>
+          Unique identifier of charge, created by Lago.
+        </ResponseField>
+        <ResponseField name="plan_code" type="string">
+          The unique code representing the plan to be attached to the customer.
+        </ResponseField>
+        <ResponseField name="amount_cents" type="integer" required>
+          The amount of the minimum commitment in cents.
+        </ResponseField>
+        <ResponseField name="invoice_display_name" type="string">
+          Specifies the name that will be displayed on an invoice. If no value is set for this field, the default name will be used as the display name.
+        </ResponseField>
+        <ResponseField name="interval" type="string">
+          The interval used for recurring billing. It represents the frequency at which minimum commitment billing occurs.
+          Available options: `weekly`, `monthly`, `quarterly`, `yearly`.
+        </ResponseField>
+        <ResponseField name="created_at" type="string" required>
+          The date and time when the minimum commitment was created. It is expressed in UTC format according to the ISO 8601 datetime standard. This field provides the timestamp for the exact moment when the minimum commitment was initially created..
+        </ResponseField>
+        <ResponseField name="updated_at" type="string">
+          The date and time when the minimum commitment was updated. It is expressed in UTC format according to the ISO 8601 datetime standard. This field provides the timestamp for the exact moment when the minimum commitment was initially created.
+        </ResponseField>
+        <ResponseField name="taxes" type="object[]">
+          All taxes applied to the minimum commitment.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
     <ResponseField name="charges" type="array">
       <Expandable title="charges">
         <ResponseField name="lago_id" type="string" required>
-          Unique identifier of charge, created by Lago.
+          Unique identifier of the minimum commitment, created by Lago.
         </ResponseField>
         <ResponseField name="lago_billable_metric_id" type="string" required>
           Unique identifier of the billable metric created by Lago.

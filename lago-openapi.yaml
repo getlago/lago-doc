@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Lago API documentation
   description: Lago API allows your application to push customer information and metrics (events) from your application to the billing application.
-  version: 0.56.0-beta
+  version: 1.0.0
   license:
     name: AGPLv3
   contact:
@@ -1940,7 +1940,7 @@ paths:
           schema:
             type: string
             example: premium
-        - name: status
+        - name: 'status[]'
           in: query
           description: 'If the field is not defined, Lago will return only `active` subscriptions. However, if you wish to fetch subscriptions by different status you can define them in a status[] query param. Available filter values: `pending`, `canceled`, `terminated`, `active`.'
           required: false
@@ -5323,7 +5323,10 @@ components:
             external_customer_id:
               type: string
               example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
-              description: 'The customer external unique identifier (provided by your own application). This field is optional if you send the `external_subscription_id`, targeting a specific subscription.'
+              description: |
+                The customer external unique identifier (provided by your own application). This field is optional if you send the `external_subscription_id`, targeting a specific subscription.
+                This field is deprecated and is no longer supported or maintained. Please use the `external_subscription_id` instead.
+              deprecated: true
             external_subscription_id:
               type: string
               example: sub_1234567890
@@ -5349,7 +5352,10 @@ components:
             external_customer_id:
               type: string
               example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
-              description: 'The customer external unique identifier (provided by your own application). This field is optional if you send the `external_subscription_id`, targeting a specific subscription.'
+              description: |
+                The customer external unique identifier (provided by your own application). This field is optional if you send the `external_subscription_id`, targeting a specific subscription.
+                This field is deprecated and is no longer supported or maintained. Please use the `external_subscription_id` instead.
+              deprecated: true
             external_subscription_id:
               type: string
               example: sub_1234567890
@@ -5406,7 +5412,10 @@ components:
           type: string
           nullable: true
           example: 5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba
-          description: 'The customer external unique identifier (provided by your own application). This field is optional if you send the `external_subscription_id`, targeting a specific subscription.'
+          description: |
+            The customer external unique identifier (provided by your own application). This field is optional if you send the `external_subscription_id`, targeting a specific subscription.
+            This field is deprecated and is no longer supported or maintained. Please use the `external_subscription_id` instead.
+          deprecated: true
         code:
           type: string
           example: storage
@@ -5983,6 +5992,77 @@ components:
             $ref: '#/components/schemas/GroupObject'
         meta:
           $ref: '#/components/schemas/PaginationMeta'
+    MinimumCommitmentInput:
+      type: object
+      description: Minimum commitment for this plan.
+      nullable: true
+      required:
+        - amount_cents
+      properties:
+        amount_cents:
+          type: integer
+          description: The amount of the minimum commitment in cents.
+          example: 100000
+        invoice_display_name:
+          type: string
+          description: 'Specifies the name that will be displayed on an invoice. If no value is set for this field, the default name will be used as the display name.'
+          example: Minimum Commitment (C1)
+        tax_codes:
+          type: array
+          items:
+            type: string
+          description: List of unique code used to identify the taxes.
+          example:
+            - french_standard_vat
+    MinimumCommitmentObject:
+      type: object
+      nullable: true
+      required:
+        - lago_id
+        - amount_cents
+        - created_at
+      properties:
+        lago_id:
+          type: string
+          format: uuid
+          description: 'Unique identifier of the minimum commitment, created by Lago.'
+          example: 1a901a90-1a90-1a90-1a90-1a901a901a90
+        plan_code:
+          type: string
+          example: premium
+          description: The unique code representing the plan to be attached to the customer.
+        amount_cents:
+          type: integer
+          description: The amount of the minimum commitment in cents.
+          example: 100000
+        invoice_display_name:
+          type: string
+          description: 'Specifies the name that will be displayed on an invoice. If no value is set for this field, the default name will be used as the display name.'
+          example: Minimum Commitment (C1)
+        interval:
+          type: string
+          description: 'The interval used for recurring billing. It represents the frequency at which subscription billing occurs. The interval can be one of the following values: `yearly`, `quarterly`, `monthly` or `weekly`.'
+          enum:
+            - weekly
+            - monthly
+            - quarterly
+            - yearly
+          example: monthly
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the minimum commitment was created. It is expressed in UTC format according to the ISO 8601 datetime standard. This field provides the timestamp for the exact moment when the minimum commitment was initially created.
+          example: '2022-04-29T08:59:51Z'
+        updated_at:
+          type: string
+          format: date-time
+          description: The date and time when the minimum commitment was updated. It is expressed in UTC format according to the ISO 8601 datetime standard. This field provides the timestamp for the exact moment when the minimum commitment was initially created.
+          example: '2022-04-29T08:59:51Z'
+        taxes:
+          type: array
+          description: All taxes applied to the minimum commitment.
+          items:
+            $ref: '#/components/schemas/TaxObject'
     MrrObject:
       type: object
       required:
@@ -6756,6 +6836,8 @@ components:
               description: List of unique code used to identify the taxes.
               example:
                 - french_standard_vat
+            minimum_commitment:
+              $ref: '#/components/schemas/MinimumCommitmentInput'
             charges:
               type: array
               description: Additional usage-based charges for this plan.
@@ -6952,6 +7034,8 @@ components:
           type: number
           description: The duration in days during which the base cost of the plan is offered for free.
           example: 5
+        minimum_commitment:
+          $ref: '#/components/schemas/MinimumCommitmentObject'
         charges:
           type: array
           description: Additional usage-based charges for this plan.
@@ -7066,6 +7150,8 @@ components:
               description: List of unique code used to identify the taxes.
               example:
                 - french_standard_vat
+            minimum_commitment:
+              $ref: '#/components/schemas/MinimumCommitmentInput'
             charges:
               type: array
               description: Additional usage-based charges for this plan.
@@ -7309,6 +7395,8 @@ components:
           type: integer
           description: 'The number of draft invoices that include a subscription attached to the plan. This field provides valuable information about the impact of deleting the plan. By checking the value of this field, you can determine the number of draft invoices that will be affected if the plan is deleted.'
           example: 0
+        minimum_commitment:
+          $ref: '#/components/schemas/MinimumCommitmentObject'
         charges:
           type: array
           items:
@@ -7497,6 +7585,8 @@ components:
           description: 'If the field is not defined and multiple `active` and `pending` subscriptions exists, Lago will update the `active` subscription. However, if you wish to update a `pending` subscription, please ensure that you include the `status` attribute with the `pending` value in your request body.'
         subscription:
           type: object
+          required:
+            - ending_at
           properties:
             name:
               type: string
@@ -7507,6 +7597,7 @@ components:
               type: string
               format: date-time
               example: '2022-10-08T00:00:00Z'
+              nullable: true
               description: 'The effective end date of the subscription. If this field is set to null, the subscription will automatically renew. This date should be provided in ISO 8601 datetime format, and use Coordinated Universal Time (UTC).'
             subscription_at:
               type: string
