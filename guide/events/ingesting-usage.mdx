@@ -4,28 +4,26 @@ description:
   "This guide explains how Lago ingests usage-based events coming from your application."
 ---
 
-## Define a Billable metric[](#define-a-billable-metric "Direct link to heading")
+## Define a billable metric[](#define-a-billable-metric "Direct link to heading")
 
 **Usage events are designed to target very specific
-[Billable metrics](/guide/billable-metrics/create-billable-metrics) created from the UI**. If you don't understand the
-concept of Billable metrics, we recommend you to read it first.
+[billable metrics](/guide/billable-metrics/create-billable-metrics) created from the UI**. If you don't understand the
+concept of billable metrics, we recommend you to read it first.
 
-First things first, you need to define a Billable metric from the UI to send
+First things first, you need to define a billable metric from the UI to send
 usage measurement events:
 
-1. In the Lago App, go to the **Billable metrics** section
-2. Click on the `Add a Billable metric` button
-3. Fill the Billable metric informations.
-   - A `name`
-   - A `code` (this is used as the event name when ingesting measurement events)
-   - A `description` _(optional)_
-4. Choose the **Aggregation type** to define how ingested events must be
-   calculated at the end of the billable period
-5. Define if this metric is `recurring` or not.
+1. In the Lago app, go to the **"Billable metrics"** section;
+2. Click **"Add a billable metric"**;
+3. Add metric information, including:
+   - `name`
+   - `code` (used to send events via API)
+   - `description` (optional)
+4. Define whether or not this metric is `recurring`; and
+5. Choose an aggregation type to define how usage should be calculated.
 
-A Billable metric must be representative of a paying feature of your company.
-Based on your customers' actions within your application, implemented events are
-automatically triggered, aggregated and calculated by Lago.
+Billable metrics represent the features of your product. Events should automatically be sent to Lago by your application
+based on your customers' actions.
 
 ## Send usage measurements to Lago[](#send-usage-measurements-to-lago "Direct link to heading")
 
@@ -34,13 +32,13 @@ event is JSON with the following fields:
 
 ```json
 {
-  "external_customer_id": "__CUSTOMER_ID__", // (Required) Unique identifier of your customer performing the action
-  "external_subscription_id": "__SUBSCRIPTION_ID__" // (Optional) Required only in case of multiple plans for a single customer
-  "code": "__EVENT_CODE__", // (Required) Your Billable metric's Code
-  "timestamp": 1650893379, // (Required) UNIX Timestamp when the event happened
+  "transaction_id": "__TRANSACTION_ID__" // (Required) Unique identifier of the event
+  "external_subscription_id": "__SUBSCRIPTION_ID__" // (Required) Unique identifier of your customer's subscription
+  "code": "__EVENT_CODE__", // (Required) The billable metric's code
+  "timestamp": 1650893379, // (Required) UNIX timestamp of the event
   "properties": {
     "custom_field": 12, // (Optional) Custom variables defined as properties
-    "operation_type": "add" or "remove" // (Optional) Required only for recurring metric with unique count aggregation type
+    "operation_type": "add" or "remove" // (Optional) Required only for recurring metric based on the unique count aggregation
   }
 }
 ```
@@ -66,18 +64,11 @@ event is JSON with the following fields:
       event \*(example: `api_searches_2022-04-01T03:49:23Z`).
     </Tip>
   </Accordion>
-  <Accordion title="2. The external customer_id">
-      The `external_customer_id` specifies which one of your customers is triggering
-      the event associated with your billing. For now **a customer can only have one
-      ID** and we don't manage aliases, parents and child IDs (for instance, billing
-      subsidiaries). By receiving an event, if an `external_customer_id` is new to
-      Lago, it will be created in the Customers list.
+  <Accordion title="2. The external_subscription_id">
+    This identifier helps Lago identify the targeted subscription, so that usage can
+    be billed to the right customer, according to the associated plan.
   </Accordion>
-  <Accordion title="3. The external subscription_id">
-    In most cases, this field is optional and should be filled out only when a customer has multiple plans and subscriptions.
-    Providing this information helps Lago target usage accurately for the appropriate plan.
-  </Accordion>
-  <Accordion title="4. The event code">
+  <Accordion title="3. The event code">
     The event `code` represents the unique code of the Billable metric you want to
     start ingest measurements on. This code is required for all events received in
     Lago. For instance, you can start ingesting events for Billable metrics with
@@ -85,7 +76,7 @@ event is JSON with the following fields:
     example)_, `atm_withdrawals` _(fintech example)_, or anything you need to define
     as a paying feature.
   </Accordion>
-  <Accordion title="5. The event timestamp">
+  <Accordion title="4. The event timestamp">
     The event timestamp is the date when the billing event occurs in your
     application and sent to Lago. This event must be a
     **[UNIX Timestamp](https://www.unixtimestamp.com/).** For instance, you could
@@ -96,7 +87,7 @@ event is JSON with the following fields:
     timestamp on your own, Lago automatically defines the reception date of the
     event as the event timestamp.
   </Accordion>
-  <Accordion title="6. The event properties">
+  <Accordion title="5. The event properties">
     Event properties are useful to send more context in usage events. Moreover, they
     are also very useful when you need to aggregate a Billable metrics for `SUM`,
     `MAX` and `UNIQUE COUNT`. Event properties can be `strings`, `integers`,
