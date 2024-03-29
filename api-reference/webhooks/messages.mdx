@@ -660,6 +660,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
         "next_plan_code": null,
         "downgrade_plan_date": null,
         "subscription_date": "2023-08-23",
+        "trial_ended_at": "2023-08-23T15:10:28Z",
         "customer": {
           "lago_id": "fbed2045-018c-4e5f-aa04-a44026fe0a63",
           "external_id": "advance_2",
@@ -743,6 +744,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
         "next_plan_code": null,
         "downgrade_plan_date": null,
         "subscription_date": "2023-08-23",
+        "trial_ended_at": "2023-08-23T15:10:28Z",
         "customer": {
           "lago_id": "fbed2045-018c-4e5f-aa04-a44026fe0a63",
           "external_id": "advance_2",
@@ -825,7 +827,8 @@ description: "Here is the complete list of webhook messages sent by Lago."
         "previous_plan_code": null,
         "next_plan_code": null,
         "downgrade_plan_date": null,
-        "subscription_date": "2023-08-23"
+        "subscription_date": "2023-08-23",
+        "trial_ended_at": "2023-08-23T15:10:28Z",
         "customer": {
           "lago_id": "fbed2045-018c-4e5f-aa04-a44026fe0a63",
           "external_id": "advance_2",
@@ -888,6 +891,90 @@ description: "Here is the complete list of webhook messages sent by Lago."
 
     1. `subscription.terminated` for the initial plan, which includes the property `next_plan_code` populated with the code of the **new plan**.
     2. `subscription.started` for the new plan, which includes the property `previous_plan_code` populated with the code of the **initial plan**.
+  </Accordion>
+  <Accordion title="Subscription trial ended">
+    Sent when the free trial is ended for a subscription.
+
+    ```json
+    {
+      "webhook_type": "subscription.trial_ended",
+      "object_type": "subscription",
+      "subscription": {
+        "lago_id": "084b0581-0052-469d-809f-846d1944861b",
+        "external_id": "b0f9804a-5a84-41fb-9a1b-c5e35db4ecec",
+        "lago_customer_id": "fbed2045-018c-4e5f-aa04-a44026fe0a63",
+        "external_customer_id": "advance_2",
+        "name": "",
+        "plan_code": "plan_advance_100",
+        "status": "terminated",
+        "billing_time": "anniversary",
+        "subscription_at": "2023-08-23T15:10:28Z",
+        "ending_at": "2024-08-23T15:11:57Z",
+        "started_at": "2023-08-23T15:10:28Z",
+        "terminated_at": "2023-08-23T15:12:23Z",
+        "canceled_at": null,
+        "created_at": "2023-08-23T15:10:36Z",
+        "previous_plan_code": null,
+        "next_plan_code": null,
+        "downgrade_plan_date": null,
+        "subscription_date": "2023-08-23",
+        "trial_ended_at": "2023-08-23T15:10:28Z",
+        "customer": {
+          "lago_id": "fbed2045-018c-4e5f-aa04-a44026fe0a63",
+          "external_id": "advance_2",
+          "name": "advance_2",
+          "sequential_id": 2,
+          "slug": "SUB-EB14-002",
+          "created_at": "2023-08-23T15:10:28Z",
+          "updated_at": "2023-08-23T15:10:36Z",
+          "country": null,
+          "address_line1": null,
+          "address_line2": null,
+          "state": null,
+          "zipcode": null,
+          "email": null,
+          "city": null,
+          "url": null,
+          "phone": null,
+          "logo_url": null,
+          "legal_name": null,
+          "legal_number": null,
+          "currency": "USD",
+          "tax_identification_number": null,
+          "timezone": null,
+          "applicable_timezone": "UTC",
+          "net_payment_term": null,
+          "external_salesforce_id": null,
+          "billing_configuration": {
+            "invoice_grace_period": null,
+            "payment_provider": null,
+            "vat_rate": null,
+            "document_locale": null
+          },
+          "metadata": []
+        },
+        "plan": {
+          "lago_id": "ca6765b6-aa7f-4fef-8b81-1fe731af0dfe",
+          "name": "plan_advance_100",
+          "created_at": "2023-08-23T14:43:11Z",
+          "code": "plan_advance_100",
+          "interval": "monthly",
+          "description": "",
+          "amount_cents": 10000,
+          "amount_currency": "USD",
+          "trial_period": 0,
+          "pay_in_advance": true,
+          "bill_charges_monthly": null,
+          "active_subscriptions_count": 3,
+          "draft_invoices_count": 0
+        }
+      }
+    }
+    ```
+    ### Arguments
+    <ResponseField name="subscription" type="JSON" required>
+      Returning a subscription object.
+    </ResponseField>
   </Accordion>
 </AccordionGroup>
 
