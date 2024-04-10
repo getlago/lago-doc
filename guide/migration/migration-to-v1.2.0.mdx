@@ -4,7 +4,7 @@ title: "Migration to v1.2.0"
 
 Dear Lago Community, 👋
 
-We’re writing to inform you of upcoming changes in the Lago API that may impact your workflows.
+We're writing to inform you of upcoming changes in the Lago API that may impact your workflows.
 
 # Why are we doing this?
 
@@ -21,7 +21,7 @@ In our continuous efforts to improve Lago's scalability and flexibility, we are 
 
 # Timeline
 
-Until **July 9, 2024** we will continue to support the current behaviors. However, after this date, previous versions will no longer be supported. We kindly ask you to update your integration before this day to avoid any potential breaking change.
+We will maintain the current API logic until **July 9, 2024**. However, after this date, previous versions will no longer be supported. We kindly ask you to update your integration before this day to avoid any potential breaking change.
 
 # What are the changes?
 
@@ -30,10 +30,8 @@ Until **July 9, 2024** we will continue to support the current behaviors. Howeve
 We're introducing a new method for building infinite levels of dimensions in Lago with the concept of `filters`.
 
 <Warning>
-  Please be aware that creating or editing billable metrics or plans via the
-  Dashboard will result in the creation of `filters`. There are risks of
-  encountering issues if you mix these actions via the Dashboard and use
-  `groups` when creating or editing billable metrics or plans via the API.
+  Creating or editing billable metrics or plans via the user interface will result in the creation of `filters`.
+  Therefore, you may encounter issues if you make changes via the interface but still use `groups` when creating or editing objects via API.
 </Warning>
 
 ### Impact on billable metrics
@@ -41,7 +39,7 @@ We're introducing a new method for building infinite levels of dimensions in Lag
 - Introducing `billable_metrics.filters`
 - Deprecating `billable_metrics.group`
 
-**Deprecating “billable_metrics.group”**
+**Deprecating "billable_metrics.group"**
 The `group` object is deprecated and will be removed from the `billable_metric` object on July 9, 2024.
 Please update all integrations currently using `billable_metrics.group` (see example below).
 
@@ -127,7 +125,7 @@ POST https://api.getlago.com/api/v1/billable_metrics/{code}/groups
 - Introducing `plans.charges.filters`
 - Deprecating `plans.charges.group_properties`
 
-**Deprecating “billable_metrics.groups” with one level**
+**Deprecating "billable_metrics.groups" with one level**
 The `group_properties` object is deprecated and will be removed from `plans.charges` on July 9, 2024.
 
 Please update all integrations currently using `plans.charges.group_properties` (see example below).
@@ -201,7 +199,7 @@ Please update all integrations currently using `plans.charges.group_properties` 
 - Introducing `fees.lago_charge_filter_id`
 - Deprecating `fees.lago_group_id`
 
-**Deprecating “billable_metrics.groups” with one level**
+**Deprecating "billable_metrics.groups" with one level**
 The `lago_group_id` field is deprecated and will be removed from `fees` on July 9, 2024.
 
 Please update all integrations currently using `fees.lago_group_id` or `invoice.fees.lago_group_id` (see example below).
@@ -229,7 +227,7 @@ Please update all integrations currently using `fees.lago_group_id` or `invoice.
 - Introducing `customer_usage.charges_usage.filters`
 - Deprecating `customer_usage.charges_usage.groups`
 
-**Deprecating “billable_metrics.groups” with one level**
+**Deprecating "billable_metrics.groups" with one level**
 The `charges_usage.groups` field is deprecated and will be removed from `customer_usage` on July 9, 2024.
 
 Please update all integrations currently using `customer_usage.charges_usage.groups` (see example below).
@@ -284,7 +282,7 @@ To enable real-time functionalities, event payloads must include `external_subsc
 
 - Making `events.external_subscription_id` required
 
-**Making “events.external_subscription_id” required**
+**Making "events.external_subscription_id" required**
 Sending `event.external_subscription_id` will be mandatory from July 9, 2024.
 
 Please update all integrations currently using `POST /events` (see example below).
@@ -316,6 +314,7 @@ Please update all integrations currently using `POST /events` (see example below
 ## 3. Deprecated fields
 
 We will remove the following deprecated fields in order to preserve the quality of the API and for clarity.
+
 | Deprecated field | Substitution field |
 |-|-|
 | `applied_coupon.expiration_date` | `applied_coupon.expiration_at` |
@@ -367,7 +366,7 @@ We will remove the following deprecated fields in order to preserve the quality 
 | `wallet.balance` | `wallet.balance_cents` |
 | `wallet.expiration_date` | `wallet.expiration_at` `|
 
-# Get Involved
+# Get involved
 
 Your feedback is important to us. If you have any questions, encounter issues, or have suggestions, please reach out to us via the Slack community.
 
