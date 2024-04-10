@@ -1,0 +1,378 @@
+---
+title: "Migration to v1.2.0"
+---
+
+Dear Lago Community, 👋
+
+We’re writing to inform you of upcoming changes in the Lago API that may impact your workflows.
+
+# Why are we doing this?
+
+We understand that change can sometimes be challenging. However, we believe it's essential for growth and improvement.
+
+In our continuous efforts to improve Lago's scalability and flexibility, we are updating our API to streamline the delivery of multiple features. This approach allows us to deliver more value to you and will pave the way for exciting new releases, including:
+
+1. **Infinite Dimension Structure:** With filters, enjoy unlimited depth in dimension structures, enabling you to merge multiple billable metrics into a single event code;
+2. **High Usage Ingestion System:** Overcome scalability issues with the ability to send over 10,000 events per second;
+3. **Current/Past Usage Performance Improvements:** Experience near-real-time data query with enhanced performance for current and past usage endpoints;
+4. **Alerting Scenarios:** Set up custom alerts for critical events such as unpaid invoices, reaching wallet credit thresholds, and many more;
+5. **Workflow Creation:** Seamlessly trigger actions within Lago based on custom scenarios, like pausing subscriptions or upgrading plans based on alerts; and
+6. **Entitlements Scenarios:** Utilize Lago's aggregated usage data to manage access to product features based on custom rules.
+
+# Timeline
+
+Until **July 9, 2024** we will continue to support the current behaviors. However, after this date, previous versions will no longer be supported. We kindly ask you to update your integration before this day to avoid any potential breaking change.
+
+# What are the changes?
+
+## 1. Transition from `group` to `filters`
+
+We're introducing a new method for building infinite levels of dimensions in Lago with the concept of `filters`.
+
+<Warning>
+  Please be aware that creating or editing billable metrics or plans via the
+  Dashboard will result in the creation of `filters`. There are risks of
+  encountering issues if you mix these actions via the Dashboard and use
+  `groups` when creating or editing billable metrics or plans via the API.
+</Warning>
+
+### Impact on billable metrics
+
+- Introducing `billable_metrics.filters`
+- Deprecating `billable_metrics.group`
+
+**Deprecating “billable_metrics.group”**
+The `group` object is deprecated and will be removed from the `billable_metric` object on July 9, 2024.
+Please update all integrations currently using `billable_metrics.group` (see example below).
+
+```diff "billable_metrics.group" with 1 level
+- { "billable_metric": {
+    …
+    "group": {
+      "key": "provider",
+      "values": ["AWS", "Google", "Azure"]
+    }
+  }
+}
++ { "billable_metric": {
+    …
+    "filters": [
+			{
+	      "key": "provider",
+	      "values": ["AWS", "Google", "Azure"]
+	    }
+		]
+  }
+}
+```
+
+```diff "billable_metrics.group" with 2 levels
+- { "billable_metric": {
+    …
+    "group": {
+      "key": "provider",
+      "values": [
+        {
+          "name": "AWS",
+          "key": "region",
+          "values": ["Europe", "Africa", "Asia"]
+        },
+        {
+          "name": "Google",
+          "key": "region",
+          "values": ["Europe", "North America"]
+        },
+        {
+          "name": "Azure",
+          "key": "region",
+          "values": ["North America", "Asia"]
+        }
+      ]
+    }
+  }
+}
++ { "billable_metric": {
+    …
+    "filters": [
+			{
+	      "key": "provider",
+	      "values": ["AWS", "Google", "Azure"]
+	    },
+			{
+	      "key": "region",
+	      "values": ["Europe", "Africa", "Asia", "North America"]
+	    }
+		]
+  }
+}
+```
+
+<Warning>
+  Note that the billable_metric object will only display filters and groups if
+  applicable.
+</Warning>
+
+### Impact on API endpoints
+
+- Deprecating `List all billable metric groups`.
+
+The endpoint `List all billable metric groups` is deprecated. It will be supported until July 9, 2024 and will then be removed.
+
+```
+POST https://api.getlago.com/api/v1/billable_metrics/{code}/groups
+```
+
+### Impact on plans
+
+- Introducing `plans.charges.filters`
+- Deprecating `plans.charges.group_properties`
+
+**Deprecating “billable_metrics.groups” with one level**
+The `group_properties` object is deprecated and will be removed from `plans.charges` on July 9, 2024.
+
+Please update all integrations currently using `plans.charges.group_properties` (see example below).
+
+```diff
+- { "plans": {
+    …
+    "charges": [
+		{
+	    …
+      "properties": {
+        "amount": "0",
+      },
+      "group_properties": [
+        {
+          "group_id": "__GROUP_ID__",
+					"invoice_display_name": "AWS in Europe",
+          "values": {
+            "amount": "15",
+          }
+        },
+				{
+          "group_id": "__GROUP_ID__",
+					"invoice_display_name": "Google in Europe",
+          "values": {
+            "amount": "20",
+          }
+        }
+      ]
+    }
+  }
+}
++ { "plans": {
+    …
+    "charges": [
+		{
+	    …
+      "properties": {
+        "amount": "0",
+      },
+      "filters": [
+				{
+					"values": {
+						"provider": "AWS",
+						"region": "Europe"
+					},
+					"invoice_display_name": "AWS in Europe"
+					"properties": { "amount": "15" }
+				},
+				{
+					"values": {
+						"provider": "Google",
+						"region": "Europe"
+					},
+					"invoice_display_name": "Google in Europe"
+					"properties": { "amount": "20" }
+				}
+      ]
+    }
+  }
+}
+```
+
+<Warning>
+  Note that the plan object will only display filters and group_properties if
+  applicable.
+</Warning>
+
+### Impact on fees
+
+- Introducing `fees.lago_charge_filter_id`
+- Deprecating `fees.lago_group_id`
+
+**Deprecating “billable_metrics.groups” with one level**
+The `lago_group_id` field is deprecated and will be removed from `fees` on July 9, 2024.
+
+Please update all integrations currently using `fees.lago_group_id` or `invoice.fees.lago_group_id` (see example below).
+
+```diff
+- { "fees": {
+		…
+		"lago_group_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+		…
+	}
+}
++ { "fees": {
+		…
+		"lago_group_id": null,
+		"lago_charge_filter_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+		…
+	}
+}
+```
+
+<Warning>This change also affects the invoice object.</Warning>
+
+### Impact on customer usage
+
+- Introducing `customer_usage.charges_usage.filters`
+- Deprecating `customer_usage.charges_usage.groups`
+
+**Deprecating “billable_metrics.groups” with one level**
+The `charges_usage.groups` field is deprecated and will be removed from `customer_usage` on July 9, 2024.
+
+Please update all integrations currently using `customer_usage.charges_usage.groups` (see example below).
+
+```diff
+- { "customer_usage": {
+		…
+		"charges_usage": [
+			…
+			{
+				"groups": [
+					{
+	          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+	          "key": "null",
+	          "value": "europe",
+	          "units": "0.9",
+	          "amount_cents": 1000,
+	          "events_count": 10
+          }
+				]
+			}
+		]
+		…
+	}
+}
++ { "customer_usage": {
+		…
+		"charges_usage": [
+			…
+			{
+				"filters": [
+					{
+	          "values": {
+							"provider": "AWS",
+							"region": "Europe"
+						}
+	          "units": "0.9",
+	          "amount_cents": 1000,
+	          "events_count": 10
+          }
+				]
+			}
+		]
+		…
+	}
+}
+```
+
+## 2. Mandatory `external_subscription_id` field in event payloads
+
+To enable real-time functionalities, event payloads must include `external_subscription_id`. Events that only include `external_customer_id` will not be taken into account when aggregating usage.
+
+- Making `events.external_subscription_id` required
+
+**Making “events.external_subscription_id” required**
+Sending `event.external_subscription_id` will be mandatory from July 9, 2024.
+
+Please update all integrations currently using `POST /events` (see example below).
+
+```diff
+- { "event": {
+	"transaction_id": "__UNIQUE_ID__",
+	"external_customer_id": "__YOUR_CUSTOMER_ID__",
+	"code": "__BILLABLE_METRIC_CODE__",
+	"timestamp": $(date +%s),
+	"properties": {
+		  "custom_field": 12
+		}
+	}
+}
++ { "event": {
+	"transaction_id": "__UNIQUE_ID__",
+	"external_customer_id": "__YOUR_CUSTOMER_ID__",
+	"external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
+	"code": "__BILLABLE_METRIC_CODE__",
+	"timestamp": $(date +%s),
+	"properties": {
+		  "custom_field": 12
+		}
+	}
+}
+```
+
+## 3. Deprecated fields
+
+We will remove the following deprecated fields in order to preserve the quality of the API and for clarity.
+| Deprecated field | Substitution field |
+|-|-|
+| `applied_coupon.expiration_date` | `applied_coupon.expiration_at` |
+| `billable_metric.group` | `billable_metric.filters` |
+| `coupon.expiration_date` | `coupon.expiration_at` |
+| `credit.before_vat` | `credit.before_taxes` |
+| `credit.item.lago_id` | `credit.item.lago_item_id` |
+| `credit_note.balance_amount_currency` | `credit_note.currency` |
+| `credit_note.credit_amount_currency` | `credit_note.currency` |
+| `credit_note.refund_amount_currency` | `credit_note.currency` |
+| `credit_note.sub_total_vat_excluded_amount_currency` | `credit_note.currency` |
+| `credit_note.sub_total_vat_excluded_amount_cents` | `credit_note.sub_total_excluding_taxes_amount_cents` |
+| `credit_note.total_amount_currency` | `credit_note.currency` |
+| `credit_note.vat_amount_currency` | `credit_note.currency` |
+| `credit_note.vat_amount_cents` | `credit_note.taxes_amount_cents` |
+| `credit_note.vat_amount_currency` | `credit_note.currency` |
+| `customer.billing_configuration.vat_rate` | `customer.taxes[].rate` |
+| `customer_usage.amount_currency` | `customer_usage.currency` |
+| `customer_usage.charge_usages.groups` | `customer_usage.charge_usages.filters` |
+| `customer_usage.from_date` | `customer_usage.from_datetime` |
+| `customer_usage.to_date` | `customer_usage.to_datetime` |
+| `customer_usage.total_amount_currency` | `customer_usage.currency` |
+| `customer_usage.vat_amount_cents` | `customer_usage.taxes_amount_cents` |
+| `customer_usage.vat_amount_currency` | `customer_usage.currency` |
+| `event_error.input_params.code` | `event_error.event.code` |
+| `event_error.input_params.external_customer_id` | `event_error.event.external_customer_id` |
+| `event_error.input_params.external_subscription_id` | `event_error.event.external_subscription_id` |
+| `event_error.input_params.properties` | `event_error.event.properties` |
+| `event_error.input_params.timestamp` | `event_error.event.timestamp` |
+| `event_error.input_params.transaction_id` | `event_error.event.transaction_id` |
+| `fee.unit_amount_cents` | `fee.precise_unit_amount` |
+| `fee.vat_amount_cents` | `fee.taxes_amount_cents` |
+| `fee.vat_amount_currency` | `fee.amount_currency` |
+| `invoice.amount_currency` | `invoice.currency` |
+| `invoice.amount_cents` | `invoice.fees_amount_cents` |
+| `invoice.credit_amount_currency` | `invoice.currency` |
+| `invoice.credit_amount_cents` | `invoice.credits[].amount_cents` |
+| `invoice.fees.group_invoice_display_name` | `invoice.fees.filter_invoice_display_name` |
+| `invoice.fees.lago_group_id` | n/a |
+| `invoice.legacy` | n/a |
+| `invoice.sub_total_vat_excluded_amount_cents` | `invoice.sub_total_excluding_taxes_amount_cent`s|
+| `invoice.sub_total_vat_included_amount_cents` | `invoice.sub_total_including_taxes_amount_cent`s|
+| `invoice.total_amount_currency` | `invoice.currency` |
+| `invoice.vat_amount_cents` | `invoice.taxes_amount_cents` |
+| `invoice.vat_amount_currency` | `invoice.currency` |
+| `organization.billing_configuration.vat_rate` | `organization.taxes[].rate` |
+| `plan.charges.group_properties` | `plan.charges.filters` |
+| `subscription.subscription_date` | `subscription.subscription_at` |
+| `wallet.balance` | `wallet.balance_cents` |
+| `wallet.expiration_date` | `wallet.expiration_at` `|
+
+# Get Involved
+
+Your feedback is important to us. If you have any questions, encounter issues, or have suggestions, please reach out to us via the Slack community.
+
+We understand that breaking changes may require you to adapt, so we apologize for any inconvenience caused. Our team is committed to providing support throughout this transition process to minimize disruptions.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
