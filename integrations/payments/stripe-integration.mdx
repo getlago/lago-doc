@@ -258,3 +258,11 @@ If the new invoice amount falls below the [minimum amount supported by Stripe](h
   payment intent to succeed ([learn how to save payment
   details](https://stripe.com/docs/payments/save-and-reuse)).
 </Warning>
+
+
+## Payment disputes
+In the event of a **lost** payment dispute within Stripe, Lago initiates an automatic response by marking the relevant invoice as disputed lost. This action involves populating the `dispute_lost_at` field with the timestamp when the dispute was lost. Following this update:
+
+- The invoice becomes non-voidable;
+- Generating a credit note is possible; however, refunding the payment back to the original payment method is not permitted; and
+- The invoice cannot be resent for collection.
