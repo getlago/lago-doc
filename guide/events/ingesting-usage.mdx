@@ -4,28 +4,26 @@ description:
   "This guide explains how Lago ingests usage-based events coming from your application."
 ---
 
-## Define a Billable metric[](#define-a-billable-metric "Direct link to heading")
+## Define a billable metric[](#define-a-billable-metric "Direct link to heading")
 
 **Usage events are designed to target very specific
-[Billable metrics](/guide/billable-metrics/create-billable-metrics) created from the UI**. If you don't understand the
-concept of Billable metrics, we recommend you to read it first.
+[billable metrics](/guide/billable-metrics/create-billable-metrics) created from the UI**. If you don't understand the
+concept of billable metrics, we recommend you to read it first.
 
-First things first, you need to define a Billable metric from the UI to send
+First things first, you need to define a billable metric from the UI to send
 usage measurement events:
 
-1. In the Lago App, go to the **Billable metrics** section
-2. Click on the `Add a Billable metric` button
-3. Fill the Billable metric informations.
-   - A `name`
-   - A `code` (this is used as the event name when ingesting measurement events)
-   - A `description` _(optional)_
-4. Choose the **Aggregation type** to define how ingested events must be
-   calculated at the end of the billable period
-5. Define if this metric is `recurring` or not.
+1. In the Lago app, go to the **"Billable metrics"** section;
+2. Click **"Add a billable metric"**;
+3. Add metric information, including:
+   - `name`
+   - `code` (used to send events via API)
+   - `description` (optional)
+4. Define whether or not this metric is `recurring`; and
+5. Choose an aggregation type to define how usage should be calculated.
 
-A Billable metric must be representative of a paying feature of your company.
-Based on your customers' actions within your application, implemented events are
-automatically triggered, aggregated and calculated by Lago.
+Billable metrics represent the features of your product. Events should automatically be sent to Lago by your application
+based on your customers' actions.
 
 ## Send usage measurements to Lago[](#send-usage-measurements-to-lago "Direct link to heading")
 
@@ -34,12 +32,13 @@ event is JSON with the following fields:
 
 ```json
 {
-  "external_subscription_id": "__SUBSCRIPTION_ID__" // (Required) Unique identifier of your subscription targeted by the event
-  "code": "__EVENT_CODE__", // (Required) Your Billable metric's code
-  "timestamp": 1650893379, // (Required) UNIX Timestamp when the event happened
+  "transaction_id": "__TRANSACTION_ID__" // (Required) Unique identifier of the event
+  "external_subscription_id": "__SUBSCRIPTION_ID__" // (Required) Unique identifier of your customer's subscription
+  "code": "__EVENT_CODE__", // (Required) The billable metric's code
+  "timestamp": 1650893379, // (Required) UNIX timestamp of the event
   "properties": {
     "custom_field": 12, // (Optional) Custom variables defined as properties
-    "operation_type": "add" or "remove" // (Optional) Required only for recurring metric with unique count aggregation type
+    "operation_type": "add" or "remove" // (Optional) Required only for recurring metric based on the unique count aggregation
   }
 }
 ```
