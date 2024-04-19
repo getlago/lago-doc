@@ -1,0 +1,130 @@
+---
+title: "Charges with filters"
+description: "Charge your customers by leveraging a combination of filters specified in the billable metric."
+---
+
+## Define a price for a combination of filters[](#define-price-for-filters "Direct link to heading")
+
+When a billable metric has defined filters, establish a set of filters to refine an event and assign a price to this combination.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Add a charge to a plan (this charge should be associated with a billable metric containing filters);
+    2. Add a new filter;
+    3. Choose a combination of filters, either specifying a key and its value or simply the key itself (covering all values);
+    4. Set a price for this combination of filters; and
+    5. Optionally, provide an Invoice display name.
+
+    <Frame caption="Set a price for a combination of filters">
+    <img src="/guide/plans/images/charge-with-filters.gif"/>
+    </Frame>
+
+  </Tab>
+  <Tab title="API">
+    Here are an example of plans you can create:
+    <CodeGroup>
+      ```bash Charge with filters
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "name": "Standard plan",
+          "code": "standard_plan",
+          "interval": "monthly",
+          "pay_in_advance": false,
+          "amount_cents": 1000,
+          "amount_currency": "USD",
+          "charges": [
+            {
+              "billable_metric_id": "5d387072-e1f2-416f-b981-135c2f177069",
+              "invoice_display_name": null,
+              "charge_model": "standard",
+              "properties": {
+                "amount": "2"
+              },
+              "filters": [
+                {
+                  "values": {
+                    "region": ["africa"],
+                    "provider": ["aws"]
+                  },
+                  "invoice_display_name": "Africa & AWS",
+                  "properties": {
+                    "amount": "1"
+                  }
+                },
+                {
+                  "values": {
+                    "region": ["__ALL_FILTER_VALUES__"],
+                    "provider": ["__ALL_FILTER_VALUES__"]
+                  },
+                  "invoice_display_name": "Other regions and providers",
+                  "properties": {
+                    "amount": "0.5"
+                  }
+                }
+              ]
+            }
+          ]
+        }'
+        ```
+      </CodeGroup>
+
+  </Tab>
+</Tabs>
+
+## Define a default price[](#define-default-price "Direct link to heading")
+
+When a billable metric has filters defined, set a default price on the charge level to cover all the other combination of filters not defined in the charge.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Add a charge to a plan (this charge should be associated with a billable metric containing filters);
+    2. Add a default price;
+    3. Set a price for this default price
+
+    <Frame caption="Set a default price for a charge handling groups">
+    <img src="/guide/plans/images/charge-with-groups-default-price.gif" />
+    </Frame>
+
+  </Tab>
+  <Tab title="API">
+      Here are an example of plans you can create:
+      <CodeGroup>
+      ```bash Storage
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "name": "Standard plan",
+          "code": "standard_plan",
+          "interval": "monthly",
+          "pay_in_advance": false,
+          "amount_cents": 1000,
+          "amount_currency": "USD",
+          "charges": [
+            {
+              "billable_metric_id": "5d387072-e1f2-416f-b981-135c2f177069",
+              "invoice_display_name": null,
+              "charge_model": "standard",
+              "properties": {
+                "amount": "2"
+              }
+            }
+          ]
+        }'
+        ```
+      </CodeGroup>
+
+  </Tab>
+</Tabs>
+<br />
+<Tip>
+  If the default price is not set, Lago will automatically define it as 0 based on the charge model.
+</Tip>

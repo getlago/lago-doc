@@ -1,0 +1,150 @@
+---
+title: "Filters"
+description: "When setting up your pricing, you may want to filters events according to their property. To do so, you can create filters for your billable metric."
+---
+
+## Create filters[](#create-filters "Direct link to heading")
+
+Your company provides DevOps services and you want to charge your customers for compute capacity by the hour.
+
+In your Lago account, you create a `compute` billable metric that calculates the total number of hours (i.e. `SUM(properties.hours)`).
+
+As your customers can choose from different cloud providers and define a region, you need to filter usage records (i.e. events) according to the provider and region.
+
+On the configuration page of your billable metric, you can define two filters: `provider` and `region`, with all the necessary values (see snippet below).
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Create a new billable metric;
+    2. Add a new filter; and
+    3. Define your different filters.
+  <Frame caption="How to add filters">
+    <img src="/guide/billable-metrics/images/add-filters.gif"/>
+  </Frame>
+
+  </Tab>
+  <Tab title="API">
+      Here are few examples of billable metrics you can create:
+      <CodeGroup>
+        ```bash Billable metrics with filters
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+          --header "Authorization: Bearer $API_KEY" \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "billable_metric": {
+              "name": "Compute",
+              "code": "compute",
+              "aggregation_type": "sum_agg",
+              "field_name": "hours",
+              "recurring": false,
+              "filters": [
+                {
+                  "key": "provider",
+                  "values": ["aws", "google", "azure"]
+                },
+                {
+                  "key": "region",
+                  "values": ["europe", "africa", "asia", "north_america"]
+                }
+              ]
+            }
+          }'
+        ```
+      </CodeGroup>
+
+  </Tab>
+</Tabs>
+
+Below is an example of an event including two group values for the billable metric described above:
+
+```json Event including a group value
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/events" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "event": {
+      "transaction_id": "event_001",
+      "external_customer_id": "customer_1234",
+      "code": "compute",
+      "timestamp": 1668461043,
+      "properties": {
+        "hours": 0.07,
+        "provider": "aws",
+        "region": "europe"
+      }
+    }
+  }'
+```
+
+<Warning>
+  Values are case-sensitive. If you don't use the exact value when pushing
+  events, they will not be taken into account. Following our example: the
+  expected value is `"aws"` and `"AWS"` is an invalid value.
+</Warning>
+
+You can also create billable metrics with dimensions
+[via the API](/api-reference/billable-metrics/create).
+
+## Edit filters
+
+You can edit billable metric filters associated with existing subscriptions. It’s important to note that making changes to these metric filters can have an impact on all plans where this billable metric is defined as a charge. Here’s an example to illustrate the impact of editing a billable metric:
+
+```json
+From Payload A:
+{
+  "billable_metric": {
+    "name": "gigabyte",
+    "code": "gigabyte",
+    "aggregation_type": "sum_agg",
+    "field_name": "total",
+    "filters": [
+	    {
+	      "key": "region",
+	      "values": [
+	        "usa",
+	        "europe",
+	      ]
+	    }
+    ]
+  }
+}
+
+To Payload B:
+{
+  "billable_metric": {
+    "name": "gigabyte",
+    "code": "gigabyte",
+    "aggregation_type": "sum_agg",
+    "field_name": "total",
+    "filters": [
+	    {
+	      "key": "region",
+	      "values": [
+	        "USA",
+	        "europe",
+	        "africa"
+	      ]
+	    }
+    ]
+  }
+}
+```
+
+Note that each filter's keys and values are case-sensitive. Here's how Lago handles these changes:
+
+1. Since `"region": "europe"` remains the same between both payloads, this filter remains in the billable metric.
+2. As `"region": "usa"` is present in Payload A but not in Payload B, this filter is removed from the billable metric.
+3. As `"region": "USA"` is not present in Payload A but is present in Payload B, this filter will be created in the billable metric.
+4. Similarly, as `"region": "africa"` is not present in Payload A but is present in Payload B, this filter will be created in the billable metric.
+
+When this billable metric is associated with charges, editing it will impact all plans where it is defined.
+
+- If an existing filter combination remains the same (case 1), Lago will retain this specific filter from the filters combination in all associated charges.
+- If an existing filter combination is removed from the billable metric (case 2), Lago will remove this specific filter from the filters combination in all associated charges.
+- If a new filter combination is created in the billable metric (case 3 and 4), Lago will not automatically add this filter in the filters combination in all associated charges; you will need to add them manually.
