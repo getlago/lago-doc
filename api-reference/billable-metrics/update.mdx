@@ -22,10 +22,12 @@ curl --location --request PUT "$LAGO_URL/api/v1/billable_metrics/:code" \
       "recurring": false,
       "field_name": "gb",
       "weighted_interval": "seconds",
-      "group": {
-        "key": "provider",
-        "values": ["us-east-1", "us-east-2", "eu-west-1"]
-      }
+      "filters": [
+        {
+          "key": "provider",
+          "values": ["us-east-1", "us-east-2", "eu-west-1"]
+        }
+      ]
     }
   }'
 ```
@@ -33,11 +35,11 @@ curl --location --request PUT "$LAGO_URL/api/v1/billable_metrics/:code" \
 ```python Python
 from lago_python_client.client import Client
 from lago_python_client.exceptions import LagoApiError
-from lago_python_client.models import BillableMetric
+from lago_python_client.models import BillableMetricFilter, BillableMetric
 
 client = Client(api_key='__YOUR_API_KEY__')
 
-group = BillableMetricGroup(
+filter = BillableMetricFilter(
   key='region',
   values=['us-east-1', 'us-east-2', 'eu-west-1']
 )
@@ -50,7 +52,7 @@ billable_metric = BillableMetric(
   recurring=false,
   field_name='gb',
   weighted_interval= 'seconds',
-  group=group
+  filters=[filter]
 )
 
 try:
@@ -72,10 +74,12 @@ client.billable_metrics.update({
   recurring: false,
   field_name: 'gb',
   weighted_interval: 'seconds',
-  group: {
+  filters: [
+    {
       key: 'region',
       values: %w[us-east-1 us-east-2 eu-west-1]
-  }
+    }
+  ]
 }, 'code')
 ```
 
@@ -110,7 +114,7 @@ func main() {
     FieldName:       "gb",
     Recurring:       false,
     WeightedInterval: "seconds",
-    Group: map[string]interface{}{
+    Filters: [1]map[string]interface{}{
         "key": "region",
         "values": [3]string{"us-east-1", "us-east-2", "eu-west-1"},
     },

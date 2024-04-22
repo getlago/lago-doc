@@ -154,10 +154,13 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
             }
           ]
         },
-        "group_properties": [
+        "filters": [
           {
-            "group_id": "__GROUP_ID__",
             "values": {
+              "cloud": ["aws"],
+              "region": ["us-east-1"]
+            },
+            "properties": {
               "graduated_ranges": [
                 {
                   "from_value": 0,
@@ -172,7 +175,8 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
                   "flat_amount": "100"
                 }
               ]
-            }
+            },
+            invoice_display_name: "Filter"
           }
         ],
         "tax_codes": []
@@ -190,14 +194,18 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
           "free_units": 0,
           "package_size": 1
         },
-        "group_properties": [
+        "filters": [
           {
-            "group_id": "__GROUP_ID__",
             "values": {
+              "cloud": ["aws"],
+              "region": ["us-east-1"]
+            },
+            "properties": {
               "amount": "30",
-            "free_units": 1000,
-            "package_size": 10000
-            }
+              "free_units": 1000,
+              "package_size": 10000
+            },
+            invoice_display_name: "Filter"
           }
         ],
         "tax_codes": []
@@ -213,10 +221,13 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
         "properties": {
           "rate": "0"
         },
-        "group_properties": [
+        "filters": [
           {
-            "group_id": "__GROUP_ID__",
             "values": {
+              "cloud": ["aws"],
+              "region": ["us-east-1"]
+            },
+            "properties": {
               "rate": "0.15",
               "fixed_amount": "0.5",
               "free_units_per_events": 5,
@@ -239,10 +250,13 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
         "properties": {
           "amount": "0"
         },
-        "group_properties": [
+        "filters": [
           {
-            "group_id": "__GROUP_ID__",
             "values": {
+              "cloud": ["aws"],
+              "region": ["us-east-1"]
+            },
+            "properties": {
               "amount": "15"
             }
           }
@@ -267,10 +281,13 @@ curl --location --request POST "$LAGO_URL/api/v1/plans" \
             }
           ]
         },
-        "group_properties": [
+        "filters": [
           {
-            "group_id": "__GROUP_ID__",
             "values": {
+              "cloud": ["aws"],
+              "region": ["us-east-1"]
+            },
+            "properties": {
               "volume_ranges": [
                 {
                   "from_value": 0,
@@ -311,10 +328,16 @@ standard_charge = Charge(
   prorated= true,
   invoice_display_name= "New display name",
   tax_codes= ['french_standard_vat'],
-  group_properties=[
+  properties={
+    'amount': '0.11'
+  },
+  filters=[
     {
-      group_id='group_id',
       values={
+        "cloud": ["aws"],
+        "region": ["us-east-1"]
+      },
+      properties={
         'amount': '0.22'
       }
     }
@@ -481,10 +504,13 @@ plan = {
       prorated: true,
       invoice_display_name: 'New invoice display name',
       tax_codes: ['french_standard_vat'],
-      group_properties: [
+      filters: [
         {
-          group_id: 'group_id',
           values: {
+            cloud: 'aws',
+            region: 'us-east-1'
+          },
+          properties: {
             amount: '0.10'
           }
         }
@@ -613,10 +639,13 @@ const standardChargeObject = {
   prorated: true,
   invoice_display_name: "New invoice display name",
   tax_codes: ["french_standard_vat"],
-  group_properties: [
+  filters: [
     {
-      group_id: "group_id",
       values: {
+        cloud: ["aws"],
+        region: ["us-east-1"]
+      },
+      properties: {
         amount: "0.10",
       },
     },
