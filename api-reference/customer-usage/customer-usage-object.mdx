@@ -35,14 +35,15 @@ description:
           "code": "storage",
           "aggregation_type": "sum_agg"
         },
-        "groups": [
+        "filters": [
           {
-            "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-            "key": null,
-            "value": "europe",
             "units": "0.9",
+            "amount_cents": 1000,
             "events_count": 10,
-            "amount_cents": 1000
+            "invoice_display_name": "AWS eu-east-1",
+            "values": {
+              "region": "us-east-1"
+            }
           }
         ],
         "grouped_usage": [
@@ -55,14 +56,15 @@ description:
               "additionalProp2": "string",
               "additionalProp3": "string"
             },
-            "groups": [
+            "filters": [
               {
-                "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-                "key": null,
-                "value": "europe",
                 "units": "0.9",
+                "amount_cents": 1000,
                 "events_count": 10,
-                "amount_cents": 1000
+                "invoice_display_name": "AWS eu-east-1",
+                "values": {
+                  "region": "us-east-1"
+                }
               }
             ]
           }
@@ -79,10 +81,12 @@ description:
 <ResponseField name="customer_usage" type="object">
   <Expandable title="object" defaultOpen="true">
     <ResponseField name="from_datetime" type="string" required>
-      The lower bound of the billing period, expressed in the ISO 8601 datetime format in Coordinated Universal Time (UTC).
+      The lower bound of the billing period, expressed in the ISO 8601 datetime
+      format in Coordinated Universal Time (UTC).
     </ResponseField>
     <ResponseField name="to_datetime" type="string" required>
-      The upper bound of the billing period, expressed in the ISO 8601 datetime format in Coordinated Universal Time (UTC).
+      The upper bound of the billing period, expressed in the ISO 8601 datetime
+      format in Coordinated Universal Time (UTC).
     </ResponseField>
     <ResponseField name="issuing_date" type="string" required>
       The date of creation of the invoice.
@@ -106,42 +110,49 @@ description:
       The currency of the customer’s current usage tax.
     </ResponseField>
     <ResponseField name="lago_invoice_id" type="string">
-      A unique identifier associated with the invoice related to this particular usage record.
-      In cases where no invoice has been generated for this particular usage, the field value will be null.
+      A unique identifier associated with the invoice related to this particular
+      usage record. In cases where no invoice has been generated for this
+      particular usage, the field value will be null.
     </ResponseField>
     <ResponseField name="charges_usage" type="array" required>
       <Expandable title="charges_usage">
         <ResponseField name="units" type="string" required>
-          The number of units consumed by the customer for a specific charge item.
+          The number of units consumed by the customer for a specific charge
+          item.
         </ResponseField>
         <ResponseField name="amount_cents" type="integer" required>
-          The amount in cents, tax excluded, consumed by the customer for a specific charge item.
+          The amount in cents, tax excluded, consumed by the customer for a
+          specific charge item.
         </ResponseField>
         <ResponseField name="amount_currency" type="string" required>
           The currency of a usage item consumed by the customer.
         </ResponseField>
         <ResponseField name="events_count" type="string" required>
-          The quantity of usage events that have been recorded for a particular charge during the specified time period. 
-          These events may also be referred to as the number of transactions in some contexts.
+          The quantity of usage events that have been recorded for a particular
+          charge during the specified time period. These events may also be
+          referred to as the number of transactions in some contexts.
         </ResponseField>
         <ResponseField name="charge" type="object" required>
           <Expandable title="charge">
             <ResponseField name="lago_id" type="string" required>
-              Unique identifier assigned to the charge within the Lago application. 
-              This ID is exclusively created by Lago and serves as a unique identifier for the charge’s 
-              record within the Lago system.
+              Unique identifier assigned to the charge within the Lago
+              application. This ID is exclusively created by Lago and serves as
+              a unique identifier for the charge’s record within the Lago
+              system.
             </ResponseField>
             <ResponseField name="charge_model" type="string" required>
-              The pricing model applied to this charge. Possible values are `standard`, `graduated`, `percentage`, `package` or `volume`.
+              The pricing model applied to this charge. Possible values are
+              `standard`, `graduated`, `percentage`, `package` or `volume`.
             </ResponseField>
           </Expandable>
         </ResponseField>
         <ResponseField name="billable_metric" type="object" required>
           <Expandable title="billable_metric">
             <ResponseField name="lago_id" type="string" required>
-              Unique identifier assigned to the billable metric within the Lago application. 
-              This ID is exclusively created by Lago and serves as a unique identifier for the billable metric’s 
-              record within the Lago system.
+              Unique identifier assigned to the billable metric within the Lago
+              application. This ID is exclusively created by Lago and serves as
+              a unique identifier for the billable metric’s record within the
+              Lago system.
             </ResponseField>
             <ResponseField name="name" type="string" required>
               The name of the billable metric used for this charge.
@@ -150,42 +161,51 @@ description:
               The code of the billable metric used for this charge.
             </ResponseField>
             <ResponseField name="aggregation_type" type="string" required>
-              The aggregation type of the billable metric used for this charge. 
-              Possible values are `count_agg`, `sum_agg`, `max_agg` or `unique_count_agg`.
+              The aggregation type of the billable metric used for this charge.
+              Possible values are `count_agg`, `sum_agg`, `max_agg` or
+              `unique_count_agg`.
             </ResponseField>
           </Expandable>
         </ResponseField>
-        <ResponseField name="group" type="object" required>
-          <Expandable title="group">
-            <ResponseField name="lago_id" type="string" required>
-              Unique identifier assigned to the group within the Lago application. 
-              This ID is exclusively created by Lago and serves as a unique identifier for the group record within the Lago system.
-            </ResponseField>
-            <ResponseField name="key" type="string" required>
-              The group key, only returned for groups with two dimensions. 
-            </ResponseField>
-            <ResponseField name="value" type="string" required>
-              The group value.
-            </ResponseField>
+        <ResponseField name="filters" type="object" required>
+          <Expandable title="filters">
             <ResponseField name="units" type="string" required>
-              The number of units consumed for a specific group related to a charge item.
+              The number of units consumed for a specific group related to a
+              charge item.
             </ResponseField>
             <ResponseField name="amount_cents" type="integer" required>
-              The amount in cents, tax excluded, consumed for a specific group related to a charge item.
+              The amount in cents, tax excluded, consumed for a specific group
+              related to a charge item.
+            </ResponseField>
+            <ResponseField name="events_count" type="integer" required>
+              The quantity of usage events that have been recorded for a
+              particular charge filter during the specified time period. These
+              events may also be referred to as the number of transactions in
+              some contexts.
+            </ResponseField>
+            <ResponseField name="invoice_display_name" type="string" required>
+              Specifies the name that will be displayed on an invoice.
+            </ResponseField>
+            <ResponseField name="values" type="string" required>
+              List of filter values applied to the usage.
             </ResponseField>
           </Expandable>
         </ResponseField>
         <ResponseField name="grouped_usage" type="object" required>
           <Expandable title="grouped_usage">
             <ResponseField name="amount_cents" type="integer" required>
-              The amount in cents, tax excluded, consumed for a specific group related to a charge item.
+              The amount in cents, tax excluded, consumed for a specific group
+              related to a charge item.
             </ResponseField>
             <ResponseField name="events_count" type="string" required>
-              The quantity of usage events that have been recorded for a particular charge during the specified time period. 
-              These events may also be referred to as the number of transactions in some contexts.
+              The quantity of usage events that have been recorded for a
+              particular charge during the specified time period. These events
+              may also be referred to as the number of transactions in some
+              contexts.
             </ResponseField>
             <ResponseField name="units" type="string" required>
-              The number of units consumed by the customer for a specific charge item.
+              The number of units consumed by the customer for a specific charge
+              item.
             </ResponseField>
             <ResponseField name="grouped_by" type="string" required>
               Key value list of event properties aggregated by the charge model
@@ -193,20 +213,24 @@ description:
             <ResponseField name="group" type="object" required>
               <Expandable title="group">
                 <ResponseField name="lago_id" type="string" required>
-                  Unique identifier assigned to the group within the Lago application. 
-                  This ID is exclusively created by Lago and serves as a unique identifier for the group record within the Lago system.
+                  Unique identifier assigned to the group within the Lago
+                  application. This ID is exclusively created by Lago and serves
+                  as a unique identifier for the group record within the Lago
+                  system.
                 </ResponseField>
                 <ResponseField name="key" type="string" required>
-                  The group key, only returned for groups with two dimensions. 
+                  The group key, only returned for groups with two dimensions.
                 </ResponseField>
                 <ResponseField name="value" type="string" required>
                   The group value.
                 </ResponseField>
                 <ResponseField name="units" type="string" required>
-                  The number of units consumed for a specific group related to a charge item.
+                  The number of units consumed for a specific group related to a
+                  charge item.
                 </ResponseField>
                 <ResponseField name="amount_cents" type="integer" required>
-                  The amount in cents, tax excluded, consumed for a specific group related to a charge item.
+                  The amount in cents, tax excluded, consumed for a specific
+                  group related to a charge item.
                 </ResponseField>
               </Expandable>
             </ResponseField>
