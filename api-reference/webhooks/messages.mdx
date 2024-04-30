@@ -1005,6 +1005,67 @@ description: "Here is the complete list of webhook messages sent by Lago."
       Returning a wallet transaction object.
     </ResponseField>
   </Accordion>
+  <Accordion title="Wallet transaction updated">
+    Sent when a wallet transaction is updated. For example, when wallet transaction is marked as settled.
+
+    ```json
+    {
+      "webhook_type": "wallet_transaction.updated",
+      "object_type": "wallet_transaction",
+      "wallet_transaction": {
+        "lago_id": "773e24d0-28f3-4af5-b5c4-207557b0beeb",
+        "lago_wallet_id": "103f64c4-933b-467f-8786-dd3c0f6fab97",
+        "status": "settled",
+        "transaction_status": "purchased",
+        "transaction_type": "inbound",
+        "amount": "100.0",
+        "credit_amount": "100.0",
+        "settled_at": "2024-04-23T11:31:43Z",
+        "created_at": "2024-04-23T11:31:43Z"
+      }
+    }
+    ```
+    ### Arguments
+    <ResponseField name="wallet_transaction" type="JSON" required>
+      Returning a wallet transaction object.
+    </ResponseField>
+  </Accordion>
+  <Accordion title="Wallet - Depleted ongoing balance">
+    Sent when the ongoing balance is negative or equal to 0.
+
+    ```json
+    {
+      "webhook_type": "wallet.depleted_ongoing_balance",
+      "object_type": "wallet",
+      "wallet": {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "external_customer_id": "hooli_1234",
+        "status": "active",
+        "currency": "USD",
+        "name": "Prepaid",
+        "rate_amount": "1.0",
+        "credits_balance": "8.0",
+        "balance_cents": 800,
+        "consumed_credits": "0.0",
+        "created_at": "2022-04-29T08:59:51Z",
+        "expiration_at": "2023-11-07T05:31:56Z",
+        "last_balance_sync_at": "2022-04-29T08:59:51Z",
+        "last_consumed_credit_at": "2022-04-29T08:59:51Z",
+        "terminated_at": "2022-09-14T16:35:31Z",
+        "recurring_transaction_rules": [],
+        "ongoing_balance_cents": 0,
+        "ongoing_usage_balance_cents": 800,
+        "credits_ongoing_balance": "0.0",
+        "credits_ongoing_usage_balance": "8.0"
+      }
+    }
+    ```
+    ### Arguments
+    <ResponseField name="wallet" type="JSON" required>
+      Returning a wallet object.
+    </ResponseField>
+  </Accordion>
 </AccordionGroup>
 
 ## External payment providers
