@@ -3,3 +3,281 @@ title: "Clone OpenAI pricing"
 description:
   "Replicate OpenAI's per-token pricing model with Lago."
 ---
+
+In this article, you will learn how to build a billing system with Lago based on tokens.
+This template is suitable for Large Language Model (LLM) and Generative AI companies whose pricing can vary based on the application or model used.
+
+## Summary
+
+<Steps>
+  <Step title="Aggregate usage with filters">
+    Use single metric to meter tokens with different filters.
+    [(More here)](#step-1-aggregate-usage-with-filters).
+  </Step>
+  <Step title="Set up a per token pricing">
+    Create a plan to price packages of tokens used.
+    [(More here)](#step-2-set-up-a-per-token-pricing).
+  </Step>
+  <Step title="Ingest usage in real-time">
+    Retrieve consumed tokens in real-time.
+    [(More here)](#step-3-ingest-usage-in-real-time).
+  </Step>
+</Steps>
+
+## Pricing structure
+For OpenAI, pricing depends on the language model used. Here are several price points they offer:
+*"Prices are per 1,000 tokens. You can think of tokens as pieces of words, where 1,000 tokens is about 750 words (learn more [here](https://platform.openai.com/tokenizer))."*
+
+### GPT-3.5 Turbo pricing
+| Model      | Input      | Output      |
+|------------|------------|-------------|
+| 4K context | $0.0015 / 1,000 tokens | $0.002 / 1,000 tokens |
+| 16K context| $0.003 / 1,000 tokens  | $0.005 / 1,000 tokens |
+
+
+### GPT-4 pricing
+| Model       | Input                | Output               |
+|-------------|----------------------|----------------------|
+| 8K context  | $0.03 / 1,000 tokens | $0.06 / 1,000 tokens |
+| 32K context | $0.06 / 1,000 tokens | $0.12 / 1,000 tokens |
+
+
+## Step 1: Aggregate usage with filters
+Lago monitors usage by converting events into billable metrics. To illustrate how this works, we are going to take GPT-4 as an example. OpenAI’s GPT-4 pricing includes a single metric based on the total number of tokens processed on the platform.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To create the corresponding metric, we use the `sum` aggregation type, which will allow us to record usage and calculate the total number of tokens used. In this case, the aggregation type is **metered**. This means that usage is reset to 0 at the beginning of the next billing cycle.
+    For this metric, there are two dimensions that will impact the price of the token:
+    - **Model:** 8K context or 32K context; and
+    - **Type**: Input data or Output data.
+
+    Therefore, we propose integrating these two dimensions into our metric as **filters**:
+    - **Filter #1:** Distinguishes between various models utilized; and
+    - **Filter #2:** Separates input and output types.
+    By implementing these filters, we can assign distinct prices to a single metric, based on events' properties.
+
+    <iframe
+    width="560"
+    height="315"
+    src="https://youtu.be/ulLpAn8_P9o"
+    title="Clone OpenAI Pricing Model using Lago"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+  ></iframe>
+
+  </Tab>
+  <Tab title="API">
+    ```bash Create a metric with filters
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+        "billable_metric": {
+            "name": "Tokens",
+            "code": "tokens",
+            "description": "",
+            "aggregation_type": "sum_agg",
+            "weighted_interval": null,
+            "recurring": false,
+            "field_name": "total",
+            "filters": [
+                {
+                  "key": "model",
+                  "values": [
+                      "32k",
+                      "8k"
+                  ]
+                },
+                {
+                  "key": "type",
+                  "values": [
+                      "input",
+                      "output"
+                  ]
+                }
+            ]
+        }
+    }'
+    ```
+  </Tab>
+</Tabs>
+
+## Step 2: Set up a per token pricing
+When creating a new plan, the first step is to define the plan model, including billing frequency and subscription fee. OpenAI pricing is ‘pay-as-you-go’, which means that there’s no subscription fee (i.e. customers only pay for what they use).
+
+<Tabs>
+  <Tab title="Dashboard">
+    Here is how to set the monthly plan for GPT-4. Our plan includes the ‘per 1,000 tokens’ charge, for which we choose the `package` pricing model. 
+    As we have defined 2 filters (models and type), we can set a specific price for each Model/Type combination.
+    We can apply the same method to create plans for GPT-3.5 Turbo. Our plan is ready to be used, now let’s see how Lago handles billing by ingesting usage.
+
+    <iframe
+    width="560"
+    height="315"
+    src="https://youtu.be/ulLpAn8_P9o"
+    title="Clone OpenAI Pricing Model using Lago"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+  ></iframe>
+
+  </Tab>
+  <Tab title="API">
+    ```bash Pricing per tokens
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+        "plan": {
+            "name": "Pay as you go",
+            "invoice_display_name": null,
+            "code": "payg",
+            "interval": "monthly",
+            "description": "",
+            "amount_cents": 0,
+            "amount_currency": "USD",
+            "trial_period": 0.0,
+            "pay_in_advance": false,
+            "charges": [
+              {
+                "billable_metric_id": "488459e1-f971-42b9-9a6b-63f0719f9006",
+                "invoice_display_name": null,
+                "billable_metric_code": "tokens",
+                "charge_model": "package",
+                "invoiceable": true,
+                "pay_in_advance": false,
+                "prorated": false,
+                "min_amount_cents": 0,
+                "properties": {
+                  "amount": "0",
+                  "free_units": 0,
+                  "package_size": 1
+                },
+                "filters": [
+                  {
+                    "invoice_display_name": null,
+                    "properties": {
+                        "amount": "0.03",
+                        "free_units": 0,
+                        "package_size": 1000
+                    },
+                    "values": {
+                        "model": ["8k"],
+                        "type": ["input"]
+                    }
+                  },
+                  {
+                    "invoice_display_name": null,
+                    "properties": {
+                        "amount": "0.06",
+                        "free_units": 0,
+                        "package_size": 1000
+                    },
+                    "values": {
+                        "model": ["8k"],
+                        "type": ["output"]
+                    }
+                  },
+                  {
+                    "invoice_display_name": null,
+                    "properties": {
+                        "amount": "0.06",
+                        "free_units": 0,
+                        "package_size": 1000
+                    },
+                    "values": {
+                        "model": ["32k"],
+                        "type": ["input"]
+                    }
+                  },
+                  {
+                      "invoice_display_name": null,
+                      "properties": {
+                          "amount": "0.12",
+                          "free_units": 0,
+                          "package_size": 1000
+                      },
+                      "values": {
+                          "model": ["32k"],
+                          "type": ["output"]
+                      }
+                  }
+                ],
+                "taxes": []
+              }
+            ],
+            "taxes": []
+        }
+    }
+    '
+
+    ```
+  </Tab>
+</Tabs>
+
+## Step 3: Ingest usage in real-time
+<Tabs>
+  <Tab title="Dashboard">
+    OpenAi records the token usage, the number of images, and the usage of transcribing speech into text. These activities are converted into events that are pushed to Lago.
+    Let’s take GPT-4 as an example:
+    Lago will group events according to:
+
+    - The billable metric code;
+    - The model; and
+    - The type.
+
+    <Frame>
+      <img src="/templates/images/tokens-usage.png" />
+    </Frame>
+    
+    For each charge, the billing system will then automatically calculate the total token usage and corresponding price. 
+    This breakdown will be displayed in the ‘Usage’ tab of the user interface and on the invoice sent to the customer.
+
+    <iframe
+    width="560"
+    height="315"
+    src="https://youtu.be/ulLpAn8_P9o"
+    title="Clone OpenAI Pricing Model using Lago"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+  ></iframe>
+  </Tab>
+  <Tab title="API">
+    ```bash Ingest tokens usage via events
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/events" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "event": {
+          "transaction_id": "{{$randomUUID}}",
+          "code": "tokens",
+          "external_customer_id": "__YOUR_CUSTOMER_ID__",
+          "external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
+          "properties": {
+            "total": 5000,
+            "model": "8k",
+            "type": "input"
+          }
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+## Wrap-up
+Per-token pricing offers flexibility and visibility, and allows LLM and Generative AI companies like OpenAI to attract more customers.
+With Lago, you can create your own metric dimensions to adapt this template to your products and services.
+
+Give it a try, click [here](https://www.getlago.com/get-started) to get started!
