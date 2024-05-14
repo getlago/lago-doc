@@ -113,6 +113,31 @@ await client.events.createBatchEvents({ events: batchEvent });
 
 ```
 
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+  ctx := context.Background()
+  lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+
+  event := lago.EventInput{
+    TransactionID:          "__UNIQUE_TRANSACTION_ID__",
+    ExternalSubscriptionID: "__UNIQUE_SUBSCRIPTION_ID__",
+    Code:                   "__BILLABLE_METRIC_CODE__",
+    Timestamp:              strconv.FormatInt(time.Now().Unix(), 10),
+    Properties: map[string]interface{}{
+      "nbusers": "12",
+    },
+  }
+
+  batchInput := make([]lago.EventInput, 1)
+  batchInput[0] = event
+
+  res, err := lagoClient.Event().Batch(ctx, &batchInput)
+}
+```
+
 ```csharp C#
 using System.Collections.Generic;
 using System.Diagnostics;
