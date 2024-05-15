@@ -80,24 +80,26 @@ import "fmt"
 import "github.com/getlago/lago-go-client"
 
 func main() {
-lagoClient := lago.New().
-    SetApiKey("__YOUR_API_KEY__")
+	ctx := context.Background()
+	lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
 
-eventInput := &lago.EventInput{
-    TransactionID: "__UNIQUE_TRANSACTION_ID__",
-    ExternalSubscriptionID: "__UNIQUE_SUBSCRIPTION_ID__",
-    Code:          "__BILLABLE_METRIC_CODE__",
-    Timestamp:     time.Now().Unix(),
-    Properties: map[string]string{
-            "nbusers": "12",
-        },
-}
+	eventInput := &lago.EventInput{
+		TransactionID:          "__UNIQUE_TRANSACTION_ID__",
+		ExternalSubscriptionID: "__UNIQUE_SUBSCRIPTION_ID__",
+		Code:                   "__BILLABLE_METRIC_CODE__",
+		Timestamp:              strconv.FormatInt(time.Now().Unix(), 10),
+		Properties: map[string]interface{}{
+			"nbusers": "12",
+		},
+	}
 
-err := lagoClient.Event().Create(eventInput)
-if err != nil {
-    // Error is *lago.Error
-    panic(err)
-}
+	res, err := lagoClient.Event().Create(ctx, eventInput)
+	if err != nil {
+		// err is *lago.Error
+		panic(err)
+	}
+	// res is *lago.Event
+	fmt.Println(*res)
 }
 ```
 
