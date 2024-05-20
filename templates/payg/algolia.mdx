@@ -3,3 +3,278 @@ title: "Clone Algolia pricing"
 description:
   "Replicate Algolia's pay-as-you-go pricing model with Lago."
 ---
+
+In this article, you will learn how to build a ‘pay-as-you-go’ billing system.
+This template is suitable for companies whose pricing fully depends on usage, such as cloud service providers and API companies, that only charge their customers for the resources they consume.
+
+## Summary
+
+<Steps>
+  <Step title="Aggregate usage to compute number of requests">
+    Create a billable metric to track request usage.
+    [(More here)](#step-1-aggregate-usage-with-filters).
+  </Step>
+  <Step title="Create a plan with multiple charges">
+    Set up a package pricing model.
+    [(More here)](#step-2-set-up-a-per-token-pricing).
+  </Step>
+  <Step title="Offer volume and commitment discounts">
+    Leverage subscriptions for a reduced price.
+    [(More here)](#step-3-ingest-usage-in-real-time).
+  </Step>
+</Steps>
+
+
+## Pricing structure
+For its two main products, Algolia Search and Algolia Recommend, the platform offers its customers to subscribe for free and only pay based on usage.
+
+| Model      | Search API     | Recommend API      |
+|------------|------------|-------------|
+| Monthly price | $1.50 / 1,000 requests | $0.60 / 1,000 requests |
+| Free usage (each month)| 10,000 requests  | 10,000 requests |
+
+Although users don’t need to subscribe to access the platform, Algolia offers its customers **discounts** based on volume and commitment (rates available upon request).
+We are going to teach you how to replicate this pricing with our billing solution.
+
+
+## Step 1: Aggregate usage to compute number of requests
+Lago monitors consumption by converting events into billable metrics. For Algolia, there would be two billable metrics based on the number of requests for the Search and Recommendation APIs.
+As the platform handles **high volumes of requests**, it would be inefficient to create an event each time a request is made. Instead, Algolia could simply send an event once an hour or hour a day with the total number of requests.
+
+
+<Tabs>
+  <Tab title="Dashboard">
+    Through the user interface, we have created two billable metrics called **‘Search requests’** and **‘Recommend requests’**. For these metrics, we use the ‘sum’ aggregation type based on the volume of requests.
+    At the end of the billing period, Lago will calculate the sum of requests for each metric using the value of each event (i.e. the event property) and reset the amount to 0 as the aggregation type is metered.
+
+    <Frame>
+    <img src="/templates/images/algolia-aggregate-requests.png" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+  ```bash Create billable metrics
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billable_metric": {
+          "name": "Search Requests",
+          "code": "search_requests",
+          "description": "Requests made via the Search API",
+          "aggregation_type": "sum_agg",
+          "weighted_interval": null,
+          "recurring": false,
+          "field_name": "search_requests_volume",
+          "filters": []
+        }
+      }
+ 
+  ```
+  </Tab>
+</Tabs>
+
+## Step 2: Create a plan with multiple charges
+Now that we have all our billable metrics, we can replicate Algolia’s pricing. As this is a ‘pay-as-you-go’ plan, there is no subscription fee. In the plan settings, we can simply define a monthly billing period and then add our charges.
+
+<Tabs>
+  <Tab title="Dashboard">
+    For both charges, we use the **package pricing model**. This model allows us to create packages of units and define a unique package price. Customers will be charged for usage based on packages of 1,000 requests. Algolia offers 10,000 requests for free each month, for both APIs. Beyond this limit, each ‘opened’ package is due, which means that 800 Search requests cost the same price as 1,000 requests (i.e. $1.50).
+    At the end of each billing period (i.e. each month), Lago will automatically invoice each customer according to their consumption, then all counts and calculations will be reset to zero for the next period.
+
+    <Frame>
+      <img src="/templates/images/algolia-package-pricing.png" />
+    </Frame>
+  </Tab>
+
+  <Tab title="API">
+  ```bash Create a plan with multiple charges
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+       "plan": {
+            "name": "Algolia Starter",
+            "code": "algolia_starter",
+            "interval": "monthly",
+            "amount_cents": 0,
+            "amount_currency": "USD",
+            "trial_period": 0.0,
+            "pay_in_advance": false,
+            "charges": [
+                {
+                    "lago_billable_metric_id": "15879740-102e-43bd-a6bc-15d865bb1b85",
+                    "billable_metric_code": "search_requests",
+                    "charge_model": "package",
+                    "invoiceable": true,
+                    "pay_in_advance": false,
+                    "prorated": false,
+                    "min_amount_cents": 0,
+                    "properties": {
+                        "amount": "1.50",
+                        "free_units": 10000,
+                        "package_size": 1000
+                    },
+                    "filters": [],
+                    "taxes": []
+                }
+            ],
+        }
+      }
+
+
+
+  ```
+    </Tab>
+</Tabs>
+
+
+## Step 3: Offer volume and commitment discounts through subscriptions
+
+_“When committing to the equivalent of 100 Search units per month or more, you automatically unlock a discount compared to PAYGO. Please contact sales for more information.”_
+
+Algolia doesn't provide much information about their volume and commitment discounts but we know that customers who commit to making at least 100,000 Search requests per month (for Algolia, a “Search unit” is a package of 1,000 requests) can benefit from a **reduced price**.
+We are going to make some assumptions to see how we could implement this logic.
+
+
+If we want to keep our package pricing model, we should convert the commitment part of our plan into a **subscription**. 
+
+<Tabs>
+  <Tab title="Dashboard">
+    With the standard pricing, 100,000 requests would be charged \$150 (i.e. 100 packages of 1,000 requests at \$1.50 each). Since we want to offer a discount to our customers, we can create a new plan with a monthly subscription of \$120, paid in advance. Then, we set the package price for 1000 requests at \$1.20. Also, we include 100,000 free units, which are covered by the subscription fee.
+
+  <Frame>
+    <img src="/templates/images/algolia-subscription.png" />
+  </Frame>
+
+  </Tab>
+  
+  <Tab title="API">
+  ```bash Introduce a subscription
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+          "plan": {
+            "name": "Algolia committed",
+            "code": "algolia_committed",
+            "interval": "monthly",
+            "amount_cents": 12000,
+            "amount_currency": "USD",
+            "trial_period": 0.0,
+            "pay_in_advance": true,
+            "charges": [
+                {
+                    "lago_billable_metric_id": "15879740-102e-43bd-a6bc-15d865bb1b85",
+                    "billable_metric_code": "search_requests",
+                    "charge_model": "package",
+                    "invoiceable": true,
+                    "pay_in_advance": false,
+                    "prorated": false,
+                    "min_amount_cents": 0,
+                    "properties": {
+                        "amount": "1.20",
+                        "free_units": 10000,
+                        "package_size": 1000
+                    },
+                    "filters": [],
+                    "taxes": []
+                }
+            ],
+            "taxes": []
+        }
+
+  ```
+  </Tab>
+</Tabs>
+
+
+Another option would be to drop the package pricing model and use the **graduated pricing model**. This model would allow us to create several tiers with different unit prices. 
+
+
+
+<Tabs>
+  <Tab title="Dashboard">
+    For the first 100,000 requests included in the subscription, we set a flat fee of $0 and then apply a decreasing unit price to offer a volume discount.
+
+  <Frame>
+    <img src="/templates/images/algolia-volume-discount.png" />
+  </Frame>
+
+  </Tab>
+  
+  <Tab title="API">
+  ```bash Implement volume discount
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "plan": {
+            "name": "Algolia committed",
+            "code": "algolia_committed",
+            "interval": "monthly",
+            "amount_cents": 12000,
+            "amount_currency": "USD",
+            "trial_period": 0.0,
+            "pay_in_advance": true,
+            "charges": [
+                {
+                    "lago_billable_metric_id": "15879740-102e-43bd-a6bc-15d865bb1b85",
+                    "billable_metric_code": "search_requests",
+                    "charge_model": "graduated",
+                    "invoiceable": true,
+                    "pay_in_advance": false,
+                    "prorated": false,
+                    "min_amount_cents": 0,
+                    "properties": {
+                        "graduated_ranges": [
+                            {
+                                "to_value": 100000,
+                                "from_value": 0,
+                                "flat_amount": "0",
+                                "per_unit_amount": "0"
+                            },
+                            {
+                                "to_value": 150000,
+                                "from_value": 100001,
+                                "flat_amount": "0",
+                                "per_unit_amount": "0.0011"
+                            },
+                            {
+                                "to_value": null,
+                                "from_value": 150001,
+                                "flat_amount": "0",
+                                "per_unit_amount": "0.001"
+                            }
+                        ]
+                    },
+                    "filters": [],
+                    "taxes": []
+                }
+            ],
+            "taxes": []
+        }
+
+  ```
+  </Tab>
+</Tabs>
+
+
+
+## Wrap-up
+‘Pay-as-you-go’ pricing strategies are popular among API companies like Algolia.
+With Lago, you can adapt this template to your products and services, using some of our most popular features:
+
+1. **Plan models**, with or without subscription;‍
+2. **Billable metrics**, including the ‘sum’ aggregation type; and‍
+3. **Charges**, including our package and graduated pricing models.
+
+Give it a try, click [here](https://www.getlago.com/get-started) to get started!
