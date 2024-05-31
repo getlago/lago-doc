@@ -4,11 +4,70 @@ description:
   "Lago seamlessly integrates with NetSuite, enabling real-time synchronization of billing data with your preferred accounting tool."
 ---
 
+<Info>
+**PREMIUM ADD-ON** ✨
+
+This integration is available upon request only. Please **[contact us](mailto:hello@getlago.com)** to get access to this premium integration.
+</Info>
+
 ## RestLET script configuration
+Lago's native integration with NetSuite utilizes a [custom RESTlet script](https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4618456517.html) to provide maximum flexibility in fetching or pushing billing data. To set up the Lago RESTlet script in your NetSuite instance, follow these steps:
+
+- **Install `ramda.min.js`**: this library is mandatory for using Lago's script. Ensure it is installed in your NetSuite instance;
+- Create a new script in NetSuite: navigate to **Customization > Scripting > Scripts > Create a New Script**;
+- **Paste the script provided by your Lago Account Manager** into the new script; and
+- **Deploy the Script**: after creating the script, deploy it within NetSuite.
+
+By deploying this script, you'll generate a custom endpoint that is crucial for the authentication process and enables seamless data synchronization between Lago and NetSuite.
 
 ## Connecting Lago to NetSuite
+To fully integrate Lago with NetSuite, start by connecting your Lago instance to a new NetSuite connection. 
+You can have an unlimited number of NetSuite connections. First, link your NetSuite account to Lago. 
+Once connected, activate the specific syncs and actions required for your use case. 
+This ensures that your Lago instance is properly configured to communicate with NetSuite, enabling seamless data synchronization and management.
+
+### Create an oAuth app in NetSuite
+After logging into your NetSuite account, navigate to **Setup > Integration > Manage Integrations > New**. 
+Enter the required integration details and follow these steps:
+
+- Under Authentication, select **Token-based Authentication**;
+- Enable the scopes for `RESTlets` and `REST Web Services`; and
+- Save you new oAuth integration.
+
+The Client Credentials will be displayed. Copy the Consumer Key/Client ID and Consumer Secret/Client Secret and save them in a secure document for future reference, as this information will not be accessible once you leave the screen.
+
+### Authentication flow
+The authentication process connects Lago and NetSuite through OAuth2. 
+To establish this connection, you need to provide the following mandatory fields:
+
+- **Connection Name:** an internal name for the connection within Lago;
+- **Unique Connection Code:** an internal code for the connection within Lago;
+- **NetSuite Account ID:** your NetSuite [account identifier](https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_1498754928.html#:~:text=You%20can%20find%20your%20NetSuite,an%20underscore%2C%20for%20example%20123456_RP.);
+- **NetSuite Client ID:** the [client ID](/integrations/accounting/netsuite#create-an-oauth-integration-in-netsuite) from your NetSuite account;
+- **NetSuite Client Secret:** the [client secret](/integrations/accounting/netsuite#create-an-oauth-integration-in-netsuite) from your NetSuite account;
+- **Custom RESTlet Endpoint:** The endpoint created from the [custom RESTlet script](/integrations/accounting/netsuite#restlet-script-configuration).
+
+### Enable actions and syncs
+Here is a list of syncs and actions that Lago uses with NetSuite. Some are mandatory, while others are optional:
+
+- `Accounts`: Fetch account data from NetSuite *(mandatory)*;
+- `Customers`: Syncs or fetch customer data from NetSuite *(mandatory)*;
+- `Items` and `Tax Items`: Fetch item and tax item data from NetSuite *(mandatory)*;
+- `Invoices`: Syncs invoice data to NetSuite *(mandatory)*;
+- `Sales Orders`: Syncs sales order data to NetSuite *(optional)*;
+- `Credit Notes`: Syncs credit note data to NetSuite *(optional)*; and
+- `Payments`: Syncs payment data to NetSuite *(optional)*.
+
 
 ## Mapping items between Lago and NetSuite
+
+### Mapping a fallback item (mandatory)
+
+### Mapping a tax item (mandatory)
+
+### Mapping default objects
+
+### Mapping custom objects
 
 ## Customers synchronization
 
