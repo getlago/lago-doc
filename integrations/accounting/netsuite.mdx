@@ -10,7 +10,7 @@ description:
 This integration is available upon request only. Please **[contact us](mailto:hello@getlago.com)** to get access to this premium integration.
 </Info>
 
-## RestLET script configuration
+## RESTlet script configuration
 Lago's native integration with NetSuite utilizes a [custom RESTlet script](https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4618456517.html) to provide maximum flexibility in fetching or pushing billing data. To set up the Lago RESTlet script in your NetSuite instance, follow these steps:
 
 - **Install `ramda.min.js`**: this library is mandatory for using Lago's script. Ensure it is installed in your NetSuite instance;
@@ -123,8 +123,53 @@ This mapping follows a one-to-one structure, meaning each billable metric or add
 
 
 ## Customers synchronization
+When creating or updating a Lago customer, you can choose to link it to a NetSuite customer.
+
+The first option is to **automatically create a new customer from Lago to NetSuite**. Follow these steps:
+1. Create or update a new Lago customer;
+2. Select the targeted NetSuite connection;
+3. Check the box labeled 'Create this customer automatically in NetSuite';
+4. Choose a NetSuite subsidiary from the list (Lago will fetch the list of subsidiaries from your NetSuite instance); and
+5. Save and create this new customer.
+
+If the customer is successfully created in NetSuite, a new field will be displayed in the Lago customer view, providing a direct link to the corresponding NetSuite customer.
+
+<Info>
+Customer creation from Lago to NetSuite happens in real-time with only a few seconds of delay.
+</Info>
+
+
+<Frame caption="Lago customer integrated with NetSuite">
+  <img src="integrations/images/sync-customers-netsuite.png" />
+</Frame>
+
+The second option is to **import an existing NetSuite customer to a Lago customer**. Follow these steps:
+1. Create or update a Lago customer;
+2. Select the targeted NetSuite connection;
+3. Ensure the box labeled 'Create this customer automatically in NetSuite' is unchecked;
+4. Paste the NetSuite customer ID in the appropriate field; and
+5. Save and create this new customer.
 
 ## Invoices synchronization
+If a Lago customer is linked to a NetSuite customer, Lago syncs invoices to NetSuite in real-time.
+
+It's important to note the following:
+- Each fee issued by Lago is synced as a line item on a NetSuite invoice;
+- The Lago fee `units` are synced to NetSuite as `quantity`;
+- The Lago fee `precise_unit_amount` is synced to NetSuite as `rate`;
+- Lago overrides the total tax amount of a NetSuite invoice using the tax item, as NetSuite does not support tax details at the line item level; and
+- Any discounts on an invoice (coupon, credit note, or prepaid credits) are synced as negative line items on the NetSuite invoice.
+
+If the invocie is successfully created in NetSuite, a new field will be displayed in the Lago invoice view, providing a direct link to the corresponding NetSuite invoice.
+
+<Info>
+Invoice creation from Lago to NetSuite happens in real-time with only a few seconds of delay.
+</Info>
+
+<Frame caption="Sync Lago invoices to NetSuite">
+  <img src="integrations/images/sync-invoices-netsuite.png" />
+</Frame>
+
 
 ## Sales Orders synchronization
 
