@@ -150,6 +150,18 @@ The second option is to **import an existing NetSuite customer to a Lago custome
 4. Paste the NetSuite customer ID in the appropriate field; and
 5. Save and create this new customer.
 
+**Here is the list of fields that is currently synced to NetSuite:**
+| Lago | NetSuite |
+| --- | --- |
+| customer | type |
+| customer.name | companyname |
+| customer.netsuite_subsidiary | subsidiary |
+| customer.id | custbody_lago_id |
+| customer.email | email |
+| customer.phone | phone |
+| customer.external_salesforce_id | custentity_lago_sf_id |
+
+
 ## Invoices synchronization
 If a Lago customer is linked to a NetSuite customer, Lago syncs invoices to NetSuite Invoices in real-time.
 
@@ -170,11 +182,42 @@ Invoice creation from Lago to NetSuite happens in real-time with only a few seco
   <img src="integrations/images/sync-invoices-netsuite.png" />
 </Frame>
 
+**Here is the list of fields that is currently synced to NetSuite:**
+| Lago | NetSuite |
+| --- | --- |
+| invoice | type |
+| invoice.lago_id | tranid |
+| customer.netsuite_internal_id | entity |
+| true | istaxable |
+| taxitem.id | taxitem |
+| invoice.taxes_amount_cents | taxamountoverride |
+| invoice.number | otherrefnum |
+| invoice.lago_id | custbody_lago_id |
+| invoice.fee.id | lineItems.item |
+| invoice.fee.account_code | lineItems.account |
+| invoice.fee.units | lineItems.quantity |
+| invoice.fee.precise_unit_amount | lineItems.rate |
 
 ## Sales Orders synchronization
 If a Lago customer is linked to a NetSuite customer and the Sales Orders action is enabled in your Lago-NetSuite connection, Lago syncs invoices to NetSuite Sales Orders in real-time.
 
 Note that the same fields used to sync invoices are also used to sync sales orders.
+
+**Here is the list of fields that is currently synced to NetSuite:**
+| Lago | NetSuite |
+| --- | --- |
+| salesorder | type |
+| invoice.lago_id | tranid |
+| customer.netsuite_internal_id | entity |
+| true | istaxable |
+| taxitem.id | taxitem |
+| invoice.taxes_amount_cents | taxamountoverride |
+| invoice.number | otherrefnum |
+| invoice.lago_id | custbody_lago_id |
+| invoice.fee.id | lineItems.item |
+| invoice.fee.account_code | lineItems.account |
+| invoice.fee.units | lineItems.quantity |
+| invoice.fee.precise_unit_amount | lineItems.rate |
 
 ## Credit Notes synchronization
 If a Lago customer is linked to a NetSuite customer, Lago syncs credit notes to NetSuite Credit Memos in real-time.
@@ -190,5 +233,29 @@ If the credit note is successfully created in NetSuite, a new field will be disp
 Credit note creation from Lago to NetSuite happens in real-time with only a few seconds of delay.
 </Info>
 
+**Here is the list of fields that is currently synced to NetSuite:**
+| Lago | NetSuite |
+| --- | --- |
+| creditmemo | type |
+| invoice.lago_id | tranid |
+| customer.netsuite_internal_id | entity |
+| true | istaxable |
+| taxitem.id | taxitem |
+| invoice.taxes_amount_cents | taxamountoverride |
+| invoice.number | otherrefnum |
+| invoice.lago_id | custbody_lago_id |
+| invoice.fee.id | lineItems.item |
+| invoice.fee.account_code | lineItems.account |
+| invoice.fee.units | lineItems.quantity |
+| invoice.fee.precise_unit_amount | lineItems.rate |
+
 ## Payments synchronization
 If a Lago invoice is tied to a NetSuite invoice, Lago automatically syncs payments occurring in Lago to NetSuite, updating in-real time the payment status of the invoice in NetSuite.
+
+| Lago | NetSuite |
+| --- | --- |
+| customerpayment | type |
+| customer.netsuite_internal_id | customer |
+| invoice.netsuite_internal_id | lineItems.doc |
+| true | lineItems.apply |
+| invoice.total_amount_cents | lineItems.amount |
