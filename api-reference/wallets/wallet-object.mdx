@@ -6,39 +6,42 @@ description: "This object represents a wallet, holding free or prepaid credits."
 <RequestExample>
   ```json The wallet object
   {
-  "wallet": {
-    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-    "external_customer_id": "hooli_1234",
-    "status": "active",
-    "currency": "USD",
-    "name": "Prepaid",
-    "rate_amount": "1.5",
-    "credits_balance": "28.0",
-    "balance_cents": 1000,
-    "consumed_credits": "2.0",
-    "created_at": "2022-04-29T08:59:51Z",
-    "expiration_at": null,
-    "last_balance_sync_at": "2022-04-29T08:59:51Z",
-    "last_consumed_credit_at": "2022-04-29T08:59:51Z",
-    "terminated_at": "2022-09-14T16:35:31Z",
-    "recurring_transaction_rules": [
-      {
-        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-        "trigger": "interval",
-        "interval": "monthly",
-        "threshold_credits": "20.0",
-        "paid_credits": "20.0",
-        "granted_credits": "10.0",
-        "created_at": "2022-04-29T08:59:51Z"
-      }
-    ],
-    "ongoing_balance_cents": 800,
-    "ongoing_usage_balance_cents": 200,
-    "credits_ongoing_balance": "8.0",
-    "credits_ongoing_usage_balance": "2.0"
+    "wallet": {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "external_customer_id": "hooli_1234",
+      "status": "active",
+      "currency": "USD",
+      "name": "Prepaid",
+      "rate_amount": "1.5",
+      "credits_balance": "28.0",
+      "balance_cents": 1000,
+      "consumed_credits": "2.0",
+      "created_at": "2022-04-29T08:59:51Z",
+      "expiration_at": null,
+      "last_balance_sync_at": "2022-04-29T08:59:51Z",
+      "last_consumed_credit_at": "2022-04-29T08:59:51Z",
+      "terminated_at": "2022-09-14T16:35:31Z",
+      "recurring_transaction_rules": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "trigger": "interval",
+          "method": "target",
+          "interval": "monthly",
+          "threshold_credits": "20.0",
+          "paid_credits": "20.0",
+          "granted_credits": "10.0",
+          "started_at": "2022-08-08T00:00:00Z",
+          "target_ongoing_balance": "200.0",
+          "created_at": "2022-04-29T08:59:51Z"
+        }
+      ],
+      "ongoing_balance_cents": 800,
+      "ongoing_usage_balance_cents": 200,
+      "credits_ongoing_balance": "8.0",
+      "credits_ongoing_usage_balance": "2.0"
+    }
   }
-}
   ```
 </RequestExample>
 
@@ -108,13 +111,18 @@ description: "This object represents a wallet, holding free or prepaid credits."
       List of recurring transaction rules. Currently, we only allow one
       recurring rule per wallet.
       <Expandable title="array">
-        <ResponseField name="created_at" type="string">
-          The date of the recurring rule creation, represented in ISO 8601
-          datetime format and expressed in Coordinated Universal Time (UTC).
+        <ResponseField name="lago_id" type="string">
+          Unique identifier assigned to the recurring rule within a wallet in
+          the Lago application. This ID is exclusively created by Lago and
+          serves as a unique identifier for the recurring rule record within the
+          Lago system.
         </ResponseField>
-        <ResponseField name="granted_credits" type="string">
-          The number of free granted credits. Required only if there is no paid
-          credits.
+        <ResponseField name="trigger" type="string">
+          The rule type. Possible values are `interval` or `threshold`.
+        </ResponseField>
+        <ResponseField name="method" type="string">
+          The method used for recurring top-up. Possible values are `fixed` or
+          `target`.
         </ResponseField>
         <ResponseField name="interval" type="string">
           The interval used for recurring top-up. It represents the frequency at
@@ -122,25 +130,34 @@ description: "This object represents a wallet, holding free or prepaid credits."
           following values: `weekly`, `monthly`, `quarterly` or `yearly`.
           Required only when rule type is `interval`.
         </ResponseField>
-        <ResponseField name="lago_id" type="string">
-          Unique identifier assigned to the recurring rule within a wallet in
-          the Lago application. This ID is exclusively created by Lago and
-          serves as a unique identifier for the recurring rule record within the
-          Lago system.
-        </ResponseField>
-        <ResponseField name="paid_credits" type="string">
-          The number of paid credits. Required only if there is no granted
-          credits.
-        </ResponseField>
-        <ResponseField name="trigger" type="string">
-          The rule type. Possible values are `interval` or `threshold`.
-        </ResponseField>
         <ResponseField name="threshold_credits" type="string">
           The threshold for recurring top-ups is the value at which an automatic
           top-up is triggered. For example, if this threshold is set at 10
           credits, an automatic top-up will occur whenever the wallet balance
           falls to or below 10 credits. Required only when rule type is set to
           `threshold`.
+        </ResponseField>
+        <ResponseField name="paid_credits" type="string">
+          The number of paid credits. Required only if there is no granted
+          credits.
+        </ResponseField>
+        <ResponseField name="granted_credits" type="string">
+          The number of free granted credits. Required only if there is no paid
+          credits.
+        </ResponseField>
+        <ResponseField name="started_at" type="string">
+          The effective start date for recurring top-ups. This date should be
+          provided in ISO 8601 datetime format and expressed in Coordinated
+          Universal Time (UTC).
+        </ResponseField>
+        <ResponseField name="target_ongoing_balance" type="string">
+          The target ongoing balance is the value set for the ongoing balance to
+          be reached by the automatic top-up. Required only when trigger is set
+          to `target`.
+        </ResponseField>
+        <ResponseField name="created_at" type="string">
+          The date of the recurring rule creation, represented in ISO 8601
+          datetime format and expressed in Coordinated Universal Time (UTC).
         </ResponseField>
       </Expandable>
     </ResponseField>

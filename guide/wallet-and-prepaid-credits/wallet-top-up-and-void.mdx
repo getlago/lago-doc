@@ -78,7 +78,15 @@ You can deduct a specific number of credits from the wallet's balance. Note that
 
 ## Setup recurring top-ups
 
-When creating or editing a wallet, you have the option to enable recurring top-ups based on either an `interval` or a `threshold` trigger.
+When creating or editing a wallet, you have the option to enable recurring top-ups. Two methods for recurring top-ups are available: `fixed` and `target`. These can be triggered either based on an `interval` or a `threshold`.
+
+### Fixed recurring top-up
+
+A fixed recurring top-up allows you to add a predetermined number of credits to your wallet, either for purchasing or gifting.
+
+### Target recurring top-up
+
+A target recurring top-up allows you to add a variable amount of credits to your wallet to reach a specific target balance. The top-up amount is determined by the ongoing balance at the trigger moment and the desired target balance.
 
 ### Interval trigger
 
@@ -91,10 +99,6 @@ Once the interval is defined, the system will automatically perform a top-up:
 - Quarterly, on the same date every three months (e.g., every 2nd of the quarter).
 - Yearly, on the same date every year (e.g., every 2nd of January).
 
-<Info>
-  The reference day for the top-up is determined by the wallet creation date.
-</Info>
-
 <Tabs>
   <Tab title="Dashboard">
     To setup a `interval` recurring top-up through the user interface:
@@ -102,6 +106,7 @@ Once the interval is defined, the system will automatically perform a top-up:
     2. Trigger on the option `Activate recurring top-up`
     3. Select `interval` as recurring type
     4. Define your interval
+    5. Define when the rule should start
   </Tab>
   <Tab title="API">
     ```bash Setup an interval recurring top-up
@@ -116,14 +121,18 @@ Once the interval is defined, the system will automatically perform a top-up:
           "external_customer_id": "hooli_1234",
           "name": "Prepaid credits",
           "rate_amount": "1.0",
-          "paid_credits": "100.0",
-          "granted_credits": "50.0",
+          "paid_credits": "0.0",
+          "granted_credits": "0.0",
           "currency": "USD",
           "expiration_at": "2022-07-07",
           "recurring_transaction_rules": [
             {
-              "rule_type": "interval",
-              "interval": "weekly"
+              "method": "fixed"
+              "trigger": "interval",
+              "interval": "weekly",
+              "started_at": null,
+              "paid_credits": "100.0",
+              "granted_credits": "0.0"
             }
           ]
         }
@@ -164,8 +173,11 @@ With a `threshold` trigger, set a specific number of `credits` that will trigger
           "expiration_at": "2022-07-07",
           "recurring_transaction_rules": [
             {
-              "rule_type": "threshold",
+              "method": "fixed"
+              "trigger": "threshold",
               "threshold_credits": "100.0"
+              "paid_credits": "100.0",
+              "granted_credits": "0.0"
             }
           ]
         }
