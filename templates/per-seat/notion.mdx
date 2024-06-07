@@ -1,69 +1,66 @@
 ---
 title: "Clone Notion pricing"
-description:
-  "Replicate Notion's per-seat pricing model with Lago."
+description: "Replicate Notion's per-seat pricing model with Lago."
 ---
-
 
 Set up a per-user (or 'per-seat) pricing like [Notion](https://www.notion.so/product), the collaboration software for innovative teams, including plans based on the number of users and prepaid credits.
 
-In this article, you will learn how to build a ‘fair’ billing system, with charges calculated according to the number of days of use.
+In this article, you will learn how to build a 'fair' billing system, with charges calculated according to the number of days of use.
 
 This template is suitable for companies whose pricing depends on persistent metrics, such as productivity software (e.g. number of days users are active), fintechs (e.g. number of days payment cards are active) and data platforms (e.g. number of days integrations are active).
-
 
 ## Summary
 
 <Steps>
   <Step title="Create recurring metrics">
-    Create a billable metric to track user activity.
-    [(More here)](#step-1-create-recurring-metrics).
+    Create a billable metric to track user activity. [(More
+    here)](#step-1-create-recurring-metrics).
   </Step>
   <Step title="Set up a 'fair' pricing model">
-    Set up prorata pricing for a pay-as-you-go plan.
-    [(More here)](#step-2-set-up-a-fair-pricing-model).
+    Set up prorata pricing for a pay-as-you-go plan. [(More
+    here)](#step-2-set-up-a-fair-pricing-model).
   </Step>
   <Step title="Offer credits to your customers">
-    Create a wallet to assign credits.
-    [(More here)](#step-3-offer-credits-to-your-customers).
+    Create a wallet to assign credits. [(More
+    here)](#step-3-offer-credits-to-your-customers).
   </Step>
 </Steps>
 
-
 ## Pricing structure
+
 Notion offers a Personal Pro plan for individuals who want to collaborate with friends or clients, and a Team plan through which members can set up a collaborative workspace. While the Personal Pro plan is limited to one member, the Team plan allows companies to invite as many members as they need.
 
-| Model      | Personal Pro plan     | Team plan      |
-|------------|------------|-------------|
-| Pages and blocks | Unlimited | Unlimited |
-| Members| Just one  | Unlimited |
-| Guests| Unlimited | Unlimited |
-| File uploads| Unlimited  | Unlimited |
-| Collaborative workspace| No  | Yes |
-| Price| $5 billed monthly  | $10 per user billed monthly|
+| Model                   | Personal Pro plan | Team plan                   |
+| ----------------------- | ----------------- | --------------------------- |
+| Pages and blocks        | Unlimited         | Unlimited                   |
+| Members                 | Just one          | Unlimited                   |
+| Guests                  | Unlimited         | Unlimited                   |
+| File uploads            | Unlimited         | Unlimited                   |
+| Collaborative workspace | No                | Yes                         |
+| Price                   | $5 billed monthly | $10 per user billed monthly |
 
 In its FAQ section, Notion explains how adding and removing members work:
 
-_“If you added members, your account will be charged a prorated amount based on the percentage of the billing cycle left at the time each member was added. If you removed members, your account will be credited in the same way.”_
+_"If you added members, your account will be charged a prorated amount based on the percentage of the billing cycle left at the time each member was added. If you removed members, your account will be credited in the same way."_
 
-Notion’s per-seat pricing is what we call a **‘fair’ pricing model**, where fees are calculated based on the number of days each user is active.
+Notion's per-seat pricing is what we call a **'fair' pricing model**, where fees are calculated based on the number of days each user is active.
 
 In addition to this, users can complete tasks to earn credits with which they can pay their Notion bill:
 
-_“You can earn credit by using Notion across your devices and trying out new features. Go to the Earn Credit tab in Settings & Members to learn more.”_
+_"You can earn credit by using Notion across your devices and trying out new features. Go to the Earn Credit tab in Settings & Members to learn more."_
 
-Here’s how you can replicate this pricing and billing system with Lago.
+Here's how you can replicate this pricing and billing system with Lago.
 
 ## Step 1: Create recurring metrics
-Lago monitors usage by converting events into billable metrics. Notion’s pricing is based on users, so we need to create a billable metric to keep track of the users associated with each customer account.
+
+Lago monitors usage by converting events into billable metrics. Notion's pricing is based on users, so we need to create a billable metric to keep track of the users associated with each customer account.
 
 There are two types of metrics:
 
-* **Metered metrics** that are reset to zero at the end of each billing period; and
-* **Recurring metrics** that can be carried over several billing periods.
+- **Metered metrics** that are reset to zero at the end of each billing period; and
+- **Recurring metrics** that can be carried over several billing periods.
 
 When a new member is added to a Notion account, they are likely to remain active for some time (probably more than just a month). Therefore, we should create a recurring metric for our users.
-
 
 <Tabs>
   <Tab title="Dashboard">
@@ -74,36 +71,39 @@ When a new member is added to a Notion account, they are likely to remain active
     At the end of the billing period, Lago will automatically calculate the number of days of activity for each user.
 
     <Frame caption="How to create a recurring metric">
-    <img src="/templates/images/notion-recurring-metric.png" />
+      <img src="/templates/images/notion-recurring-metric.png" />
     </Frame>
+
   </Tab>
   <Tab title="API">
-  ```bash Create a recurring billable metric
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
+    ```bash
+    # Create a recurring billable metric
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
 
-      curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "billable_metric": {
-          "name": "Users",
-          "code": "users",
-          "description": "Team members with access to the collaborative space",
-          "aggregation_type": "unique_count_agg",
-          "weighted_interval": null,
-          "recurring": true,
-          "field_name": "user_id",
-          "filters": []
-        }
+    curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "billable_metric": {
+        "name": "Users",
+        "code": "users",
+        "description": "Team members with access to the collaborative space",
+        "aggregation_type": "unique_count_agg",
+        "weighted_interval": null,
+        "recurring": true,
+        "field_name": "user_id",
+        "filters": []
       }
- 
-  ```
+    }
+    ```
+
   </Tab>
 </Tabs>
 
 ## Step 2: Set up a 'fair' pricing model
-When creating a new plan, the first step is to define the plan model, including billing frequency and subscription fee. Notion’s Team plan is **‘pay-as-you-go’**, which means that there’s no subscription fee (i.e. customers only pay for what they use).
+
+When creating a new plan, the first step is to define the plan model, including billing frequency and subscription fee. Notion's Team plan is **'pay-as-you-go'**, which means that there's no subscription fee (i.e. customers only pay for what they use).
 
 <Tabs>
   <Tab title="Dashboard">
@@ -115,116 +115,109 @@ When creating a new plan, the first step is to define the plan model, including 
       <img src="/templates/images/notion-plan-per-seat.png" />
     </Frame>
 
-
     To understand how it works, we can add a new customer and assign them the monthly Team plan we just created. Today is October 9th and a member is immediately added to the customer account. In the **debugger**, we can see the corresponding event, sent by the backend system via the API.
 
-    <Frame caption="Example of event when adding a user>
+    <Frame caption="Example of event when adding a user">
       <img src="/templates/images/notion-add-user-event.png" />
     </Frame>
 
-
-
-    In the **‘Usage’ tab** of the customer view, we can see that the customer’s current usage is $7.42. As there’s one active user and 23 days left in October (including October 9th), the billing system plans to bill 0.74194 units at the end of the period (23 days left divided by 31 days in October).
+    In the **'Usage' tab** of the customer view, we can see that the customer's current usage is $7.42. As there's one active user and 23 days left in October (including October 9th), the billing system plans to bill 0.74194 units at the end of the period (23 days left divided by 31 days in October).
 
     <Frame caption="Usage report updated in real time">
       <img src="/templates/images/notion-usage-report.png" />
     </Frame>
+
   </Tab>
 
   <Tab title="API">
-  ```bash Create a plan with prorata
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
-      curl --location --request POST "$LAGO_URL/api/v1/plans" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-       "plan": {
-          "name": "Notion Team plan",
-          "code": "notion_team_plan",
-          "interval": "monthly",
-          "amount_cents": 0,
-          "amount_currency": "USD",
-          "trial_period": 0.0,
-          "pay_in_advance": false,
-          "bill_charges_monthly": null,
-          "charges": [
-              {
-                "billable_metric_id": "d4f8056c-6321-4a82-9cd7-1e08313764f4",
-                "billable_metric_code": "users",
-                "charge_model": "standard",
-                "invoiceable": true,
-                "pay_in_advance": false,
-                "prorated": true,
-                "min_amount_cents": 0,
-                "properties": {
-                    "amount": "10"
-                },
-                "filters": [],
-                "taxes": []
-              }
-            ],
-        }
+    ```bash
+    # Create a plan with prorata
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "plan": {
+        "name": "Notion Team plan",
+        "code": "notion_team_plan",
+        "interval": "monthly",
+        "amount_cents": 0,
+        "amount_currency": "USD",
+        "trial_period": 0.0,
+        "pay_in_advance": false,
+        "bill_charges_monthly": null,
+        "charges": [
+          {
+            "billable_metric_id": "d4f8056c-6321-4a82-9cd7-1e08313764f4",
+            "billable_metric_code": "users",
+            "charge_model": "standard",
+            "invoiceable": true,
+            "pay_in_advance": false,
+            "prorated": true,
+            "min_amount_cents": 0,
+            "properties": {
+              "amount": "10"
+            },
+            "filters": [],
+            "taxes": []
+          }
+        ],
       }
-
-
-
-  ```
-    </Tab>
+    }
+    ```
+  </Tab>
 </Tabs>
 
-    If the same user is removed before the end of the month, Lago will automatically recalculate the number of **billable days** (i.e. the number of billing units).
-
+If the same user is removed before the end of the month, Lago will automatically recalculate the number of **billable days** (i.e. the number of billing units).
 
 ## Step 3: Offer credits to your customers
 
 Now that our pricing is ready, we can set up our credit system. Notion customers earn credits when they use the app across different devices and try out new features.
 
-  <Frame caption="Notion 'Earn credit' tab">
-    <img src="/templates/images/notion-credits.png" />
-  </Frame>
-
+<Frame caption="Notion 'Earn credit' tab">
+  <img src="/templates/images/notion-credits.png" />
+</Frame>
 
 <Tabs>
   <Tab title="Dashboard">
-    In the **‘Wallets’ tab** of the customer view, we can create a new wallet, which will allow us to grant credits to our customer. If later they complete additional tasks, we’ll be able to top up their wallet with free credits.
+    In the **'Wallets' tab** of the customer view, we can create a new wallet, which will allow us to grant credits to our customer. If later they complete additional tasks, we'll be able to top up their wallet with free credits.
 
-  <Frame caption="How to create a new wallet">
-    <img src="/templates/images/notion-wallet-creation.png" />
-  </Frame>
+    <Frame caption="How to create a new wallet">
+      <img src="/templates/images/notion-wallet-creation.png" />
+    </Frame>
 
-    Credits are automatically deducted from the customer’s next invoice(s).
+    Credits are automatically deducted from the customer's next invoice(s).
 
   </Tab>
-  
-  <Tab title="API">
-  ```bash Create a wallet
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
-      curl --location --request POST "$LAGO_URL/api/v1/wallets" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "wallet": {
-          "name": "Notion Credits",
-          "rate_amount": "1.0",
-          "paid_credits": "0.0",
-          "granted_credits": "10.0",
-          "currency": "USD",
-          "expiration_at": null,
-          "expiration_date": null,
-          "recurring_transaction_rules": []
-        }
-      }
 
-  ```
+  <Tab title="API">
+    ```bash
+    # Create a wallet
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "wallet": {
+        "name": "Notion Credits",
+        "rate_amount": "1.0",
+        "paid_credits": "0.0",
+        "granted_credits": "10.0",
+        "currency": "USD",
+        "expiration_at": null,
+        "expiration_date": null,
+        "recurring_transaction_rules": []
+      }
+    }
+    ```
   </Tab>
 </Tabs>
 
-
-
 ## Wrap-up
-For software companies like Notion, implementing a ‘fair’ per-user pricing model is a good way to **increase transparency and customer satisfaction**.
+
+For software companies like Notion, implementing a 'fair' per-user pricing model is a good way to **increase transparency and customer satisfaction**.
 With Lago, you can create your own persistent metrics to adapt this template to your products and services.
 
 Give it a try, click [here](https://www.getlago.com/get-started) to get started!
