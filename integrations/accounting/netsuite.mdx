@@ -31,6 +31,33 @@ Lago's native integration with NetSuite utilizes a [custom RESTlet script](https
 
 By deploying this script, you'll generate a **custom endpoint url** that is crucial for the authentication process and enables seamless data synchronization between Lago and NetSuite.
 
+## Mandatory NetSuite settings
+To ensure the sync doesn't fail, verify that the following settings are correctly configured. This will enable Lago to sync data to NetSuite properly.
+
+### Remove Locations on invoices
+Lago doesn't recognize the location field on invoices, which is mandatory by default. To resolve this, remove the location requirement from your invoice form:
+1. Navigate to **Customization > Forms > Transaction Forms**;
+2. Locate the form related to your invoices;
+3. Go to the **Screen Fields** tab; and
+4. Find the Location field and **uncheck both the Show and Mandatory checkboxes**.
+
+<Frame caption="Remove Locations on invoices">
+  <img src="/integrations/images/netsuite-remove-locations-field.png" />
+</Frame>
+
+### Define Taxable items
+To enable tax amount overrides for your Lago invoices synced to NetSuite, ensure all items are marked as taxable. If any item is non-taxable, the invoice sync will fail. To update an item:
+
+1. Go to **Lists > Accounting > Items**;
+2. Edit the item associated with a Lago object;
+3. Navigate to the **Accounting** tab;
+4. Locate the **Tax / Tariff** section; and
+5. Set the item to **Taxable**.
+
+<Frame caption="Define Taxable items">
+  <img src="/integrations/images/netsuite-taxable-items.png" />
+</Frame>
+
 ## Connecting Lago to NetSuite
 To fully integrate Lago with NetSuite, start by connecting your Lago instance to a new NetSuite connection. 
 You can have an unlimited number of NetSuite connections. First, link your NetSuite account to Lago. 
