@@ -1,0 +1,243 @@
+---
+title: "Clone Google BigQuery pricing"
+description:
+  "Replicate BigQuery's pay-as-you-go pricing model and offer free upfront credits with Lago."
+---
+ 
+In this article, you will learn how to offer free upfront credits for new users on a ‘pay-as-you-go’ pricing model. 
+This template is fitted for companies, like AI or infra providers, whose pricing fully depends on usage but that wish to offer free credits for newcomers.
+
+## Summary
+
+<Steps>
+  <Step title="Configure your pay-as-you-go model to compute usage">
+    	Aggregate usage to compute number of requests.
+      [(More here)](#aggregate-usage-to-compute-number-of-requests).
+
+      Create a plan with graduated charges.
+      [(More here)](#create-a-plan-with-graduated-charges).
+  </Step>
+  <Step title="Create a wallet to offer free upfront credits">
+    Set up free credits.
+    [(More here)](#step-2-create-a-wallet-to-offer-free-credits).
+  </Step>
+  <Step title="Record customer usage to start invoicing">
+    Send usage events to get started.
+    [(More here)](#step-3-record-customer-usage-to-start-invoicing-customers).
+  </Step>
+</Steps>
+
+
+## Pricing structure
+BigQuery offers customers the possibility to subscribe for free and only pay based on usage. For new customers, the platform offers $300 worth of credits during 90 days to try the product completely for free.
+
+
+| Plan      | Cost per volume of data scanned     |
+|------------|------------|
+| On-Demand pricing | $6.25 per TiB (a measure of compute capacity) |
+
+
+In this article, we are going to show you how to replicate this pricing with Lago’s billing solution.
+
+
+## Step 1: Configure your pay-as-you-go pricing
+
+### Aggregate usage to compute number of requests
+Lago’s **billable metric** allows you to meter and aggregate customer events according to specific rules. For BigQuery, the billable metric will sum the total volume of data scanned. 
+
+As the platform handles high volumes of requests, it would be inefficient to create an event each time a query is made. 
+Instead, BigQuery could simply send an event once an hour or hour a day with the total volume of data processed.
+
+
+
+<Tabs>
+  <Tab title="Dashboard">
+    Through the user interface, we created one ‘Data processed’ **billable metric**. For this metric, we use the `sum` aggregation type based on the volume of data processed. 
+    At the end of the billing period, Lago calculates the total volume of processed data for the billable metric using the value contained in each event (i.e. the event property) and reset the amount to 0 as the aggregation type is **metered**.
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/EaRi97Q2BcQ?si=n1WP-vIdVvUzzk3v&amp;start=67" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+  </Tab>
+  <Tab title="API">
+  ```bash Create billable metrics
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      
+      curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+          "billable_metric": {
+          "name": "Data processed",
+          "code": “data_processed",
+          "description": "Total volume of data scanned by BigQuery",
+          "aggregation_type": "sum",
+          "recurring": false,
+          "field_name": "data_processed_volume",
+          "filters": [
+          ]
+        }
+      }'
+
+
+  ```
+  </Tab>
+</Tabs>
+
+### Create a plan with graduated charges
+We now have our billable metric to replicate BigQuery’s pricing. As this is a ‘pay-as-you-go’ plan, there is no subscription fee. 
+In the plan setting, we only need to define a monthly billing period and set a specific pricing to our charges. 
+
+<Tabs>
+  <Tab title="Dashboard">
+    We use the **graduated charge** model since BigQuery offers the first unit for free. 
+    At the end of each billing period (i.e. each month), Lago will automatically invoice each customer according to their consumption, then all counts and calculations will be reset to zero for the next period.
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/EaRi97Q2BcQ?si=W0MVC4efSRY9ujZt&amp;start=125" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+  </Tab>
+  <Tab title="API">
+  ```bash Create a plan with graduated charges
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+       "plan": {
+            "name": "BigQuery On-Demand",
+            "code": "bigquery_on_demand",
+            "interval": "monthly",
+            "amount_cents": 0,
+            "amount_currency": "USD",
+            "trial_period": 0.0,
+            "pay_in_advance": false,
+            "charges": [
+                {
+                    "billable_metric_id": "__BILLABLE_METRIC_ID__",
+                    "billable_metric_code": "data_processed",
+                    "charge_model": "graduated",
+                    "invoiceable": true,
+                    "pay_in_advance": false,
+                    "prorated": false,
+                    "min_amount_cents": 0,
+          "properties": {
+            "graduated_ranges": [
+              {
+                "from_value": 0,
+                "to_value": 10000,
+                "per_unit_amount": "0",
+                "flat_amount": "0"
+              },
+              {
+                "from_value": 10001,
+                "to_value": null,
+                "per_unit_amount": "6.25",
+                "flat_amount": "0"
+              }
+            ]
+          },
+                    "filters": [],
+                    "taxes": []
+                }
+            ],
+        }
+      }
+
+
+  ```
+  </Tab>
+</Tabs>
+
+## Step 2: Create a wallet to offer free credits
+_“Start your 90-day free BigQuery trial which includes $300 worth of free usage”_
+
+BigQuery lets new users try its product for free by offering upfront credits valid for 90 days. 
+We can replicate this logic using Lago’s **wallet** feature and add **prepaid free credits** to it.
+
+
+<Tabs>
+  <Tab title="Dashboard">
+    For each customer, we need to create a wallet and offer \$300 of upfront free credits to replicate BigQuery’s offer. To do so, we set up the value of each credit at \$1.00 and grant 300 credits that customers will receive when creating their account.
+    The credits are valid for 90 days, so we will also set an expiration date on the wallet. After this date, the wallet will expire and all remaining credits won’t be actionable.
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/EaRi97Q2BcQ?si=W0MVC4efSRY9ujZt&amp;start=222" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+  </Tab>
+
+  <Tab title="API">
+  ```bash Create a wallet on a customer
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      curl --location --request POST "https://api.getlago.com/api/v1/wallets" \
+      --header "Authorization: Bearer $__YOUR_API_KEY__" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "wallet": {
+            "name": "Free trial offer",
+            "rate_amount": "1.00",
+            "currency": "USD",
+            "external_customer_id": "__EXTERNAL_CUSTOMER_ID__",
+            "paid_credits": "0",
+            "granted_credits": "30000"
+        }
+      }'
+
+
+  ```
+    </Tab>
+</Tabs>
+
+
+## Step 3: Record customer usage to start invoicing customers
+
+Once you have set up a billable metric, plan and wallet, you can start sending customer usage events to Lago. Events will be aggregated per the billable metric rules and Lago will price it charges according to the charges defined in the plan. 
+You can send an event once an hour or hour a day with the total volume of data processed. You can batch up to 100 events in a single request.
+
+<Tabs>
+  <Tab title="API">
+  ```bash Send usage events
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      curl --location --request POST "$LAGO_URL/api/v1/events" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+            "event": {
+                "transaction_id": "__UNIQUE_ID__",
+                "external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
+                "code": "__BILLABLE_METRIC_CODE__",
+                "timestamp": $(date +%s),
+               "properties": {
+                  "data_processed_volume": "10"
+          },      
+
+                }
+            }
+        }'
+
+
+  ```
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/EaRi97Q2BcQ?si=W0MVC4efSRY9ujZt&amp;start=342" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+  </Tab>
+</Tabs>
+
+
+Lago’s engine will compute the ongoing wallet balance based on the customer usage. At the end of the plan’s billing cycle, if the wallet balance is positive, an invoice will be generated but the offered credits will cover the customer usage. On the contrary, if the wallet balance is negative, the outstanding amount will be invoiced to the customer for payment. 
+
+Below is an invoice example where the usage exceeded the offered credits. Credits are automatically deducted from the amount due.
+
+    <Frame>
+      <img src="/templates/images/bigquery-invoice.png" />
+    </Frame>
+
+
+## Wrap-up
+Offering free upfront credits is a popular strategy among AI and infra companies with pay-as-you-go models like BigQuery. 
+With Lago, you can adapt this template to your products and services using:
+
+
+1. Configure your pay-as-you-go pricing by aggregate using a **billable metric**;‍
+2. Add this billable metric as **graduated charges** to a plan; and‍
+3. Create a **wallet** and add prepaid free credits.
+
+
+Give it a try, click [here](https://www.getlago.com/get-started) to get started!
