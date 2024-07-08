@@ -49,7 +49,7 @@ When adding customer information, you must:
 1. Define Stripe as the **default payment provider**;
 2. Leave the field associated with the **Stripe customer ID** blank;
 3. **Enable** the option to automatically create the customer in Stripe; and
-4. Define payment method options for this customer. Possible values are `card` and `sepa_debit`.
+4. Define payment method options for this customer. Possible values are `card`, `link`, `sepa_debit`, `us_bank_account` and `bacs_debit`.
 
 The customer will automatically be added to Stripe. Stripe will then return the
 customer ID, which will be stored in Lago.
@@ -68,7 +68,7 @@ information, you must:
 1. Define Stripe as the **default payment provider**;
 2. Provide the **Stripe customer ID**;
 3. **Disable** the option to automatically create the customer in Stripe; and
-4. Define payment method options for this customer. Possible values are `card` and `sepa_debit`.
+4. Define payment method options for this customer. Possible values are `card`, `link`, `sepa_debit`, `us_bank_account` and `bacs_debit`.
 
 
 <Frame caption="Migration of an existing Stripe customer">
@@ -188,6 +188,37 @@ The checkout URL provided by Lago is designed to handle multiple payment options
             "sync": true,
             "sync_with_provider": true,
             "provider_payment_methods": ["bacs_debit"]
+          }
+        }
+      }'
+    ```
+  </Accordion>
+  <Accordion title="Link" icon="link">
+    For card transactions, you can enable the [Link](https://stripe.com/payments/link) feature to offer one-click payments. 
+    Link automatically fills in your customers' payment information, ensuring a seamless and secure checkout experience.
+
+    <Warning>
+      If you are using the `link` feature, it must be used in conjunction with `card`.
+    </Warning>
+
+    ```bash
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "address_line1": "5230 Penfield Ave",
+          "billing_configuration": {
+            "invoice_grace_period": 3,
+            "payment_provider": "stripe",
+            "provider_customer_id": "cus_12345",
+            "sync": true,
+            "sync_with_provider": true,
+            "provider_payment_methods": ["card", "link"]
           }
         }
       }'
