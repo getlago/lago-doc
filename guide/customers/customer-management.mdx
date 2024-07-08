@@ -99,7 +99,7 @@ When a plan that includes usage-based charges is assigned to a customer, you can
 start pushing [events](/guide/events/ingesting-usage) associated with the customer account.
 
 During the billing period, the customer's current usage is visible in the
-**"Usage"** tab of the customer view, including (but not limited to):
+**"Analytics"** tab of the customer view, under **"Current usage report** including (but not limited to):
 
 - Total amount for the period under consideration; and
 - Breakdown by charge, including total number of billing units and amount.
@@ -107,7 +107,7 @@ During the billing period, the customer's current usage is visible in the
 <Tabs>
   <Tab title="Dashboard">
    <Frame caption="Fetch customer's current usage">
-      <img src="/guide/images/customer-current-usage-28893d7bd2e44ae054012ffa8e3cc69b.png" />
+      <img src="/guide/images/customer-current-usage.png" />
     </Frame>
   </Tab>
   <Tab title="API">
@@ -122,6 +122,47 @@ During the billing period, the customer's current usage is visible in the
       curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/current_usage?external_subscription_id=$EXTERNAL_SUBSCRIPTION_ID" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+
+## Monitor the customer's billing status[](#monitor-the-customers-overdue-balance "Direct link to heading")
+
+The "**Billing overview**" lets you see in a glance where a customer stands in terms of revenue and collection. It looks at the past 12 months.
+
+- Gross revenue indicates how much has been billed to this customer
+- Total overdue highlights the aggregated amount from invoices that are past due
+
+<Tabs>
+  <Tab title="Dashboard">
+   <Frame caption="Fetch customer's gross revenue">
+      <img src="/guide/images/customer-gross-revenue.png" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+   You can retrieve the customer's gross revenue via the API using [this endpoint](/api-reference/analytics/gross-revenue).
+      <CodeGroup>
+      ```bash Get customer gross revenue
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request GET "$LAGO_URL/api/v1/analytics/gross_revenue?external_customer_id=hooli_1234&currency=USD" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \  
+      ```
+      </CodeGroup>
+
+      You can retrieve the customer's overdue balance via the API using [this endpoint](/api-reference/analytics/overdue-balances).
+      <CodeGroup>
+      ```bash Get customer overdue balance
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request GET "$LAGO_URL/api/v1/analytics/overdue_balances?external_customer_id=hooli_1234&currency=USD" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \  
       ```
       </CodeGroup>
   </Tab>
