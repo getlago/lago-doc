@@ -349,14 +349,21 @@ description: "This object represents a plan. This plan can then be assigned to a
         </ResponseField>
         <ResponseField name="pay_in_advance" type="boolean">
           This field determines the billing timing for this specific usage-based
-          charge. When set to `true`, the charge is due and invoiced
-          immediately. Conversely, when set to `false`, the charge is due and
-          invoiced at the end of each billing period.
+          charge. When set to true, the fee is created and invoices at the event
+          reception. If false the fee is created at event reception but its
+          invoicing will follow the group_paid_fees settings.
         </ResponseField>
         <ResponseField name="invoiceable" type="boolean">
           This field specifies whether the charge should be included in a proper
           invoice. If set to `false`, no invoice will be issued for this charge.
           You can only set it to `false` when `pay_in_advance` is `true`.
+        </ResponseField>
+        <ResponseField name="regroup_paid_fees" type="string">
+          This setting can only be configured if pay_in_advance is false. This
+          field determines whether and when the charge fee should be included in
+          the invoice. If `null`, no invoice will be issued for this charge fee.
+          If `invoice`, an invoice will be generated at the end of the period,
+          consolidating all charge fees with a succeeded payment status.
         </ResponseField>
         <ResponseField name="min_amount_cents" type="integer">
           The minimum spending amount required for the charge, measured in cents

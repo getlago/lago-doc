@@ -1,33 +1,42 @@
 ---
 title: "Invoiceable vs Uninvoiceable"
-description:
-  "In-advance charges can be either invoiceable or not."
+description: "In-advance charges can be either invoiceable or not."
 ---
 
-<Info>**Premium feature ✨**: only users with a premium license can define whether or not a charge is invoiceable. 
-Please **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+<Info>
+  **Premium feature ✨**: only users with a premium license can define whether
+  or not a charge is invoiceable. Please **[contact
+  us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago
+  Self-Hosted Premium.
+</Info>
 
 If a charge needs to be `paid in advance`, you can choose whether or not it generates an invoice.
 
-The `"invoiceable": false` option is **particularly relevant for fintech companies that want to charge customers instantly 
-without issuing an invoice**. This feature can be useful for banking transactions like ATM withdrawals, FX transfers and other 
+The `"invoiceable": false` option is **particularly relevant for fintech companies that want to charge customers instantly
+without issuing an invoice**. This feature can be useful for banking transactions like ATM withdrawals, FX transfers and other
 similar scenarios.
 
-By setting the invoiceable parameter to false, you can streamline the payment process, eliminating the step of generating 
-invoices for these specific charges.
+By setting the invoiceable parameter to false, a fee is created by default, and a webhook `fee.created` is sent immediately upon any changes in usage without generating an invoice. However, you can decide the charge invoicing strategy:
 
-To define if a charge is invoiceable or not: 
+1. `null`: Fees generated never appear on invoices (default behaviour).
+2. `in_arrears`: Groups all paid fees into one invoice at the end of the billing period.
+
+Please note that if `in_arrears`, all fees generated with a `payment_status` different from `succeeded` won’t appear on invoice generated at the end of the billing period. They will appear on next ones if you manually edit their `payment_status` to `succeeded`.
+
+The invoice generated consolidates paid fees, is marked as paid, and will not be emailed to your end customer if the email feature is activated.
+
 <Tabs>
   <Tab title="Dashboard">
     1. Go to a **Plan**;
     2. Add a usage-based **charge**;
     3. Define a price model;
     4. Define this charge as **paid in advance**; and
-    5. Untick **generate an invoice for each event**.
+    5. Select the option that best suits your needs from the three available choices.
 
-      <Frame  caption="Configure a charge as non invoiceable">
+      <Frame  caption="Configure the charge invoicing strategy">
         <img src="/guide/plans/images/instant-charge.png"/>
       </Frame>
+
   </Tab>
   <Tab title="API">
     Use the `invoiceable : false` for a charge paid in advance:
@@ -57,6 +66,7 @@ To define if a charge is invoiceable or not:
             "charge_model": "percentage",
             "pay_in_advance": true,
             "invoiceable": false,
+            "regroup_paid_fees" : "invoice"
             "min_amount_cents": 100,
             "properties": {
               "rate": "0.5",
@@ -70,5 +80,6 @@ To define if a charge is invoiceable or not:
     }'
     ```
     </CodeGroup>
+
   </Tab>
 </Tabs>
