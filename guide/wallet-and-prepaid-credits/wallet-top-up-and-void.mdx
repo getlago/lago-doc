@@ -17,8 +17,9 @@ Payment must be made in order for credits to be added to the customer's wallet
 
     1. Open the **"Wallets"** tab and click **"Edit wallet"** on the right;
     2. Select **"Top up credit"**;
-    3. Enter the number of credits to be purchased and/or granted for free; and
-    4. Click **"Top up credit"** to confirm.
+    3. Enter the number of credits to be purchased and/or granted for free;
+    4. Determine whether the wallet transaction generates an invoice after a top-up or only following a successful payment; and
+    5. Click **"Top up credit"** to confirm.
 
     <Info>Coupons **do not apply** to credit purchases and top-ups.</Info>
 
@@ -35,13 +36,19 @@ Payment must be made in order for credits to be added to the customer's wallet
         "wallet_transaction": {
           "wallet_id": "wallet_1234567890",
           "paid_credits": "20.0",
-          "granted_credits": "10.0"
+          "granted_credits": "10.0",
+          "invoice_requires_successful_payment": false
         }
       }'
     ```
 
   </Tab>
 </Tabs>
+
+
+## Invoicing top-up after successful payment option
+When enabled, this option delays issuing an invoice for a wallet top-up until a successful payment is made. If disabled, the invoice is issued immediately upon the wallet top-up, regardless of the payment status.
+This setting can be applied to individual transactions.
 
 ## Void credits[](#void-credits "Direct link to heading")
 
@@ -132,7 +139,8 @@ Once the interval is defined, the system will automatically perform a top-up:
               "interval": "weekly",
               "started_at": null,
               "paid_credits": "100.0",
-              "granted_credits": "0.0"
+              "granted_credits": "0.0",
+              "invoice_requires_successful_payment": false
             }
           ]
         }
@@ -177,7 +185,8 @@ With a `threshold` trigger, set a specific number of `credits` that will trigger
               "trigger": "threshold",
               "threshold_credits": "100.0"
               "paid_credits": "100.0",
-              "granted_credits": "0.0"
+              "granted_credits": "0.0",
+              "invoice_requires_successful_payment": true
             }
           ]
         }
