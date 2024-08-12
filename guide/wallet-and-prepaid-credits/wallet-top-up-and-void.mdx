@@ -18,8 +18,9 @@ Payment must be made in order for credits to be added to the customer's wallet
     1. Open the **"Wallets"** tab and click **"Edit wallet"** on the right;
     2. Select **"Top up credit"**;
     3. Enter the number of credits to be purchased and/or granted for free;
-    4. Determine whether the wallet transaction generates an invoice after a top-up or only following a successful payment; and
-    5. Click **"Top up credit"** to confirm.
+    4. Define transaction metadata (optional & available only via API);
+    5. Determine whether the wallet transaction generates an invoice after a top-up or only following a successful payment; and
+    6. Click **"Top up credit"** to confirm.
 
     <Info>Coupons **do not apply** to credit purchases and top-ups.</Info>
 
@@ -37,7 +38,13 @@ Payment must be made in order for credits to be added to the customer's wallet
           "wallet_id": "wallet_1234567890",
           "paid_credits": "20.0",
           "granted_credits": "10.0",
-          "invoice_requires_successful_payment": false
+          "invoice_requires_successful_payment": false,
+          "transaction_metadata": [
+            {
+              "key": "top-up-type",
+              "value": "manual"
+            }
+          ]
         }
       }'
     ```
@@ -45,8 +52,8 @@ Payment must be made in order for credits to be added to the customer's wallet
   </Tab>
 </Tabs>
 
-
 ## Invoicing top-up after successful payment option
+
 When enabled, this option delays issuing an invoice for a wallet top-up until a successful payment is made. If disabled, the invoice is issued immediately upon the wallet top-up, regardless of the payment status.
 This setting can be applied to individual transactions.
 
@@ -60,8 +67,9 @@ You can deduct a specific number of credits from the wallet's balance. Note that
 
     1. Open the **"Wallets"** tab and click **"Edit wallet"** on the right;
     2. Select **"Void credits"**;
-    3. Enter the number of credits to void; and
-    4. Click **"Void credits"** to confirm.
+    3. Enter the number of credits to void;
+    4. Define transaction metadata (optional & available only via API); and
+    5. Click **"Void credits"** to confirm.
 
   </Tab>
   <Tab title="API">
@@ -75,7 +83,13 @@ You can deduct a specific number of credits from the wallet's balance. Note that
       --data-raw '{
         "wallet_transaction": {
           "wallet_id": "wallet_1234567890",
-          "void_credits": "20.0"
+          "void_credits": "20.0",
+          "transaction_metadata": [
+            {
+              "key": "top-up-type",
+              "value" "manual-void"
+            }
+          ]
         }
       }'
     ```
@@ -109,11 +123,12 @@ Once the interval is defined, the system will automatically perform a top-up:
 <Tabs>
   <Tab title="Dashboard">
     To setup a `interval` recurring top-up through the user interface:
-    1. Create or edit a wallet
-    2. Trigger on the option `Activate recurring top-up`
-    3. Select `interval` as recurring type
-    4. Define your interval
-    5. Define when the rule should start
+    1. Create or edit a wallet;
+    2. Trigger on the option `Activate recurring top-up`;
+    3. Select `interval` as recurring type;
+    4. Define your interval;
+    5. Define when the rule should start; and 
+    6. Define transaction metadata for the top-ups (optional & available only via API);
   </Tab>
   <Tab title="API">
     ```bash Setup an interval recurring top-up
@@ -140,7 +155,13 @@ Once the interval is defined, the system will automatically perform a top-up:
               "started_at": null,
               "paid_credits": "100.0",
               "granted_credits": "0.0",
-              "invoice_requires_successful_payment": false
+              "invoice_requires_successful_payment": false,
+              "transaction_metadata": [
+                {
+                  "key": "top-up-type",
+                  "value": "automatic"
+                }
+              ]
             }
           ]
         }
@@ -157,10 +178,11 @@ With a `threshold` trigger, set a specific number of `credits` that will trigger
 <Tabs>
   <Tab title="Dashboard">
     To setup a `interval` recurring top-up through the user interface:
-    1. Create or edit a wallet
-    2. Trigger on the option `Activate recurring top-up`
-    3. Select `threshold` as recurring type
-    4. Define the credits threshold
+    1. Create or edit a wallet;
+    2. Trigger on the option `Activate recurring top-up`;
+    3. Select `threshold` as recurring type;
+    4. Define the credits threshold; and
+    5. Define transaction metadata for the top-ups (optional & available only via API);
   </Tab>
   <Tab title="API">
     ```bash Set a recurring top-up on creation
@@ -186,7 +208,13 @@ With a `threshold` trigger, set a specific number of `credits` that will trigger
               "threshold_credits": "100.0"
               "paid_credits": "100.0",
               "granted_credits": "0.0",
-              "invoice_requires_successful_payment": true
+              "invoice_requires_successful_payment": true,
+              "transaction_metadata": [
+                {
+                  "key": "top-up-type",
+                  "value": "automatic"
+                }
+              ]
             }
           ]
         }
