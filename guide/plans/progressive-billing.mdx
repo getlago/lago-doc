@@ -25,13 +25,59 @@ It's important to note that lifetime usage is persistent across periods, meaning
 
 For the progressive billing feature, you can configure two types of thresholds: Step-Based Thresholds and Recurring Thresholds.
 
-### Step-Based thresholds
-For Step-Based Thresholds, invoices are generated when the lifetime usage of a subscription reaches a defined threshold. 
-You can set an unlimited number of thresholds, each with a specific amount and a unique name.
+### Step-based thresholds
 
-<Frame caption="Defining step-based thresholds">
-  <img src="/guide/plans/images/progressive-billing-step-thresholds.png" />
+<Tabs>
+    <Tab title="Dashboard">
+        For Step-Based Thresholds, invoices are generated when the lifetime usage of a subscription reaches a defined threshold. 
+        You can set an unlimited number of thresholds, each with a specific amount and a unique name.
+
+        To add progressive billing Step-Based Thresholds from the UI:
+        1. Navigate to the desired plan;
+        2. Access the Advanced Settings;
+        3. Locate the Progressive Billing section; and
+        4. Add your thresholds.
+
+        <Frame caption="Defining step-based thresholds">
+        <img src="/guide/plans/images/progressive-billing-step-thresholds.png" />
 </Frame>
+    </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```json Add progressive billing thresholds
+    {
+        "plan": {
+            "name": "Premium",
+            "invoice_display_name": null,
+            "created_at": "2024-08-26T14:23:53Z",
+            "code": "premium",
+            "interval": "monthly",
+            "description": "",
+            "amount_cents": 10000,
+            "amount_currency": "USD",
+            "trial_period": 0.0,
+            "pay_in_advance": true,
+            "charges": [...],
+            "usage_thresholds": [
+                {
+                    "amount_cents": 500,
+                    "threshold_display_name": "Step 1 "
+                },
+                {
+                    "amount_cents": 5000,
+                    "threshold_display_name": "Step 2"
+                },
+                {
+                    "amount_cents": 10000,
+                    "threshold_display_name": "Step 3"
+                }
+            ]
+        }
+    }
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
 
 In the above example, Lago will issue an invoice when the specified threshold is met:
 
@@ -43,14 +89,64 @@ In the above example, Lago will issue an invoice when the specified threshold is
 - Then, resume to 'end of the month' billing.
 
 ### Recurring threshold
-In addition to Step-Based Thresholds, you can also set up a Recurring Threshold. This threshold determines what happens after the final step-based threshold is reached. 
-If a recurring threshold is defined, Lago will continue to issue invoices each time the lifetime usage increases by the specified amount. 
-For example, as shown in the image below, after the last threshold, Lago will automatically bill $100 each time the lifetime usage increments by that amount.
+<Tabs>
+    <Tab title="Dashboard">
+        In addition to Step-Based Thresholds, you can also set up a Recurring Threshold. This threshold determines what happens after the final step-based threshold is reached. 
+        If a recurring threshold is defined, Lago will continue to issue invoices each time the lifetime usage increases by the specified amount. 
+        For example, as shown in the image below, after the last threshold, Lago will automatically bill $100 each time the lifetime usage increments by that amount.
 
-<Frame caption="Defining a recurring threshold">
-  <img src="/guide/plans/images/progressive-billing-recurring-threshold.png" />
-</Frame>
+        To add a recurring threshold from the UI:
+        1. Navigate to the desired plan;
+        2. Access the Advanced Settings;
+        3. Locate the Progressive Billing section;
+        4. Toggle the 'Recurring' switch; and
+        5. Enter a name and define the recurring threshold amount.
 
+        <Frame caption="Defining a recurring threshold">
+        <img src="/guide/plans/images/progressive-billing-recurring-threshold.png" />
+        </Frame>
+    </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```json Add a recurring billing threshold
+    {
+        "plan": {
+            "name": "Premium",
+            "invoice_display_name": null,
+            "created_at": "2024-08-26T14:23:53Z",
+            "code": "premium",
+            "interval": "monthly",
+            "description": "",
+            "amount_cents": 10000,
+            "amount_currency": "USD",
+            "trial_period": 0.0,
+            "pay_in_advance": true,
+            "charges": [...],
+            "usage_thresholds": [
+                {
+                    "amount_cents": 500,
+                    "threshold_display_name": "Step 1 "
+                },
+                {
+                    "amount_cents": 5000,
+                    "threshold_display_name": "Step 2"
+                },
+                {
+                    "amount_cents": 10000,
+                    "threshold_display_name": "Step 3"
+                },
+                {
+                "amount_cents": 5000,
+                "threshold_display_name": "Bill every 50 dollars",
+                "recurring": true
+                }
+            ]
+        }
+    }
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
 
 ## Invoicing behaviors
 For our progressive billing feature, invoices are generated whenever a threshold is crossed, regardless of when it occurs within a billing period. 
