@@ -42,11 +42,65 @@ In the above example, Lago will issue an invoice when the specified threshold is
 - `Invoice #5`: When the lifetime usage reaches $1,000;
 - Then, resume to 'end of the month' billing.
 
-### Recurring thresholds
+### Recurring threshold
 In addition to Step-Based Thresholds, you can also set up a Recurring Threshold. This threshold determines what happens after the final step-based threshold is reached. 
 If a recurring threshold is defined, Lago will continue to issue invoices each time the lifetime usage increases by the specified amount. 
 For example, as shown in the image below, after the last threshold, Lago will automatically bill $100 each time the lifetime usage increments by that amount.
 
-<Frame caption="Defining step-based thresholds">
+<Frame caption="Defining a recurring threshold">
   <img src="/guide/plans/images/progressive-billing-recurring-threshold.png" />
 </Frame>
+
+
+## Invoicing behaviors
+For our progressive billing feature, invoices are generated whenever a threshold is crossed, regardless of when it occurs within a billing period. 
+However, there are a few specific behaviors and edge cases related to this feature that are important to consider.
+
+<Frame caption="Progressive billing invoice behavior">
+  <img src="/guide/plans/images/progressive-billing-invoice-behavior.png" />
+</Frame>
+
+
+### Invoicing during job execution
+It's important to note that **threshold billing occurs when our progressive billing job runs** (every 5 minutes by default, though this interval can be adjusted on a case-by-case basis).
+This means that Lago does not trigger the invoice immediately when the threshold is crossed but rather at a predefined interval.
+
+As a result, Lago will invoice the total usage at the time the job runs, **which may slightly exceed the threshold**. 
+For instance, if your billing threshold is \$10 but the job runs when the customer's current usage is \$12, Lago will invoice for the full \$12.
+
+### Excluding already billed usage
+
+When a customer crosses a threshold for a specific subscription, Lago will invoice the total usage for the current period, 
+ensuring that any 'previously billed usage' is excluded.
+
+This approach provides customers with a clear view of their current consumption while preventing them from being charged again 
+for usage already invoiced under previous thresholds.
+
+It's important to note that the invoice template (as shown below) includes the following details:
+
+- The total usage for the current period;
+- An adjustment that excludes previously billed usage; and
+- A footer that provides context, explaining the reason for the invoice, including lifetime usage and the threshold that was crossed.
+
+<Frame caption="Progressive billing invoice detail">
+  <img src="/guide/plans/images/progressive-billing-invoice-detail.png" />
+</Frame>
+
+### Grace period edge cases
+It's important to note that **progressive billing invoices are not subject to a grace period** and, therefore, cannot be in a `draft` status. 
+The reason for this is that draft invoices are not `finalized`, and progressive billing calculations are based solely on `finalized` invoices. Including draft invoices in these calculations would significantly alter the accuracy of the progressive billing process.
+
+### Applying discounts
+Progressive billing invoices will automatically apply any available discounts, including coupons, prepaid credits, or credit notes.
+
+### Overriding subscription thresholds
+To provide maximum flexibility with the progressive billing feature, you can **override the default plan's thresholds for a specific subscription**. 
+This allows a particular subscription to have its own customized thresholds. You can add or remove thresholds as needed, or even disable the progressive billing feature entirely for a specific subscription.
+
+### Modifying thresholds
+You can edit, add, or remove progressive billing thresholds—or even disable this feature—at any time for a plan or subscription. 
+This flexibility allows you to adjust thresholds to meet your customer's needs without needing to rebuild everything from scratch.
+
+### Being notified
+Since progressive billing invoices can be triggered at any time during a billing period, it's crucial to stay informed when a customer crosses a threshold. 
+Lago sends a webhook notification, `subscription.usage_threshold_reached`, providing details about the subscription and the specific threshold that was exceeded.
