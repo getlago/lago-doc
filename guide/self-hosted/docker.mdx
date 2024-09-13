@@ -30,7 +30,14 @@ cd lago
 echo "LAGO_RSA_PRIVATE_KEY=\"`openssl genrsa 2048 | base64`\"" >> .env
 source .env
 
-# Start
+# Start the api
+docker compose up -d api
+
+# Create the database
+docker compose exec api rails db:create
+docker compose exec api rails db:migrate
+
+# Start all other components
 docker-compose up
 
 ```
@@ -85,41 +92,49 @@ Docker images are always updated to the last stable version in the
 Lago uses the following environment variables to configure the components of the
 application. You can override them to customise your setup.
 
-| Variable                            | Default value                                                                                            | Description                                                                                                                                                      |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POSTGRES_HOST`                       | db                                                                                                       | Host name of the postgres server                                                                                                                                 |
-| `POSTGRES_DB`                         | lago                                                                                                     | Name of the postgres database                                                                                                                                    |
-| `POSTGRES_USER`                       | lago                                                                                                     | Database user for postgres connection                                                                                                                            |
-| `POSTGRES_PASSWORD`                   | changeme                                                                                                 | Database password for postgres connection                                                                                                                        |
-| `POSTGRES_PORT`                       | 5432                                                                                                     | Port the postgres database listens to                                                                                                                            |
-| `REDIS_HOST`                          | redis                                                                                                    | Host name of the redis server                                                                                                                                    |
-| `REDIS_PORT`                          | 6379                                                                                                     | Port the redis database listens to                                                                                                                               |
-| `LAGO_REDIS_CACHE_HOST`               | redis                                                                                                    | Host name of the redis cache server                                                                                                                              |
-| `LAGO_REDIS_CACHE_PORT`               | 6379                                                                                                     | Port the redis cache server listens to                                                                                                                           |
-| `LAGO_FRONT_URL`                      | http://localhost                                                                                         | URL of the Lago front-end application.Used for CORS configuration                                                                                                |
-| `FRONT_PORT`                          | 80                                                                                                       | Port the front-end application listens to                                                                                                                        |
-| `LAGO_API_URL`                        | http://localhost:3000                                                                                    | URL of the Lago back-end application                                                                                                                             |
-| `API_PORT`                            | 3000                                                                                                     | Port the back-end application listens to                                                                                                                         |
-| `SECRET_KEY_BASE`                     | your-secret-key-base-hex-64                                                                              | Secret key used for session encryption                                                                                                                           |
-| `SENTRY_DSN`                          | Sentry DSN key for error and performance tracking                                                        |                                                                                                                                                                  |
-| `LAGO_RSA_PRIVATE_KEY`                | Private key used for webhook signatures                                                                  |                                                                                                                                                                  |
-| `LAGO_SIDEKIQ_WEB`                    | Activate the Sidekiq web UI, disabled by default                                                         |                                                                                                                                                                  |
-| `LAGO_ENCRYPTION_PRIMARY_KEY`         | Encryption primary key used to secure sensitive values stored in the database                            |                                                                                                                                                                  |
-| `LAGO_ENCRYPTION_DETERMINISTIC_KEY`   | Encryption deterministic key used to secure sensitive values stored in the database                      |                                                                                                                                                                  |
-| `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` | Encryption key salt used to secure sensitive values stored in the database                               |                                                                                                                                                                  |
-| `LAGO_WEBHOOK_ATTEMPTS`               | 3                                                                                                        | Number of failed attempt before stopping to deliver a webhook                                                                                                    |
-| `LAGO_USE_AWS_S3`                     | Use AWS S3 for files storage                                                                             |                                                                                                                                                                  |
-| `LAGO_AWS_S3_ACCESS_KEY_ID`           | AWS Access Key id that has access to S3                                                                  |                                                                                                                                                                  |
-| `LAGO_AWS_S3_SECRET_ACCESS_KEY`       | AWS Secret Access Key that has access to S3                                                              |                                                                                                                                                                  |
-| `LAGO_AWS_S3_REGION`                  | AWS S3 Region                                                                                            |                                                                                                                                                                  |
-| `LAGO_AWS_S3_BUCKET`                  | AWS S3 Bucket name                                                                                       |                                                                                                                                                                  |
-| `LAGO_AWS_S3_ENDPOINT`                | S3 compatible storage endpoint. Should be set only if you are using another storage provider than AWS S3 |                                                                                                                                                                  |
-| `LAGO_USE_GCS`                        | false                                                                                                    | Use Google Cloud Service Cloud Storage for file storage, ⚠️ If you want to use GCS, you have to pass the credentials json key file to the api and worker service |
-| `LAGO_GCS_PROJECT`                    | GCS Project name                                                                                         |                                                                                                                                                                  |
-| `LAGO_GCS_BUCKET`                     | GCS Bucket Name                                                                                          |                                                                                                                                                                  |
-| `LAGO_PDF_URL`                        | http://pdf:3000                                                                                          | PDF Service URL on your infrastructure                                                                                                                           |
-| `LAGO_DISABLE_SIGNUP`                 | Disable Sign up when running Lago in self-hosted                                                         |                                                                                                                                                                  |
-| `LAGO_RAILS_STDOUT`                   | Set to true to activate logs on containers                                                               |                                                                                                                                                                  |
+| Variable                            | Default value                           | Description                                                                                                                                                      |
+| ----------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_HOST`                       | db                                      | Host name of the postgres server                                                                                                                                 |
+| `POSTGRES_DB`                         | lago                                    | Name of the postgres database                                                                                                                                    |
+| `POSTGRES_USER`                       | lago                                    | Database user for postgres connection                                                                                                                            |
+| `POSTGRES_PASSWORD`                   | changeme                                | Database password for postgres connection                                                                                                                        |
+| `POSTGRES_PORT`                       | 5432                                    | Port the postgres database listens to                                                                                                                            |
+| `POSTGRES_SCHEMA`                     | public                                  | Name of the postgres schema
+| `REDIS_HOST`                          | redis                                   | Host name of the redis server                                                                                                                                    |
+| `REDIS_PORT`                          | 6379                                    | Port the redis database listens to                                                                                                                               |
+| `REDIS_PASSWORD`                      |                                         | Password of the redis server                                                                                                                                     |
+| `LAGO_REDIS_CACHE_HOST`               | redis                                   | Host name of the redis cache server                                                                                                                              |
+| `LAGO_REDIS_CACHE_PORT`               | 6379                                    | Port the redis cache server listens to                                                                                                                           |
+| `LAGO_REDIS_CACHE_PASSWORD`           |                                         | Password of the redis cache server                                                                                                                               |
+| `LAGO_MEMCACHE_SERVERS`               |                                         | Coma separated list of memcache servers                                                                                                                          |
+| `LAGO_FRONT_URL`                      | http://localhost                        | URL of the Lago front-end application.Used for CORS configuration                                                                                                |
+| `FRONT_PORT`                          | 80                                      | Port the front-end application listens to                                                                                                                        |
+| `LAGO_API_URL`                        | http://localhost:3000                   | URL of the Lago back-end application                                                                                                                             |
+| `API_PORT`                            | 3000                                    | Port the back-end application listens to                                                                                                                         |
+| `SECRET_KEY_BASE`                     | your-secret-key-base-hex-64             | Secret key used for session encryption                                                                                                                           |
+| `SENTRY_DSN`                          |                                         | Sentry DSN key for error and performance tracking on Lago back-end                                                                                               |
+| `SENTRY_DSN_FRONT`                    |                                         | Sentry DSN key for error and performance tracking on Lago front-end                                                                                              |
+| `LAGO_RSA_PRIVATE_KEY`                |                                         | Private key used for webhook signatures                                                                                                                          |
+| `LAGO_SIDEKIQ_WEB`                    |                                         | Activate the Sidekiq web UI, disabled by default                                                                                                                 |
+| `LAGO_ENCRYPTION_PRIMARY_KEY`         | your-encryption-primary-key             | Encryption primary key used to secure sensitive values stored in the database                                                                                    |
+| `LAGO_ENCRYPTION_DETERMINISTIC_KEY`   | your-encryption-deterministic-key       | Encryption deterministic key used to secure sensitive values stored in the database                                                                              |
+| `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` | your-encryption-derivation-salt         | Encryption key salt used to secure sensitive values stored in the database                                                                                       |
+| `LAGO_WEBHOOK_ATTEMPTS`               | 3                                       | Number of failed attempt before stopping to deliver a webhook                                                                                                    |
+| `LAGO_USE_AWS_S3`                     | false                                   | Use AWS S3 for files storage                                                                                                                                     |
+| `LAGO_AWS_S3_ACCESS_KEY_ID`           | azerty123456                            | AWS Access Key id that has access to S3                                                                                                                          |
+| `LAGO_AWS_S3_SECRET_ACCESS_KEY`       | azerty123456                            | AWS Secret Access Key that has access to S3                                                                                                                      |
+| `LAGO_AWS_S3_REGION`                  | us-east-1                               | AWS S3 Region                                                                                                                                                    |
+| `LAGO_AWS_S3_BUCKET`                  | bucket                                  | AWS S3 Bucket name                                                                                                                                               |
+| `LAGO_AWS_S3_ENDPOINT`                |                                         | S3 compatible storage endpoint. Should be set only if you are using another storage provider than AWS S3                                                         |
+| `LAGO_USE_GCS`                        | false                                   | Use Google Cloud Service Cloud Storage for file storage, ⚠️ If you want to use GCS, you have to pass the credentials json key file to the api and worker service |
+| `LAGO_GCS_PROJECT`                    |                                         | GCS Project name                                                                                                                                                 |
+| `LAGO_GCS_BUCKET`                     |                                         | GCS Bucket Name                                                                                                                                                  |
+| `LAGO_PDF_URL`                        | http://pdf:3000                         | PDF Service URL on your infrastructure                                                                                                                           |
+| `LAGO_DISABLE_SIGNUP`                 |                                         | Disable Sign up when running Lago in self-hosted                                                                                                                 |
+| `LAGO_RAILS_STDOUT`                   | true                                    | Set to true to activate logs on containers                                                                                                                       |
+| `LAGO_DISABLE_WALLET_REFRESH`         |                                         | Disable automatic refresh of wallet ongoing balance                                                                                                              |
+| `GOOGLE_AUTH_CLIENT_ID`          |                                         | Client ID for Google auth Single Sign On                                                                                                                         |
+| `GOOGLE_AUTH_CLIENT_SECRET`      |                                         | Client Secret for Google auth Single Sign On                                                                                                                     |
 
 <Warning>
 We recommend that you change `POSTGRES_PASSWORD`, `SECRET_KEY_BASE`,
@@ -297,6 +312,10 @@ api-worker:
 
 In order to use the email feature, you need to configure some environment variables.
 
+<Warning>
+  In addition to this configuration, defining an organization email in Settings > Organization is mandatory; without it, emails will not be sent.
+</Warning>
+
 |Name|Description|
 |--|--|
 | `LAGO_FROM_EMAIL` | Required to send emails (i.e:* noreply@getlago.com*) |
@@ -304,3 +323,12 @@ In order to use the email feature, you need to configure some environment variab
 | `LAGO_SMTP_PORT` | Port of the SMTP Server |
 | `LAGO_SMTP_USERNAME` | Username of the SMTP Server |
 | `LAGO_SMTP_PASSWORD` | Password of the SMTP Server |
+
+#### Single Sign On using Google authentication[](#single-sign-on-using-google-authentication)
+
+In order to enable Google authentication for single sign on, you have to set those variables.
+
+|Name|Description|
+|--|--|
+| `GOOGLE_AUTH_CLIENT_ID`     | Client ID for Google auth Single Sign On     |
+| `GOOGLE_AUTH_CLIENT_SECRET` | Client Secret for Google auth Single Sign On |

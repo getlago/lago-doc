@@ -4,6 +4,10 @@ title: "Update a customer"
 authMethod: bearer
 ---
 
+<Warning>
+This endpoint performs an upsert operation.
+</Warning>
+
 <RequestExample>
 
 ```bash cURL
@@ -39,7 +43,7 @@ curl --location --request POST "$LAGO_URL/api/v1/customers" \
         "sync": true,
         "sync_with_provider": true,
         "document_locale": "fr",
-        "provider_payment_methods": ["card", "sepa_debit", "us_bank_account", "bacs_debit"]
+        "provider_payment_methods": ["card", "sepa_debit", "us_bank_account", "bacs_debit", "link"]
       },
       "metadata": [
         {
@@ -104,7 +108,7 @@ except LagoApiError as e:
 ```ruby Ruby
 require 'lago-ruby-client'
 
-client = Lago::Api::Client.new({api_key: '__YOUR_API_KEY__'})
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
 
 client.customers.create(
   external_id: "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
@@ -131,7 +135,7 @@ client.customers.create(
     sync: true,
     sync_with_provider: true,
     document_locale: "fr",
-    provider_payment_methods: ["card", "sepa_debit", "us_bank_account", "bacs_debit"]
+    provider_payment_methods: ["card", "sepa_debit", "us_bank_account", "bacs_debit", "link"]
   },
   metadata: [
     {

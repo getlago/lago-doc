@@ -44,65 +44,60 @@ The `group` object is deprecated and will be removed from the `billable_metric` 
 Please update all integrations currently using `billable_metrics.group` (see example below).
 
 ```diff "billable_metrics.group" with 1 level
-- { "billable_metric": {
+{
+  "billable_metric": {
     …
-    "group": {
-      "key": "provider",
-      "values": ["AWS", "Google", "Azure"]
-    }
-  }
-}
-+ { "billable_metric": {
-    …
-    "filters": [
-			{
-	      "key": "provider",
-	      "values": ["AWS", "Google", "Azure"]
-	    }
-		]
+-    "group": {
+-      "key": "provider",
+-      "values": ["AWS", "Google", "Azure"]
+-   }
++   "filters": [
++	  {
++	    "key": "provider",
++	    "values": ["AWS", "Google", "Azure"]
++	  }
++	]
   }
 }
 ```
 
 ```diff "billable_metrics.group" with 2 levels
-- { "billable_metric": {
+{
+  "billable_metric": {
     …
-    "group": {
-      "key": "provider",
-      "values": [
-        {
-          "name": "AWS",
-          "key": "region",
-          "values": ["Europe", "Africa", "Asia"]
-        },
-        {
-          "name": "Google",
-          "key": "region",
-          "values": ["Europe", "North America"]
-        },
-        {
-          "name": "Azure",
-          "key": "region",
-          "values": ["North America", "Asia"]
-        }
-      ]
-    }
+-    "group": {
+-      "key": "provider",
+-      "values": [
+-        {
+-          "name": "AWS",
+-          "key": "region",
+-          "values": ["Europe", "Africa", "Asia"]
+-        },
+-        {
+-          "name": "Google",
+-          "key": "region",
+-          "values": ["Europe", "North America"]
+-        },
+-        {
+-          "name": "Azure",
+-          "key": "region",
+-          "values": ["North America", "Asia"]
+-        }
+-      ]
+-    }
++    "filters": [
++      {
++        "key": "provider",
++        "values": ["AWS", "Google", "Azure"]
++      },
++      {
++        "key": "region",
++        "values": ["Europe", "Africa", "Asia", "North America"]
++      }
++    ]
   }
 }
-+ { "billable_metric": {
-    …
-    "filters": [
-			{
-	      "key": "provider",
-	      "values": ["AWS", "Google", "Azure"]
-	    },
-			{
-	      "key": "region",
-	      "values": ["Europe", "Africa", "Asia", "North America"]
-	    }
-		]
-  }
-}
+
 ```
 
 <Warning>
@@ -131,59 +126,49 @@ The `group_properties` object is deprecated and will be removed from `plans.char
 Please update all integrations currently using `plans.charges.group_properties` (see example below).
 
 ```diff
-- { "plans": {
+{
+  "plans": {
     …
     "charges": [
-		{
-	    …
+    {
+      …
       "properties": {
         "amount": "0",
       },
-      "group_properties": [
-        {
-          "group_id": "__GROUP_ID__",
-					"invoice_display_name": "AWS in Europe",
-          "values": {
-            "amount": "15",
-          }
-        },
-				{
-          "group_id": "__GROUP_ID__",
-					"invoice_display_name": "Google in Europe",
-          "values": {
-            "amount": "20",
-          }
-        }
-      ]
-    }
-  }
-}
-+ { "plans": {
-    …
-    "charges": [
-		{
-	    …
-      "properties": {
-        "amount": "0",
-      },
-      "filters": [
-				{
-					"values": {
-						"provider": "AWS",
-						"region": "Europe"
-					},
-					"invoice_display_name": "AWS in Europe"
-					"properties": { "amount": "15" }
-				},
-				{
-					"values": {
-						"provider": "Google",
-						"region": "Europe"
-					},
-					"invoice_display_name": "Google in Europe"
-					"properties": { "amount": "20" }
-				}
-      ]
+-      "group_properties": [
+-        {
+-          "group_id": "__GROUP_ID__",
+-          "invoice_display_name": "AWS in Europe",
+-          "values": {
+-            "amount": "15",
+-          }
+-        },
+-        {
+-          "group_id": "__GROUP_ID__",
+-          "invoice_display_name": "Google in Europe",
+-          "values": {
+-            "amount": "20",
+-          }
+-        }
+-      ]
++      "filters": [
++        {
++          "values": {
++            "provider": "AWS",
++            "region": "Europe"
++          },
++          "invoice_display_name": "AWS in Europe"
++          "properties": { "amount": "15" }
++        },
++        {
++          "values": {
++            "provider": "Google",
++            "region": "Europe"
++          },
++          "invoice_display_name": "Google in Europe"
++          "properties": { "amount": "20" }
++        }
++      ]
     }
   }
 }
@@ -205,18 +190,14 @@ The `lago_group_id` field is deprecated and will be removed from `fees` on July 
 Please update all integrations currently using `fees.lago_group_id` or `invoice.fees.lago_group_id` (see example below).
 
 ```diff
-- { "fees": {
-		…
-		"lago_group_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-		…
-	}
-}
-+ { "fees": {
-		…
-		"lago_group_id": null,
-		"lago_charge_filter_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-		…
-	}
+{
+  "fees": {
+    …
+-    "lago_group_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
++    "lago_group_id": null,
++    "lago_charge_filter_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    …
+  }
 }
 ```
 
@@ -233,81 +214,64 @@ The `charges_usage.groups` field is deprecated and will be removed from `custome
 Please update all integrations currently using `customer_usage.charges_usage.groups` (see example below).
 
 ```diff
-- { "customer_usage": {
-		…
-		"charges_usage": [
-			…
-			{
-				"groups": [
-					{
-	          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-	          "key": "null",
-	          "value": "europe",
-	          "units": "0.9",
-	          "amount_cents": 1000,
-	          "events_count": 10
-          }
-				]
-			}
-		]
-		…
-	}
-}
-+ { "customer_usage": {
-		…
-		"charges_usage": [
-			…
-			{
-				"filters": [
-					{
-	          "values": {
-							"provider": "AWS",
-							"region": "Europe"
-						}
-	          "units": "0.9",
-	          "amount_cents": 1000,
-	          "events_count": 10
-          }
-				]
-			}
-		]
-		…
-	}
+{
+  "customer_usage": {
+    …
+    "charges_usage": [
+      …
+      {
+-        "groups": [
+-          {
+-            "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+-            "key": "null",
+-            "value": "europe",
+-            "units": "0.9",
+-            "amount_cents": 1000,
+-            "events_count": 10
+-          }
+-        ]
++        "filters": [
++          {
++            "values": {
++              "provider": "AWS",
++              "region": "Europe"
++            }
++            "units": "0.9",
++            "amount_cents": 1000,
++            "events_count": 10
++          }
++        ]
+      }
+    ]
+    …
+  }
 }
 ```
 
 ## 2. Mandatory `external_subscription_id` field in event payloads
 
-To enable real-time functionalities, event payloads must include `external_subscription_id`. Events that only include `external_customer_id` will not be taken into account when aggregating usage.
+To enable real-time functionalities, event payloads must include `external_subscription_id`.
+Events that only include `external_customer_id` will not be taken into account when aggregating usage in upcoming versions.
 
 - Making `events.external_subscription_id` required
 
 **Making "events.external_subscription_id" required**
-Sending `event.external_subscription_id` will be mandatory from July 9, 2024.
+Sending `event.external_subscription_id` will be mandatory starting July 9, 2024.
 
 Please update all integrations currently using `POST /events` (see example below).
 
 ```diff
-- { "event": {
-	"transaction_id": "__UNIQUE_ID__",
-	"external_customer_id": "__YOUR_CUSTOMER_ID__",
-	"code": "__BILLABLE_METRIC_CODE__",
-	"timestamp": $(date +%s),
-	"properties": {
-		  "custom_field": 12
-		}
-	}
-}
-+ { "event": {
-	"transaction_id": "__UNIQUE_ID__",
-	"external_customer_id": "__YOUR_CUSTOMER_ID__",
-	"external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
-	"code": "__BILLABLE_METRIC_CODE__",
-	"timestamp": $(date +%s),
-	"properties": {
-		  "custom_field": 12
-		}
-	}
+{
+  "event": {
+    "transaction_id": "__UNIQUE_ID__",
+-   "external_customer_id": "__YOUR_CUSTOMER_ID__",
++   "external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
+    "code": "__BILLABLE_METRIC_CODE__",
+    "timestamp": $(date +%s),
+    "properties": {
+      "custom_field": 12
+    }
+  }
 }
 ```
 

@@ -15,7 +15,7 @@ This integration is only available to users with a specific paying add-on. Pleas
 ## Object mapping
 
 <Frame caption="Lago to Salesforce object mapping">
-  <img src="/integrations/data/images/salesforce-crm-integration.png" />
+  <img src="/integrations/images/lago-salesforce-object-mapping.png" />
 </Frame>
 
 ## I. Integration configuration
@@ -128,8 +128,10 @@ To establish a connection between your Lago instance and the Salesforce Package,
   - Provide your **Lago API Key** (located in Lago's Developer Section)
   - Enter your Lago **API base URL**. Do not insert the `api/v1` at the end of the URL. By default, the valid URL is `https://api.getlago.com/`. 
   If you want to change the API base URL to another one (e.g., `https://api.eu.getlago.com/` or a custom self-hosted one), please follow option 2.
+  - Enter lago app URL (**Front End Base URL**). By default, the valid URL is `https://app.getlago.com/` (it will be different for self-hosted).
 4. **"Save and validate"** your connection; and
-5. Click the **"Start Sync Data"** to finalize the connection between Lago and Salesforce.
+  - If the **Lago API Key** is valid then only **Start Data Sync** button will be enabled.
+5. Click the **"Start Data Sync"** to finalize the connection between Lago and Salesforce.
 
 <Warning>
 Please note that data synchronization is available only for Lago customers with an `external_salesforce_id` and an existing Salesforce Account.
@@ -147,6 +149,10 @@ you can customize it directly in Salesforce:
 
 ## II. Sync data from Lago to Salesforce
 If your webhook endpoint is configured correctly, your **billing data will flow seamlessly in real-time**.
+
+<Info>
+Please note that Subscriptions and Invoices will be created in Salesforce via webhooks seamlessly
+</Info>
 
 ### Sync customers to Salesforce
 To synchronize Lago Customer data with Salesforce Accounts (native object), ensure that your 
@@ -209,13 +215,44 @@ Here is a list of Subscription fields that are automatically synced:
 Whenever a credit note is issued for a Lago Invoice, the credit note details will be automatically 
 synced in real-time with Salesforce using the `Lago CreditNotes` custom object.
 
+### Sync Plans, Add-Ons to Salesforce
+Plans and Add-ons are synced to Salesforce when we initially click on **Start Data Sync** from Lago Base Configuration page.
+  - Plans are synced to `Lago Plans` object and `Product2` standard object. We also create a _price book entry_ for all the products in `Standard Price Book` price book
+  - Add-Ons are synced to `Lago Add-Ons` object and `Product2` standard object. We also create a _price book entry_ for all the products in `Standard Price Book` price book.
+
+### Schedule Sync from Lago To Salesforce
+We also provide option to schedule the data sync from Lago to Salesforce. 
+  - `LagoSyncScheduleable` -- a schedulable class which helps us schedule either all the data or any one of them.
+  - To schedule the sync of any _ONE_ of the object:
+    - Create a new instance of class by passing any one of the following string: `CUSTOMER`, `SUBSCRIPTION`, `PLAN`, `ADDON`, `INVOICE`, `CREDITNOTE`
+      - Ex: To sync Plans from lago to Salesforce everyday at 1PM, execute below anonymous code in Anonymous window in Developer Console. ([click here to learn more about CRON expression](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_scheduler.htm))
+        ```
+        //Create a new instance. Pass 'PLAN' in brackets.
+        lago.LagoSyncScheduleable syncPlan = new lago.LagoSyncScheduleable('PLAN');
+        //CRON expression to schedule a job everyday at 1 PM
+        String schedule_cron = '0 0 13 * * ?';
+        //schedule(name, cron_expression, class_instance)
+        System.schedule('Sync Lago Plan', schedule_cron, syncPlan);
+        ```
+  - To schedule the sync of  _ALL_ the objects:
+    - create a new instance of class by passing `true`
+      - Ex: To sync **all** objects from lago to Salesforce everyday at 1PM, execute below anonymous code in Anonymous window in Developer Console. ([click here to learn more about CRON expression](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_scheduler.htm))
+        ```
+        //Create a new instance. Pass true in brackets.
+        lago.LagoSyncScheduleable syncAll = new lago.LagoSyncScheduleable(true);
+        //CRON expression to schedule a job everyday at 1 PM
+        String schedule_cron = '0 0 13 * * ?';
+        //schedule(name, cron_expression, class_instance)
+        System.schedule('Sync Lago all', schedule_cron, syncPlan);
+        ```
+
 
 ## III. Actions from Salesforce to Lago
 Beyond just syncing data from Lago to Salesforce, you can also initiate actions in Lago directly from Salesforce. 
-You can leverage Salesforce `Flows` to execute actions in Lago. Lago provides two customizable templates for creating customers from Salesforce Accounts 
-and directly assigning subscriptions to customers from Salesforce.
+You can leverage Salesforce `Flows` to execute actions in Lago. Lago provides several customizable templates for creating customers from Salesforce Accounts, directly assigning subscriptions to customers from Salesforce, creating one-off invoice from salesforce.
 
-### Flow 1: Create customers
+### Create customers
+#### Flow: `Lago Template - Create Customer in Lago on Account Create`
 <Frame caption="Use Lago template to create a customer on Account creation">
   <img src="/integrations/images/lago-salesforce-flows-template.png" />
 </Frame>
@@ -238,23 +275,28 @@ By default, the action is initiated when a Lago ID is absent. Additionally, you 
 </Frame>
 
 
-### Flow 2: Create subscriptions
+### Create subscriptions (automation)
+
 Assigning a plan to a customer, adjusting negotiated prices, and initiating the subscription upon winning an opportunity represents a key action from Salesforce to Lago. 
 This enables sales teams to remain within Salesforce, their primary tool, and activate billing processes directly, without the need to switch platforms.
 
-To assign a subscription and set prices in Lago directly from Salesforce, use the provided Lago Flow template.
+To assign a subscription and set prices in Lago directly from Salesforce, use the provided two flows via following Lago Flow templates.
+
+#### Flow 1: `Lago Template - Create Lago SObject Records`
+
+This Flow is used to create intermediate records in Lago Objects - `Lago Subscription`
 
 1. Log into your Salesforce instance;
-2. Access the Setup section via the settings wheel icon in Salesforce;
+2. Access the Setup section via the settings gear icon in Salesforce;
 3. Find and select `Flows` under Process Automation in the sidebar;
-4. Locate and open the `Lago Template - Create Subscription in Lago on Opp Closed`;
+4. Locate and open the `Lago Template - Create Lago SObject Records`;
 5. Click 'Save As' to create and save your own version of the template; and
 6. Do not forget to click the `Activate` button to activate your flow.
 
 <Steps>
   <Step title="Validate the flow">
     The default setting triggers plan assignment when a Salesforce Account links to a Lago customer and the **opportunity status changes to closed-won**. 
-    You can customize this flow to suit your specific needs. Moreover, you have the option to adjust the subscription fields being synchronized from Salesforce to Lago.
+    You can customize this flow to suit your specific needs. Moreover, you have the option to adjust the subscription fields and subscription charges fields being synchronized from Salesforce to Lago.
     <Frame caption="Customize the flow">
       <img src="/integrations/images/sync-subscriptions-salesforce-lago-flow.gif" />
     </Frame>
@@ -268,20 +310,115 @@ To assign a subscription and set prices in Lago directly from Salesforce, use th
     5. Click on 'Lago Override Plan' to finalize the subscription assignment.
 
     <Info>
-      By default, the subscription is created when the opportunity is `closed-won`. You can assign multiple subscriptions for the same opportunity.
+      By default, the lago subscription record in salesforce is created when the opportunity is `closed-won`. You can assign multiple subscriptions for the same opportunity.
     </Info>
 
-    <iframe
-      width="560"
-      height="315"
-      src="https://www.youtube.com/embed/mflFqN7mHNA"
-      title="Salesforce integration with Lago"
-      frameBorder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen>
-    </iframe>
   </Step>
 </Steps>
+
+
+#### Flow 2: `Lago Template - Create Subscription in Lago on Subscription Creation/Update`
+
+This Flow is used to create subscriptions in Lago from Salesforce
+
+1. Log into your Salesforce instance;
+2. Access the Setup section via the settings gear icon in Salesforce;
+3. Find and select `Flows` under Process Automation in the sidebar;
+4. Locate and open the `Lago Template - Create Subscription in Lago on Subscription Creation/Update`;
+5. Click 'Save As' to create and save your own version of the template; and
+6. Do not forget to click the `Activate` button to activate your flow.
+
+The default setting triggers plan assignment when `SyncToLago` checkbox is checked. You can customize this flow to suit your specific needs. 
+
+### Create subscriptions (lago native UI)
+
+We also have option to create subscriptions in Lago directly from Salesforce using Lago's create subscription screen.
+
+1. Log into your Salesforce instance;
+2. Access the setup section via the settings gear icon in Salesforce;
+3. Go to Object manager and find and open account object;
+4. Go to page layout (or Lightning record page) depending on what you are using, and open the page layout in which you'd like to add the button to create subscription.
+5. Add the button `Lago Subscription`
+6. Save the page layout or lightning record page.
+
+Open any account which has `lago_id` populated. Click on `Lago Subscription` button; it will pop-up Lago Screen (make sure you've entered correct `Front End URL` in Lago Base Configuration page); enter correct username and password. Save. A new subscription will be directly created in Lago. And, if Webhooks are configured correctly, it will also create `Lago Subscription` record in Salesforce.
+
+    <Frame caption="Lago Subscription from SF (iframe)">
+      <img src="/integrations/data/images/salesforce-lago-subscription-iframe.gif" />
+    </Frame>
+
+    <Info>
+      We can add a new button **_Lago Subscription_** on _Account_ page or _Opportunity_ page
+      A new Lago Subscription record will be created via webhooks (if configured).
+      And after 1 minute another callout will be made to sync Charges.
+    </Info>
+
+### Terminate Subscription
+
+ We can terminate the subscription from Salesforce to lago only if the subscription is already synced to lago(status is _active_ or _pending_).
+
+ Go to Lago Subscription record in Salesforce, and check `Terminate Subscription` checkbox.  
+
+    <Info>
+    As soon as `Terminate Subscription` is checked it will terminate the subscription in Lago. It is handled from the backend via trigger.
+    </Info>
+
+
+### Create one-off invoice
+
+This enables sales team to create one-off invoice in lago from Salesforce. 
+Right from the opportunity record we add products which are related to `Lago Add-ons`, specify the quantity, description and amount.
+
+To create one-off invoice and set prices in Lago directly from Salesforce, use the provided two flows via following Lago Flow templates.
+
+#### Flow 1: [`Lago Template - Create Lago SObject Records`](/integrations/crm/salesforce-crm#flow-1-lago-template-create-lago-sobject-records)
+
+The same flow as we created above to create subscription - is also used to create intermediate records in Lago Objects - `Lago Invoice`
+
+#### Flow 2: `Lago Template - Generate Invoice in Lago On Lago Invoice Field Update`
+
+This Flow is used to create one-off invoice in Lago from Salesforce
+
+1. Log into your Salesforce instance;
+2. Access the Setup section via the settings gear icon in Salesforce;
+3. Find and select `Flows` under Process Automation in the sidebar;
+4. Locate and open the `Lago Template - Generate Invoice in Lago On Lago Invoice Field Update`;
+5. Click 'Save As' to create and save your own version of the template; and
+6. Do not forget to click the `Activate` button to activate your flow.
+
+The default setting triggers create invoice when `SyncToLago` checkbox is checked. You can customize this flow to suit your specific needs. 
+
+
+### Create one-off invoice (lago native UI)
+
+We also have option to create one off invoice in Lago directly from Salesforce using Lago's create invoice screen.
+
+1. Log into your Salesforce instance;
+2. Access the setup section via the settings gear icon in Salesforce;
+3. Go to Object manager and find and open Account object or Opportunity;
+4. Go to page layout (or Lightning record page) depending on what you are using, and open the page layout in which you'd like to add the button to create Invoice.
+5. Add the button `Lago Invoice`
+6. Save the page layout or lightning record page.
+
+Open any account which has `lago_id` populated. Click on `Lago Invoice` button; it will pop-up Lago Screen (make sure you've entered correct `Front End URL` in Lago Base Configuration page); enter correct username and password. Save. A new Invoice will be directly created in Lago. And, if Webhooks are configured correctly, it will also create `Lago Invoice` record in Salesforce.
+
+    <Frame caption="Lago Invoice from SF (iframe)">
+      <img src="/integrations/data/images/salesforce-lago-invoice-iframe.gif" />
+    </Frame>
+
+    <Info>
+      We can add a new button **_Lago Invoice_** on _Account_ page or _Opportunity_ page
+      A new Lago Invoice record will be created via webhooks (if configured).
+      After 1 minute another callout will be made to sync invoice line items (add ons).
+    </Info>
+
+### Get Invoice pdf
+
+Now we can also get invoice pdf directly directly from Salesforce. 
+
+1. Go to Lago Invoice
+2. Open any Invoice which is already synced.
+3. Click `Get Invoice pdf` > it will open PDF in a new tab.
 
 ## Debugging & logs
 

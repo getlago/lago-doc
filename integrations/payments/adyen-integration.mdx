@@ -1,5 +1,5 @@
 ---
-title: "Adyen integration"
+title: "Adyen"
 description:
   "Lago's native integration with Adyen allows you to collect payments
   automatically when new invoices are generated."
@@ -70,16 +70,29 @@ When connecting Lago to Adyen, you need to provide information for the following
 ## Setting up Adyen's payments auto-capture
 To enable automatic payment capture in your Adyen account, ensure that you have configured the account settings accordingly. Automatic payment capture allows for immediate processing without manual intervention. Refer to Adyen's documentation for instructions on [setting up auto capture](https://docs.adyen.com/online-payments/capture#automatic-capture).
 
+## Turn on Adyen's recurring details
+In Adyen, to enable recurring payments for a stored payment method, follow these steps:
+1. Go to Developers > Additional Data;
+2. Check the box for Recurring Details; and
+3. Click Save.
+
+<Frame caption="Adyen recurring details option">
+  <img src="/guide/payments/images/adyen-recurring-options.png" />
+</Frame>
+
 ## Setting up Adyen Webhook for listening to important events
 **This step is crucial and mandatory** for Lago to receive and process messages from Adyen, enabling functionalities such as customer creation/update, payment processing, and refunds. To configure Adyen webhook and establish communication with Lago, follow the steps below:
 
 1. Access your Adyen application and navigate to the **Developers** section;
 2. Select **Webhooks** and create a new webhook of type **Standard**;
 3. In the **Server configuration** section, locate the **General** settings; and
-4. Copy and paste the following URL: **`https://api.getlago.com/webhooks/adyen/{{your_organization_id}}`** (don't forget to change the prefix `your_organization_id`)
+4. Copy and paste the following URL: **`https://api.getlago.com/webhooks/adyen/{{your_organization_id}}?code={{connection_code}}`**.
 
 <Tip>
-You can find your Organization ID in Lago under the Developers section, specifically in **API keys & ID** > **Organization ID**.
+You can find your Organization ID in Lago under the Developers section in Lago, specifically in **API keys & ID** > **Organization ID**.
+</Tip>
+<Tip>
+To find your **connection code**, navigate to the Integrations section in Lago and select the appropriate connection code for your Adyen integration.
 </Tip>
 
 **Please ensure that you complete this setup correctly, as your Adyen integration will not function without this vital step.**
@@ -192,12 +205,12 @@ In cases where a customer has Adyen defined as their payment provider, Lago simp
 
 This integration eliminates the need for manual refund processing and ensures that refunds are efficiently handled in Adyen. Lago's automated refund functionality helps you maintain accurate and timely refund transactions, enhancing customer satisfaction and operational efficiency.
 
-## Watch the demo video
-<iframe width="100%" height="400" src="https://www.youtube.com/embed/Zh7NNbgS7Bo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
 ## Payment disputes
 In the event of a **lost** chargeback (dispute) within Adyen, Lago initiates an automatic response by marking the relevant invoice as disputed lost. This action involves populating the `dispute_lost_at` field with the timestamp when the dispute was lost. Following this update:
 
 - The invoice becomes non-voidable;
 - Generating a credit note is possible; however, refunding the payment back to the original payment method is not permitted; and
 - The invoice cannot be resent for collection.
+
+## Watch the demo video
+<iframe width="100%" height="400" src="https://www.youtube.com/embed/Zh7NNbgS7Bo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>

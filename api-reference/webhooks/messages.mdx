@@ -4,21 +4,22 @@ description: "Here is the complete list of webhook messages sent by Lago."
 ---
 
 ## Event ingestion
+
 <AccordionGroup>
   <Accordion title="Events errors">
     Sent by the health check process when some events received in the previous hour do not match the validation rules.
 
-    ```json
-      {
-        "webhook_type": "events.errors",
-        "object_type": "events_errors",
-        "events_errors": {
-          "invalid_code": ["__transaction_id__"],
-          "missing_aggregation_property": ["__transaction_id__"],
-          "missing_group_key": ["__transaction_id__"]
-        }
-      }
-    ```
+```json
+{
+  "webhook_type": "events.errors",
+  "object_type": "events_errors",
+  "events_errors": {
+    "invalid_code": ["__transaction_id__"],
+    "missing_aggregation_property": ["__transaction_id__"],
+    "missing_group_key": ["__transaction_id__"]
+  }
+}
+```
 
     ### Arguments
     <ResponseField name="invalid_code" type="array" required>
@@ -30,6 +31,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="missing_group_key" type="array" required>
       List of events `transaction_id` for which the groups properties defined at the billable metric level are missing or invalid.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Event error [deprecated]">
     This webhook is deprecated and no longer sent in Lago `v0.50.0-beta` and above. It was sent when there was an error related to the creation of an event.
@@ -72,10 +74,12 @@ description: "Here is the complete list of webhook messages sent by Lago."
     | 404   | `subscription_not_found`     | No subscription matches the given external subscription id |
     | 422   | `invalid_argument`           | No subscription matches the given external subscription id |
     | 422   | `invalid_recurring_resource` | Provided recurring resource for persisted event is invalid |
+
   </Accordion>
 </AccordionGroup>
 
 ## Invoices
+
 <AccordionGroup>
   <Accordion title="Draft invoice created">
     Sent when a new invoice is in draft.
@@ -180,6 +184,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="invoice" type="JSON" required>
       Returning an invoice object.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Finalized invoice created">
     Sent when an invoice is finalized. This event serves as a signal to your application that the invoice processing is
@@ -196,6 +201,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
         "invoice_type": "subscription",
         "status": "finalized",
         "payment_status": "succeeded",
+        "payment_overdue": false,
         "amount_cents": 100,
         "amount_currency": "EUR",
         "vat_amount_cents": 20,
@@ -551,6 +557,67 @@ description: "Here is the complete list of webhook messages sent by Lago."
         "invoice_type": "subscription",
         "status": "finalized",
         "payment_status": "succeeded",
+        "payment_overdue": false,
+        "currency": "USD",
+        "fees_amount_cents": 70,
+        "amount_cents": 70,
+        "vat_amount_cents": 11,
+        "coupons_amount_cents": 0,
+        "credit_notes_amount_cents": 0,
+        "credit_amount_cents": 0,
+        "total_amount_cents": 81,
+        "prepaid_credit_amount_cents": 0,
+        "file_url": null,
+        "version_number": 2,
+        "legacy": false,
+        "amount_currency": "USD",
+        "vat_amount_currency": "USD",
+        "credit_amount_currency": "USD",
+        "total_amount_currency": "USD",
+        "customer": {
+          "lago_id": "99a6094e-199b-4101-896a-54e927ce7bd7",
+          "sequential_id": 1,
+          "slug": "LAG-1234-001",
+          "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "address_line1": "5230 Penfield Ave",
+          "address_line2": null,
+          "city": "Woodland Hills",
+          "country": "US",
+          "created_at": "2022-04-29T08:59:51Z",
+          "email": "dinesh@piedpiper.test",
+          "legal_name": "Coleman-Blair",
+          "legal_number": "49-008-2965",
+          "logo_url": "http://hooli.com/logo.png",
+          "name": "Gavin Belson",
+          "phone": "1-171-883-3711 x245",
+          "state": "CA",
+          "url": "http://hooli.com",
+          "vat_rate": 20.0,
+          "zipcode": "91364"
+        }
+      }
+    }
+    ```
+    ### Arguments
+    <ResponseField name="invoice" type="JSON" required>
+      Returning an invoice object.
+    </ResponseField>
+  </Accordion>
+  <Accordion title="Payment overdue">
+    Sent when the payment of an invoice is considered as overdue.
+    ```json
+    {
+      "webhook_type": "invoice.payment_overdue",
+      "object_type": "invoice",
+      "invoice": {
+        "lago_id": "68133479-abcd-1234-5678-jklm437da000",
+        "sequential_id": 1,
+        "number": "SEL-AZ22-040-XXX",
+        "issuing_date": "2023-04-24",
+        "invoice_type": "subscription",
+        "status": "finalized",
+        "payment_status": "succeeded",
+        "payment_overdue": "true",
         "currency": "USD",
         "fees_amount_cents": 70,
         "amount_cents": 70,
@@ -599,6 +666,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
 </AccordionGroup>
 
 ## Subscriptions and fees
+
 <AccordionGroup>
   <Accordion title="Fee created">
     Sent when a fee for a charge to be paid in advance is created. You can use this information to collect the payment of the
@@ -633,6 +701,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="fee" type="JSON" required>
       Returning a fee object.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Subscription started">
     Sent when a subscription starts.
@@ -717,6 +786,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="subscription" type="JSON" required>
       Returning a subscription object.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Subscription termination alert">
     Alert for imminent termination of subscriptions with set end dates, sent 45 days and 15 days prior (at fixed intervals).
@@ -801,6 +871,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="subscription" type="JSON" required>
       Returning a subscription object.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Subscription terminated">
     Sent when a subscription is terminated.
@@ -885,12 +956,14 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="subscription" type="JSON" required>
       Returning a subscription object.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Subscription upgraded/downgraded">
     When a subscription undergoes an upgrade or downgrade, you will be notified via two webhook messages as follows:
 
     1. `subscription.terminated` for the initial plan, which includes the property `next_plan_code` populated with the code of the **new plan**.
     2. `subscription.started` for the new plan, which includes the property `previous_plan_code` populated with the code of the **initial plan**.
+
   </Accordion>
   <Accordion title="Subscription trial ended">
     Sent when the free trial is ended for a subscription.
@@ -975,10 +1048,244 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="subscription" type="JSON" required>
       Returning a subscription object.
     </ResponseField>
+
+  </Accordion>
+    <Accordion title="Subscription usage threshold reached">
+    Sent when a progressive billing threshold has been crossed.
+
+    ```json
+    {
+  "webhook_type": "subscription.usage_threshold_reached",
+  "object_type": "subscription",
+  "subscription": {
+    "lago_id": "cc0d663b-6be1-4e65-8b40-5789a11ad496",
+    "external_id": "d4e763ec-a1e7-40f9-a670-725ef5c0a6c4",
+    "lago_customer_id": "16a1cc42-498f-4f81-a788-907a14726222",
+    "external_customer_id": "test10",
+    "name": "",
+    "plan_code": "premium",
+    "status": "active",
+    "billing_time": "anniversary",
+    "subscription_at": "2024-08-28T00:00:00Z",
+    "started_at": "2024-08-28T00:00:00Z",
+    "trial_ended_at": null,
+    "ending_at": null,
+    "terminated_at": null,
+    "canceled_at": null,
+    "created_at": "2024-08-28T14:31:48Z",
+    "previous_plan_code": null,
+    "next_plan_code": null,
+    "downgrade_plan_date": null,
+    "customer": {
+      "lago_id": "16a1cc42-498f-4f81-a788-907a14726222",
+      "external_id": "test10",
+      "name": "test10",
+      "sequential_id": 17,
+      "slug": "HOO-A58E-017",
+      "created_at": "2024-08-28T14:31:43Z",
+      "updated_at": "2024-08-28T14:31:48Z",
+      "country": null,
+      "address_line1": null,
+      "address_line2": null,
+      "state": null,
+      "zipcode": null,
+      "email": null,
+      "city": null,
+      "url": null,
+      "phone": null,
+      "logo_url": null,
+      "legal_name": null,
+      "legal_number": null,
+      "currency": "USD",
+      "tax_identification_number": null,
+      "timezone": null,
+      "applicable_timezone": "UTC",
+      "net_payment_term": null,
+      "external_salesforce_id": "",
+      "billing_configuration": {
+        "invoice_grace_period": null,
+        "payment_provider": null,
+        "payment_provider_code": null,
+        "document_locale": null
+      },
+      "shipping_address": {
+        "address_line1": null,
+        "address_line2": null,
+        "city": null,
+        "zipcode": null,
+        "state": null,
+        "country": null
+      },
+      "metadata": []
+    },
+    "plan": {
+      "lago_id": "f9a7cb8a-a3da-463e-8cc3-27b4cd7268e3",
+      "name": "Premium",
+      "invoice_display_name": null,
+      "created_at": "2024-08-26T19:36:06Z",
+      "code": "premium",
+      "interval": "monthly",
+      "description": "",
+      "amount_cents": 10000,
+      "amount_currency": "USD",
+      "trial_period": 0,
+      "pay_in_advance": true,
+      "bill_charges_monthly": null,
+      "customers_count": 10,
+      "active_subscriptions_count": 10,
+      "draft_invoices_count": 1,
+      "parent_id": null,
+      "charges": [
+        {
+          "lago_id": "80248b30-2f61-4415-a079-50dea62032bf",
+          "lago_billable_metric_id": "5767cae0-bef3-4f92-b307-cec1abffd727",
+          "invoice_display_name": "",
+          "billable_metric_code": "storage",
+          "created_at": "2024-08-26T19:36:06Z",
+          "charge_model": "standard",
+          "invoiceable": true,
+          "regroup_paid_fees": null,
+          "pay_in_advance": false,
+          "prorated": false,
+          "min_amount_cents": 0,
+          "properties": {
+            "amount": "0"
+          },
+          "filters": [
+            {
+              "invoice_display_name": null,
+              "properties": {
+                "amount": "1"
+              },
+              "values": {
+                "region": [
+                  "EU"
+                ]
+              }
+            },
+            {
+              "invoice_display_name": null,
+              "properties": {
+                "amount": "2"
+              },
+              "values": {
+                "region": [
+                  "US"
+                ]
+              }
+            }
+          ],
+          "taxes": []
+        },
+        {
+          "lago_id": "b4520b85-a753-40ee-8152-810795661418",
+          "lago_billable_metric_id": "6a2cb17c-0463-43a6-8af3-befb61fccf63",
+          "invoice_display_name": "",
+          "billable_metric_code": "seats",
+          "created_at": "2024-08-26T19:36:06Z",
+          "charge_model": "standard",
+          "invoiceable": true,
+          "regroup_paid_fees": null,
+          "pay_in_advance": false,
+          "prorated": false,
+          "min_amount_cents": 0,
+          "properties": {
+            "amount": "1"
+          },
+          "filters": [],
+          "taxes": []
+        },
+        {
+          "lago_id": "5b751c56-c303-450f-8b49-9a42084cee7d",
+          "lago_billable_metric_id": "26c83bf2-a2fe-477d-af95-44ce2e6d86b1",
+          "invoice_display_name": null,
+          "billable_metric_code": "requests",
+          "created_at": "2024-08-28T13:28:30Z",
+          "charge_model": "standard",
+          "invoiceable": true,
+          "regroup_paid_fees": null,
+          "pay_in_advance": false,
+          "prorated": false,
+          "min_amount_cents": 20000,
+          "properties": {
+            "amount": "0.10"
+          },
+          "filters": [],
+          "taxes": []
+        }
+      ],
+      "usage_thresholds": [
+        {
+          "lago_id": "78e8eaae-c5cc-4cfd-bdf0-3502c353e882",
+          "threshold_display_name": "Threshold 1 ",
+          "amount_cents": 500,
+          "recurring": false,
+          "created_at": "2024-08-27T12:47:24Z",
+          "updated_at": "2024-08-27T12:47:24Z"
+        },
+        {
+          "lago_id": "e38466f2-ee4b-471a-9083-df21cdaa6e1e",
+          "threshold_display_name": "Threshold 2",
+          "amount_cents": 5000,
+          "recurring": false,
+          "created_at": "2024-08-27T12:47:24Z",
+          "updated_at": "2024-08-27T12:47:24Z"
+        },
+        {
+          "lago_id": "508797dd-a59d-49e8-bb08-95c3622bce05",
+          "threshold_display_name": "Bill every 50 dollars",
+          "amount_cents": 5000,
+          "recurring": true,
+          "created_at": "2024-08-27T12:47:24Z",
+          "updated_at": "2024-08-27T12:47:24Z"
+        },
+        {
+          "lago_id": "49c3b23e-5194-4009-bcca-b0de070dadb2",
+          "threshold_display_name": "Threshold 3",
+          "amount_cents": 10000,
+          "recurring": false,
+          "created_at": "2024-08-27T12:47:24Z",
+          "updated_at": "2024-08-27T12:47:24Z"
+        }
+      ],
+      "taxes": [],
+      "minimum_commitment": {
+        "lago_id": "259bfce6-2f9c-4f85-b96e-20d3f106786b",
+        "plan_code": "premium",
+        "invoice_display_name": null,
+        "amount_cents": 200000,
+        "interval": "monthly",
+        "created_at": "2024-08-26T19:36:06Z",
+        "updated_at": "2024-08-26T19:36:06Z",
+        "taxes": []
+      }
+    },
+    "usage_threshold": {
+      "lago_id": "49c3b23e-5194-4009-bcca-b0de070dadb2",
+      "threshold_display_name": "Threshold 3",
+      "amount_cents": 10000,
+      "recurring": false,
+      "created_at": "2024-08-27T12:47:24Z",
+      "updated_at": "2024-08-27T12:47:24Z"
+    }
+  }
+}
+    ```
+    ### Arguments
+    <ResponseField name="subscription" type="JSON" required>
+      Returning a subscription object with the `usage_threshold` reached.
+    </ResponseField>
   </Accordion>
 </AccordionGroup>
 
+
+
+
+
+
+
 ## Wallets
+
 <AccordionGroup>
   <Accordion title="Wallet transaction created">
     Sent when a wallet transaction is created.
@@ -1004,6 +1311,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="wallet_transaction" type="JSON" required>
       Returning a wallet transaction object.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Wallet transaction updated">
     Sent when a wallet transaction is updated. For example, when wallet transaction is marked as settled.
@@ -1029,6 +1337,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="wallet_transaction" type="JSON" required>
       Returning a wallet transaction object.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Wallet - Depleted ongoing balance">
     Sent when the ongoing balance is negative or equal to 0.
@@ -1065,10 +1374,12 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="wallet" type="JSON" required>
       Returning a wallet object.
     </ResponseField>
+
   </Accordion>
 </AccordionGroup>
 
 ## External payment providers
+
 <AccordionGroup>
   <Accordion title="Payment provider created">
     This webhook is sent when a customer is successfully created in the payment provider's application.
@@ -1107,6 +1418,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="customer" type="JSON" required>
       Returning a customer object.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Checkout URL generated">
     Sent when a checkout link is issued for a customer.
@@ -1137,6 +1449,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="checkout_url" type="String" required>
       URL that should be utilized to set up the payment method within the payment provider's system.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Payment provider error">
     This webhook is sent when there is an error related to the creation of a customer in the payment provider's system.
@@ -1173,6 +1486,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
       <ResponseField name="provider_error[error_code] " type="String" required>
       The error code sent by the payment provider.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Payment failure">
     Sent when there is an error related to the payment process.
@@ -1218,6 +1532,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
       <ResponseField name="provider_error[error_code] " type="String" required>
       The error code sent by the payment provider.
     </ResponseField>
+
   </Accordion>
 
 <Accordion title="Payment dispute lost">
@@ -1225,49 +1540,104 @@ description: "Here is the complete list of webhook messages sent by Lago."
 
     ```json
       {
-  "webhook_type": "invoice.payment_dispute_lost",
-  "object_type": "payment_dispute_lost",
-  "payment_dispute_lost": {
-    "invoice": {
-      "lago_id": "95afbc14-70d4-41a0-855c-df348bd5c878",
-      "sequential_id": 1,
-      "number": "TWLO-202404-093",
-      "issuing_date": "2024-04-15",
-      "payment_due_date": "2024-04-15",
-      "net_payment_term": 0,
-      "invoice_type": "subscription",
-      "status": "finalized",
-      "payment_status": "pending",
-      "payment_dispute_lost_at": "2024-04-16T12:48:01.176Z",
-      "currency": "USD",
-      "fees_amount_cents": 163000,
-      "taxes_amount_cents": 32500,
-      "coupons_amount_cents": 500,
-      "credit_notes_amount_cents": 0,
-      "sub_total_excluding_taxes_amount_cents": 162500,
-      "sub_total_including_taxes_amount_cents": 195000,
-      "total_amount_cents": 194900,
-      "prepaid_credit_amount_cents": 100,
-      "file_url": "https://main-api.staging.getlago.com/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJaWt3TmpFMk56a3lNQzFtTWpOakxUUmxZMk10WWpVM1pDMDFZbUl3TjJJd09UVmpaamtHT2daRlZBPT0iLCJleHAiOm51bGwsInB1ciI6ImJsb2JfaWQifX0=--e9e5fce3554afcbcf2b2f531fdee9365cf44e732/TWLO-202404-093.pdf",
-      "version_number": 4,
-      "legacy": false,
-      "amount_currency": "USD",
-      "vat_amount_currency": "USD",
-      "credit_amount_currency": "USD",
-      "total_amount_currency": "USD",
-      "amount_cents": 163000,
-      "credit_amount_cents": 500,
-      "vat_amount_cents": 32500,
-      "sub_total_vat_excluded_amount_cents": 162500,
-      "sub_total_vat_included_amount_cents": 195000,
+        "webhook_type": "invoice.payment_dispute_lost",
+        "object_type": "payment_dispute_lost",
+        "payment_dispute_lost": {
+          "invoice": {
+            "lago_id": "95afbc14-70d4-41a0-855c-df348bd5c878",
+            "sequential_id": 1,
+            "number": "TWLO-202404-093",
+            "issuing_date": "2024-04-15",
+            "payment_due_date": "2024-04-15",
+            "net_payment_term": 0,
+            "invoice_type": "subscription",
+            "status": "finalized",
+            "payment_status": "pending",
+            "payment_dispute_lost_at": "2024-04-16T12:48:01.176Z",
+            "currency": "USD",
+            "fees_amount_cents": 163000,
+            "taxes_amount_cents": 32500,
+            "coupons_amount_cents": 500,
+            "credit_notes_amount_cents": 0,
+            "sub_total_excluding_taxes_amount_cents": 162500,
+            "sub_total_including_taxes_amount_cents": 195000,
+            "total_amount_cents": 194900,
+            "prepaid_credit_amount_cents": 100,
+            "file_url": "https://main-api.staging.getlago.com/rails/active_storage/blobs/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaEpJaWt3TmpFMk56a3lNQzFtTWpOakxUUmxZMk10WWpVM1pDMDFZbUl3TjJJd09UVmpaamtHT2daRlZBPT0iLCJleHAiOm51bGwsInB1ciI6ImJsb2JfaWQifX0=--e9e5fce3554afcbcf2b2f531fdee9365cf44e732/TWLO-202404-093.pdf",
+            "version_number": 4,
+            "legacy": false,
+            "amount_currency": "USD",
+            "vat_amount_currency": "USD",
+            "credit_amount_currency": "USD",
+            "total_amount_currency": "USD",
+            "amount_cents": 163000,
+            "credit_amount_cents": 500,
+            "vat_amount_cents": 32500,
+            "sub_total_vat_excluded_amount_cents": 162500,
+            "sub_total_vat_included_amount_cents": 195000,
+            "customer": {
+              "lago_id": "16ce2b87-0a1c-4474-a483-9c584059bbac",
+              "external_id": "hooli_1234",
+              "name": "Hooli 1234",
+              "sequential_id": 111,
+              "slug": "TWLO-111",
+              "created_at": "2024-04-15T21:48:28Z",
+              "updated_at": "2024-04-15T21:52:02Z",
+              "country": null,
+              "address_line1": null,
+              "address_line2": null,
+              "state": null,
+              "zipcode": null,
+              "email": null,
+              "city": null,
+              "url": null,
+              "phone": null,
+              "logo_url": null,
+              "legal_name": null,
+              "legal_number": null,
+              "currency": "USD",
+              "tax_identification_number": null,
+              "timezone": null,
+              "applicable_timezone": "UTC",
+              "net_payment_term": null,
+              "external_salesforce_id": "",
+              "billing_configuration": {
+                "invoice_grace_period": null,
+                "payment_provider": null,
+                "payment_provider_code": null,
+                "vat_rate": null,
+                "document_locale": null
+              },
+              "metadata": []
+            }
+          }
+        }
+      }
+
+      ````
+
+</Accordion>
+</AccordionGroup>
+
+## External accounting providers
+
+<AccordionGroup>
+  <Accordion title="Accounting provider created">
+    This webhook is sent when a customer is successfully created in the accounting provider's application (like NetSuite).
+    This allows you to retrieve the identifier assigned to the customer by the accounting service provider.
+
+    ```json
+      {
+      "webhook_type": "customer.accounting_provider_created",
+      "object_type": "customer",
       "customer": {
-        "lago_id": "16ce2b87-0a1c-4474-a483-9c584059bbac",
-        "external_id": "hooli_1234",
-        "name": "Hooli 1234",
-        "sequential_id": 111,
-        "slug": "TWLO-111",
-        "created_at": "2024-04-15T21:48:28Z",
-        "updated_at": "2024-04-15T21:52:02Z",
+        "lago_id": "95efb1ac-cfcd-4f56-8fb3-bd26f7d36190",
+        "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "name": "Gavin Belson",
+        "sequential_id": 11,
+        "slug": "CUS-84C0-011",
+        "created_at": "2024-06-04T09:12:27Z",
+        "updated_at": "2024-06-04T09:12:27Z",
         "country": null,
         "address_line1": null,
         "address_line2": null,
@@ -1280,7 +1650,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
         "logo_url": null,
         "legal_name": null,
         "legal_number": null,
-        "currency": "USD",
+        "currency": null,
         "tax_identification_number": null,
         "timezone": null,
         "applicable_timezone": "UTC",
@@ -1288,23 +1658,132 @@ description: "Here is the complete list of webhook messages sent by Lago."
         "external_salesforce_id": "",
         "billing_configuration": {
           "invoice_grace_period": null,
-          "payment_provider": null,
-          "payment_provider_code": null,
+          "payment_provider": "stripe",
+          "payment_provider_code": "stripe",
           "vat_rate": null,
-          "document_locale": null
+          "document_locale": null,
+          "provider_customer_id": "cus_QEM8IhiAwKq8PI",
+          "provider_payment_methods": [
+            "card"
+          ],
+          "sync_with_provider": true
         },
-        "metadata": []
+        "metadata": [],
+        "integration_customers": [
+          {
+            "lago_id": "b9005e92-3e3b-44cd-a0b9-280bf19e690c",
+            "external_customer_id": "63733",
+            "type": "netsuite",
+            "subsidiary_id": "1",
+            "sync_with_provider": true
+          }
+        ]
       }
     }
-  }
-}
     ```
-</Accordion>
+    ### Arguments
+    <ResponseField name="customer" type="JSON" required>
+      Returning a customer object.
+    </ResponseField>
 
+  </Accordion>
+  <Accordion title="Accounting provider error">
+    Sent when there is an error related to the accounting provider sync.
+    Usually occurs when something went wrong in the accounting service provider's application.
+
+    ```json
+      {
+      "webhook_type": "customer.accounting_provider_error",
+      "object_type": "accounting_provider_customer_error",
+      "accounting_provider_customer_error": {
+        "lago_customer_id": "95efb1ac-cfcd-4f56-8fb3-bd26f7d36190",
+        "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "accounting_provider": "netsuite",
+        "accounting_provider_code": "netsuite_prod",
+        "provider_error": {
+          "message": "No line found with doc: 456828 in sublist: apply",
+          "error_code": "action_script_runtime_error"
+        }
+      }
+    }
+    ```
+
+    ### Arguments
+    <ResponseField name="lago_invoice_id" type="String" required>
+      Unique identifer of the invoice in Lago application.
+    </ResponseField>
+    <ResponseField name="lago_customer_id" type="String" required>
+      Unique identifier assigned to the customer within the Lago application.
+      This ID is exclusively created by Lago and serves as a unique identifier for the customer's record within the Lago system.
+    </ResponseField>
+    <ResponseField name="external_customer_id" type="String" required>
+      The customer external unique identifier (provided by your own application).
+    </ResponseField>
+      <ResponseField name="accounting_provider" type="String" required>
+      The default accounting provider attached to this customer.
+    </ResponseField>
+    <ResponseField name="accounting_provider_code" type="String" required>
+      The accounting provider code attached to this customer.
+    </ResponseField>
+    <ResponseField name="provider_error[message]" type="String" required>
+      The error message sent by the accounting provider.
+    </ResponseField>
+      <ResponseField name="provider_error[error_code] " type="String" required>
+      The error code sent by the accounting provider.
+    </ResponseField>
+
+  </Accordion>
 </AccordionGroup>
 
+## External tax providers
+
+<AccordionGroup>
+  <Accordion title="Tax provider error">
+    Sent when there is an error related to the tax provider sync. This usually occurs due to issues with item mappings, customer definitions, or within the service provider’s application.
+
+    ```json
+     {
+        "webhook_type": "customer.tax_provider_error",
+        "object_type": "tax_provider_customer_error",
+        "tax_provider_customer_error": {
+          "lago_customer_id": "25b6f420-ac31-4084-9445-8615557f9a1c",
+          "external_customer_id": "customer-test-12345",
+          "accounting_provider": "anrok",
+          "accounting_provider_code": "test22",
+          "provider_error": {
+            "message": "Service failure",
+            "error_code": "productExternalIdUnknown"
+          }
+        }
+      }
+    ```
+
+    ### Arguments
+    <ResponseField name="lago_customer_id" type="String" required>
+      Unique identifier assigned to the customer within the Lago application.
+      This ID is exclusively created by Lago and serves as a unique identifier for the customer's record within the Lago system.
+    </ResponseField>
+    <ResponseField name="external_customer_id" type="String" required>
+      The customer external unique identifier (provided by your own application).
+    </ResponseField>
+    <ResponseField name="tax_provider" type="String" required>
+      The default tax provider attached to this customer.
+    </ResponseField>
+    <ResponseField name="tax_provider_code" type="String" required>
+      The tax provider code attached to this customer.
+    </ResponseField>
+    <ResponseField name="provider_error[message]" type="String" required>
+      The error message sent by the tax provider.
+    </ResponseField>
+    <ResponseField name="provider_error[error_code] " type="String" required>
+      The error code sent by the accounting provider.
+    </ResponseField>
+
+  </Accordion>
+</AccordionGroup>
 
 ## Credit notes and refunds
+
 <AccordionGroup>
   <Accordion title="Credit note created">
     Sent when a new credit note has been issued for a customer.
@@ -1370,6 +1849,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="credit_note" type="JSON" required>
       Returning a credit note object.
     </ResponseField>
+
   </Accordion>
   <Accordion title="PDF credit note generated">
       Sent when the PDF file has been generated for a credit note.
@@ -1435,6 +1915,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="credit_note" type="JSON" required>
       Returning a credit note object.
     </ResponseField>
+
   </Accordion>
   <Accordion title="Refund failure">
     This webhook is sent when there is an error related to a credit note refund of a payment previously created on a payment provider.
@@ -1478,5 +1959,6 @@ description: "Here is the complete list of webhook messages sent by Lago."
     <ResponseField name="provider_error[error_code]" type="String" required>
       The error message sent by the payment provider.
     </ResponseField>
+
   </Accordion>
 </AccordionGroup>

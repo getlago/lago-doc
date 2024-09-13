@@ -1,7 +1,6 @@
 ---
 title: "Overview"
-description:
-  "Since usage-based charges can be calculated at the end of the billing period, you often need to wait to collect payments. With prepaid credits, you can now unlock recurring revenue opportunities for pay-as-you-go pricing models."
+description: "Since usage-based charges can be calculated at the end of the billing period, you often need to wait to collect payments. With prepaid credits, you can now unlock recurring revenue opportunities for pay-as-you-go pricing models."
 ---
 
 Prepaid credits increase predictability as they allow you to collect payments in advance and then monitor the evolution of the balance of your customer’s wallets.
@@ -18,13 +17,16 @@ Prepaid credits increase predictability as they allow you to collect payments in
     4. Choose a name for the wallet (optional);
     5. Set the credit value (e.g. 1 credit = $5);
     6. Enter the number of credits to be purchased and/or granted for free;
-    7. Set the [expiration date](#expiration-date-and-termination) (optional); and
-    8. Click **"Add wallet & credits"** to confirm.
+    7. Define transaction metadata (optional & available only via API);
+    8. Determine whether the wallet transaction generates an invoice after a top-up or only following a successful payment;
+    9. Set the [expiration date](#expiration-date-and-termination) (optional); and
+    10. Click **"Add wallet & credits"** to confirm.
 
     <Info>
       If the currency of the customer is already defined, the currency of the wallet
       must be the same.
     </Info>
+
   </Tab>
   <Tab title="API">
     ```bash Create a credit wallet
@@ -42,20 +44,27 @@ Prepaid credits increase predictability as they allow you to collect payments in
           "paid_credits": "100.0",
           "granted_credits": "50.0",
           "currency": "USD",
-          "expiration_at": "2022-07-07"
+          "expiration_at": "2022-07-07",
+          "invoice_requires_successful_payment": false,
+          "transaction_metadata": [
+            {
+              "key": "top-up-type",
+              "value": "manual"
+            }
+          ]
         }
       }'
     ```
+
   </Tab>
 </Tabs>
 
-   ![Creation of a wallet via the user interface](/guide/images/new-wallet-7ff463a41c3bea60da1d08d38263ab89.png)
+![Creation of a wallet via the user interface](/guide/images/new-wallet.png)
 
     Free credits are added to the customer's wallet instantly, while purchased
     credits are added to the wallet when payment is confirmed (see below).
 
     Each customer can only have one active wallet.
-
 
 ## Real time wallet balance[](#real-time-wallet-balance "Direct link to heading")
 
@@ -74,7 +83,6 @@ Keep track of your wallet's real-time balance. Lago provides two types of balanc
 1. **Balance:** invoiced balance, which reflects the remaining prepaid credits in your wallet. It updates each time an invoice is finalized for the customer.
 2. **Ongoing Balance:** balance accounted for current usage, including taxes, offering a real-time estimate of your balance's consumption. It refreshes every 5 minutes or upon the finalization of an invoice for the customer.
 
-
 ## Application scope[](#application-scope "Direct link to heading")
 
 Prepaid credits are deducted from the subtotal of the next invoice(s), after
@@ -83,6 +91,10 @@ tax.
 ![Invoice partially paid with prepaid credits](/guide/images/prepaid-credits-invoice-ecd9e8ad653b516efb08c6b48e1e48fe.png)
 
 <Info>Prepaid credits do not apply to one-off invoices.</Info>
+
+## Invoicing after successful payment option
+
+When enabled, this option delays issuing an invoice for a wallet top-up until a successful payment is made. If disabled, the invoice is issued immediately upon the wallet top-up, regardless of the payment status. This setting applies to all transactions for the wallet, but can be overridden for individual transactions or recurring rules.
 
 ## Expiration date and termination[](#expiration-date-and-termination "Direct link to heading")
 

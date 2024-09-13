@@ -1,0 +1,219 @@
+---
+title: "Clone Stripe pricing"
+description:
+  "Replicate Stripe's per-transaction pricing model with Lago."
+---
+
+Implement a per-transaction pricing model like Stripe, the leading payments infrastructure company, including fees based on the total amount and number of transactions.
+
+In this article, you will learn how to build a per-transaction billing system with Lago, where a single event can trigger instant charges.
+This template is suitable for companies whose pricing depends on transactions, such as fintechs and marketplaces that deduct their fees from their customers' revenue.
+
+## Summary
+
+<Steps>
+  <Step title="Record a transaction usage with billable metrics">
+    Ensure transactions are promptly recorded as they occur.
+    [(More here)](#step-1-create-billable-metrics-for-transaction).
+  </Step>
+  <Step title="Price transactions with in advance charges">
+    Establish a price per transaction, incorporating upfront charges and specifying fixed fees, as well as minimum and maximum spending thresholds per transaction.
+    [(More here)](##step-2-price-transaction-with-in-advance-charges).
+  </Step>
+  <Step title="Ingest transactions in real-time">
+    Ingest each new transaction in real-time.
+    [(More here)](#step-3-ingest-transactions-in-real-time).
+  </Step>
+    <Step title="Estimate a fee for a future transaction">
+    Ingest each new transaction in real-time.
+    [(More here)](#step-4-estimate-fees-for-future-transactions).
+  </Step>
+</Steps>
+
+## Pricing structure
+Stripe offers 'pay-as-you-go' pricing based on successful card charges processed via its platform. 
+Stripe's API includes many payment options. Rates and fixed fees per transaction vary depending on the payment method.
+
+| Payment Method                  | Percentage Charge (based on transaction amount) | Fixed Fee (per transaction) |
+|---------------------------------|--------------------------------------------------|-----------------------------|
+| Card payments (online)           | 2.9%                                             | $0.30                       |
+| Card payments (in-person)       | 2.7%                                             | $0.05                       |
+| Wallets (Apple Pay, Alipay)     | 2.9%                                             | $0.30                       |
+| Pre-authorised debits in Canada | 1.0%                                             | $0.30                       |
+| SEPA Direct Debit               | 0.8%                                             | $0.30                       |
+| SOFORT                          | 1.4%                                             | $0.30                       |
+
+As Stripe supports more 20 payment methods in the US and most of them share the same charge model, we will focus on online card payments.
+
+Here's how you can replicate this pricing with our billing solution.
+
+## Step 1: Create billable metrics for transaction
+
+<Tabs>
+  <Tab title="Dashboard">
+    Lago monitors consumption by converting events into billable metrics. For Stripe's per-transaction pricing, we can create a billable metric for each payment method.
+
+    Using the `sum` aggregation type, we create a billable metric that will allow us to record transactions. In this case, the aggregation type is `metered`. It means the aggregated amount is reset to 0 at the beginning of the next billing cycle.
+
+    When a successful card charge is processed via the platform, our backend system will generate an `online_payments` event, including the transaction amount.
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=EAmRNU92Bgrh7w_B&amp;start=62" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+  </Tab>
+  <Tab title="API">
+    ```bash Create a metric for each transaction
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "billable_metric": {
+        "name": "SEPA",
+        "code": "sepa",
+        "description": "",
+        "aggregation_type": "sum_agg",
+        "weighted_interval": null,
+        "recurring": false,
+        "field_name": "amount",
+        "filters": []
+      }
+    }'
+    ```
+  </Tab>
+</Tabs>
+
+## Step 2: Price transaction with in advance charges
+When creating a new plan, the first thing to do is to define the plan model, including billing frequency and subscription fee. Here we can select the monthly plan interval. As we are implementing a 'pay-as-you-go' pricing model, there is no subscription fee.
+
+<Tabs>
+  <Tab title="Dashboard">
+    We want our customers to pay for their use of the payments platform, so we add charges to our plan. Each charge is associated with a billable metric (i.e. one charge per payment method in this case) and has its own pricing structure. In order to replicate Stripe’s pricing, we select the percentage metered charge model then choose pay charge in-advance (`pay_in_advance` is `true`).
+    Additionally, the option to generate invoice for each event should be turned off as Stripe doesn't bill customers for individual transactions (`invoiceable` is `false`).
+
+    The percentage charge model allows us to combine a percentage charge **based on the amount of the transaction and a fixed fee**.
+
+    If you want to charge your user on this usage on a monthly basis, you can set up the same way using the Percentage charge model and charge it in arrears.
+
+    If we wanted to go even further, we could define free units. For instance, we could:
+    - Offer the first three transactions; or
+    - Offer the first $1,000; or
+    - Create a model where the first three transactions or first $1,000 would be free; or
+    - Specify minimum and maximum transaction spending limits. For instance, ensure a minimum fee of $2 per transaction, even if the result falls below this threshold.
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=sTjrPPQKqny72b1I&amp;start=62" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+  </Tab>
+  <Tab title="API">
+    ```bash Pricing percentage fees in-advance
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "plan": {
+          "name": "Basic",
+          "code": "basic",
+          "interval": "monthly",
+          "amount_cents": 0,
+          "amount_currency": "USD",
+          "pay_in_advance": false,
+          "charges": [
+            {
+              "billable_metric_id": "32c2e174-2c7c-41e7-983b-3018d08e02c1",
+              "billable_metric_code": "sepa",
+              "charge_model": "percentage",
+              "invoiceable": false,
+              "pay_in_advance": true,
+              "prorated": false,
+              "min_amount_cents": 0,
+              "properties": {
+                "rate": "0.8",
+                "fixed_amount": "0.30"
+              },
+              "filters": [],
+              "taxes": []
+            }
+          ],
+          "taxes": []
+      }
+  }'
+    ```
+  </Tab>
+</Tabs>
+
+## Step 3: Ingest transactions in real-time
+<Tabs>
+  <Tab title="Dashboard">
+    Stripe records each transaction based on their type, and charge it instantly. These activities are converted into events that are pushed to Lago.
+
+    <Frame>
+      <img src="/templates/images/mistral-tokens-usage.png" />
+    </Frame>
+    
+    For each transaction, the billing system will then automatically calculate the total amount to charge to the end user.
+    This breakdown will be displayed in the 'Usage' tab of the user interface and on the invoice sent to the customer.
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=ZYTvyUDiVYhGC6-5" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+  </Tab>
+  <Tab title="API">
+    ```bash Ingest event for each transaction
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    curl --location --request POST "$LAGO_URL/api/v1/events" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "event": {
+        "transaction_id": "{{$randomUUID}}",
+        "code": "sepa",
+        "external_customer_id": "hooli_1234",
+        "properties": {
+          "amount": 200
+        }
+      }
+    }'
+    ```
+  </Tab>
+</Tabs>
+
+## Step 4: Estimate fees for future transactions
+<Tabs>
+  <Tab title="Dashboard">
+    Stripe records each transaction based on their type, and charge it instantly. These activities are converted into events that are pushed to Lago.
+    
+    For each transaction, the billing system will then automatically calculate the total amount to charge to the end user.
+    This breakdown will be displayed in the 'Usage' tab of the user interface and on the invoice sent to the customer.
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=DrGUzrrVHhh-7tZS&amp;start=412" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+  </Tab>
+  <Tab title="API">
+    ```bash Estimate a fee for a future transaction
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    curl --location --request POST "$LAGO_URL/api/v1/events/estimate_fees" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "event": {
+          "external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
+          "code": "__BILLABLE_METRIC_CODE__",
+          "properties": {
+            "amount": 1200,
+          }
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+
+## Wrap-up
+For fintech companies like Stripe, implementing a per-transaction pricing model is a good way to **increase revenue as customers grow and capture value everytime a transaction is processed**.
+With Lago, you can create your own billable metrics and use the percentage charge model paid instantly to adapt this template to your products and services.
+
+Give it a try, click [here](https://www.getlago.com/get-started) to get started!

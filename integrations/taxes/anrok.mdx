@@ -1,0 +1,172 @@
+---
+title: "Anrok"
+description: "Lago's native integration with Anrok allows you to automatically update your invoices with tax amounts sourced directly from Anrok. This integration ensures compliance with international tax regulations by calculating taxes for US & non-US obligations, like VAT."
+---
+
+<Info>
+
+**PREMIUM FEATURE** ✨
+
+This feature is only available to users with a premium license. Please
+**[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago
+Self-Hosted Premium.
+
+</Info>
+
+## Overview
+
+Lago’s integration with Anrok simplifies tax calculation and reporting by syncing invoice amounts with Anrok for filing.
+
+When an invoice is in draft status, Lago generates an ephemeral transaction in Anrok to calculate the preliminary taxes. Once the invoice is finalized, Lago creates a permanent transaction in Anrok to calculate the final taxes, marking it for reporting to the appropriate tax authority via Anrok.
+
+To calculate the appropriate tax for each line item, Lago sends the customer’s address, tax identifier (if applicable), and the relevant product ID to Anrok. Anrok then calculates the tax for the invoice and returns the data to Lago, which is used to update the invoice with accurate tax information. Additionally, Lago synchronizes updates for voided and disputed invoices, as well as any credit notes created, ensuring that your records remain up to date.
+
+## Prerequisites
+
+1. **Premium feature**: To access Anrok via Lago, you’ll need to be under the Premium license.
+2. **Getting Started**: We recommend reviewing the [Anrok Getting Started Guide](https://help-center.anrok.com/hc/en-us/categories/4410165176339-Getting-Started-Guide) before initiating the setup process.
+3. **Anrok Account**: Ensure you have an Anrok account. Ideally, test the connection via an Anrok sandbox account to your Lago test account. Contact the Anrok team to request a free sandbox account.
+4. **Physical Nexus**: Make sure you are correctly recording physical nexus in Anrok. Add or manage your physical nexus through the "Jurisdictions" tab by clicking the “Manage Physical Nexus” button.
+5. **Products in Anrok**: Create products in Anrok, assigning a tax configuration to each product you sell in Lago. You will need the IDs of these products when setting up the Anrok integration in Lago (see the mapping below).
+6. **Customer Exemptions in Anrok**: If necessary, upload valid exemption certificates for your customers in Anrok. Ensure that when you create a customer profile in Lago, you use the same customer ID as in Anrok. This consistency allows Lago to correctly identify the customer and apply the exemption certificates when calculating taxes.
+
+## Connect Anrok to Lago
+
+Lago allows you to connect your different Anrok instances. For example, you could connect both a sandbox and a production Anrok account. To do so:
+
+1. In Lago, please go to Settings > Integration
+2. Click on Anrok
+3. Define a name and code for this connection; and
+4. Enter your Anrok API key
+
+<Frame caption="Connect Anrok to Lago">
+  <img src="/integrations/images/anrok-connection.png" />
+</Frame>
+
+### Mapping items between Lago and Anrok (mandatory)
+
+To synchronize invoices and retrieve tax data, Lago needs to establish a one-to-one relationship between its objects and Anrok products. Follow these steps to map an item:
+
+1. In Anrok, navigate to the **Products IDs** section.
+2. Click on a product and **copy its Product ID.**
+3. In Lago, navigate to **Integration** > **Anrok** > **Mapping**.
+4. Choose the item you want to associate with the Product ID selected in step 2.
+5. **Paste the Product ID to map the item** — repeat this action for all items in Lago that require mapping.
+
+<Info>
+
+The invoice will be marked as `failed` if any item requiring tax calculation from Anrok is not properly mapped and no fallback item is provided.
+
+</Info>
+
+### Mapping a fallback item (mandatory)
+
+The fallback item serves as a backup and is used if the mapping of other items is not defined. This dummy item ensures continuous data synchronization between Lago and Anrok in the event of mapping issues.
+
+<Frame caption="Mapping Lago item to Anrok">
+  <img src="/integrations/images/anrok-mapping.png" />
+</Frame>
+
+## Customer configuration for tax calculation
+
+### Customer synchronization
+
+When creating or updating a Lago customer, you can choose to link it to an existing Anrok customer.
+
+The first option is to **automatically create a new customer from Lago to Anrok**. Follow these steps:
+
+1. Create or update a new Lago customer;
+2. Select the targeted Anrok connection;
+3. Check the box labeled ‘Create this customer automatically in Anrok’; and
+4. Save and create this new customer.
+
+If the customer is successfully created in Anrok, a new field will be displayed in the Lago customer view, providing a direct link to the corresponding Anrok customer.
+
+<Frame caption="Create customer in Anrok">
+  <img src="/integrations/images/anrok-create-customer.png" />
+</Frame>
+
+The second option is to **import an existing Anrok customer to a Lago customer**. Follow these steps:
+
+1. Create or update a Lago customer;
+2. Select the targeted Anrok connection;
+3. Ensure the box labeled ‘Create this customer automatically in NetSuite’ is unchecked;
+4. Paste the Anrok customer ID in the appropriate field; and
+5. Save and create this new customer.
+
+If the customer is successfully synced in Anrok, a new field will be displayed in the Lago customer view, providing a direct link to the corresponding Anrok customer.
+
+<Frame caption="Sync Anrok customer in Lago">
+  <img src="/integrations/images/anrok-sync-customer.png" />
+</Frame>
+
+<Info>
+
+Please note that in both cases, the customer will be created in Anrok after the first invoice is synchronized.​
+
+</Info>
+
+### Address requirements
+
+Anrok requires that each customer in Lago has a valid shipping address. If a shipping address is not available, Lago will default to using the billing address for tax calculation purposes. If both addresses are invalid or missing, Lago will be unable to generate the invoice, and the invoice status will be marked as failed. In such cases, you will be notified of the failure in the dashboard and via webhook.
+
+<Frame caption="Mapping Lago item to Anrok">
+  <img src="/integrations/images/anrok-failed-invoice.png" />
+</Frame>
+
+### Tax identifier
+
+If a customer has a `tax_identification_number` configured in Lago, this ID will be sent to Anrok for tax calculation and reporting. This ID is essential for determining whether the transaction is subject to a reverse charge in eligible VAT countries.
+
+### Tax exempt customers
+
+For customers who qualify for tax exemptions, you need to create a Certificate in your Anrok dashboard. Ensure that the customer profile in Lago uses the same customer ID as in Anrok in the Anrok customer ID. This consistency allows Lago to correctly identify the customer and apply the exemption certificates when calculating taxes.
+
+## Current usage
+
+Lago queries Anrok for the current usage and wallet ongoing balance. To ensure the best experience, Lago caches the results of current usage taxes for 24 hours.
+
+## Error management
+
+### Refresh draft invoice with tax errors
+
+When an invoice is in `draft` and encounters a tax synchronization error, you have the option to refresh the invoice to recalculate the tax. The invoice remains editable during this process, and the error will not prevent the invoice from being `finalized`. However, if the error persists after attempting to finalize the invoice, the invoice will be marked as `failed`.
+
+### Retry synchronization for failed invoice
+
+When an invoice fails due to a tax synchronization error, you have the option to manually re-sync each invoice individually from the invoice details page or via this [endpoint](TBD). Alternatively, you can go to the integration settings and trigger a bulk invoice synchronization.
+
+<Frame caption="Mapping Lago item to Anrok">
+  <img src="/integrations/images/anrok-sync-all-invoices.png" />
+</Frame>
+
+### Retry synchronization for voided / disputed invoices
+
+When an invoice is voided or disputed, Lago will sync this updated record with Anrok to ensure your reports are accurate. If the sync fails, you will be notified. In that case, please manually resync the voided or disputed invoice through the dashboard.
+
+### Pay in advance non invoiceable charge
+
+Lago will notify you via webhook if a tax error occurs when a non-invoiceable fee paid in advance is generated. The fee will not be created. Please note that you will need to fix the issue and resend the event to generate the fee. For any assistance, please contact the Lago team.
+
+### Tax error scenario
+
+If Lago is unable to generate an invoice or sync it to Anrok, you will be alerted via the dashboard and webhook.
+Tax synchronization and invoice generation can fail due to the following reasons:
+
+1. Incorrect connection settings (API key).
+2. Items used in objects or fallback items not mapped.
+3. Missing customer shipping or billing address.
+4. Timeout or internal service error.
+
+Tax synchronization can fail during the following processes:
+
+1. Calculating taxes in one-off-invoice form
+2. Refreshing a draft invoice
+3. Finalizing an invoice
+4. Generating a fee paid in advance non-invoiceable
+5. Fetching current usage
+6. Voiding an invoice
+7. Disputing an invoice
+8. Creating a credit note
+
+If an issue arises, please check the mapping, verify the customer address and launch a synchronization; or contact the Lago team for assistance.

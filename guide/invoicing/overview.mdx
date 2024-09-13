@@ -59,3 +59,93 @@ You can specify multiple `grouped_by` keys for your charge; the order you set th
 The `grouped_by` feature is exclusively available for the `standard` charge model.
 
 </Note>
+
+
+## Finalize empty invoices
+By default, Lago finalizes all invoices, including those with a final amount of zero. However, some customers may prefer to skip empty invoices to avoid unnecessary accounting documents. 
+In such cases, you **can configure Lago to skip the issuance of invoices when they are empty**.
+
+### Empty invoices definition
+Lago considers an invoice empty only if it has no line items before applying coupons or discounts. 
+If an applicable discount reduces an invoice's total to zero, Lago will not consider this invoice as part of the empty invoices scope and will still finalize it.
+
+### Organization level
+The `finalize_zero_amount_invoice` setting is set to `true` by default. At the organization level, you can change this value to `false` at any time.
+When set to `false`, empty invoices won't be finalized for any customers unless specifically overridden at the customer level.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To modify this setting from the Lago user interface:
+    1. Go to Settings in your app;
+    2. Navigate to the Invoices section; and
+    3. Update the value in the **'Finalize zero amount invoice'** section according to your preference.
+
+  </Tab>
+
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Update the organization's settings
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/organizations" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "organization": {
+          "country": "US",
+          "finalize_zero_amount_invoice": true
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+
+</Tabs>
+
+### Customer level
+By default, new customers inherit the `finalize_zero_amount_invoice` setting from the organization.
+You can override this setting for individual customers to meet specific needs. 
+
+The available options are:
+- `inherit`: Follows the organization's setting;
+- `skip`: Skips finalizing empty invoices; or
+- `finalize`: Always finalizes invoices, even if empty.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To modify this customer setting from the Lago user interface:
+    1. Go to a specific customer;
+    2. Navigate to the Settings section; and
+    3. Override the value in the **'Finalize zero amount invoice'** section according to your preference.
+  </Tab>
+
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Update the customer's settings
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "hooli_12345",
+          "address_line1": "100 Fintech Devcon Street",
+          "city": "Austin",
+          "country": "US",
+          "email": "hooli@fintech.com",
+          "legal_number": "54321",
+          "name": "Hooli 12345",
+          "state": "Texas",
+          "tax_identification_number": "1234",
+          "zipcode": "9399",
+          "finalize_zero_amount_invoice": "skip"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+  
+</Tabs>
