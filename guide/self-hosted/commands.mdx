@@ -37,10 +37,14 @@ BillSubscriptionJob.perform_now([subscription],timestamp)
 ```
 
 ## Remove cache for a subscription
-
-Use this to remove the cache on a specific subscriptions.
+Use this to remove the cache on a specific subscription.
 
 ```ruby
 # In the rails Console
 Subscriptions::ChargeCacheService.expire_for_subscription(Subscription.find('YOUR_SUB_EXTERNAL_ID')) 
+```
+To remove the cache for all subscriptions, you can alternatively use this command:
+```ruby
+# In the rails Console
+Subscription.find_each {|s| Subscriptions::ChargeCacheService.expire_for_subscription(s) }
 ```
