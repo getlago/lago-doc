@@ -1,0 +1,67 @@
+---
+title: "Overdue balance payment"
+---
+
+When a customer has some invoices past their due date, their [overdue balance](https://docs.getlago.com/guide/customers/customer-management#monitor-the-customers-billing-status) becomes positive, and you have the ability to request its payment manually.
+
+<Info>
+**Premium feature ✨**:
+
+This feature is only available to users with a premium license. Please **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago Self-Hosted Premium.
+</Info>
+
+
+<Tabs>
+  <Tab title="Dashboard">
+    In the customer view, a "request payment” link appears within the overdue balance warning. 
+
+    <Frame caption="Request payment for the overdue balance">
+      <img src="/guide/images/customer-request-overdue-balance-payment.png" />
+    </Frame>
+
+    By clicking on it, a panel opens so you can:
+    - Review the invoices included in the overdue balance,
+    - Review the email which will be sent in case the payment fails, or if no payment provider is linked
+    - Confirm you want to request the payment.
+
+    <Frame caption="Preview the overdue balance payment request">
+      <img src="/guide/images/customer-overdue-balance-payment-preview.png" />
+    </Frame>
+
+
+  </Tab>
+  <Tab title="API">
+      You can create a payment request for the overdue balance from the API, targeting the invoices you want to be paid.
+      <CodeGroup>
+      ```bash Create a payment request
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/payment_requests/" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        {
+        "payment_request": {
+          "lago_invoice_ids": ["4064eff9-e7a6-4692-a289-15d7d5da9b83", "b1f36d2f-8ea6-4192-9407-8e87ba5c28c2"],
+          "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "email": "rebecca@piedpiper.test"
+        }
+      }'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+## A payment provider is connected for this customer
+
+A payment intent will be generated for the amount shown. 
+
+- If the payment fails, and email will be sent requesting payment, with a URL to pay (except for Gocardless where no payment URL is provided).
+- When the payment is successful, the attached invoices will automatically be updated with a succeeded payment status.
+
+## No payment provider is available for this customer
+
+An email will be sent requesting payment for the overdue balance.
+
+- When the payment is successful, you will have to manually update the payment status of said invoices.
