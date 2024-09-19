@@ -116,9 +116,9 @@ application. You can override them to customise your setup.
 | `SENTRY_DSN_FRONT`                    |                                         | Sentry DSN key for error and performance tracking on Lago front-end                                                                                              |
 | `LAGO_RSA_PRIVATE_KEY`                |                                         | Private key used for webhook signatures                                                                                                                          |
 | `LAGO_SIDEKIQ_WEB`                    |                                         | Activate the Sidekiq web UI, disabled by default                                                                                                                 |
-| `LAGO_ENCRYPTION_PRIMARY_KEY`         | your-encryption-primary-key             | Encryption primary key used to secure sensitive values stored in the database                                                                                    |
-| `LAGO_ENCRYPTION_DETERMINISTIC_KEY`   | your-encryption-deterministic-key       | Encryption deterministic key used to secure sensitive values stored in the database                                                                              |
-| `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` | your-encryption-derivation-salt         | Encryption key salt used to secure sensitive values stored in the database                                                                                       |
+| `ENCRYPTION_PRIMARY_KEY`              | your-encryption-primary-key             | Encryption primary key used to secure sensitive values stored in the database                                                                                    |
+| `ENCRYPTION_DETERMINISTIC_KEY`        | your-encryption-deterministic-key       | Encryption deterministic key used to secure sensitive values stored in the database                                                                              |
+| `ENCRYPTION_KEY_DERIVATION_SALT`      | your-encryption-derivation-salt         | Encryption key salt used to secure sensitive values stored in the database                                                                                            |
 | `LAGO_WEBHOOK_ATTEMPTS`               | 3                                       | Number of failed attempt before stopping to deliver a webhook                                                                                                    |
 | `LAGO_USE_AWS_S3`                     | false                                   | Use AWS S3 for files storage                                                                                                                                     |
 | `LAGO_AWS_S3_ACCESS_KEY_ID`           | azerty123456                            | AWS Access Key id that has access to S3                                                                                                                          |
@@ -138,15 +138,15 @@ application. You can override them to customise your setup.
 
 <Warning>
 We recommend that you change `POSTGRES_PASSWORD`, `SECRET_KEY_BASE`,
-`LAGO_RSA_PRIVATE_KEY`, `LAGO_ENCRYPTION_PRIMARY_KEY`,
-`LAGO_ENCRYPTION_DETERMINISTIC_KEY` and `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` to
+`LAGO_RSA_PRIVATE_KEY`, `ENCRYPTION_PRIMARY_KEY`,
+`ENCRYPTION_DETERMINISTIC_KEY` and `ENCRYPTION_KEY_DERIVATION_SALT` to
 improve the security of your Lago instance:
 
 - `SECRET_KEY_BASE` can be generated using the `openssl rand -hex 64` command.
 - `LAGO_RSA_PRIVATE_KEY` can be generated using the
   `openssl genrsa 2048 | base64` command.
-- `LAGO_ENCRYPTION_PRIMARY_KEY`, `LAGO_ENCRYPTION_DETERMINISTIC_KEY` and
-  `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` can all be gerated using the
+- `ENCRYPTION_PRIMARY_KEY`, `ENCRYPTION_DETERMINISTIC_KEY` and
+  `ENCRYPTION_KEY_DERIVATION_SALT` can all be gerated using the
   `cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` command.
 
 </Warning>
