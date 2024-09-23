@@ -35,7 +35,7 @@ By deploying this script, you'll generate a **custom endpoint url** that is cruc
 ## Mandatory NetSuite settings
 To ensure the sync doesn't fail, verify that the following settings are correctly configured. This will enable Lago to sync data to NetSuite properly.
 
-### Remove Locations on invoices
+### Remove Locations on invoices and credit memos
 Lago doesn't recognize the location field on invoices, which is mandatory by default. To resolve this, remove the location requirement from your invoice form:
 1. Navigate to **Customization > Forms > Transaction Forms**;
 2. Locate the form related to your invoices;
@@ -45,6 +45,40 @@ Lago doesn't recognize the location field on invoices, which is mandatory by def
 <Frame caption="Remove Locations on invoices">
   <img src="/integrations/images/netsuite-remove-locations-field.png" />
 </Frame>
+
+<Info>
+  You can repeat the same operation for Credit Memos
+</Info>
+
+### Create Lago Tax Nexus, Type and Code
+To have Lago override the tax details for your invoice line items, follow these steps. If not, Lago will send the amount excluding taxes to NetSuite.
+
+<Steps>
+  <Step title="Step 1: Create a Lago Tax Nexus">
+    1. Go to **Setup** > **Tax** > **Nexuses** > **New**;
+    2. Choose a new **Country** (*⚠️ ensure it's unused by other existing tax nexuses*. It can be a new state for an existing country);
+    3. Enter `Lago Tax Nexus` in the **Description** field;
+    4. Create a new **Tax Agency** by clicking the **+** button. Name it `Lago Tax Agency` and assign it to the relevant parent subsidiary; and
+    5. Save your changes.
+
+  </Step>
+  <Step title="Step 2: Create a Lago Tax Type">
+    1. Navigate to **Setup** > **Tax** > **Tax Types** > **New**;
+    2. Select the same **Country** as the one used in the Lago Tax Nexus;
+    3. Name it `Lago Tax Type`;
+    4. **Link the Lago Tax Nexus** in the Nexus section; and
+    5. Save it.
+
+  </Step>
+  <Step title="Step 3: Create a Lago Tax Code">
+    1. Go to **Setup** > **Tax** > **Tax Code** > **New**;
+    2. Enter a **Name**, like `Lago Tax`;
+    3. Select and tie the previously created Lago Tax Type; and
+    4. Save your settings.
+  </Step>
+</Steps>
+
+
 
 ### Define Taxable items
 To enable tax amount overrides for your Lago invoices synced to NetSuite, ensure all items are marked as taxable. If any item is non-taxable, the invoice sync will fail. To update an item:
@@ -145,9 +179,16 @@ This mapping follows a one-to-many structure, meaning that a single fallback ite
   <img src="/integrations/images/netsuite-fallback-item.png" />
 </Frame>
 
-### Mapping a tax item (mandatory)
+### Mapping a tax item
 To override the tax amount for an invoice, sales order, or credit note, you need to map a single tax item from NetSuite. 
 This mapped item will be used to assign the correct tax amount.
+
+**To ensure taxes are sent from Lago to NetSuite, complete the tax mapping** for the following [tax fields you created here](#create-lago-tax-nexus-type-and-code):
+1. Tax Nexus;
+2. Tax Type; and
+3. Tax Code.
+
+Use the `id` for each item, found either in the UI or in the URL of the specific item.
 
 <Info>
 This mapping follows a one-to-many structure, meaning that a single tax item can be mapped to override all tax amounts issued by Lago.
