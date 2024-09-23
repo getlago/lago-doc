@@ -3,3 +3,125 @@ openapi: "POST /credit_notes/{lago_id}/download"
 authMethod: "bearer"
 title: "Download a credit note"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+CREDIT_NOTE_ID="__CREDIT_NOTE_ID__"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/download" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+invoice = None
+try:
+    invoice = client.credit_notes.download('__CREDIT_NOTE_ID__')
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.credit_notes.download('__CREDIT_NOTE_ID__')
+```
+
+```js Javascript
+await client.creditNotes.downloadCreditNote('credit-note-id')
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+
+credit_note, err := lagoClient.CreditNote().Download("__CREDIT_NOTE_ID__")
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// credit_note is *lago.CreditNote
+fmt.Println(credit_note)
+
+// If the credit note has to be generated, the response is empty
+// And you will get a webhook `credit_note.generated`
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class DownloadCreditNoteExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new CreditNotesApi(Configuration.Default);
+          var id = "183da83c-c007-4fbb-afcd-b00c07c41ffe";  // string | ID of the existing Lago Credit note
+
+          try
+          {
+              // Download an existing credit note
+              CreditNote result = apiInstance.DownloadCreditNote(id);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling CreditNotesApi.DownloadCreditNote: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\CreditNotesApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$id = "183da83c-c007-4fbb-afcd-b00c07c41ffe"; // string | ID of the existing Lago Credit note
+
+try {
+  $result = $apiInstance->downloadCreditNote($id);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling CreditNotesApi->downloadCreditNote: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>

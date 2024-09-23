@@ -3,3 +3,106 @@ openapi: "GET /wallets/{lago_id}/wallet_transactions"
 authMethod: "bearer"
 title: "List all wallet transactions"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v1/wallets/:id/wallet_transactions?per_page=2&page=1" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.wallet_transactions.find_all({'per_page': 2, 'page': 1})
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.wallet_transactions.get_all({ per_page: 2, page: 3 })
+```
+
+```js Javascript
+await client.wallets.findAllWalletTransactions("wallet-id", {
+  per_page: 2,
+  page: 3,
+});
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+walletTransactionListInput := &lago.WalletTransactionListInput{
+    PerPage: 1,
+    Page: 1,
+    WalletId: 12345,
+}
+
+walletTransactionResult, err := lagoClient.WalletTransaction().GetList(walletTransactionListInput)
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// walletTransactionResult is *lago.WalletTransactionResult
+fmt.Println(walletTransactionResult)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class FindAllWalletsExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new WalletsApi(Configuration.Default);
+          var externalCustomerId = "12345";  // string | External customer ID
+          var page = 2;  // int? | Number of page (optional)
+          var perPage = 20;  // int? | Number of records per page (optional)
+
+          try
+          {
+              // Find wallets
+              Wallets result = apiInstance.FindAllWallets(externalCustomerId, page, perPage);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling WalletsApi.FindAllWallets: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+</RequestExample>

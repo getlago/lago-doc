@@ -3,3 +3,120 @@ openapi: "DELETE /add_ons/{code}"
 authMethod: "bearer"
 title: "Delete an add-on"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request DELETE "$LAGO_URL/api/v1/add_ons/:code" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.add_ons.destroy('code')
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.add_ons.destroy('code')
+```
+
+```js Javascript
+await client.addOns.destroyAddOn('code')
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+  lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+  addOn, err := lagoClient.AddOn().Delete("__YOUR_ADDON_CODE__")
+  if err != nil {
+    // Error is *lago.Error
+    panic(err)
+  }
+
+  // addOn is *lago.AddOn
+  fmt.Println(addOn)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class DestroyAddOnExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new AddOnsApi(Configuration.Default);
+          var code = "example_code";  // string | Code of the existing add-on
+
+          try
+          {
+              // Delete an add-on
+              AddOn result = apiInstance.DestroyAddOn(code);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling AddOnsApi.DestroyAddOn: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\AddOnsApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$code = "example_code"; // string | Code of the existing add-on
+
+try {
+  $result = $apiInstance->destroyAddOn($code);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling AddOnsApi->destroyAddOn: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>

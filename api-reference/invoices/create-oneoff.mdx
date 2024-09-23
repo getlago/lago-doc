@@ -3,3 +3,190 @@ openapi: "POST /invoices"
 authMethod: "bearer"
 title: "Create a one-off invoice"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/invoices" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "invoice": {
+      "external_customer_id": "hooli_1234",
+      "currency": "USD",
+      "fees": [
+        {
+          "add_on_code": "setup_fee",
+          "units": 2.5,
+          "unit_amount_cents": 1200,
+          "description": "This is a description.",
+          "tax_codes": ["french_standard_vat]
+        }
+      ]
+    }
+  }'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import InvoiceFee, OneOffInvoice, InvoiceFeesList
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+fee_object = InvoiceFee(
+  add_on_code='setup_fee',
+  units=2.5,
+  unit_amount_cents=1200,
+  description='This is a description.'
+)
+
+invoice_create = OneOffInvoice(
+  external_customer_id="hooli_1234",
+  currency="USD",
+  fees=InvoiceFeesList(__root__=[fee_object])
+)
+
+try:
+    client.invoices.create(invoice_create)
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.invoices.create({
+  external_customer_id: "hooli_1234",
+  currency: 'USD',
+  fees: [
+    {
+      add_on_code: 'setup_fee',
+      units: 2.5,
+      unit_amount_cents: 1200,
+      description: 'This is a description.'
+    }
+  ]
+})
+```
+
+```js Javascript
+const invoiceObject = {
+  external_customer_id: "hooli_1234",
+  currency: "USD",
+  fees: [
+    {
+      add_on_code: "setup_fee",
+      description: "This is a description.",
+      units: 2.5,
+      unit_amount_cents: 1200,
+    },
+  ],
+};
+
+await client.invoices.createInvoice({
+  invoice: invoiceObject,
+});
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().
+    SetApiKey("__YOUR_API_KEY__")
+
+invoiceInput := &lago.OneOffInput{
+    ExternalCustomerId: custID,
+        currency: "USD",
+    Fees: [
+    &InvoiceFeesInput{
+        AddOnCode: "setup_fee",
+        Description: "This is a description.",
+        Units: 2.5,
+        UnitAmountCents: 1200
+    }
+    ]
+}
+
+invoice, err := lagoClient.Invoice().Create(invoiceInput)
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// invoice is *lago.Invoice
+fmt.Println(invoice)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class UpdateInvoiceExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new InvoicesApi(Configuration.Default);
+          var id = "183da83c-c007-4fbb-afcd-b00c07c41ffe";  // string | ID of the existing Lago Invoice
+          var invoiceInput = new InvoiceOneOffInput();
+
+          try
+          {
+              // Update an existing invoice status
+              Invoice result = apiInstance.CreateInvoice(invoiceInput);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling InvoicesApi.CreateInvoice: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\InvoicesApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$invoice_input = new \OpenAPI\Client\Model\InvoiceOneOffInput();
+
+try {
+  $result = $apiInstance->createInvoice($invoice_input);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling InvoicesApi->createInvoice: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>

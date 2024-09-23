@@ -3,3 +3,129 @@ openapi: "GET /credit_notes"
 authMethod: "bearer"
 title: "List all credit notes"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v1/credit_notes?per_page=2&page=1" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.credit_notes.find_all({'per_page': 2, 'page': 1})
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.credit_notes.get_all({ per_page: 2, page: 3 })
+```
+
+```js Javascript
+await client.creditNotes.findAllCreditNotes({ per_page: 2, page: 3 });
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+
+creditNoteListInput := &lago.CreditNoteListInput{
+    PerPage: 1,
+    Page: 1,
+    ExternalCustomerID: "cus_1234",
+}
+
+creditNoteResult, err := lagoClient.CreditNote().GetList(creditNoteListInput)
+if err != nil {
+    // Error is *lago.Error
+    panic(err)
+}
+
+// creditNoteResult is *lago.CreditNoteResult
+fmt.Println(creditNoteResult)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class FindAllCreditNotesExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new CreditNotesApi(Configuration.Default);
+          var page = 2;  // int? | Number of page (optional)
+          var perPage = 20;  // int? | Number of records per page (optional)
+          var externalCustomerId = "12345";  // string | External customer ID (optional)
+
+          try
+          {
+              // Find Credit notes
+              CreditNotes result = apiInstance.FindAllCreditNotes(page, perPage, externalCustomerId);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling CreditNotesApi.FindAllCreditNotes: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\CreditNotesApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$page = 2; // int | Number of page
+$per_page = 20; // int | Number of records per page
+$external_customer_id = "12345"; // string | External customer ID
+
+try {
+  $result = $apiInstance->findAllCreditNotes($page, $per_page, $external_customer_id);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling CreditNotesApi->findAllCreditNotes: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>

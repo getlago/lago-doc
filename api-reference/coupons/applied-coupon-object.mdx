@@ -2,3 +2,95 @@
 title: "The applied coupon object"
 description: "This object represents a coupon applied to a customer. It can override the initial values of a coupon."
 ---
+
+<RequestExample>
+```json The applied coupon object
+{
+  "applied_coupon": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_coupon_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "coupon_code": "startup_deal",
+    "coupon_name": "Startup Deal",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+    "status": "active",
+    "amount_cents": 2000,
+    "amount_cents_remaining": 50,
+    "amount_currency": "EUR",
+    "percentage_rate": "string",
+    "frequency": "recurring",
+    "frequency_duration": 3,
+    "frequency_duration_remaining": 1,
+    "expiration_at": "2022-04-29T08:59:51Z",
+    "created_at": "2022-04-29T08:59:51Z",
+    "terminated_at": "2022-04-29T08:59:51Z"
+  }
+}
+```
+</RequestExample>
+
+## Attributes
+
+<ResponseField name="applied_coupon" type="object">
+  <Expandable title="object"  defaultOpen="true">
+    <ResponseField name="lago_id" type="string" required>
+      Unique identifier of the applied coupon, created by Lago.
+    </ResponseField>
+    <ResponseField name="lago_coupon_id" type="string" required>
+      Unique identifier of the coupon, created by Lago.
+    </ResponseField>
+    <ResponseField name="coupon_name" type="string" required>
+      The name of the coupon.
+    </ResponseField>
+    <ResponseField name="coupon_code" type="string" required>
+      Unique code used to identify the coupon.
+    </ResponseField>
+    <ResponseField name="external_customer_id" type="string" required>
+      The customer external unique identifier (provided by your own application)
+    </ResponseField>
+    <ResponseField name="lago_customer_id" type="string" required>
+      Unique identifier of the customer, created by Lago.
+    </ResponseField>
+    <ResponseField name="status" type="string" required>
+      The status of the coupon. Can be either `active` or `terminated`.
+    </ResponseField>
+    <ResponseField name="amount_cents" type="integer">
+      The amount of the coupon in cents. This field is required only for coupon with `fixed_amount` type.
+    </ResponseField>
+    <ResponseField name="amount_cents_remaining" type="integer">
+      The remaining amount in cents for a `fixed_amount` coupon with a frequency set to `once`. 
+      This field indicates the remaining balance or value that can still be utilized from the coupon.
+    </ResponseField>
+    <ResponseField name="amount_currency" type="string">
+      The currency of the coupon. This field is required only for coupon with `fixed_amount` type.
+    </ResponseField>
+    <ResponseField name="expiration_at" type="string">
+      The expiration date and time of the coupon. This field is required only for coupons with `expiration` set to `time_limit`. 
+      The expiration date and time should be specified in UTC format according to the ISO 8601 datetime standard. 
+      It indicates the exact moment when the coupon will expire and is no longer valid.
+    </ResponseField>
+    <ResponseField name="frequency" type="string" required>
+      The type of frequency for the coupon. It can have three possible values: `once`, `recurring`, or `forever`.
+        - If set to `once`, the coupon is applicable only for a single use.
+        - If set to `recurring`, the coupon can be used multiple times for recurring billing periods.
+        - If set to `forever`, the coupon has unlimited usage and can be applied indefinitely.
+    </ResponseField>
+    <ResponseField name="frequency_duration" type="string">
+      Specifies the number of billing periods to which the coupon applies. This field is required only for coupons 
+      with a `recurring` frequency type
+    </ResponseField>
+    <ResponseField name="frequency_duration_remaining" type="integer">
+      The remaining number of billing periods to which the coupon is applicable. This field determines the remaining 
+      usage or availability of the coupon based on the remaining billing periods.
+    </ResponseField>
+    <ResponseField name="percentage_rate" type="float">
+      The percentage rate of the coupon. This field is required only for coupons with a `percentage` coupon type.
+    </ResponseField>
+    <ResponseField name="created_at" type="string" required>
+      The date and time when the coupon was assigned to a customer. It is expressed in UTC format according to the ISO 8601 datetime standard.
+    </ResponseField>
+    <ResponseField name="terminated_at" type="string">
+      This field indicates the specific moment when the coupon amount is fully utilized or when the coupon is removed from the customer's coupon list. It is expressed in UTC format according to the ISO 8601 datetime standard.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
