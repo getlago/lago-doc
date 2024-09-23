@@ -3,3 +3,199 @@ openapi: "POST /events/batch"
 authMethod: "bearer"
 title: "Batch usage events"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/events/batch" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+	"events": [
+      {
+        "transaction_id": "__UNIQUE_ID__",
+        "external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
+        "code": "__BILLABLE_METRIC_CODE__",
+        "timestamp": $(date +%s),
+        "properties": {
+          "custom_field": 12
+        }
+      }
+    ]
+  }'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import BatchEvent
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+# Create a list of events
+batch_event = BatchEvent(events=[
+    Event(
+        transaction_id="__UNIQUE_ID_1__",
+        external_subscription_id="__SUBSCRIPTION_ID_1__",
+        code="__BILLABLE_METRIC_CODE__",
+        timestamp=1650893379,
+        properties={"custom_field": "custom"}
+    ),
+    Event(
+        transaction_id="__UNIQUE_ID_2__",
+        external_subscription_id="__SUBSCRIPTION_ID_2__",
+        code="__BILLABLE_METRIC_CODE__",
+        timestamp=1650893380,
+        properties={"custom_field": "custom"}
+    )
+    # Add more events as needed
+])
+try:
+    client.events.batch_create(batch_event)
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+# Create an array of event hashes
+events = [
+  {
+    transaction_id: "__UNIQUE_ID_1__",
+    external_subscription_id: "__SUBSCRIPTION_ID_1__",
+    code: "__BILLABLE_METRIC_CODE__",
+    timestamp: Time.now.to_i,
+    properties: {
+      custom_field: "custom value 1"
+    }
+  },
+  {
+    transaction_id: "__UNIQUE_ID_2__",
+    external_subscription_id: "__SUBSCRIPTION_ID_2__",
+    code: "__BILLABLE_METRIC_CODE__",
+    timestamp: Time.now.to_i,
+    properties: {
+      custom_field: "custom value 2"
+    }
+  }
+  # Add more events as needed
+]
+
+client.events.batch_create(events)
+```
+
+```js Javascript
+const batchEvent = [
+  {
+    transaction_id: "__UNIQUE_TRANSACTION_ID_1__",
+    external_subscription_id: "__SUBSCRIPTION_ID_1__",
+    code: "__BILLABLE_METRIC_CODE__",
+    timestamp: 1650893379,
+    properties: { customField: "custom1" },
+  },
+  {
+    transaction_id: "__UNIQUE_TRANSACTION_ID_2__",
+    external_subscription_id: "__SUBSCRIPTION_ID_2__",
+    code: "__BILLABLE_METRIC_CODE__",
+    timestamp: 1650893380,
+    properties: { customField: "custom2" },
+  },
+  // Add more events as needed
+];
+
+await client.events.createBatchEvents({ events: batchEvent });
+
+```
+
+```go Go
+import "fmt"
+import "github.com/getlago/lago-go-client"
+
+func main() {
+  ctx := context.Background()
+  lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+
+  event := lago.EventInput{
+    TransactionID:          "__UNIQUE_TRANSACTION_ID__",
+    ExternalSubscriptionID: "__UNIQUE_SUBSCRIPTION_ID__",
+    Code:                   "__BILLABLE_METRIC_CODE__",
+    Timestamp:              strconv.FormatInt(time.Now().Unix(), 10),
+    Properties: map[string]interface{}{
+      "nbusers": "12",
+    },
+  }
+
+  batchInput := make([]lago.EventInput, 1)
+  batchInput[0] = event
+
+  res, err := lagoClient.Event().Batch(ctx, &batchInput)
+}
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class CreateBatchEventsExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new EventsApi(Configuration.Default);
+          var batchEventInput = new BatchEventInput(); // BatchEventInput | Batch events payload
+
+          try
+          {
+              // Create batch events
+              apiInstance.CreateBatchEvents(batchEventInput);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling EventsApi.CreateBatchEvents: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\EventsApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$batch_event_input = new \OpenAPI\Client\Model\BatchEventInput(); // \OpenAPI\Client\Model\BatchEventInput | Batch events payload
+
+try {
+  $apiInstance->createBatchEvents($batch_event_input);
+} catch (Exception $e) {
+  echo 'Exception when calling EventsApi->createBatchEvents: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>

@@ -3,3 +3,234 @@ title: "Update a subscription"
 openapi: "PUT /subscriptions/{external_id}"
 authMethod: "bearer"
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PUT "$LAGO_URL/api/v1/subscriptions/:id" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+  "subscription": {
+    "name": "Repository B",
+    "ending_at": "2022-10-08T00:00:00Z",
+    "subscription_at": "2022-08-08T00:00:00Z",
+    "plan_overrides": {
+      "amount_cents": 10000,
+      "amount_currency": "USD",
+      "description": "Plan for early stage startups.",
+      "invoice_display_name": "Startup plan",
+      "name": "Startup",
+      "tax_codes": [
+        "french_standard_vat"
+      ],
+      "trial_period": 5,
+      "charges": [
+        {
+          "id": "cha_12345",
+          "billable_metric_id": "bm_12345",
+          "invoice_display_name": "Setup",
+          "min_amount_cents": 0,
+          "tax_codes": [
+            "standard_vat"
+          ],
+          "properties": {
+            "graduated_ranges": [
+              {
+                "from_value": 0,
+                "to_value": 10,
+                "flat_amount": "10",
+                "per_unit_amount": "0.5"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cha_67890",
+          "billable_metric_id": "bm_67890",
+          "invoice_display_name": "FX Transfer",
+          "min_amount_cents": 0,
+          "properties": {
+            "graduated_percentage_ranges": [
+              {
+                "from_value": 0,
+                "to_value": 10,
+                "rate": "1",
+                "flat_amount": "10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cha_111213",
+          "billable_metric_id": "bm_111213",
+          "invoice_display_name": "API calls",
+          "min_amount_cents": 0,
+          "properties": {
+            "amount": "30",
+            "free_units": 100,
+            "package_size": 1000
+          }
+        },
+        {
+          "id": "cha_141516",
+          "billable_metric_id": "bm_141516",
+          "invoice_display_name": "Interchange",
+          "min_amount_cents": 0,
+          "properties": {
+            "rate": "1",
+            "fixed_amount": "0.5",
+            "free_units_per_events": 5,
+            "free_units_per_total_aggregation": "500",
+            "per_transaction_max_amount": "3.75",
+            "per_transaction_min_amount": "1.75"
+          }
+        },
+        {
+          "id": "cha_171819",
+          "billable_metric_id": "bm_171819",
+          "invoice_display_name": "Seats",
+          "min_amount_cents": 0,
+          "properties": {
+            "volume_ranges": [
+              {
+                "from_value": 0,
+                "to_value": 10,
+                "flat_amount": "10",
+                "per_unit_amount": "0.5"
+              }
+            ]
+          }
+        },
+        {
+          "id": "cha_202122",
+          "billable_metric_id": "bm_202122",
+          "invoice_display_name": "Interchange",
+          "min_amount_cents": 0,
+          "filters": [
+            {
+              "values": {
+                "cloud": ["aws"],
+                "region": ["us-east-1"]
+              },
+              "properties": {
+                "graduated_ranges": [
+                  {
+                    "from_value": 0,
+                    "to_value": 10,
+                    "flat_amount": "10",
+                    "per_unit_amount": "0.5"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import Subscription
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+update_params = Subscription(name='new name', subscription_at='2022-08-08T00:00:00Z', ending_at= '2023-08-08T00:00:00Z')
+
+try:
+    client.subscriptions.update(update_params, 'id')
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+update_params = { name: 'new name', subscription_at: '2022-08-08T00:00:00Z', ending_at: '2022-08-08T00:00:00Z' }
+client.subscriptions.update(update_params, 'id')
+```
+
+```js Javascript
+await client.subscriptions.updateSubscription("external_id", {
+  subscription: {
+    name: "new name",
+    subscription_at: "2022-08-08T00:00:00Z",
+    ending_at: "2023-08-08T00:00:00Z",
+  },
+});
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class UpdateSubscriptionExample
+  {
+      public static void Main()
+      {
+          Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+          // Configure HTTP bearer authorization: bearerAuth
+          Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+          var apiInstance = new SubscriptionsApi(Configuration.Default);
+          var externalId = "example_id";  // string | External ID of the existing subscription
+          var subscriptionUpdateInput = new SubscriptionUpdateInput(); // SubscriptionUpdateInput | Update an existing subscription
+
+          try
+          {
+              // Update an existing subscription
+              Subscription result = apiInstance.UpdateSubscription(externalId, subscriptionUpdateInput);
+              Debug.WriteLine(result);
+          }
+          catch (ApiException e)
+          {
+              Debug.Print("Exception when calling SubscriptionsApi.UpdateSubscription: " + e.Message );
+              Debug.Print("Status Code: "+ e.ErrorCode);
+              Debug.Print(e.StackTrace);
+          }
+      }
+  }
+}
+```
+
+```php PHP
+<?php
+require_once(__DIR__ . '/vendor/autoload.php');
+
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\SubscriptionsApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$external_id = "example_id"; // string | External ID of the existing subscription
+$subscription_update_input = new \OpenAPI\Client\Model\SubscriptionUpdateInput(); // \OpenAPI\Client\Model\SubscriptionUpdateInput | Update an existing subscription
+
+try {
+  $result = $apiInstance->updateSubscription($external_id, $subscription_update_input);
+  print_r($result);
+} catch (Exception $e) {
+  echo 'Exception when calling SubscriptionsApi->updateSubscription: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>

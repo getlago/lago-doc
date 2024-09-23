@@ -5,3 +5,145 @@ title: "Estimate an upcoming fee"
 description: "Estimate the fees that would be created after reception of an event for 
 a billable metric attached to one or multiple pay in advance charges."
 ---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/events/estimate_fees" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+      "event": {
+          "external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
+          "code": "__BILLABLE_METRIC_CODE__",
+          "properties": {
+            "custom_field": 12,
+          }
+      }
+  }'
+```
+
+```python Python
+from lago_python_client.models import Event
+
+event = Event(
+  external_subscription_id="__YOUR_SUBSCRIPTION_ID__",
+  code="__BILLABLE_METRIC_CODE__",
+)
+
+client.events.estimate_fees(event)
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.events.estimate_fees(
+  external_subscription_id: "__YOUR_SUBSCRIPTION_ID__",
+  code: "__BILLABLE_METRIC_CODE__",
+  properties: {
+    custom_field: 12,
+  }
+)
+```
+
+```js Javascript
+import { Client, getLagoError } from 'lago-javascript-client';
+
+const lagoClient = Client('__YOUR_API_KEY__');
+
+try {
+    const { data } = await lagoClient.events.eventEstimateFees(estimateEvent);
+} catch (error) {
+    const lagoError = await getLagoError<typeof lagoClient.events.eventEstimateFees>(error);
+}
+```
+
+```go Go
+  import "fmt"
+  import "github.com/getlago/lago-go-client"
+
+  func main() {
+    lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+
+    eventEstimateInput := &lago.EventEstimateFeesInput{
+      ExternalSubscriptionID: "__YOUR_SUBSCRIPTION_ID__",
+      Code:          "__BILLABLE_METRIC_CODE__",
+      Properties: map[string]string{
+        "custom_field": "12",
+      },
+    }
+
+    err := lagoClient.Event().EstimateFees(eventEstimateInput)
+    if err != nil {
+      // Error is *lago.Error
+      panic(err)
+    }
+  }
+```
+
+```csharp C#
+using System.Collections.Generic;
+using System.Diagnostics;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
+using Org.OpenAPITools.Model;
+
+namespace Example
+{
+  public class CreateEventExample
+  {
+    public static void Main()
+    {
+      Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
+      // Configure HTTP bearer authorization: bearerAuth
+      Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
+
+      var apiInstance = new EventsApi(Configuration.Default);
+      // EventEstimateFeesInput | Event estimate payload
+      var eventEstimateInput = new EventEstimateFeesInput();
+
+      try
+      {
+        // Create a new event
+        apiInstance.EventEstimateFees(eventEstimateInput);
+      }
+      catch (ApiException e)
+      {
+        Debug.Print("Exception when calling EventsApi.EventEstimateFees: " + e.Message );
+        Debug.Print("Status Code: "+ e.ErrorCode);
+        Debug.Print(e.StackTrace);
+      }
+    }
+  }
+}
+```
+
+```php PHP
+require_once(__DIR__ . '/vendor/autoload.php');
+
+// Configure Bearer authorization: bearerAuth
+$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
+
+
+$apiInstance = new OpenAPI\Client\Api\EventsApi(
+  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
+  // This is optional, `GuzzleHttp\Client` will be used as default.
+  new GuzzleHttp\Client(),
+  $config
+);
+$event_estimate_input = new \OpenAPI\Client\Model\EventEstimateFeesInput(); // \OpenAPI\Client\Model\EventEstimateFeesInput | Event estimage fees payload
+
+try {
+    $apiInstance->eventEstimateFees($event_input);
+} catch (Exception $e) {
+    echo 'Exception when calling EventsApi->eventEstimateFees: ', $e->getMessage(), PHP_EOL;
+}
+```
+
+</RequestExample>
+
