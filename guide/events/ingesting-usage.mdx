@@ -1,7 +1,6 @@
 ---
 title: "Ingesting usage"
-description:
-  "This guide explains how Lago ingests usage-based events coming from your application."
+description: "This guide explains how Lago ingests usage-based events coming from your application."
 ---
 
 ## Define a billable metric[](#define-a-billable-metric "Direct link to heading")
@@ -36,6 +35,7 @@ event is JSON with the following fields:
   "external_subscription_id": "__SUBSCRIPTION_ID__" // (Required) Unique identifier of your customer's subscription
   "code": "__EVENT_CODE__", // (Required) The billable metric's code
   "timestamp": 1650893379, // (Required) UNIX timestamp of the event
+  "precise_total_amount_cents": "140", // (Optional) Precise amount cents of the event used for dynamic charge model
   "properties": {
     "custom_field": 12, // (Optional) Custom variables defined as properties
     "operation_type": "add" or "remove" // (Optional) Required only for recurring metric based on the unique count aggregation
@@ -63,6 +63,7 @@ event is JSON with the following fields:
       by concatenating the `code` of the Billable metric and the `timestamp` of the
       event \*(example: `api_searches_2022-04-01T03:49:23Z`).
     </Tip>
+
   </Accordion>
   <Accordion title="2. The external_subscription_id">
     This attribute allows Lago to assign the event to the right subscription (and therefore to the right customer).
@@ -86,8 +87,16 @@ event is JSON with the following fields:
     **This `timestamp` is not mandatory to send the event**. If you do not specify a
     timestamp on your own, Lago automatically defines the reception date of the
     event as the event timestamp.
+
   </Accordion>
-  <Accordion title="5. The event properties">
+    <Accordion title="5. The event precise amount cent">
+    The event’s precise amount in cents refers to the amount sent to Lago when using a dynamic charge model. 
+    This value must be specified in cents.
+
+    **The precise_total_amount_cents is not mandatory when sending the event.** If you do not specify an amount, Lago will automatically set it to 0, and the event will not be included in the charge aggregation.
+
+  </Accordion>
+  <Accordion title="6. The event properties">
     Event properties are useful to send more context in usage events. Moreover, they
     are also very useful when you need to aggregate a Billable metrics for `SUM`,
     `MAX` and `UNIQUE COUNT`. Event properties can be `strings`, `integers`,
@@ -96,10 +105,15 @@ event is JSON with the following fields:
     In case of an aggregation type `UNIQUE COUNT` for a metric that is `recurring`
     , the `operation_type` is required.
     By sending `add`, you will add a value. By sending `remove`, you will remove a value.
+
   </Accordion>
 </AccordionGroup>
 
-<Warning>If you were using the `external_customer_id` to send usage measurement, note that this field is deprecated and is no longer supported or maintained. Please use the `external_subscription_id` instead.</Warning>
+<Warning>
+  If you were using the `external_customer_id` to send usage measurement, note
+  that this field is deprecated and is no longer supported or maintained. Please
+  use the `external_subscription_id` instead.
+</Warning>
 
 ## Idempotency and retries[](#idempotency-and-retries "Direct link to heading")
 
@@ -141,12 +155,13 @@ could send an event to Lago each single minute measuring the CPU consumption of
 a customer.
 
 ## Batching events
-In Lago, event batching allows for the efficient ingestion of multiple events through a single API call. 
+
+In Lago, event batching allows for the efficient ingestion of multiple events through a single API call.
 This capability enhances data throughput and reduces the number of API requests needed for event management.
+
 - **Batching multiple events:** Users can aggregate multiple events into a single batch. This consolidation enables the ingestion of numerous events simultaneously, significantly optimizing the data transmission process.
 - **API call limitation:** Lago supports batching of up to 100 events per API call. This feature is designed to balance between high-volume data handling and system performance.
 - **Validation process:** If any event within the batch does not meet the structural requirements, the entire batch will be rejected. This ensures data integrity and consistency. Users are advised to verify the structure of each event before batching to prevent rejections.
-
 
 ## Designed for flexibility[](#designed-for-flexibility "Direct link to heading")
 
