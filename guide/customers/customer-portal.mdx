@@ -2,12 +2,6 @@
 title: "The customer portal"
 ---
 
-<Info>
-**Premium feature ✨**:
-
-This feature is only available to users with a premium license. Please **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago Self-Hosted Premium.
-</Info>
-
 The Lago Customer Portal is a user-friendly platform that allows you to effortlessly share billing information, such as past invoices, with your end customers. As we continue to develop this tool, you will be able to display even more useful information to your customers.
 
 ## Generate a customer portal link
@@ -19,6 +13,12 @@ To generate a customer portal URL that can be embedded into your product, you ha
   <img src="/guide/images/customer-portal-access.png" />
 </Frame>
 
+## Embedding the dashboard
+You can also use the API to generate an embeddable Customer Portal that can be displayed in your application by using an iframe. To do so, use the endpoint `/customers/:external_customer_id/portal_url` to generate an embeddable URL that can be displayed in your user interface.
+
+<Info>
+For security reasons, the token returned by the API **expires after 12 hours**. Therefore, it is important to use the endpoint and generate a new token every time a customer refreshes or accesses the billing page.
+</Info>
 
 ## Customer portal preferred language
 By default, the embedded portal is displayed in English. However, you can easily change the language for a specific customer by adjusting the `document language` in their settings. To access this feature, follow these simple steps:
@@ -36,20 +36,45 @@ If the language you are looking for is not yet available, please [visit this pag
 </Info>
 
 
-## Billing overview
-The billing overview section provides a summary of both total invoices (everything that has been invoiced since the beginning) and overdue invoices (all the invoices past their due date, which are due). Your customers can know where they stand in one glance.
+## Customer portal information
 
-## Invoice history dashboard
+### 1. Invoice history
+The invoice history section provides a summary of both total invoices (everything that has been invoiced since the beginning) and overdue invoices (all the invoices past their due date, which are due). Your customers can know where they stand in one glance.
+
 The Customer Portal allows your customers to retrieve all past invoices and download them with ease. Lago displays useful billing information such as the issuing date, invoice number, amount, and payment status (paid or unpaid). Additionally, your customers can filter the list and search for a specific invoice.
 
 <Frame caption="Invoices list - Customer Portal">
   <img src="/guide/images/customer-portal-invoices-list.png" />
 </Frame>
 
+### 2. Customer information
+In addition to viewing their invoice list, customers can retrieve essential billing information, including legal name, tax identification number, billing email, and billing/shipping addresses.
 
-## Embedding the dashboard
-You can also use the API to generate an embeddable Customer Portal that can be displayed in your application by using an iframe. To do so, use the endpoint `/customers/:external_customer_id/portal_url` to generate an embeddable URL that can be displayed in your user interface.
+Customers can also update this information directly through the portal, ensuring that their billing details remain synchronized with the latest data.
 
-<Info>
-For security reasons, the token returned by the API **expires after 12 hours**. Therefore, it is important to use the endpoint and generate a new token every time a customer refreshes or accesses the billing page.
-</Info>
+<Frame caption="Customer information - Customer Portal">
+  <img src="/guide/images/customer-information-portal.png" />
+</Frame>
+
+### 3. Plans and usage information
+In addition to viewing their invoices and customer details, customers can access their subscriptions and usage directly through the portal.
+
+For subscription details, they can view key information such as the plan name, recurring fee, and subscription renewal date.
+
+Customers also have real-time access to comprehensive usage details, including:
+- Total lifetime usage and the next threshold for subscriptions using progressive billing;
+- A detailed usage report, showing the number of units consumed and associated costs; and
+- A full breakdown of usage by billing filters and groups.
+
+<Frame caption="Plans and usage - Customer Portal">
+  <img src="/guide/images/plans-usage-portal.png" />
+</Frame>
+
+### 4. Prepaid credits information
+The customer portal provides your customers with real-time access to their prepaid credit balance, showing the remaining credits based on their current usage.
+
+Additionally, customers can top up their paid credits, ensuring their wallet is always sufficiently funded.
+
+<Frame caption="Prepaid credits - Customer Portal">
+  <img src="/guide/images/prepaid-credits-portal.png" />
+</Frame>
