@@ -714,7 +714,7 @@ description: "Here is the complete list of webhook messages sent by Lago."
   </Accordion>
 </AccordionGroup>
 
-## Subscriptions and fees
+External payment providers
 
 <AccordionGroup>
   <Accordion title="Fee created">
@@ -1377,6 +1377,42 @@ description: "Here is the complete list of webhook messages sent by Lago."
   </Accordion>
 </AccordionGroup>
 
+## Payments
+<AccordionGroup>
+  <Accordion title="Payment requires action">
+    This message is triggered when a payment requires additional validation or confirmation, typically via 3D Secure (3DS). 
+    This is commonly seen in regions like India or when enhanced customer authentication is necessary.
+
+    The `url` field contains the checkout link that initiates 3D Secure (3DS) validation for your customers. 
+    The `return_url` is the page displayed once the 3DS process is completed.
+
+
+    ```json
+    {
+      "webhook_type": "payment.requires_action",
+      "object_type": "payment",
+      "payment": {
+        "lago_payable_id": "322d45ef-6ee2-40a5-9051-95cc895d27cf",
+        "lago_customer_id": "f8fb64a1-5201-4718-8dee-a860fd8973d5",
+        "status": "requires_action",
+        "external_customer_id": "hindi_hacker",
+        "provider_customer_id": "cus_R2cGAPxKAr8EZZ",
+        "payment_provider_code": "stripe",
+        "payment_provider_type": "PaymentProviders::StripeProvider",
+        "provider_payment_id": "pi_3QAX2xLMcydqKRXY1YntSNsZ",
+        "next_action": {
+          "type": "redirect_to_url",
+          "redirect_to_url": {
+            "url": "https://hooks.stripe.com/3d_secure_2/hosted?merchant=acct_1JhU3GLMcydqKRXY&payment_intent=pi_3QAX2xLMcydqKRXY1YntSNsZ&payment_intent_client_secret=pi_3QAX2xLMcydqKRXY1YntSNsZ_secret_roJDD6Xv0WVAyqEdGLNVzXAe5&publishable_key=pk_test_51JhU3GLMcydqKRXYnKJygces9vGDbAliy7FXZE4pFPHltzaMaHpmSKyXyNSl4ySdifkI3g6ti1MjhWxalJVN6NWO002BR1LdNK&source=payatt_3QAX2xLMcydqKRXY1krEQYJC",
+            "return_url": "https://stripe.com/"
+          }
+        }
+      }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
 ## External payment providers
 
 <AccordionGroup>
@@ -1961,4 +1997,3 @@ description: "Here is the complete list of webhook messages sent by Lago."
 
   </Accordion>
 </AccordionGroup>
-`````
