@@ -3,6 +3,56 @@ title: "Messages"
 description: "Below is a list of the event types we currently send. Please note that additional event types may be introduced in the future, so your code should be flexible enough to accommodate new types as they arise. Our objective is to maintain a consistent and predictable event structure, making it easier to integrate and handle messages, along with the objects they affect."
 ---
 
+## Credit notes and refunds
+<ParamField path="credit_note.created" type="data.object">
+  [Credit note object](/api-reference/credit-notes/credit-note-object). Sent when a new credit note has been issued for a customer. This will allow your application to proceed with the refund.
+</ParamField>
+
+<ParamField path="credit_note.generated" type="data.object">
+  [Credit note object](/api-reference/credit-notes/credit-note-object). Sent when the PDF file has been generated for a credit note. This will allow your application to retrieve the PDF credit note.
+</ParamField>
+
+<ParamField path="credit_note.refund_failure" type="data.object">
+  `credit_note_payment_provider_refund_error` object. Sent when the PDF file has been generated for a credit note. This will allow your application to retrieve the PDF credit note.
+</ParamField>
+
+
+## Customers
+### External payment providers
+<ParamField path="customer.payment_provider_created" type="data.object">
+  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in the payment provider’s application. This allows you to retrieve the identifier assigned to the customer by the payment service provider.
+</ParamField>
+
+<ParamField path="customer.checkout_url_generated" type="data.object">
+  `payment_provider_customer_checkout_url` object. Sent when a checkout link is issued for a customer.
+</ParamField>
+
+<ParamField path="customer.payment_provider_error" type="data.object">
+  `payment_provider_customer_error` object. Sent when there is an error related to the creation of a customer in the payment provider’s system.
+</ParamField>
+
+<ParamField path="invoice.payment_failure" type="data.object">
+  `payment_provider_invoice_payment_error` object. Sent when there is an error related to the payment process. Usually occurs when no valid payment method is defined for the customer in the payment service provider’s application.
+</ParamField>
+
+<ParamField path="invoice.payment_dispute_lost" type="data.object">
+  `payment_dispute_lost` object. Sent whenever a dispute or a chargeback is lost within your payment provider.
+</ParamField>
+
+### External accounting providers
+<ParamField path="customer.accounting_provider_created" type="data.object">
+  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in the accounting provider’s application (like NetSuite). This allows you to retrieve the identifier assigned to the customer by the accounting service provider.
+</ParamField>
+
+<ParamField path="customer.accounting_provider_error" type="data.object">
+  `accounting_provider_customer_error` object. Sent when there is an error related to the accounting provider sync. Usually occurs when something went wrong in the accounting service provider’s application.
+</ParamField>
+
+### External tax providers
+<ParamField path="customer.tax_provider_error" type="data.object">
+  `tax_provider_error` object. Sent when there is an error related to the tax provider sync. This usually occurs due to issues with item mappings, customer definitions, or within the service provider’s application.
+</ParamField>
+
 ## Event ingestion
 
 <ParamField path="events.errors" type="data.object">
@@ -48,6 +98,25 @@ description: "Below is a list of the event types we currently send. Please note 
   [Invoice object](/api-reference/invoices/invoice-object). Sent when an invoice is voided.
 </ParamField>
 
+## Payments
+
+<ParamField path="payment.requires_action" type="data.object">
+  This message is triggered when a payment requires additional validation or confirmation, typically via 3D Secure (3DS). This is commonly seen in regions like India or when enhanced customer authentication is necessary.
+  The `url` field contains the checkout link that initiates 3D Secure (3DS) validation for your customers. The `return_url` is the page displayed once the 3DS process is completed.
+</ParamField>
+
+<ParamField path="payment_request.created" type="data.object">
+  [Payment request object](/api-reference/payment-requests/payment-request-object). Sent when a manual payment request has been triggered, to request payment for the overdue balance.
+</ParamField>
+
+<ParamField path="payment_request.payment_failure" type="data.object">
+  [Payment request object](/api-reference/payment-requests/payment-request-object). Sent when the payment attached to a payment request has failed. The `provider_error` field indicates the error code and message from the payment provider.
+</ParamField>
+
+<ParamField path="payment_request.payment_status_updated" type="data.object">
+  [Payment request object](/api-reference/payment-requests/payment-request-object). Sent when the payment attached to a payment request is updated to a new payment status, through the `payment_status field.
+</ParamField>
+
 ## Subscriptions and fees
 
 <ParamField path="fee.created" type="data.object">
@@ -88,59 +157,8 @@ description: "Below is a list of the event types we currently send. Please note 
   [Wallet object](/api-reference/wallets/wallet-object). Sent when the ongoing balance is negative or equal to 0.
 </ParamField>
 
-## Payments
-
-<ParamField path="payment.requires_action" type="data.object">
-  This message is triggered when a payment requires additional validation or confirmation, typically via 3D Secure (3DS). This is commonly seen in regions like India or when enhanced customer authentication is necessary.
-  The `url` field contains the checkout link that initiates 3D Secure (3DS) validation for your customers. The `return_url` is the page displayed once the 3DS process is completed.
-</ParamField>
-
-## Customers
-### External payment providers
-<ParamField path="customer.payment_provider_created" type="data.object">
-  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in the payment provider’s application. This allows you to retrieve the identifier assigned to the customer by the payment service provider.
-</ParamField>
-
-<ParamField path="customer.checkout_url_generated" type="data.object">
-  `payment_provider_customer_checkout_url` object. Sent when a checkout link is issued for a customer.
-</ParamField>
-
-<ParamField path="customer.payment_provider_error" type="data.object">
-  `payment_provider_customer_error` object. Sent when there is an error related to the creation of a customer in the payment provider’s system.
-</ParamField>
-
-<ParamField path="invoice.payment_failure" type="data.object">
-  `payment_provider_invoice_payment_error` object. Sent when there is an error related to the payment process. Usually occurs when no valid payment method is defined for the customer in the payment service provider’s application.
-</ParamField>
-
-<ParamField path="invoice.payment_dispute_lost" type="data.object">
-  `payment_dispute_lost` object. Sent whenever a dispute or a chargeback is lost within your payment provider.
-</ParamField>
-
-### External accounting providers
-<ParamField path="customer.accounting_provider_created" type="data.object">
-  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in the accounting provider’s application (like NetSuite). This allows you to retrieve the identifier assigned to the customer by the accounting service provider.
-</ParamField>
-
-<ParamField path="customer.accounting_provider_error" type="data.object">
-  `accounting_provider_customer_error` object. Sent when there is an error related to the accounting provider sync. Usually occurs when something went wrong in the accounting service provider’s application.
-</ParamField>
-
-### External tax providers
-<ParamField path="customer.tax_provider_error" type="data.object">
-  `tax_provider_error` object. Sent when there is an error related to the tax provider sync. This usually occurs due to issues with item mappings, customer definitions, or within the service provider’s application.
-</ParamField>
 
 
-## Credit notes and refunds
-<ParamField path="credit_note.created" type="data.object">
-  [Credit note object](/api-reference/credit-notes/credit-note-object). Sent when a new credit note has been issued for a customer. This will allow your application to proceed with the refund.
-</ParamField>
 
-<ParamField path="credit_note.generated" type="data.object">
-  [Credit note object](/api-reference/credit-notes/credit-note-object). Sent when the PDF file has been generated for a credit note. This will allow your application to retrieve the PDF credit note.
-</ParamField>
 
-<ParamField path="credit_note.refund_failure" type="data.object">
-  `credit_note_payment_provider_refund_error` object. Sent when the PDF file has been generated for a credit note. This will allow your application to retrieve the PDF credit note.
-</ParamField>
+
