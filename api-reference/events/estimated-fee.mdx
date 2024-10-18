@@ -2,7 +2,7 @@
 openapi: "POST /events/estimate_fees"
 authMethod: "bearer"
 title: "Estimate an upcoming fee"
-description: "Estimate the fees that would be created after reception of an event for 
+description: "Estimate the fees that would be created after reception of an event for
 a billable metric attached to one or multiple pay in advance charges."
 ---
 
@@ -86,64 +86,4 @@ try {
   }
 ```
 
-```csharp C#
-using System.Collections.Generic;
-using System.Diagnostics;
-using Org.OpenAPITools.Api;
-using Org.OpenAPITools.Client;
-using Org.OpenAPITools.Model;
-
-namespace Example
-{
-  public class CreateEventExample
-  {
-    public static void Main()
-    {
-      Configuration.Default.BasePath = "https://api.getlago.com/api/v1";
-      // Configure HTTP bearer authorization: bearerAuth
-      Configuration.Default.AccessToken = "YOUR_ACCESS_TOKEN";
-
-      var apiInstance = new EventsApi(Configuration.Default);
-      // EventEstimateFeesInput | Event estimate payload
-      var eventEstimateInput = new EventEstimateFeesInput();
-
-      try
-      {
-        // Create a new event
-        apiInstance.EventEstimateFees(eventEstimateInput);
-      }
-      catch (ApiException e)
-      {
-        Debug.Print("Exception when calling EventsApi.EventEstimateFees: " + e.Message );
-        Debug.Print("Status Code: "+ e.ErrorCode);
-        Debug.Print(e.StackTrace);
-      }
-    }
-  }
-}
-```
-
-```php PHP
-require_once(__DIR__ . '/vendor/autoload.php');
-
-// Configure Bearer authorization: bearerAuth
-$config = OpenAPI\Client\Configuration::getDefaultConfiguration()->setAccessToken('YOUR_ACCESS_TOKEN');
-
-
-$apiInstance = new OpenAPI\Client\Api\EventsApi(
-  // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
-  // This is optional, `GuzzleHttp\Client` will be used as default.
-  new GuzzleHttp\Client(),
-  $config
-);
-$event_estimate_input = new \OpenAPI\Client\Model\EventEstimateFeesInput(); // \OpenAPI\Client\Model\EventEstimateFeesInput | Event estimage fees payload
-
-try {
-    $apiInstance->eventEstimateFees($event_input);
-} catch (Exception $e) {
-    echo 'Exception when calling EventsApi->eventEstimateFees: ', $e->getMessage(), PHP_EOL;
-}
-```
-
 </RequestExample>
-
