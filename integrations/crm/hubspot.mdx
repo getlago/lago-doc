@@ -1,0 +1,141 @@
+---
+title: "HubSpot"
+description: "Lago syncs billing data to HubSpot in real-time."
+---
+
+<Info>
+**PREMIUM ADD-ON** ✨
+
+This integration is only available to users with a specific paying add-on. Please
+**[contact us](mailto:hello@getlago.com)** to get access to Salesforce CRM integration.
+</Info>
+
+<Warning>
+    
+    This integration is a one-way sync, where Lago continuously syncs billing data to HubSpot in real time. 
+    Currently, it doesn’t support fetching information or taking actions from HubSpot back to Lago.
+
+</Warning>
+
+## Object mapping
+
+<Frame caption="Lago to HubSpot object mapping">
+  <img src="/integrations/images/hubspot-crm-integration-objects-mapping.png" />
+</Frame>
+
+## Integration configuration
+
+### oAuth connection
+
+<Frame caption="Connect Lago to HubSpot through an oAuth connection">
+  <img src="/integrations/images/hubspot-integration-connect-screen.png" />
+</Frame>
+
+To fully integrate Lago with HubSpot, start by connecting your Lago instance to a new HubSpot connection. You can have an unlimited number of HubSpot connections. First, link your HubSpot account to Lago. Once connected, activate the specific syncs and actions required for your use case. This ensures that your Lago instance is properly configured to communicate with HubSpot, enabling seamless data synchronization and management.
+
+1. In Lago, navigate to **Integrations** > **HubSpot**;
+2. Create a **new HubSpot connection**;
+3. Assign a unique **name** and **code** to the connection;
+4. Select the **default targeted object** for Lago customers between HubSpot Contacts or Companies; and
+5. Use OAuth2 to grant access to the desired HubSpot account.
+
+There you go, Lago is fully connected to HubSpot!
+
+<Frame caption="Lago to HubSpot - oAuth connection flow">
+  <img src="/integrations/images/hubspot-integration-oauth-flow.png" />
+</Frame>
+
+### List of scopes
+Here's a list of scopes you grant to Lago when connecting your HubSpot instance: `oauth`, `crm.objects.companies.read`, `crm.objects.companies.write`, 
+`crm.objects.custom.read`, `crm.objects.custom.write`, `crm.schemas.companies.read`, `crm.schemas.companies.write`, `crm.schemas.custom.read`, 
+`crm.objects.contacts.read`, `crm.objects.contacts.write`, `crm.schemas.contacts.read`, `crm.schemas.contacts.write` and `crm.schemas.custom.write`.
+
+### Custom properties deployment
+By connecting HubSpot to Lago, **custom properties are automatically added to both your HubSpot Companies and Contacts** (native objects). 
+These fields are used to sync customer data between HubSpot and Lago.
+- `lago_customer_id`: internal id of a Lago customer (unique);
+- `lago_customer_external_id`: your customer's external id in Lago;
+- `lago_billing_email`: your customer's billing email in Lago;
+- `lago_tax_identification_number`: your customer's tax identification number in Lago; and
+- `lago_customer_link`: the URL path to the related Lago customer.
+
+<Frame caption="Custom properties deployed by Lago to HubSpot Companies and Contacts">
+  <img src="/integrations/images/hubspot-integration-custom-properties.png" />
+</Frame>
+
+<Info>
+  Note that custom properties are deployed in the background the first time the connection is created.
+</Info>
+
+### Custom objects deployment
+By connecting HubSpot to Lago, 2 custom objects are automatically deployed to your HubSpot instance: `LagoSubscriptions` and `LagoInvoices`.
+
+<Info>
+  Note that custom objects are deployed in the background the first time the connection is created. They are automatically tied to HubSpot Contacts or Companies.
+</Info>
+
+#### LagoSubscriptions
+Here is the list of properties deployed with the `LagoSubscriptions` custom object:
+
+| HubSpot Property Name              | Type        | Field Type  | Has Unique Value |
+|------------------------------------|-------------|------------|------------------|
+| Lago Subscription Id               | string      | text       | true             |
+| Lago External Subscription Id      | string      | text       | false            |
+| Lago Subscription Name             | string      | text       | false            |
+| Lago Subscription Plan Code        | string      | text       | false            |
+| Lago Subscription Status           | string      | text       | false            |
+| Lago Subscription Created At       | date        | date       | false            |
+| Lago Subscription Started At       | date        | date       | false            |
+| Lago Subscription Ending At        | date        | date       | false            |
+| Lago Subscription At               | date        | date       | false            |
+| Lago Subscription Terminated At    | date        | date       | false            |
+| Lago Subscription Trial Ended At   | date        | date       | false            |
+| Lago Subscription Link             | string      | file       | false            |
+| Lago Billing Time                  | enumeration | radio      | false            |
+
+
+#### LagoInvoices
+Here is the list of properties deployed with the `LagoInvoices` custom object:
+
+| HubSpot Property Name                        | Type   | Field Type        | Has Unique Value |
+|----------------------------------------------|--------|-------------------|------------------|
+| Lago Invoice Id                              | string | text              | true             |
+| Lago Invoice Number                          | string | text              | false            |
+| Lago Invoice Issuing Date                    | date   | date              | false            |
+| Lago Invoice Payment Due Date                | date   | date              | false            |
+| Lago Invoice Payment Overdue                 | bool   | booleancheckbox   | false            |
+| Lago Invoice Type                            | string | text              | false            |
+| Lago Invoice Status                          | string | text              | false            |
+| Lago Invoice Payment Status                  | string | text              | false            |
+| Lago Invoice Currency                        | string | text              | false            |
+| Lago Invoice Total Amount                    | number | number            | false            |
+| Lago Invoice Subtotal Excluding Taxes        | number | number            | false            |
+| Lago Invoice File URL                        | string | file              | false            |
+| Lago Invoice Link                            | string | file              | false            |
+
+## Sync data from Lago to HubSpot
+
+### Sync customers to HubSpot
+When you create or update a customer in Lago, the information is synced in real time to your HubSpot account. Please note the following:
+
+- If `customer.customer_type` in Lago is `company`, the data is synced as a HubSpot Company record.
+- If `customer.customer_type` in Lago is `individual`, the data is synced as a HubSpot Contact record.
+- If `customer.customer_type` is undefined, the data is synced using the default Customer Object set at the connection level.
+
+<Frame caption="Customer syncs from Lago to HubSpot">
+  <img src="/integrations/images/hubspot-integration-customer-sync.png" />
+</Frame>
+
+<Frame caption="Example of a Company created by Lago">
+  <img src="/integrations/images/hubspot-integration-create-company.png" />
+</Frame>
+
+You can instruct Lago to automatically create a new Company or Contact in your HubSpot account, or link an existing one by pasting a HubSpot ID into the corresponding Lago customer record.
+
+### Sync subscriptions to HubSpot
+Whenever a Lago customer is linked to a HubSpot Contact or Company, **Lago Subscriptions are automatically synced in real-time with the `LagoSubscriptions` object in HubSpot**. 
+The subscription record is then automatically associated with the corresponding Contact or Company in HubSpot.
+
+### Sync invoices to HubSpot
+Whenever a Lago customer is linked to a HubSpot Contact or Company, **Lago Invoices are automatically synced in real-time with the `LagoInvoices` object in HubSpot**. 
+The invoice record is then automatically associated with the corresponding Contact or Company in HubSpot.
