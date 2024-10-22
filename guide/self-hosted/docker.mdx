@@ -5,6 +5,16 @@ description:
   Lago."
 ---
 
+## Lago Docker Deployment Guide
+
+Docker provides a convenient way to set up and run the self-hosted version of Lago for development and testing purposes. This guide will walk you through the steps to deploy Lago using Docker Compose. **However, we strongly discourage using Docker Compose for production environments.** For production deployments, we recommend using Kubernetes with our Helm chart due to its robustness, scalability, and better support for high-availability configurations.
+
+### Important Note for Production Use
+
+Using Docker Compose in production is not recommended because it lacks the advanced features needed for scaling, load balancing, and seamless updates. Kubernetes, in conjunction with our Helm chart, provides a more secure and scalable solution suitable for production workloads.
+
+---
+
 ## Requirements[](#requirements "Direct link to heading")
 
 1. Install [Docker](https://docs.docker.com/get-docker/) on your machine;
@@ -15,7 +25,7 @@ description:
    [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) is
    installed on your machine.
 
-## Run the app[](#run-the-app "Direct link to heading")
+### 1. Clone the Lago Repository
 
 To start using Lago, run the following commands in a shell:
 
@@ -25,11 +35,172 @@ git clone https://github.com/getlago/lago.git
 
 # Go to Lago folder
 cd lago
+```
 
-# Set up environment configuration
-echo "LAGO_RSA_PRIVATE_KEY=\"`openssl genrsa 2048 | base64`\"" >> .env
-source .env
+## 2. Set Up Environment Variables
 
+
+Create a `.env` file in the root directory of the Lago project and populate it with the necessary environment variables. Below is an example of what your `.env` file might look like (there is also a .env.example at the root of the repository):
+
+```shell
+DOMAIN=yourdomain.com
+LAGO_API_URL=http://${DOMAIN}/api
+LAGO_FRONT_URL=http://${DOMAIN}
+POSTGRES_USER=lago
+POSTGRES_PASSWORD=changeme
+POSTGRES_DB=lago
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+POSTGRES_SCHEMA=public
+REDIS_HOST=redis
+REDIS_PORT=6379
+SECRET_KEY_BASE=your-secret-key-base-hex-64
+LAGO_RSA_PRIVATE_KEY=your-base64-encoded-private-key
+LAGO_ENCRYPTION_PRIMARY_KEY=your-encryption-primary-key
+LAGO_ENCRYPTION_DETERMINISTIC_KEY=your-encryption-deterministic-key
+LAGO_ENCRYPTION_KEY_DERIVATION_SALT=your-encryption-derivation-salt
+```
+
+Note: Replace placeholder values (e.g., `yourdomain.com`, `changeme`, `your-secret-key-base-hex-64`, etc.) with your actual configuration values.
+
+## 3. Generate Required Keys and Secrets
+
+*SECRET_KEY_BASE*: Generate using `openssl rand -hex 64`.
+*LAGO_RSA_PRIVATE_KEY*: Generate using `openssl genrsa 2048 | base64`.
+*LAGO_ENCRYPTION_PRIMARY_KEY*, *LAGO_ENCRYPTION_DETERMINISTIC_KEY*, *LAGO_ENCRYPTION_KEY_DERIVATION_SALT*: Generate each using `cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1`.
+
+## 4. Configure Docker Compose
+
+Review the `docker-compose.new.yml` file provided. It includes several services:
+
+* traefik: Acts as a reverse proxy and handles SSL termination.
+* api: The Lago API service.
+* front: The Lago frontend application.
+* db: PostgreSQL database.
+* redis: Redis cache.
+* api-worker: Background worker for asynchronous tasks.
+* api-clock: Scheduler for periodic tasks.
+* pdf: Service for PDF generation.
+
+### Traefik Configuration:
+
+Ensure that the DOMAIN environment variable is set correctly in your .env file. Traefik uses this variable to route traffic and obtain SSL certificates from Let's Encrypt.
+
+## Using Traefik with HTTPS on Localhost Using a Self-Signed Certificate :
+
+When working with Traefik in a local development environment, you might want to enable HTTPS on `localhost`. Since Let's Encrypt does not issue certificates for `localhost`, you'll need to use a self-signed certificate. This documentation will guide you through the process of modifying your docker-compose.yml file to use a self-signed certificate with Traefik.
+
+### Generating a Self-Signed Certificate
+
+```shelm
+openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes \
+  -keyout cert.key -out cert.crt -subj "/CN=localhost"
+```
+
+This command creates two files in your current directory:
+
+* cert.crt: The self-signed certificate.
+* cert.key: The private key for the certificate.
+
+Note: Keep these files secure, even though they are for local development.
+
+### Modifying docker-compose.yml
+
+#### 1. Commenting Out Let's Encrypt Configuration
+
+In your existing `docker-compose.yml`, locate the Traefik service configuration. You'll need to comment out or remove the Let's Encrypt-related lines since they are not applicable for `localhost`.
+
+Locate and comment out the following lines in the `command` section:
+
+```shell
+# --certificatesresolvers.lagoresolver.acme.tlschallenge=true
+# --certificatesresolvers.lagoresolver.acme.email=youremail@domain.tld
+# --certificatesresolvers.lagoresolver.acme.storage=/letsencrypt/acme.json
+```
+
+Also, comment out the labels related to TLS certificate resolution:
+
+```
+# - "traefik.http.routers.traefik.tls.certresolver=lagoresolver"
+```
+
+#### 2. Adding Self-Signed Certificate Configuration
+
+Now, you'll add configuration to tell Traefik to use your self-signed certificate.
+
+In the `volumes` section, add:
+
+```
+- "./cert.crt:/certs/cert.crt"
+- "./cert.key:/certs/cert.key"
+```
+
+This mounts your self-signed certificate and key into the Traefik container.
+
+In the `command` section, add or modify:
+
+```shell
+- "--entrypoints.websecure.address=:443"
+- "--entrypoints.websecure.http.tls=true"
+- "--entrypoints.websecure.http.tls.certificates[0].certFile=/certs/cert.crt"
+- "--entrypoints.websecure.http.tls.certificates[0].keyFile=/certs/cert.key"
+```
+
+These lines configure Traefik to use the self-signed certificate for the `websecure` entrypoint.
+
+#### Final docker-compose.yml Example
+
+Here is how your Traefik service should look after modifications ( /!\ only for localhost purpose /!\):
+
+```yaml
+services:
+  traefik:
+    image: traefik:v2.5
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--api.insecure=false"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--entrypoints.websecure.http.tls.certificates[0].certFile=/certs/cert.crt"
+      - "--entrypoints.websecure.http.tls.certificates[0].keyFile=/certs/cert.key"
+      # Commented out Let's Encrypt configuration
+      # - "--certificatesresolvers.lagoresolver.acme.tlschallenge=true"
+      # - "--certificatesresolvers.lagoresolver.acme.email=youremail@domain.tld"
+      # - "--certificatesresolvers.lagoresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./cert.crt:/certs/cert.crt"
+      - "./cert.key:/certs/cert.key"
+      # Commented out Let's Encrypt volume
+      # - traefik_certificates:/letsencrypt
+      - traefik_config:/traefik
+    labels:
+      - "traefik.http.routers.traefik.rule=Host(`localhost`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      # Commented out TLS certificate resolver label
+      # - "traefik.http.routers.traefik.tls.certresolver=lagoresolver"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+```
+
+#### Notes :
+
+Browser Warnings: When accessing `https://localhost`, your browser will display a security warning because the certificate is self-signed. You can safely ignore this warning for local development.
+Trusting the Certificate: To eliminate browser warnings, you can add the self-signed certificate to your system's trusted certificates store.
+Environment Variables: Ensure that the DOMAIN environment variable is set to `localhost` if used elsewhere in your configuration.
+Cleaning Up: Remember that self-signed certificates should not be used in production environments.
+
+
+## 5. Start the Services
+
+```shell
 # Start the api
 docker compose up -d api
 
@@ -42,10 +213,10 @@ docker compose up
 
 ```
 
-You can now open your browser and go to [http://localhost](http://localhost) to
-connect to the application. Just after
-[signing up](#signing-up), Lago's API is exposed
-at [http://localhost:3000](http://localhost:3000).
+# Accessing Lago
+
+Once the setup is complete, you can access the Lago application by navigating to `https://yourdomain.com` in your web browser.
+
 
 ## Signing up[](#signing-up "Direct link to heading")
 
@@ -112,8 +283,8 @@ application. You can override them to customise your setup.
 | `LAGO_MEMCACHE_SERVERS`               |                                         | Coma separated list of memcache servers                                                                                                                          |
 | `LAGO_FRONT_URL`                      | [http://localhost](http://localhost)    | URL of the Lago front-end application.Used for CORS configuration                                                                                                |
 | `FRONT_PORT`                          | 80                                      | Port the front-end application listens to                                                                                                                        |
-| `LAGO_API_URL`                        | [http://localhost:3000](http://localhost:3000) | URL of the Lago back-end application                                                                                                                      |
-| `API_URL`                             | [http://localhost:3000](http://localhost:3000) | URL of the Lago back-end application defined for the front image                                                                                          |
+| `LAGO_API_URL`                        | [http://localhost/api](http://localhost/api) | URL of the Lago back-end application                                                                                                                      |
+| `API_URL`                             | [http://localhost/api](http://localhost/api) | URL of the Lago back-end application defined for the front image                                                                                          |
 | `API_PORT`                            | 3000                                    | Port the back-end application listens to                                                                                                                         |
 | `SECRET_KEY_BASE`                     | your-secret-key-base-hex-64             | Secret key used for session encryption                                                                                                                           |
 | `SENTRY_DSN`                          |                                         | Sentry DSN key for error and performance tracking on Lago back-end                                                                                               |
@@ -181,72 +352,6 @@ two options to achieve this:
 - by using a self-signed certificate
 - by using a signed certificate generated by Let's Encrypt
 
-#### Self Signed Certificate[](#self-signed-certificate "Direct link to heading")
-
-- Run the script to generate the certificates
-
-```shell
-# Be sure to be in your lago folder
-./extra/init-selfsigned.sh
-
-# This should create certificates in the ./extra/ssl/ folder
-```
-
-- Take a look at the `docker-compose.yml` file and uncomment the part related to
-  the Self-Signed certificate
-
-```yaml
-volumes:
-  - ./extra/nginx-selfsigned.conf:/etc/nginx/conf.d/default.conf
-  - ./extra/ssl/nginx-selfsigned.crt:/etc/ssl/certs/nginx-selfsigned.crt
-  - ./extra/ssl/nginx-selfsigned.key:/etc/ssl/private/nginx-selfsigned.key
-  - ./extra/ssl/dhparam.pem:/etc/ssl/certs/dhparam.pem
-```
-
-- You can now start the front application with a self signed SSL certificate
-  support
-
-```shell
-docker-compose up front
-```
-
-#### Let's Encrypt Certificate[](#lets-encrypt-certificate "Direct link to heading")
-
-- Edit the file `extra/init-letsencrypt.sh`
-  - You must replace `lago.example` with your domain name
-  - You must enter a valid email address
-- Edit the file `extra/nginx-letsencrypt.conf`
-  - You must replace `lago.example` with your domain name
-- Uncomment the [Cerbot lines](https://github.com/getlago/lago/blob/5d08b61f4f174f445b258005854aaa18ca049266/docker-compose.yml#L124-L129) in the `docker-compose.yml` file
-- Run the following script
-
-```shell
-# Be sure to be in your lago folder
-./extra/init-letsencrypt.sh
-
-# You will be asked to provide some information
-# After that you should be able to see the extra/certbot folder
-```
-
-- Take a look at the `docker-compose.yml` file and uncomment all the parts
-  related to the Let's Encrypt's support
-
-```yaml
-command:
-  '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx
-  -g "daemon off;"'''
----
-volumes:
-  - ./extra/nginx-letsencrypt.conf:/etc/nginx/conf.d/default.conf
-  - ./extra/certbot/conf:/etc/letsencrypt
-  - ./extra/certbot/www:/var/www/certbot
-```
-
-- You can now start the front application with the signed certificate support
-
-```shell
-docker-compose up front
-```
 
 ### Storage[](#storage "Direct link to heading")
 
