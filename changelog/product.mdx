@@ -1,0 +1,1484 @@
+---
+title: "Product updates"
+---
+
+<Update label="October 2024">
+ ## Customer type
+ Users can specify whether the customer is a company or an individual by setting the customer type.
+
+ By default, if no customer type is specified, customers are created without a defined type and you will need to assign one manually.
+
+ [Learn more](/guide/customers/customer-management#companies-vs-individuals)
+
+ <Frame>
+   <img src="https://cdn.prod.website-files.com/63569f390f3a7ad4c76d2bd6/670e3492b8af7e403998631d_670e348652aa9119b8d40ec5_Mail%252038%2520Company%2520vs%2520Individual.png" />
+ </Frame>
+
+ ## Send tax invoices
+ Lago invoices are now fully compliant with local legislation in Australia, Indonesia, New Zealand and the United Arab Emirates.
+
+ In those countries, it is mandatory to emit "Tax Invoices" accord to specific rules. This can now be handled with Lago.
+
+ <Frame>
+   <img src="https://cdn.prod.website-files.com/63569f390f3a7ad4c76d2bd6/670e342075003c7364903b11_670e34092f78a79d6fac4518_Tax%2520invoice.png" />
+ </Frame>
+
+ ## Retrieve all events using the API
+ Users can now retrieve and filters all events using the API. The endpoint also allows for filtering by:
+ - `code`
+ - `external_subscription_id`
+ - `timestamp_from`
+ - `timestamp_to`
+
+ [Learn more](/api-reference/events/list-events)
+</Update>
+
+<Update label="September 2024">
+ ## Anrok integration ✨
+ <Info>✨ This feature is only available via a paying add-on. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ We have developed an integration with Anrok to make tax management easier. This native integration allows you to automatically update your invoices with tax amounts sourced directly from Anrok.
+
+ - Lago sends the customer's address, tax identifier (if applicable), and the relevant product ID to calculate the appropriate tax for each line item
+ - Anrok calculates the tax for the invoice and returns the data to Lago, which is used to update the invoice with accurate tax information
+ - Lago synchronizes updates for voided and disputed invoices, as well as any credit notes created, ensuring that your records remain up to date
+
+ This integration ensures compliance with international tax regulations by calculating taxes for US & non-US obligations, like VAT.
+
+ [Learn more](/integrations/taxes/anrok#mapping-items-between-lago-and-anrok-mandatory)
+
+ <Frame>
+   <img src="https://cdn.prod.website-files.com/63569f390f3a7ad4c76d2bd6/66ead609693bf0b7c4c33372_66ead603a7be86769eb0ce97_mail-36-lago-anrok.png" />
+ </Frame>
+
+ ## Precise amount for fees
+ Lago now allows you to retrieve the precise (ie. non rounded) amount on the fee object. Before only the rounded `amount_cents` was available.
+
+ To use the precise fee amount, you can use the `precise_amount` field.
+
+ [Learn more](/api-reference/fees/fee-object)
+
+ <Frame>
+   <img src="https://cdn.prod.website-files.com/63569f390f3a7ad4c76d2bd6/66ead5ba17d9844835539533_66ead5b4097b06391471f487_mail-36-fee-precise-amount.png" />
+ </Frame>
+
+ ## Progressive billing ✨
+ <Info>✨ This feature is only available via a paying add-on. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ Progressive billing, also known as threshold billing, automatically triggers an invoice when a customer's cumulative usage reaches predefined thresholds.
+
+ This method ensures that customers cannot exceed certain usage limits without ensuring payment is received, reducing the risk of unpaid services or fraud.
+
+ You can setup 2 types of threshold:
+ - Step-based threshold: invoices are generated when the lifetime usage of a subscription reaches a defined threshold. You can set an unlimited number of thresholds, each with a specific amount and a unique name
+ - Recurring threshold: this threshold determines what happens after the final step-based threshold is reached. (For example, after the last threshold, Lago will automatically bill $100 each time the lifetime usage increments by that amount)
+
+ [Learn more](/guide/plans/progressive-billing#progressive-billing)
+
+ ## Skip empty invoices generation
+ Users can now decide whether or not to issue $0 invoices (ie. empty invoices). By default, empty invoices are generated. You can change this setting at the organisation level.
+
+ When creating a customer, it takes by default the configuration of the organization for this specific field.
+
+ However, you can decide to override this information for a specific customer. Why? You might have customers who need to receive an invoice each month, even if the total amount is 0.
+
+ [Learn more](/guide/invoicing/overview#finalize-empty-invoices)
+
+ <Frame>
+   <img src="https://cdn.prod.website-files.com/63569f390f3a7ad4c76d2bd6/66ead69e8d93cffff76e3ca1_66ead69b3927db5ea498e4cc_mail-36-skip-0-invoice.png" />
+ </Frame>
+
+  ## Filter and export invoices
+  Users can now filter the list of invoices (e.g. by currency, customer, issuing date, etc.) and the filtered list can then be exported from the user interface.
+
+  Two export options are available:
+  - Standard, including the list of invoices and invoice amounts (i.e. one row per invoice)
+  - Advanced, including the list of fees (i.e. one row per fee, so multiple rows per invoice if the invoice includes multiple fees)
+
+  The list is automatically emailed to the requester in a CSV file.
+
+  [Learn more](/guide/invoicing/export)
+
+  <Frame>
+    <img src="https://cdn.prod.website-files.com/63569f390f3a7ad4c76d2bd6/66d590ad4898ed6c465f308a_66d5905057e9afbb44b530e6_filter-export-invoices.png" />
+  </Frame>
+
+  ## Wallet transaction metadata
+  When creating a wallet transaction via API, you can add metadata to store additional information (e.g. source of the transaction).
+
+  This information is not displayed in the user interface.
+
+  [Learn more](/api-reference/wallets/wallet-transaction-object)
+</Update>
+
+<Update label="August 2024">
+ ## Invoicing options for wallet top-ups
+ When creating a new wallet for a customer, users can choose to generate invoices for credit purchases either:
+ - As soon as the wallet transaction is created
+ - Only when payment is successful, which avoids generating invoices for transactions that have not been finalized
+
+ These options are also available for automatic and manual top-ups (see `wallet_transaction.invoice_requires_successful_payment`).
+
+ [Learn more](/guide/wallet-and-prepaid-credits/overview#invoicing-after-successful-payment-option)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/66b9a5353bcc3c82de50005a_66b9a4d0e366be520e901864_topup-invoice-if-paid.png" />
+ </Frame>
+</Update>
+
+<Update label="July 2024">
+ ## API changes (v1.7.0)
+ As announced a few months ago, we have updated the event ingestion process and removed deprecated API fields. Changes include:
+
+ **1. Replacing groups with filters**
+
+ The new dimension system based on filters allows users to create billable metrics with more than two dimensions, and makes it easier to create charges based on custom event properties. The old dimension system based on groups has been permanently removed from the Lago API ([see all changes](/guide/migration/migration-to-v1.2.0#1-transition-from-group-to-filters)).
+
+ **2. Marking `external­_subscription­_id` as mandatory for events**
+
+ Events that only include `external­_customer­_id` are no longer taken into account when aggregating usage ([learn more](/guide/migration/migration-to-v1.2.0#2-mandatory-external-subscription-id-field-in-event-payloads)). This change will streamline the event validation process and enable real-time billing capabilities.
+
+ **3. Removing deprecated API fields**
+
+ For the sake of clarity and to preserve the quality of the API, we've deprecated several legacy fields ([see full list](/guide/migration/migration-to-v1.2.0#3-deprecated-fields)).
+
+ [Learn more](/guide/migration/migration-to-v1.2.0)
+
+ ## Invoicing options for instant charges ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ For charges paid in advances, Lago offers three invoicing options:
+ - An invoice can be issued for each event
+ - An invoice that only includes paid fees can be issued at the end of the billing period
+ - No invoices (users only rely on the `fee.created` webhook)
+
+ [Learn more](/guide/plans/charges/invoiceable-vs-noninvoiceable)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/669df9a12a27751fcf4c176c_regroup-fees.png" />
+ </Frame>
+
+ ## Xero integration ✨
+ <Info>✨ This feature is only available via a paying add-on. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ We have developed a Xero integration to make accounting easier. Available features include:
+ - Connecting a Lago account to a Xero account via OAuth
+ - Mapping Lago objects such as billable metrics, plans, coupons, wallet credits and taxes to Xero items
+ - Real-time synchronization of customer accounts
+ - Real-time synchronization of invoices
+ - Real-time synchronization of credit notes
+ - Real-time synchronization of payments
+
+ [Learn more](/integrations/accounting/xero)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/669e5787323898dab0e6c0d5_xero-integration.png" />
+ </Frame>
+
+  ## Link checkout
+  For card payments processed through integration with Stripe, users can enable the Link option. Link automatically fills the customer's payment information for faster checkout.
+
+  [Learn more](/integrations/payments/stripe-integration#link)
+
+  <Frame>
+    <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/669a69858d650ff02d0d8acc_link-stripe.png" />
+  </Frame>
+
+  ## Overview of customer billing
+  The customer view features a new billing section, including:
+  - Gross revenue (i.e. total amount billed to the customer)
+  - Total overdue (i.e. total amount of invoices that are past their due date)
+
+  This improvement is the first step toward dunning management (coming soon).
+
+  [Learn more](/guide/customers/customer-management#monitor-the-customers-billing-status)
+
+  <Frame>
+    <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/669a6c88553775726dbfbe32_overdue-balance.png" />
+  </Frame>
+
+  ## NetSuite integration ✨
+ <Info>✨ This feature is only available via a paying add-on. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ We have developed a NetSuite integration to make accounting easier. Available features include:
+ - Connecting a Lago account to a NetSuite account via OAuth
+ - Mapping Lago objects such as billable metrics, plans, coupons, wallet credits and taxes to NetSuite items and tax items
+ - Real-time synchronization of customer accounts
+ - Real-time synchronization of invoices (and sales orders)
+ - Real-time synchronization of credit notes
+ - Real-time synchronization of payments
+
+ [Learn more](/integrations/accounting/netsuite)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/6690fd220e725bf64cae8573_netsuite.png" />
+ </Frame>
+
+ ## Shipping address
+ In addition to the customer's billing address, users can add a shipping address. This information can be useful when the applicable tax rates are determined through integration with a tax management provider (e.g. Anrok).
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/6691072102427ae629bba52f_shipping-address.png" />
+ </Frame>
+
+ ## Overdue invoices
+ If an invoice is not marked as paid once its due date has passed, it is considered to be overdue. The billing system will then send a webhook message to notify the organization that issued the invoice (see `invoice.payment_overdue`).
+
+ [Learn more](/api-reference/webhooks/messages#payment-overdue)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/6691054994914e08de22b597_overdue-invoices.png" />
+ </Frame>
+
+## Custom pricing ✨
+ <Info>✨ This feature is only available via a paying add-on. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ For companies whose aggregation and pricing models cannot be reproduced using standard functions, our team can inject a custom code snippet into the billing application.
+
+ This feature allows users to implement advanced billing rules based on custom logic, which can be very useful when migrating from an in-house billing system.
+
+ [Learn more](/guide/plans/charges/charge-models/custom-price)
+ 
+ ## Okta SSO ✨
+ <Info>✨ This feature is only available via a paying add-on. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ Users can sign up and log in to their Lago account through Okta single sign-on (SSO), which enables a better experience and ensures that the identity provider remains the system of record for authenticating users.
+
+ [Learn more](/guide/security/sso#okta-sso)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/669001f17a346a946b55b65d_okta-sso.png" />
+ </Frame>
+
+ ## Hiding subscription fees at zero
+ We have modified the invoice template and introduced new rules for subscription fees:
+ - If `amount_cents` is zero for the subscription fee and there are no other fees (e.g. usage-based charges or commitment) in the invoice, the subscription fee will appear on the PDF invoice
+ - If `amount_cents` is zero for the subscription fee and there are other fees in the invoice, the subscription fee will not be displayed on the PDF invoice
+
+ ## Role-based access control (RBAC) ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ With the RBAC feature, organizations can ensure that each member only has access to the information and actions required to perform their job duties.
+
+ There are three roles available on the Lago platform:
+ - Admin: full access to all views and actions (usually assigned to billing engineers and managers)
+ - Account Manager: can manage customer accounts and subscriptions (suitable for sales and success teams)
+ - Finance & Analyst: mostly view-only, with the ability to manage invoices and credit notes
+
+ [Learn more](/guide/security/rbac)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/66904bd5019fdc202e474c2d_rbac.png" />
+ </Frame>
+
+ ## Recurring wallet top-ups ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ Users can define rules to automatically trigger wallet top-ups, based on two methods:
+ - Fixed: a predefined number of credits is added to the customer's wallet
+ - Target: credits are added to the customer's wallet to reach a predefined balance
+
+ There are also two trigger options:
+ - Interval: weekly, monthly, quarterly or yearly top-ups, with a custom start date
+ - Threshold: the top-up is triggered when the ongoing balance of the wallet reaches a predefined minimum threshold
+
+ [Learn more](/guide/wallet-and-prepaid-credits/wallet-top-up-and-void#setup-recurring-top-ups)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/669054b3caad7a097a442a2a_recurring-top-up.png" />
+ </Frame>
+
+ ## Webhook messages for wallets
+ Lago now sends webhook messages when:
+ - A wallet transaction is created (see `wallet_transaction.created`)
+ - The status of a wallet transaction is updated (e.g. when a pending transaction is settled - see `wallet_transaction.updated`)
+ - When the ongoing balance of the wallet is zero or less than zero (see `wallet.depleted_ongoing_balance`)
+
+ [Learn more](/api-reference/webhooks/messages#wallets)
+
+ ## Void wallet credits
+ The endpoint `POST /wallet_transactions` includes a new function to void credits, which are immediately deducted from the balance of the customer's wallet.
+
+ This action can also be triggered via the user interface.
+
+ [Learn more](/api-reference/wallets/top-up)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/668fdfe2eb597ec66f9e6be9_void-wallet-credits.png" />
+ </Frame>
+</Update>
+
+
+<Update label="April 2024">
+ ## Filters for billable metrics
+ We have made changes to our dimension system and replaced metric groups with filters. This new feature offers greater flexibility as:
+ - Users can create as many filters as needed (they are no longer limited to two dimensions)
+ - Users can define specific rates based on very granular filter combinations (e.g. online card payments with Visa cards, offline card payments with Amex cards, etc.)
+
+ [Learn more](/guide/plans/charges/charges-with-filters)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/662910db994a499707b7a2a7_filters-charge.png" />
+ </Frame>
+
+ ## Google SSO
+ Users can sign up and log in to their Lago account through Google single sign-on (SSO), which enables a better experience and ensures that the identity provider remains the system of record for authenticating users.
+
+ [Learn more](/guide/security/sso#google-sso)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/66253cad310d9303b8409d12_google-sso.png" />
+ </Frame>
+
+ ## Improved trial period
+ When the subscription fee of a plan is paid in advance and the plan includes a trial period, the first invoice was initially generated when the subscription started. Following feedback from the Lago Community, we have modified this logic to generate the first invoice at the end of the free trial.
+
+ [Learn more](/guide/plans/plan-model#the-trial-period-optional)
+
+ ## Payment disputes
+ If a payment dispute is reported as lost by the payment provider, Lago will provide `invoice.payment_dispute_lost_at` and send the webhook message `invoice.payment_dispute_lost`.
+
+ This feature is available via integrations with Stripe and Adyen.
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/66254d35eec50942aebf62f4_disputes.png" />
+ </Frame>
+
+ ## Upcoming API changes (v1.2.0)
+ We have released a new version of Lago with exciting new features, but also API changes likely to affect our users' workflows.
+
+ **1. Replacing groups with filters**
+
+ We have developed a new dimension system that offers greater flexibility. Filters allow users to create billable metrics with more than two dimensions, and make it easier to create charges based on custom event properties.
+
+ However, this feature introduces changes to a number of objects, including `billable_metric`, `plan`, `fee` and `customer_usage`. In addition, the endpoint to retrieve billable metric groups will be deprecated ([see all changes](/guide/migration/migration-to-v1.2.0#1-transition-from-group-to-filters)).
+
+ **2. The external subscription ID becomes mandatory for events**
+
+ In order to develop real-time billing capabilities, we need to streamline our validation process. We have therefore decided to make `external_subscription_id` mandatory when sending events via the Lago API.
+
+ Events that only include `external_customer_id` will no longer be taken into account when aggregating usage ([learn more](/guide/migration/migration-to-v1.2.0#2-mandatory-external-subscription-id-field-in-event-payloads)).
+
+ **3. Deprecation of API fields**
+
+ For the sake of clarity and to preserve the quality of the API, we are going to deprecate several legacy fields ([see full list](/guide/migration/migration-to-v1.2.0#3-deprecated-fields)).
+
+ **Timeline**
+
+ We will maintain the current API logic until July 9, 2024. After this date, previous versions will no longer be supported. We kindly ask our users to update their integration before that day to avoid any potential breaking change.
+
+ [Learn more](/guide/migration/migration-to-v1.2.0)
+
+ ## Minimum plan commitment ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ When creating a plan, defining a commitment ensures a minimum invoice amount for the billing period.
+
+ This minimum is calculated at the end of the period, taking into account the subscription fee and all usage-based charges. If the total amount invoiced is less than the minimum commitment, Lago will automatically apply a true-up fee.
+
+ The default commitment can be overridden when assigning the plan to a customer.
+
+ [Learn more](/guide/plans/commitment)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/6625421c94bb460b0cdb4fd3_plan-commitment.png" />
+ </Frame>
+</Update>
+
+<Update label="March 2024">
+ ## ACH and BACS payments
+ Lago's native integration with Stripe supports two new payment methods:
+ - ACH Direct Debit for customers with a US bank account
+ - BACS Direct Debit for customers with a UK bank account
+
+ [Learn more](/integrations/payments/stripe-integration#supported-payment-methods)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/65f00f034ccf549951bebeb6_stripe-ach-bacs.png" />
+ </Frame>
+
+ ## Grouping of charges
+ It is possible to group charges on the invoice according to a custom attribute. When creating a charge based on the standard pricing model, users can define one or several `grouped_by` attributes that will then be used to provide information on the distribution of usage.
+
+ For a customer who has sent thousands of API requests, for instance, we could display the breakdown of usage based on the `workspace_id` to which each request is linked.
+
+ [Learn more](/guide/invoicing/overview#custom-invoice-grouping)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/65f00c3f4853f8925c5f62b4_grouped-by.png" />
+ </Frame>
+
+ ## Updated Salesforce package ✨
+ <Info>✨ This feature is only available via a paying add-on. Please contact hello@getlago.com to get access to the Salesforce CRM integration.</Info>
+
+ This new package allows users to initiate actions in Lago without leaving the Salesforce interface. It includes two customizable flows:
+ 1. Ability to automatically create Lago customers from Salesforce accounts
+ 2. Ability to automatically create Lago subscriptions from Salesforce opportunities, including the option to override existing plans
+
+ [Learn more](/integrations/crm/salesforce-crm#iii-actions-from-salesforce-to-lago)
+</Update>
+
+<Update label="February 2024">
+ ## Payment link for a specific invoice
+ We have added a new endpoint to generate checkout URLs for specific invoices.
+
+ This feature is available via integrations with Stripe and Adyen. It allows users to collect payments in countries where payment methods cannot be saved for future use.
+
+ [Learn more](/api-reference/invoices/payment-url)
+
+  ## Wallet balance in (near) real-time ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ In addition to the invoiced balance, which represents the credit available in the wallet after the last invoice has been finalized, wallets include an ongoing balance, which takes into account the customer's current usage and taxes.
+
+ The ongoing balance gives an overview of the credit available in the wallet in near real-time, as it is updated every 5 minutes.
+
+ [Learn more](/guide/wallet-and-prepaid-credits/overview#real-time-wallet-balance)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/65c3bec9ca11bfc9501f67f3_real-time-balance.png" />
+ </Frame>
+</Update>
+
+<Update label="January 2024">
+ ## Edit draft invoices ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ When an invoice is in draft (i.e. during the grace period), fees can be modified via the user interface. Users can either:
+ - Overwrite the total number of units, in which case Lago will automatically recalculate the fee based on the pricing model associated with the charge
+ - Overwrite the number of units and unit price, in which case Lago will automatically recalculate the fee based on this information
+
+ [Learn more](/guide/invoicing/grace-period#edit-a-specific-fee)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/65c3bbab15766bd2c4ef9184_edit-draft-invoice.png" />
+ </Frame>
+
+ ## Multiple PSP accounts
+ If an organization has multiple accounts with the same PSP (e.g. US Stripe account and EU Stripe account) they can all be connected to Lago. Users can then select the most appropriate account to process payments for each customer.
+
+ [Learn more](/integrations/introduction#payments-integrations)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/65b7b4d1022173be6cd5c96f_multi-psp.png" />
+ </Frame>
+
+ ## Batch endpoint
+ Events can now be sent in batches using the new `/events/batch` endpoint. Each API call may include up to 100 events.
+
+ [Learn more](/api-reference/events/batch)
+
+ ## Disabling emails for invoices without fees
+ To avoid sending too many notifications to customers, we have deactivated emails for invoices without fees.
+
+ Although invoices with `"fees_amount_cents": 0` are no longer sent to customers by email, they are still available in the database and user interface.
+
+ [Learn more](/guide/emails#email-scenarios)
+</Update>
+
+<Update label="December 2023">
+ ## Custom invoice numbering
+ We have made invoice numbering more flexible, with three elements:
+ - Prefix that can be customized
+ - Dynamic sequence, either based on sequential customer IDs, or based on year and month (i.e. YYYYMM)
+ - Sequential number of the invoice (i.e. 001, 002, 003, etc.)
+
+ [Learn more](/guide/invoicing/overview#invoice-numbering)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/658c3af9eb231c5e672f5c8f_invoice-numbering.png" />
+ </Frame>
+
+ ## EU tax management
+ Lago's EU tax detection feature allows users to check customers' tax identification numbers through integration with the European VAT Information Exchange System (VIES), and to automatically assign them a tax rate based on their country.
+
+ [Learn more](/integrations/taxes/lago-eu-taxes)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/658c3f1197589af28f53f1e0_lago-eu-tax-mgt.png" />
+ </Frame>
+
+ ## Unit prices
+ PDF invoices now include details of charges for each pricing model (e.g. for graduated pricing, we display the number of units and unit price for each tier).
+
+ This information is also available in the invoice object (see `invoice.fees.amount_details`).
+
+ [Learn more](/api-reference/invoices/invoice-object)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/658c47c497589af28f586160_fee-unit-price.png" />
+ </Frame>
+
+  ## Automatic wallet top-ups ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ Customer wallets can be topped up automatically according to predefined rules:
+ - Based on a time interval (e.g. weekly, monthly, etc.)
+ - Based on a threshold (e.g. when the wallet balance is less than or equal to $10)
+
+ [Learn more](/guide/prepaid-credits#setup-recurring-top-ups)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/6570a3dfd5171330e5dc2126_wallet-top-ups.png" />
+ </Frame>
+</Update>
+
+<Update label="November 2023">
+ ## Event validations
+ We have added an `events.errors` webhook message to notify users when some of the events ingested in the last hour are invalid.
+
+ Possible errors include:
+ - Invalid billable metric code
+ - Missing aggregation property
+ - Missing group key
+
+ [Learn more](/api-reference/webhooks/messages#event-ingestion)
+
+ ## Regenerate checkout links
+ When a customer wants to update their payment method, or when a checkout link has expired, users can generate a new checkout URL on demand through the Lago API.
+
+ This action is available for all our native payment integrations.
+
+ [Learn more](/api-reference/customers/psp-checkout-url)
+
+  ## Custom success URL
+  When setting up one of our native payment integrations, users can define the URL to which customers should be redirected after completing the checkout process. Custom URLs can only be added via the user interface.
+
+  [Learn more](/integrations/introduction#payments-integrations)
+
+  <Frame>
+    <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/65538c396760d1cb5c7e7d0f_success-url.png" />
+  </Frame>
+
+  ## Default currency
+  The organization's currency can be defined in the settings of the account or via API. It is used as the default currency when creating new objects, such as plans and add-ons, and to display information on dashboards.
+
+  [Learn more](/api-reference/organizations/update)
+
+  <Frame>
+    <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/65538fc86913d3aab0bdf794_default-currency.png" />
+  </Frame>
+
+  ## Helm chart updates
+  We have released a new version of the Lago Helm Charts to facilitate on-premise deployment.
+
+  [Learn more](https://github.com/getlago/lago-helm-charts)
+</Update>
+
+
+<Update label="October 2023">
+ ## Integration with Salesforce CRM ✨
+ <Info>✨ This feature is only available via a paying add-on. Please contact hello@getlago.com to get access to the Salesforce CRM integration.</Info>
+
+ With the new Salesforce CRM integration, Lago data is automatically synced with Salesforce.
+
+ Users can access their customers' subscriptions, invoices and credit notes directly in their CRM application.
+
+ [Learn more](/integrations/crm/salesforce-crm)
+
+ ## Removal of event validations
+ We are currently upgrading our infrastructure and setting up a new event ingestion system. As part of this project, we have decided to remove the validations that were automatically performed when ingesting events through the Lago API.
+
+ This means that the API no longer returns error messages when events include incorrect parameters (e.g. wrong billable metric code, subscription not found, `transaction_id` already exists, etc.).
+
+ ## Retrieve a subscription
+ We have added a new endpoint to allow users to retrieve a specific subscription via the Lago API, using the `external_id` of the subscription.
+
+ [Learn more](/api-reference/subscriptions/get-specific)
+
+ ## Webhooks for subscription upgrades/downgrades
+ When the plan associated with a subscription changes, Lago automatically notifies the user with two webhook messages:
+ - `subscription.terminated` to confirm the termination of the initial plan (includes `next_plan_code`)
+ - `subscription.started` to confirm the start of the new plan (includes `previous_plan_code`)
+
+ [Learn more](/api-reference/webhooks/messages)
+
+  ## Plan details
+ In the Plans section of the app, users can now click one of their plans to see its details (i.e. name, code, interval, currency, subscription fee, usage-based charges, etc.) and also retrieve the list of subscriptions linked to the plan.
+
+ In addition, in the customer view of the app, users can click one of the subscriptions assigned to their customer to see its details (i.e. status, start date, interval, currency, fees, charges, etc.).
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/652fa9d8bb0bdb53c30aea81_plan-details.png" />
+ </Frame>
+
+ ## Override plans ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ When assigning a plan to a customer, you can modify some attributes to create a custom plan. Editable fields include (but are not limited to):
+ - Currency
+ - Subscription fee
+ - Charge prices
+ - Minimum spending requirements
+ - Tax rates
+ - Invoice display names
+
+ Details of the new plan will be available in the customer view.
+
+ [Learn more](/guide/subscriptions/assign-plan#overriding-a-plan)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/652d5f42d17f781134b3f428_plan-override.png" />
+ </Frame>
+
+ ## Spanish locale
+ ¡Hola a todos! The Spanish locale is now available on Lago.
+
+ Users can select it as their organization's default language or as a customer's preferred language.
+
+ [Learn more](/api-reference/resources/locales)
+
+ ## Swedish locale
+ Hej alla! The Swedish locale is now available on Lago.
+
+ Users can select it as their organization's default language or as a customer's preferred language.
+
+ [Learn more](/api-reference/resources/locales)
+
+ ## Display names on invoices
+ When creating or updating a plan, users can define custom display names for subscription and usage-based charges, which will be printed on the PDF files generated by Lago.
+
+ Display names can be defined via the user interface or the API (see `plan.invoice_display_name` and `charges.invoice_display_name`).
+
+ [Learn more](/guide/plans/charges/overview#update-invoice-display-names)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/651fffd240c8227ee8ccaf83_invoice_display_name.png" />
+ </Frame>
+
+ ## Retrieve past usage
+ We have added a new endpoint to retrieve past usage. When a billing period has ended, users can still retrieve usage data through `GET /customers/{external_customer_id}/past_usage`.
+
+ Users must specify `external_subscription_id` and can filter results by `billable_metric_code`. They can also select the number of past periods for which they wish to retrieve usage data.
+
+ [Learn more](/api-reference/customer-usage/get-past)
+</Update>
+
+<Update label="September 2023">
+ ## LATEST aggregation
+ `latest_agg` allows users to compute usage based on the last value received during the period for a billable metric.
+
+ Consider the following example for the `storage` metric, where usage is aggregated based on the property `gb`:
+ - The first event includes 5 GB
+ - The second event includes 7 GB
+ - The third event includes 6 GB
+
+ With `latest_agg`, at the end of the billing period, the total number of units used to calculate the fee will be 6, as it's the last value received.
+
+ [Learn more](/guide/billable-metrics/aggregation-types/latest)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/650da517aba506f5de907e33_latest_agg.png" />
+ </Frame>
+
+ ## WEIGHTED SUM aggregation
+ `weighted_sum_agg` allows users to compute usage based on a custom property and the time elapsed between two events (e.g. memory consumption measured in GB-seconds).
+
+ Billable metrics based on this aggregation type can be metered or recurring, and are always billed at the end of the billing period.
+
+ [Learn more](/guide/billable-metrics/aggregation-types/weighted-sum)
+
+ ## Subscription end date
+ When a subscription end date is set, the subscription is automatically terminated by Lago.
+
+ A notification is sent to the user 45 days and 15 days before the subscription is terminated (see `subscription.termination_alert` webhook).
+
+ If no end date is set for a subscription, it will renew automatically.
+
+ [Learn more](/guide/subscriptions/assign-plan#subscription-end-date)
+
+ ## Duplicate plans
+ Users can duplicate an existing plan from the user interface to create a new plan with the same structure. They can then choose a name and a code for their new plan, and modify the parameters that differ from the original plan (e.g. interval, currency, charges, etc.).
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/650dad92cde93dce0f94e2dc_duplicate_plan.png" />
+ </Frame>
+
+ ## Edit dimensions
+ When dimensions are defined for a billable metric, users can add/remove groups by modifying the corresponding code snippet via the user interface, or by updating the billable metric object via API.
+
+ Changes to dimensions may affect all plans where the billable metric is listed as a charge.
+
+ [Learn more](/guide/billable-metrics/dimensions#edit-dimensions)
+</Update>
+
+
+<Update label="August 2023">
+ ## Default price for groups
+ For billable metrics that include several [groups](/guide/billable-metrics/dimensions), when configuring their plans, users can set a default price that applies to all groups.
+
+ The default price can be overwritten by setting a different price for a specific group.
+
+ If the default price is not defined, it is automatically set to zero.
+
+ [Learn more](/guide/plans/charges-with-groups)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/64edceea0edeebc0c927a55f_groups_default_price.png" />
+ </Frame>
+
+ ## Italian locale
+ Ciao a tutti! The Italian locale is now available on Lago.
+
+ Users can select it as their organization's default language or as a customer's preferred language.
+
+ [Learn more](/api-reference/resources/locales)
+
+ ## Minimum / Maximum per transaction ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ The percentage pricing model includes a new option for defining minimum and maximum prices per transaction.
+
+ When applied, Lago adjusts the fees based on the `per_transaction_min_amount` and `per_transaction_max_amount` parameters.
+
+ [Learn more](/guide/plans/charges#available-charge-models)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/64edd2e4d50ff59c5b723c4e_min_max_transaction.png" />
+ </Frame>
+
+ ## Webhook for subscriptions started
+ We have added a new webhook message for subscriptions.
+
+ When the status of a subscription switches to `active`, Lago automatically sends a `subscription.started` message.
+
+ [Learn more](/api-reference/webhooks/messages)
+
+ ## Graduated percentage pricing
+ We have added a new graduated pricing model, which allows users to define prices based on a percentage of the number of units, and to add a flat fee for each tier (optional).
+
+ [Learn more](/guide/plans/charges#available-charge-models)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/64e89f342b91415c55065d3d_graduated_percentage.png" />
+ </Frame>
+
+  ## Quarterly billing interval
+  In addition to the weekly, monthly and yearly intervals, Lago `v0.44.1-beta` includes the new quarterly interval.
+
+  When selected, all fees (i.e. subscription fee and charges) are billed every three months.
+
+  [Learn more](/guide/plans/plan-model#plan-interval)
+
+  <Frame>
+    <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/64e0c3a5adf760339f515865_quarterly_interval.png" />
+  </Frame>
+
+
+  ## Webhook signatures
+ When creating a webhook endpoint through the user interface or the API, you can choose between:
+ - The original `JWT` signature
+ - The new `HMAC` signature, which includes a shorter header
+
+ Please refer to the guide to find out how to verify the webhook signatures.
+
+ [Learn more](/api-reference/webhooks/format---signature)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/64dc879de79a172c36a2591c_webhook-signature.png" />
+ </Frame>
+
+ ## Taxes applied to add-ons
+ Tax objects can now be used to define the default tax rate(s) associated with an add-on.
+
+ When creating a one-off invoice, if there is no tax rate associated with the add-on, Lago will automatically select the tax rate defined at customer or organization level.
+
+ The tax rate applied to the add-on can be modified at any time through the user interface or the API.
+
+ [Learn more](/guide/invoicing/taxes#taxes-at-the-add-on-level)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/64dc8ef6dc475efb34be6f09_taxes-one-off-invoices.png" />
+ </Frame>
+
+ ## Net payment term
+  The net payment term determines the number of days given to the customer to pay their invoice. It is calculated based on the date the invoice is finalized and displayed on the PDF file.
+
+  When the net payment term is defined at the organization level, it applies to all customers by default. However, it can be overridden by the net payment term defined at the customer level.
+
+  [Learn more](/guide/invoicing/net-payment-term)
+
+  <Frame>
+    <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/64d61160a4369260ee492462_net_payment_term.png" />
+  </Frame>
+
+  ## Taxes defined at plan and charge level
+  In addition to the taxes defined at organization and customer level, users can select tax objects at plan and charge level.
+
+  For subscription invoices, the tax hierarchy is as follows:
+  1. Taxes defined at **organization level** will apply to all fees (i.e. subscription and charges)
+  2. Taxes defined at **customer level** will take precedence over taxes defined at organization level and will apply to all fees (i.e. subscription and charges)
+  3. Taxes defined at **plan level** will take precedence over taxes defined at customer level and will apply to all fees (i.e. subscription and charges)
+  4. Taxes defined at **charge level** will take precedence over taxes defined at plan level but will only apply to the fee associated with the corresponding charge
+
+  [Learn more](/guide/invoicing/taxes)
+</Update>
+
+<Update label="July 2023">
+ ## Filter subscriptions by status
+ We have added a new query parameter to the endpoint that allows users to retrieve subscriptions.
+
+ By default, `GET /api/v1/subscriptions/` returns all active subscriptions. However, you can also retrieve pending, canceled and terminated subscriptions by using the `status` parameter.
+
+ [Learn more](/api-reference/subscriptions/get-all)
+
+ ## SEPA Direct Debit with Stripe
+ Our native integration with Stripe now supports SEPA Direct Debit payments.
+
+ When Stripe is defined as the default payment provider for a customer, you can select the authorised payment method(s): card, direct debit or both.
+
+ Before initiating a payment intent, Lago will automatically check the customer's default payment method registered in Stripe.
+
+ Kindly note, SEPA Direct Debit is only available for invoices denominated in euros (EUR).
+
+ [Learn more](/integrations/payments/stripe-integration#payment-methods)
+
+ ## Recurring and prorated charges
+ When a billable metric is defined as [recurring](/guide/plans/charges#metered-vs-recurring-charges), the number of billing units at the end of the billing period is carried over to the next period. It is not reset to zero, as with metered metrics.
+
+ Users can create recurring metrics based on `sum_agg` and `count_unique_agg`. They can also define whether the corresponding charges should be [prorated](/guide/plans/charges#prorated-vs-fully-billed-charges) (this option is only available for the standard and volume pricing models).
+
+ <Info>ℹ️ Metrics based on `recurring_count_agg` have been automatically converted into `count_unique_agg` metrics with the attribute `"recurring": true`.</Info>
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/64c78b87721dcd020fb02e93_recurring_prorated_charge.png" />
+ </Frame>
+
+ ## Cancel pending subscriptions
+  When a subscription is created with a subscription date in the future, its status is automatically set to `pending`.
+
+  You can now cancel a pending subscription through the Lago API, using the following endpoint:
+  `DELETE /api/v1/subscriptions/{external_id}?status=pending`
+
+  [Learn more](/api-reference/subscriptions/terminate)
+
+  ## Multiple webhook endpoints
+  Webhook messages can be used to collect billing information and set up custom workflows. They are related to subscriptions, events, fees, invoices, payment providers and credit notes.
+
+  You can now create up to five webhook endpoints to listen to Lago events.
+
+  [Learn more](/guide/webhooks)
+
+  ## Custom tax objects
+ In the settings of their account, users can define the default tax rate that applies by default to all customers of their organization. This tax rate can then be overwritten at the customer level.
+
+ Whether set at the organization level or the customer level, so far the tax rate used to calculate fees was simply indicated as "Tax" on invoices.
+
+ To give users more flexibility, we've added the option to create several tax objects, which can then be assigned to the organization or specific customers (e.g. state sales tax, VAT, reverse charge, GST, etc.).
+
+ [Learn more](/guide/invoicing/taxes)
+
+ ## Stripe checkout URL
+ When a new customer is successfully created through Lago's native integration with Stripe, the billing system sends a `customer.checkout_url_generated` webhook message.
+
+ You can redirect your customer to the corresponding page to register their payment method, which will then be used to collect payment when a new invoice is issued.
+
+ [Learn more](/integrations/payments/stripe-integration#stripe-checkout-storing-customers-payment-method-information)
+
+ ## Tax identification number
+ The [customer object](/api-reference/customers/object) and [organization object](/api-reference/organizations/organization-object) include a new `tax_identification_number` attribute. When a value is available for this attribute, it is automatically displayed on the PDF version of the next invoices.
+
+  ## Integration with GoCardless
+  Lago now offers native integration with [GoCardless](https://gocardless.com/), including (but not limited to):
+  - Ability to define GoCardless as the default payment provider for a customer
+  - Ability to automatically create Lago customers in GoCardless and retrieve their customer ID
+  - Ability to automatically collect payments via direct debit
+  - Ability to automatically update the status of an invoice depending on the payment status
+  - Ability to automatically resubmit failed payments with [GoCardless Success+](https://gocardless.com/solutions/success-plus/)
+
+  To learn more about this integration, please [consult our guide](/integrations/payments/gocardless-integration)
+
+</Update>
+
+
+<Update label="April 2023">
+ ## Minimum spend on charges ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ You can now define minimum spending requirements for usage-based charges.
+
+ The minimum spend is defined as an amount excluding tax. If at the end of the billing period, your customer has spent less than the minimum, then Lago will automatically generate a true-up fee to compensate for the difference.
+
+ Minimum spending requirements are defined when creating or editing plans, either through the user interface or the API.
+
+ [Learn more](/guide/plans/charges#charge-spending-minimum)
+
+ ## Coupons limited to specific metrics
+  We have added a new option to the coupon settings: it is now possible to limit the application scope of a coupon to specific billable metrics.
+
+  By default, coupons apply to all charges but when creating a new coupon, you can define the list of billable metrics to which the coupon applies.
+
+  This feature is related to the `billable_metric_codes` attribute of the `coupon` object ([see API documentation](/api-reference/coupons/create)).
+
+  Please refer to [the guide](/guide/coupons) for more information on coupons.
+
+  <Frame>
+    <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d99a2c0c03ba2fc5401f1_coupons-bm-1c2ee68ef19c01172755b5f8a2df7a57.png" />
+  </Frame>
+
+  ## Reset password
+  You can now reset your password via the user interface.
+
+  On the login page, click "Forgotten password" to access the dedicated page where you can request a link to reset your password.
+
+  <Frame>
+    <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d99855923b14e5744c2ad_reset-password-f3bf1adf1ab7196efb7818a6876e0597.png" />
+  </Frame>
+</Update>
+
+<Update label="March 2023">
+ ## Automatic emails ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ We are introducing a new built-in invoicing feature, which allows you to automatically send invoices and credit notes from Lago to your customers.
+
+ The email template can be customized with the name, email address and logo of your organization, and will be sent in the customer's preferred language (or the default language defined in the settings of your account).
+
+ For cloud users, Lago takes care of the SMTP setup. For users on the self-hosted version, the setup is described in the public documentation.
+
+ [Learn more](/guide/emails)
+
+ ## Customer billing portal ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ We have released the first version of our billing portal, which allows your customers to access their invoices.
+
+ You can generate access links through the user interface or embed the customer portal into your application using our API and an iframe.
+
+ [Learn more](/guide/customers/customer-portal)
+
+ ## Invoice metadata
+  After an invoice has been generated, you can add metadata to store additional information (e.g. custom ID, payment reference, etc.). This information will be included in the `invoice` object but will not be displayed on the PDF invoice.
+
+  Invoice metadata can be managed via the user interface or the API.
+
+  [Learn more](/guide/invoicing/invoice-metadata)
+
+  <Frame>
+    <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d9912609433d243c5394a_invoice-metadata-b13dd0c8879275b47474d90751c6d3ce.png" />
+  </Frame>
+
+  ## Customer metadata
+ When creating or editing a customer, you can add metadata to store additional information (e.g. customer type, name of the account manager, etc.).
+
+ Customer metadata can be displayed on invoices, and can be managed via the user interface or the API.
+
+ [Learn more](/guide/customers/customer-metadata)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d98eba25357cc364d7601_customer-metadata-ca988533d02dd460cdd300c4a6e05967.png" />
+ </Frame>
+
+  ## Webhook logs
+ The new webhook management system allows you to access the list of webhook messages sent by Lago and check their status. You can re-trigger a message that has failed through the user interface.
+
+ To access the webhook logs:
+ 1. Go to the **Developers** section via the sidebar
+ 2. Open the **Webhooks** tab
+ 3. Click on the webhook endpoint to see the list of messages
+
+ [Learn more](/guide/webhooks)
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d98c95cae0642bcbfe06d_webhook-logs-4bb9abafa5c8ccc09b8f0416aae2adb1.png" />
+ </Frame>
+</Update>
+
+<Update label="February 2023">
+ ## Document translation
+ PDF files including invoices and credit notes can be generated in different languages.
+
+ The [default language](/guide/invoicing/download-invoices#translate-invoices) that is set at the organization level can be overwritten by the [customer's preferred language](/guide/customers/invoice-customer#preferred-language).
+
+ In the API, the `document_locale` attribute determines the language of the documents.
+
+ You can contribute to Lago's open-source project by helping us translate documents. The new language will then be added to the [list of supported locales](/api-reference/resources/locales) and available to the entire Lago Community.
+
+ ## Update payment status
+ You can now update the payment status of an invoice through the user interface.
+
+ To do so:
+ 1. Access the **Invoices** section
+ 2. Find the relevant invoice
+ 3. Click the ellipsis icon on the right
+ 4. Click **Update payment status**
+ 5. Select the new payment status
+ 6. Click **Update status** to confirm
+
+ This action can be performed [via the API](/api-reference/invoices/update) as well.
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d988e13539e399a78763c_payment-status-ui-05432db8f7ea894d3e94a33697d59375.png" />
+ </Frame>
+
+  ## Coupons limited to specific plans
+  We have added a new option to the coupon settings: it is now possible to limit the application scope of a coupon to specific plans.
+
+  By default, coupons apply to all plans but when creating a new coupon, you can define the list of plans to which the coupon applies.
+
+  This feature is related to the `plan_codes` attribute of the `coupon` object ([see API documentation](/api-reference/coupons/create)).
+
+  Please refer to [the guide](/guide/coupons) for more information on coupons.
+
+  <Frame>
+    <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d984f67a4e10db11f906e_coupons-plans.png" />
+  </Frame>
+</Update>
+
+<Update label="January 2023">
+ ## Coupons that apply forever
+ When creating a coupon, through the [user interface](/guide/coupons) or the [API](/api-reference/coupons/create), it is now possible to select the `forever` frequency.
+
+ Coupons with the `forever` frequency apply to all subscription invoices, regardless of the number of subscription invoices generated in a given period.
+
+ <Info>ℹ️ The value of the coupon is deducted from the amount of the invoice after tax. Coupons do not apply to add-ons or any other one-off charges.</Info>
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d97ecb648e82c370f81ad_coupons-forever.png" />
+ </Frame>
+
+ ## Search bar
+ Tired of scrolling through an endless list to find the customer your are looking for? We understand that.
+
+ We have added a search functionality to the user interface to make it easier to find metrics, plans, customers, invoices, etc.
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d9828b9891d90712245d2_search-bar.png" />
+ </Frame>
+
+  ## Payment retries
+ We have added the ability to resend payments for collection.
+
+ This new feature is available to all users:
+ - Through the user interface ([learn more](/guide/payments/payment-retries))
+ - Through the API ([learn more](/guide/payments/payment-retries))
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d979bec6a5cd21aa2945a_retry-payment.png" />
+ </Frame>
+
+  ## Grace period ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ If at the end of the billing period, you want to review the invoices before sending them to customers for payment, you can define a [grace period](/guide/invoicing/grace-period).
+
+ During the grace period, invoices are in `draft` status and can be modified. Available actions include:
+ - **Adding usage records** by sending events with a `timestamp` within the relevant billing period
+ - **Applying coupons** to the customer's account
+ - **Adding credits** to the customer's wallet and credit note wallet
+
+ When the grace period expires, invoices are automatically `finalized` (they can no longer be edited), which triggers the `invoice.created` [webhook](/api-reference/webhooks/messages). You can also finalize invoices manually.
+
+ The organization's grace period applies to all customers by default, but it can be overwritten by the customer's grace period.
+
+ ## Invoice list
+ We have added a new **Invoices** section, which allows you to access the list of invoices.
+
+ Invoices are filtered according to their status (i.e. draft or finalized) and according to their payment status (i.e. succeeded, pending or failed).
+
+ The same filters can be applied when [retrieving invoices via the API](/api-reference/invoices/get-all).
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d971142f0800f8b954abc_invoice-list.png" />
+ </Frame>
+
+   ## Credit notes ✨
+ <Info>✨ Lago may automatically generate a credit note when a subscription is upgraded or downgraded. However, only users with a premium license can manually generate credit notes via the user interface or the API. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ You can now use your Lago account to issue credit notes for subscription invoices and add-ons.
+
+ Depending on the payment status of the invoice, you will be able to:
+ - **Refund the customer** (only for paid invoices)
+ - **Credit back the customer's account**
+
+ Please refer to the [documentation](/guide/credit-notes) for more information on credit notes and credit methods.
+
+ ## Timezones ✨
+ <Info>✨ This feature is only available to users with a premium license. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
+
+ You can now set the timezone of your organization in the settings of the app. To do so:
+ 1. Access the **Settings** section via the side menu
+ 2. In the **Organization** tab, you will see the current timezone (UTC by default)
+ 3. Click **Edit**
+ 4. Select a new timezone from the list
+ 5. Click **Save timezone** to confirm
+
+ It can also be set through the API using this [endpoint](/api-reference/organizations/update).
+
+ The organization's timezone applies to all customers by default and determines when billing periods start and end (i.e. when invoices should be generated). It is also the reference timezone for most views and lists in the app.
+
+ The organization's timezone can be overwritten by the customer's timezone ([learn more](/guide/customers/invoice-customer#bill-following-your-customers-timezone)).
+
+ <Info>ℹ️ In the app, you can hover over any date with a dotted underline to see the reference timezones.</Info>
+</Update>
+
+<Update label="December 2022">
+ ## Lago Open API
+ We have developed an Open API to help you get started with Lago and make it easier to test our solution.
+
+ Please refer to the [documentation](/guide/lago-open-api) to learn how to import the Lago Open API into Postman and create a new collection.
+
+ Our [public repository](https://github.com/getlago/lago-openapi) is also available on GitHub.
+</Update>
+
+<Update label="November 2022">
+ ## Apply several coupons
+ You can now apply several coupons to a customer account.
+
+ When several coupons are applied to a customer, they will be deducted according to the date on which they were applied: the coupon that was applied first will be deducted first.
+
+ The remaining value / number of remaining periods for each coupon will be visible in the **Overview** tab of the customer view.
+
+ You can also use `GET /api/v1/applied_coupons` to retrieve all coupons applied to a customer.
+
+## Invoice details
+ To review the invoice details through the user interface:
+ 1. Go to the **Customers** section
+ 2. Select a customer to open the customer view
+ 3. Open the **Invoices** tab
+ 4. Click the invoice to see its details
+
+ On the details page, you can download the invoice in PDF format and copy the invoice ID through the **Actions** dropdown in the upper right corner.
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d92a996e93ed861bf238b_invoice-details.png" />
+ </Frame>
+</Update>
+
+<Update label="October 2022">
+ ## Integration with GoCardless
+ Lago now offers native integration with [GoCardless](https://gocardless.com/), including (but not limited to):
+ - Ability to define GoCardless as the default payment provider for a customer
+ - Ability to automatically create Lago customers in GoCardless and retrieve their customer ID
+ - Ability to automatically collect payments via direct debit
+ - Ability to automatically update the status of an invoice depending on the payment status
+ - Ability to automatically resubmit failed payments with [GoCardless Success+](https://gocardless.com/solutions/success-plus/)
+
+ To learn more about this integration, please [consult our guide](/integrations/payments/gocardless-integration).
+
+  ## Subscription date
+ It is now possible to set a start date in the past or in the future for a new subscription.
+
+ Setting a start date in the past can be useful when migrating existing customers to Lago, while setting a start date in the future can be useful for scheduling upcoming subscriptions.
+
+ For more information about the impact of the start date on the invoicing process, please refer to [the documentation](/guide/subscriptions/assign-plan#subscription-date).
+
+  ## Dimensions for grouping events
+ When creating a new billable metric, you can define dimensions that will be used to group events according to their properties.
+
+ For example, if you want to charge your customers for compute capacity according to the cloud provider and server region, you can create a `compute` billable metric with two dimensions ([learn more](/guide/billable-metrics/dimensions)).
+
+ Changes to the API include:
+ - Ability to add a `group` parameter with one or two dimensions when [creating](/api-reference/billable-metrics/create) or [updating](/api-reference/billable-metrics/update) billable metrics
+ - Ability to [retrieve the groups](/api-reference/billable-metrics/get-all-groups) associated with a billable metric
+ - Ability to add a `group_properties` parameter when [creating](/api-reference/plans/create) or [updating](/api-reference/plans/update) a plan
+ - Ability to retrieve [customer usage](/api-reference/customer-usage/customer-usage-object) by group
+ - New `lago_group_id` for fees (see [invoice object](/api-reference/invoices/invoice-object))
+
+## Enhanced coupon model
+ We have improved the coupon model to offer more flexibility.
+
+ Changes include (but are not limited to):
+ 1. Ability to define the value of a coupon as a fixed amount or percentage
+ 2. Ability to create recurring coupons that apply over several billing periods
+ 3. Ability to set an expiration date (i.e. date after which the coupon can no longer be redeemed)
+
+ [Learn more](/guide/coupons)
+
+## Customer currency
+ It is now possible to define the currency at [customer](/api-reference/customers/object) level.
+
+ The currency associated with each customer was previously defined by the currency of the plan assigned to the customer. This logic prevented users from assigning a coupon or an add-on to a customer before creating a subscription.
+
+ When creating a new customer via the user interface or the API, you can now select the currency associated with the customer. If the currency is not defined at customer level, it will be determined by the first object assigned to the customer (i.e. currency of the plan, add-on, coupon, or wallet).
+
+ <Info>⚠️ Once an object has been assigned to the customer (i.e. plan, add-on, coupon, or wallet), the currency associated with the customer cannot be changed.</Info>
+
+ ## Error management
+ We have refactored the error management system to give more visibility to API users.
+
+ The `message` attribute for errors has been replaced with `code` and `error_details`, which provide more information about the errors. There are several codes associated with each error.
+
+ For example, when creating a new billable metric, the API may return `"error": "Unprocessable entity"` with the code `value_is_mandatory` for the `name` field (i.e. the name of the billable metric is missing).
+
+ Please refer to the [documentation](/api-reference/intro) available for each endpoint for more information on error codes.
+</Update>
+
+
+<Update label="September 2022">
+ ## Invite members
+ You can now invite your teammates to join your Lago account.
+
+ To add a new member via the user interface:
+ 1. Go to the **Settings** section of the app
+ 2. Open the **Members** tab
+ 3. Click **Invite a member** on the right
+ 4. Enter the email address of your teammate
+ 5. Click **Generate invitation link** to confirm
+ 6. Copy the invitation link to share it with your teammate
+
+ Invitation links have no expiration date. When your teammate clicks the link, they can choose their password and then access the account.
+
+ You can remove a member by clicking the **bin icon** on the right of the list of members.
+
+ <Info>ℹ️ All members have the same role and permissions.</Info>
+
+ ## Overwrite plans
+ If after a negotiation phase, you need to create a custom plan for an important customer, you can use the 'overwrite' feature, available through the user interface.
+
+ This feature allows you to create a new plan from an existing one, in order to adjust the plan model and charges according to your business needs.
+
+ Overwriting a plan has no impact on the original plan or existing subscriptions.
+
+ [Learn more](/guide/subscriptions/assign-plan#overwriting-a-plan)
+
+ ## Recurring count
+ Companies with fair and transparent pricing models are often praised by customers. If you are considering implementing seat-based pricing for instance, the `reccuring_count` aggregation is exactly what you need.
+
+ This new aggregation type allows you to push events for persistent units.
+
+ Consider the following example:
+
+ > Your customer is on a monthly plan and adds a new user to their account on September 15th, so you generate an event that corresponds to one billing unit.
+ >
+ > At the end of September, Lago will automatically create a prorated charge for this user, based on the number of days of activity (i.e. from September 15th to September 30th).
+ >
+ > This billing unit will remain valid until you generate another event to remove it. For instance, if your customer deletes the user on October 22nd, Lago will create another prorated charge for the period October 1st to October 22nd.
+
+ Consult [our guide](/guide/billable-metrics/recurring-vs-metered) to learn more about persistent units.
+
+ ## External IDs
+ We are introducing changes to the API that will make it easier to manage subscriptions:
+ - For the [creation of new subscriptions](/api-reference/subscriptions/assign-plan), `subscription_id` and `unique_id` will be removed and replaced with `external_id` (required)
+ - For all other endpoints, `subscription_id` will be replaced with `external_subscription_id`
+
+ This will allow you to operate via the API using your own identifiers and save you the trouble for storing our IDs.
+
+ In addition to this, for consistency purposes:
+ - For the [creation of new customers](/api-reference/customers/create), `customer_id` will be replaced with `external_id`
+ - For all other endpoints, `customer_id will be replaced with `external_customer_id`
+
+ These changes will come into effect on **September 8, 2022**.
+
+ Please [get in touch](https://www.getlago.com/slack) with our team if you have any questions.
+</Update>
+
+
+<Update label="August 2022">
+ ## Volume charge model
+ The new volume charge model allows you to create a tiered pricing structure and then calculate a unit price that applies to all units depending on total volume.
+
+ It is similar to the graduated charge model, except that only one price tier applies at the end of the billing period.
+
+ Please refer to [the guide](/guide/plans/charges#charge-models) and [API documentation](/api-reference/plans/create) for more information.
+
+ ## Anniversary dates for subscriptions
+ When assigning a plan to a customer, you can now choose whether the subscription should be renewed at the beginning of the period or on its anniversary date.
+
+ For instance, if a monthly plan is assigned to a customer on August 10th and you choose to align the billing cycle with the anniversary date of the subscription, the customer will be billed every 10th of the month.
+
+ With [the API](/api-reference/subscriptions/assign-plan), you can use the `billing_time` attribute to choose your preferred option. If not provided, Lago will base the subscription on calendar periods.
+
+ [Learn more](/guide/subscriptions/assign-plan#billing-cycles)
+
+ ## Free units for the percentage charge model
+ We have released an enhanced version of the percentage charge model, including:
+ - Ability to define free units based on the number of events (e.g. first 3 events are free)
+ - Ability to define free units based on the total amount (e.g. first $500 are free)
+
+ Please refer to the [documentation](/guide/plans/charges#charge-models) for more information.
+
+ ## Multiple plans
+ It is now possible to assign multiple plans to a customer (e.g. if your customer needs to create several workspaces on your platform, you can link a plan to each workspace).
+
+ To help differentiate each plan, you can add display names that will appear in the user interface and on invoices.
+
+ Kindly note that:
+ 1. All plans must be denominated in the same currency
+ 2. You must now specify the `subscription_id` for each event or create batch events
+
+ [Click here to see the documentation](/guide/subscriptions/assign-plan#multiple-plans)
+
+ ## Tracking & Analytics
+ To help us better understand your needs, we have added a tracking module to the self-hosted version of Lago.
+
+ Data analytics will help us improve the quality of our product and performance of the API.
+
+ As the privacy of our users is of paramount importance, we will not collect any personal information about your customers or the amount of your invoices, and you can opt out at any time.
+
+ [Learn more](/guide/self-hosted/tracking-analytics)
+
+ ## Go client
+ We have added a new API client to make it easier for Go users to set up their billing system with Lago.
+
+ [Click here to see the documentation](/api-reference/intro)
+</Update>
+
+
+<Update label="July 2022">
+ ## App version
+ It is now possible to check the version of the Lago application you are using.
+
+ Click on of your `organization's name` in the top-left corner of the user interface to see the app version currently in use.
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d800242f0800f8b7ada30_app-version.png" />
+ </Frame>
+
+ ## Current usage
+ Good news for those who follow closely the consumption of their customers. You can now track the current billing usage of your customers either from the UI or from the API.
+
+ **To access this Usage tab:**
+ 1. Access your list of **customers**
+ 2. Select a specific customer that is **already linked to a subscription**
+ 3. Access the **usage** tab
+ 4. Get a complete view of **usage-based consumption** that is going to be billed on the next invoice
+
+ On top of that, you can fetch the current usage of a customer directly from the API. To do so, you can access the following endpoint `GET /api/v1/customers/:customer_id/current_usage`
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d7fb119ef4234068c5b9a_current-usage.png" />
+ </Frame>
+
+ ## PDF invoices
+ Lago will generate a PDF file for each new invoice.
+
+ You can download invoices via the user interface or the API and can also modify some of the elements included in the invoice template.
+
+ Full documentation [available here](/guide/invoicing/download-invoices).
+
+ ## New API endpoints
+ We like our users when they use our nice and clean UI, but we also love when they use our API. One of the usecase could be to use Lago as a white-labeled solution.
+
+ Here is the full list of endpoints we have just released:
+
+ **Billable metrics**
+ - Create a billable metric `POST /api/v1/billable_metrics`
+ - Update a billable metric `PUT /api/v1/billable_metrics/:code`
+ - Destroy a billable metric `DELETE /api/v1/billable_metrics/:code`
+ - Fetch a specific billable metric `GET /api/v1/billable_metrics/:code`
+ - Fetch all billable metrics `GET /api/v1/billable_metrics?per_page=2&page=1`
+
+ **Plans**
+ - Create a plan `POST /api/v1/plans`
+ - Update a plan `PUT /api/v1/plans/:code`
+ - Destroy a plan `DELETE /api/v1/plans/:code`
+ - Fetch a specific plan `GET /api/v1/plans/:code`
+ - Fetch all plans `GET /api/v1/plans?per_page=2&page=1`
+
+ **Coupons**
+ - Create a coupon `POST /api/v1/coupons`
+ - Update a coupon `PUT /api/v1/coupons/:code`
+ - Destroy a coupon `DELETE /api/v1/coupons/:code`
+ - Fetch a specific coupon `GET /api/v1/coupons/:code`
+ - Fetch all coupons `GET /api/v1/coupons?per_page=2&page=1`
+
+ **Add-ons**
+ - Create a add_on `POST /api/v1/add_ons`
+ - Update a add_on `PUT /api/v1/add_ons/:code`
+ - Destroy a add_on `DELETE /api/v1/add_ons/:code`
+ - Fetch a specific add_on `GET /api/v1/add_ons/:code`
+ - Fetch all add_ons `GET /api/v1/add_ons?per_page=2&page=1`
+
+ **Current usage**
+ - Get the current usage of a specific customer `GET /api/v1/customers/:customer_id/current_usage`
+
+ **Organization**
+ - Update the information of your organization `PUT /api/v1/organizations`
+</Update>
+
+<Update label="June 2022">
+ ## Integration with Stripe Payments
+ Lago now offers native integration with Stripe, including (but not limited to):
+ - Ability to create Lago customers in Stripe automatically and retrieve their customer ID
+ - Ability to define Stripe as the default payment provider for a customer
+ - Ability to generate payment intents automatically
+ - Ability to update the status of an invoice depending on the payment status
+ - Ability to receive a webhook when a payment fails
+
+ To learn more about this integration, please [consult our guide](/integrations/payments/stripe-integration).
+
+ ## Weekly plan interval
+ When setting up a plan, you can select the weekly interval to define a weekly billing period.
+
+ The plan interval applies to the subscription and charges, which means that:
+ - For plans that must be paid in advance, the subscription fee is invoiced at the beginning of the week
+ - For plans that are paid in arrears, the subscription fee is invoiced at the end of the week
+ - Usage is calculated at the end of each week
+
+ The week starts on Monday and ends on Sunday. If the customer's subscription starts in the middle of the week, the fees will be applied on a pro-rata basis.
+
+  ## Invoice monthly charges for a plan paid yearly
+ Before the release of this feature, usaged-based features (charges) were following the plan period. If the plan period was invoiced yearly, the charges were invoiced yearly.
+
+ It's now possible to **invoice billable metrics on a montly basis** for a plan billed yearly. The base amount of the plan will be invoice yearly (in-arrears or in-advance), but your usage based features will be invoiced on a monthly basis.
+
+ **To do so:**
+ 1. Access a **Plan**
+ 2. Define a plan **yearly**
+ 3. Price **additional charges** from your billable metrics
+ 4. Turn `on` the toggle for **applying charges monthly**
+
+ By switching on, **all the charges** will be invoiced monthly even if the plan is yearly.
+
+ <Info>ℹ️ The last invoice is gathering both the subscription and the usage-based charges</Info>
+
+ ## Events list
+ You are now able to view all the ingested events sent from your application to Lago. We called this feature `Events list` because it makes the event ingestion easier and more understandable.
+
+ 1. Access the `Developer` sidebar item
+ 2. Click the `Events` tab
+ 3. Take a look at the latest events ingested
+
+ <Info>ℹ️ If an event you sent is not shown in the UI, it means that it has not been ingested by Lago</Info>
+
+ This events list is also helpul to warn you for 2 specific cases:
+ 1. **Warning 1** - The event code is not related to an existing billable metric
+ 2. **Warning 2** - The property sent does not match the aggregation property defined in your billable metric
+
+ <Frame>
+   <img src="https://uploads-ssl.webflow.com/63569f390f3a7ad4c76d2bd6/649d7caf57c468e53266577a_events-list.png" />
+ </Frame>
+
+  ## Add-ons
+ Add-ons are now available on Lago. Create add-ons to apply one-time fees (e.g. setup fee, one-time purchase, etc.) and generate the corresponding invoices instantly.
+
+ Full documentation [available here](/guide/one-off-invoices/create-add-ons).
+</Update>
+
+<Update label="June 3, 2022">
+ ## Pay-as-you-go template
+ We've added a new template to our collection: [click here](https://www.getlago.com/resources/templates/algolia) to learn how to replicate Algolia's pay-as-you-go pricing.
+
+ It's a great starting point for companies whose pricing fully depends on usage, such as cloud service providers and API companies.
+
+ With Lago, you can adapt this template to your products and services, using some of our most popular features, including the ['sum' aggregation type](/guide/billable-metrics/aggregation-types) and the [package charge model](/guide/plans/charges#charge-models).
+
+  ## Coupons
+ Introducing coupons, a new feature that allows you to offer discounts to your customers.
+
+ Full documentation [available here](/guide/coupons).
+
+</Update>
+
+
+<Update label="May 2022">
+ ## Subscription changes
+ You can now modify the subscription assigned to a customer through the user interface.
+
+ To learn how to upgrade or downgrade a subscription and how it affects billing, please refer to the documentation.
+
+ ## Package pricing for charges
+ It is now possible to apply a [package pricing model](/guide/plans/charges#charge-models) to a charge. To do so:
+ 1. Select an existing plan (or create a new one)
+ 2. Add a charge
+ 3. Select the package pricing model
+
+ This new pricing model allows you to apply a flat fee to a range of units. The price will be fixed for the entire range, regardless of the number of units consumed by the customer during the billing period.
+
+  ## Percentage charge model
+ Inside the **plan**, when creating a charge, you can now select the **percentage charge model**.
+
+ This feature is useful for industries willing to take a `% + fixed fee` out of a usage-based features (for banking or charity industry, for instance). These fees are applied on the *units to be charged* (e.g. the aggregation result of your billable metric).
+
+</Update>
