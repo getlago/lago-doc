@@ -1,0 +1,101 @@
+---
+title: "SQL Expressions"
+description: "For more advanced calculations, you can use SQL custom expressions. These expressions are helpful when the aggregation results for a billable metric require complex calculations."
+---
+
+## Creating a SQL Custom Expression
+When creating a billable metric, you can choose between using a simple aggregation field or a custom expression. 
+**Custom expressions allow you to define more advanced computation logic**, which is useful when the required aggregation involves complex calculations that Lago should handle.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To add a custom expression through the user interface:
+
+    - Define the `name` and `code` for the billable metric;
+    - Choose an aggregation type;
+    - Select `Custom expressions` as the aggregation option instead of `Unique field`;
+    - Enter your custom expression in the expanded side panel;
+    - Test the custom expression; and
+    - Save the billable metric.
+
+<Frame caption="Create a custom expression for a billable metric">
+  <img src="/guide/billable-metrics/images/custom-expression-creation.png" />
+</Frame>
+
+
+  </Tab>
+
+  <Tab title="API">
+      Here are few examples of custom expressions you can create for a billable metric:
+      <CodeGroup>
+      
+    ```bash Storage
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "Storage",
+            "code": "storage",
+            "description": "Number of GB consumed",
+            "aggregation_type": "sum_agg",
+            "expression": "(event.properties.ended_at - event.timestamp) / 3600",
+            "field_name": "total",
+            "recurring": false
+          }
+        }'
+    ```
+
+    ```bash Seats
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "Seats",
+            "code": "seats",
+            "description": "Number of seats used",
+            "aggregation_type": "unique_count_agg",
+            "expression": "concat(event.properties.user_id, ‘-‘ , event.properties.app_id)",
+            "field_name": "total",
+            "recurring": true
+          }
+        }'
+    ```
+
+      </CodeGroup>
+
+  </Tab>
+</Tabs>
+
+<Info>
+    Custom expressions can be used with any aggregation type except `COUNT`.
+</Info>
+
+## Examples of SQL Custom Expressions
+A variety of SQL custom expressions are available for use. Here are a few examples:
+
+- **Concatenation:** `CONCAT(value1, '_', value2)`
+- **Math operations:** `((value1 * value2) / value3)`
+- **Rounding:** `ROUND(value1 / value2)`
+
+If you need a SQL custom expression that isn't supported by default in Lago, **feel free to contact our team** or **consider contributing to the open-source version**.
+
+
+## Testing your SQL Custom Expression
+Lago provides a testing tool to help you validate the custom expressions you've created. A sample event is used to test your expression. You can override any field in the test event.
+If your custom expression is incorrect, Lago will return an error, and you won't be able to save it until it's valid.
+
+Keep the following in mind:
+- You can dynamically reference any event field within your expression; and
+- Use precise paths to reference fields accurately. For instance, to use the event timestamp, the path is `event.timestamp`. To reference a custom property sent with the event, the path is `event.properties.your_field`.
+
+<Frame caption="Test your custom expression">
+  <img src="/guide/billable-metrics/images/test-custom-expression.png" />
+</Frame>
