@@ -169,4 +169,14 @@ decoded_signature['data'] == request.body
 
   base64_hmac == signature
   ```
+
+  ```php PHP
+  $signature = $_SERVER['X-Lago-Signature'];
+
+  $requestBody = file_get_contents('php://input');
+  $hmac = hash_hmac('sha256', $requestBody, 'YOUR_ORGANIZATION_API_KEY', true);
+  $base64Signature = base64_encode($hmac);
+
+  $valid = hash_equals($signature, $base64Signature);
+  ```
 </CodeGroup>
