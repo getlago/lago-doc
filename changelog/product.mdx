@@ -4,6 +4,53 @@ description: "New updates and improvements to Lago."
 ---
 
 <Update label="November 2024">
+## Automatic Dunning: Payment reminders on autopilot
+For businesses billing on usage, keeping payments timely is essential. That's why we're introducing **Automatic Dunning**—a hands-off way to manage overdue invoices and keep cash flow steady.
+
+With Automatic Dunning, you can **set up tailored reminder campaigns** for different customer groups. Once activated, **these campaigns run on autopilot**, sending scheduled email reminders for any unpaid invoices. Reminders will keep going until the payment is made or you adjust the settings.
+
+Automatic Dunning keeps your payment reminders on autopilot, so you can focus on what matters while your billing engine handles collections in the background.
+
+[Learn more](../guide/dunning/automatic-dunning)
+
+ <Frame>
+   <img src="/changelog/images/20241113-auto-dunning.gif" />
+ </Frame>
+
+ ## Customizable Rounding for usage metrics
+ Previously, usage rounding in Lago was limited to a default precision. Now, with **Customizable Rounding Rules**, you have full control over how usage-based metrics are rounded.
+
+Choose from these rounding options:
+
+- **Ceil**: Always round up to the nearest integer.
+- **Floor**: Always round down to the nearest integer.
+- **Round**: Round to the nearest integer using standard rounding rules.
+
+Additionally, you can specify a **precision level**—positive or negative—allowing you to round usage to a set number of decimals.
+
+[Learn more](../guide/billable-metrics/rounding)
+
+ <Frame>
+   <img src="/changelog/images/20241113-rounding.png" />
+ </Frame>
+
+
+ ## Build any usage-Based Metric with SQL Expressions
+ Previously, usage-based metrics in Lago were powered by a single field—ideal for simplicity but limited in flexibility. Now, we are giving you complete control with SQL Expressions.
+
+  **With SQL Expressions, you can build metrics tailored to your needs**. Use advanced math operations, concatenations, rounding, and more to create precise, custom metrics that reflect your unique usage patterns.
+
+  **Custom expressions allow you to define more advanced computation logic** by dynamically using any event field within your expression. Here are a few examples:
+  - **Concatenation:** `CONCAT(value1, '_', value2)`
+  - **Math operations:** `((value1 * value2) / value3)`
+  - **Rounding:** `ROUND(value1 / value2)`
+
+  ```SQL SQL Expression example
+  CEIL((event.properties.ended_at - event.timestamp) / 3600)
+  ```
+
+  [Learn more](../guide/billable-metrics/sql-expressions)
+
 ## Cascade plan editions to overridden subscriptions
 You have now the flexibility to decide whether changes made to the parent plan should automatically cascade to all overridden subscriptions. 
 For instance, if you add a new charge to the parent plan, it will immediately reflect in the overridden subscriptions, ensuring that all pricing updates are seamlessly applied across your entire customer base while maintaining the flexibility of custom pricing.
