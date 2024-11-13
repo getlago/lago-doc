@@ -4,7 +4,7 @@ description:
   "Useful commands for self-hosted users."
 ---
 
-Below is a compilation of essential commands tailored for open-source enthusiasts, primarily designed for managing invoicing tasks, 
+Below is a compilation of essential commands tailored for open-source enthusiasts, primarily designed for managing invoicing tasks,
 whether for immediate processing or scheduling.
 
 These commands are designed to execute a Rails console (rails c) within a Docker container named api, which is managed by Docker Compose.
@@ -33,7 +33,7 @@ Use this to issue an invoice immmediately. Ensure to specify the correct subscri
 # In the rails Console
 subscription = Subscription.find_by(external_id: 'YOUR_SUB_EXTERNAL_ID')
 timestamp = DateTime.parse('2024-04-01').to_i
-BillSubscriptionJob.perform_now([subscription],timestamp)
+BillSubscriptionJob.perform_now([subscription], timestamp, invoicing_reason: :subscription_periodic)
 ```
 
 ## Remove cache for a subscription
@@ -41,7 +41,7 @@ Use this to remove the cache on a specific subscription.
 
 ```ruby
 # In the rails Console
-Subscriptions::ChargeCacheService.expire_for_subscription(Subscription.find('YOUR_SUB_EXTERNAL_ID')) 
+Subscriptions::ChargeCacheService.expire_for_subscription(Subscription.find('YOUR_SUB_EXTERNAL_ID'))
 ```
 To remove the cache for all subscriptions, you can alternatively use this command:
 ```ruby
