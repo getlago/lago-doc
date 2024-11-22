@@ -4,165 +4,176 @@ description: "New updates and improvements to Lago."
 ---
 
 <Update label="November 2024">
-## Automatic Dunning: Payment reminders on autopilot
-For businesses billing on usage, keeping payments timely is essential. That's why we're introducing **Automatic Dunning**—a hands-off way to manage overdue invoices and keep cash flow steady.
+  ## Roll your API key
+    <Frame>
+      <img src="/changelog/images/20241122-roll-api-keys.png" />
+    </Frame>
 
-With Automatic Dunning, you can **set up tailored reminder campaigns** for different customer groups. Once activated, **these campaigns run on autopilot**, sending scheduled email reminders for any unpaid invoices. Reminders will keep going until the payment is made or you adjust the settings.
+    Oops! Think your API key might be exposed, or just want to rotate it to stay safe? No worries—you don’t need to reach out to us. You can now quickly roll your key anytime in the Developer section. 
 
-Automatic Dunning keeps your payment reminders on autopilot, so you can focus on what matters while your billing engine handles collections in the background.
+    [Learn more](../guide/security/api-keys)
 
-[Learn more](../guide/dunning/automatic-dunning)
+  ## Automatic Dunning: Payment reminders on autopilot
+    <Frame>
+      <img src="/changelog/images/20241113-auto-dunning.gif" />
+    </Frame>
 
- <Frame>
-   <img src="/changelog/images/20241113-auto-dunning.gif" />
- </Frame>
+    For businesses billing on usage, keeping payments timely is essential. That's why we're introducing **Automatic Dunning**—a hands-off way to manage overdue invoices and keep cash flow steady.
 
- ## Customizable Rounding for usage metrics
- Previously, usage rounding in Lago was limited to a default precision. Now, with **Customizable Rounding Rules**, you have full control over how usage-based metrics are rounded.
+    With Automatic Dunning, you can **set up tailored reminder campaigns** for different customer groups. Once activated, **these campaigns run on autopilot**, sending scheduled email reminders for any unpaid invoices. Reminders will keep going until the payment is made or you adjust the settings.
 
-Choose from these rounding options:
+    Automatic Dunning keeps your payment reminders on autopilot, so you can focus on what matters while your billing engine handles collections in the background.
 
-- **Ceil**: Always round up to the nearest integer.
-- **Floor**: Always round down to the nearest integer.
-- **Round**: Round to the nearest integer using standard rounding rules.
+    [Learn more](../guide/dunning/automatic-dunning)
 
-Additionally, you can specify a **precision level**—positive or negative—allowing you to round usage to a set number of decimals.
+  ## Customizable Rounding for usage metrics
+    <Frame>
+      <img src="/changelog/images/20241113-rounding.png" />
+    </Frame>
 
-[Learn more](../guide/billable-metrics/rounding)
+    Previously, usage rounding in Lago was limited to a default precision. Now, with **Customizable Rounding Rules**, you have full control over how usage-based metrics are rounded.
 
- <Frame>
-   <img src="/changelog/images/20241113-rounding.png" />
- </Frame>
+    Choose from these rounding options:
+
+    - **Ceil**: Always round up to the nearest integer.
+    - **Floor**: Always round down to the nearest integer.
+    - **Round**: Round to the nearest integer using standard rounding rules.
+
+    Additionally, you can specify a **precision level**—positive or negative—allowing you to round usage to a set number of decimals.
+
+    [Learn more](../guide/billable-metrics/rounding)
 
 
- ## Build any usage-Based Metric with SQL Expressions
- Previously, usage-based metrics in Lago were powered by a single field—ideal for simplicity but limited in flexibility. Now, we are giving you complete control with SQL Expressions.
+  ## Build any usage-Based Metric with SQL Expressions
+    Previously, usage-based metrics in Lago were powered by a single field—ideal for simplicity but limited in flexibility. Now, we are giving you complete control with SQL Expressions.
 
-  **With SQL Expressions, you can build metrics tailored to your needs**. Use advanced math operations, concatenations, rounding, and more to create precise, custom metrics that reflect your unique usage patterns.
+    **With SQL Expressions, you can build metrics tailored to your needs**. Use advanced math operations, concatenations, rounding, and more to create precise, custom metrics that reflect your unique usage patterns.
 
-  **Custom expressions allow you to define more advanced computation logic** by dynamically using any event field within your expression. Here are a few examples:
-  - **Concatenation:** `CONCAT(value1, '_', value2)`
-  - **Math operations:** `((value1 * value2) / value3)`
-  - **Rounding:** `ROUND(value1 / value2)`
+    **Custom expressions allow you to define more advanced computation logic** by dynamically using any event field within your expression. Here are a few examples:
+    - **Concatenation:** `CONCAT(value1, '_', value2)`
+    - **Math operations:** `((value1 * value2) / value3)`
+    - **Rounding:** `ROUND(value1 / value2)`
 
-  ```SQL SQL Expression example
-  CEIL((event.properties.ended_at - event.timestamp) / 3600)
-  ```
+    ```SQL SQL Expression example
+    CEIL((event.properties.ended_at - event.timestamp) / 3600)
+    ```
 
-  [Learn more](../guide/billable-metrics/sql-expressions)
+    [Learn more](../guide/billable-metrics/sql-expressions)
 
-## Cascade plan editions to overridden subscriptions
-You have now the flexibility to decide whether changes made to the parent plan should automatically cascade to all overridden subscriptions. 
-For instance, if you add a new charge to the parent plan, it will immediately reflect in the overridden subscriptions, ensuring that all pricing updates are seamlessly applied across your entire customer base while maintaining the flexibility of custom pricing.
+  ## Cascade plan editions to overridden subscriptions
+    <Frame>
+      <img src="/changelog/images/20241113-cascade-plans-edits-to-overridden-sub.png" />
+    </Frame>
 
-[Learn more](../guide/plans/overview#editing-plans)
+    You have now the flexibility to decide whether changes made to the parent plan should automatically cascade to all overridden subscriptions. 
+    For instance, if you add a new charge to the parent plan, it will immediately reflect in the overridden subscriptions, ensuring that all pricing updates are seamlessly applied across your entire customer base while maintaining the flexibility of custom pricing.
 
-<Frame>
-   <img src="/changelog/images/20241113-cascade-plans-edits-to-overridden-sub.png" />
- </Frame>
+    [Learn more](../guide/plans/overview#editing-plans)
 
-## Sync billing data to HubSpot
-With Lago’s new integration, you can now seamlessly sync billing data in real time to HubSpot. By connecting your Lago account to HubSpot, you’ll enable the following:
+  ## Sync billing data to HubSpot
+    <Frame>
+      <img src="/changelog/images/20241105-sync-billing-data-hubspot.jpg" />
+    </Frame>
 
-1. **Customer Creation**: Automatically create Contacts or Companies in HubSpot based on your Lago customer data.
-2. **Invoice Syncing**: Real-time invoice sync to a HubSpot custom object named `LagoInvoices`.
-3. **Subscription Syncing**: Real-time subscription sync to a HubSpot custom object named `LagoSubscriptions`.
+    With Lago’s new integration, you can now seamlessly sync billing data in real time to HubSpot. By connecting your Lago account to HubSpot, you’ll enable the following:
 
-[Learn more](../integrations/crm/hubspot)
+    1. **Customer Creation**: Automatically create Contacts or Companies in HubSpot based on your Lago customer data.
+    2. **Invoice Syncing**: Real-time invoice sync to a HubSpot custom object named `LagoInvoices`.
+    3. **Subscription Syncing**: Real-time subscription sync to a HubSpot custom object named `LagoSubscriptions`.
 
- <Frame>
-   <img src="/changelog/images/20241105-sync-billing-data-hubspot.jpg" />
- </Frame>
+    [Learn more](../integrations/crm/hubspot)
 
- ## Quote in Salesforce CPQ, bill in Lago!
-Our enhanced Salesforce package now enables you to use Salesforce CPQ for quoting leads and customers. 
-**Once a quote is approved and signed, it automatically triggers a real-time subscription in Lago**. 
-No need for separate processes—your sales team can directly create subscriptions from validated quotes within Salesforce.
+  ## Quote in Salesforce CPQ, bill in Lago!
+    <Frame>
+      <img src="/changelog/images/20241105-sync-billing-data-salesforce-cpq.jpg" />
+    </Frame>
 
-[Learn more](../integrations/crm/salesforce-cpq)
+    Our enhanced Salesforce package now enables you to use Salesforce CPQ for quoting leads and customers. 
+    **Once a quote is approved and signed, it automatically triggers a real-time subscription in Lago**. 
+    No need for separate processes—your sales team can directly create subscriptions from validated quotes within Salesforce.
 
- <Frame>
-   <img src="/changelog/images/20241105-sync-billing-data-salesforce-cpq.jpg" />
- </Frame>
+    [Learn more](../integrations/crm/salesforce-cpq)
 
- ## Dynamic pricing
- Do your prices change dynamically based on a provider or complex in-house calculations? 
- Here are some real-life use cases:
- - 🤖 AI companies: prices fluctuating based on real-time models cost
- - 🏦 Fintech: matching prices to live market data
- - 📱 Telco/CPaaS: adjusting costs to fluctuating carrier rates
 
- We've heard you, and we're excited to introduce Dynamic Pricing for this!
- You can now set a charge model as Dynamic and send the event amount directly through each event. No more headaches trying to manage interchange fees or fluctuating custom prices.
+  ## Dynamic pricing
+    <Frame>
+      <img src="/changelog/images/20241105-dynamic-pricing.png" />
+    </Frame>
 
-[Learn more](../guide/plans/charges/charge-models/dynamic)
+    Do your prices change dynamically based on a provider or complex in-house calculations? 
+    Here are some real-life use cases:
+    - 🤖 AI companies: prices fluctuating based on real-time models cost
+    - 🏦 Fintech: matching prices to live market data
+    - 📱 Telco/CPaaS: adjusting costs to fluctuating carrier rates
 
- <Frame>
-   <img src="/changelog/images/20241105-dynamic-pricing.png" />
- </Frame>
+    We've heard you, and we're excited to introduce Dynamic Pricing for this!
+    You can now set a charge model as Dynamic and send the event amount directly through each event. No more headaches trying to manage interchange fees or fluctuating custom prices.
 
+    [Learn more](../guide/plans/charges/charge-models/dynamic)
 </Update>
 
 <Update label="October 2024">
-## Credit note on prepaid credit invoices
-Refund your customers who purchased prepaid credit in no time! 
-You can now process refunds for prepaid credit bought within Lago directly, without needing to engage your payment provider. 
-Lago takes care of the refund through its credit note module, enabling you to initiate the refund to the payment provider and automatically void the prepaid credit in the active wallet according to the wallet’s refund status.
+  ## Credit note on prepaid credit invoices
+    Refund your customers who purchased prepaid credit in no time! 
+    You can now process refunds for prepaid credit bought within Lago directly, without needing to engage your payment provider. 
+    Lago takes care of the refund through its credit note module, enabling you to initiate the refund to the payment provider and automatically void the prepaid credit in the active wallet according to the wallet’s refund status.
 
-[Learn more](/guide/credit-notes.mdx)
+    [Learn more](/guide/credit-notes.mdx)
 
-## Customer Portal complete rework
-We’ve **completely reworked the Customer Portal**. You can now embed the portal URL to display in real-time **plans and usage information**, **wallet data**, **customer info**, and **invoice lists**.
+  ## Customer Portal complete rework
+    <Frame>
+      <img src="/changelog/images/20241031-customer-portal-rework.jpg" />
+    </Frame>
+    
+    We’ve **completely reworked the Customer Portal**. You can now embed the portal URL to display in real-time **plans and usage information**, **wallet data**, **customer info**, and **invoice lists**.
 
-Additionally, your end customers can take actions directly within the portal, such as **adding prepaid credits** and **updating their customer info**—all automatically synced with your Lago back office.
+    Additionally, your end customers can take actions directly within the portal, such as **adding prepaid credits** and **updating their customer info**—all automatically synced with your Lago back office.
 
-**Cherry on top?** We’re offering the new Customer Portal **for free** to all users, including those on our open-source plan.
+    **Cherry on top?** We’re offering the new Customer Portal **for free** to all users, including those on our open-source plan.
 
- <Frame>
-   <img src="/changelog/images/20241031-customer-portal-rework.jpg" />
- </Frame>
 
-## Usage ingestion sources
-Premium ingestion sources for metering and usage consumption are now **generally available**. 
-Instead of using the basic API, you can leverage dedicated connectors to ingest data directly from sources like **AWS S3**, **AWS Kinesis**, **Kafka**, **MongoDB**, and **Azure**. 
-Most connectors support ingestion rates of **over 15,000 events per second** (compared to 1,000 via the basic REST API).
+  ## Usage ingestion sources
+    <Frame>
+      <img src="/changelog/images/20241031-ingest-usage-custom-sources.jpg" />
+    </Frame>
 
-For custom ingestion connectors, please contact the Lago team.
+    Premium ingestion sources for metering and usage consumption are now **generally available**. 
+    Instead of using the basic API, you can leverage dedicated connectors to ingest data directly from sources like **AWS S3**, **AWS Kinesis**, **Kafka**, **MongoDB**, and **Azure**. 
+    Most connectors support ingestion rates of **over 15,000 events per second** (compared to 1,000 via the basic REST API).
 
-[Learn more](/guide/events/metering-source)
+    For custom ingestion connectors, please contact the Lago team.
 
- <Frame>
-   <img src="/changelog/images/20241031-ingest-usage-custom-sources.jpg" />
- </Frame>
+    [Learn more](/guide/events/metering-source)
 
- ## Customer type
- Users can specify whether the customer is a company or an individual by setting the customer type.
 
- By default, if no customer type is specified, customers are created without a defined type and you will need to assign one manually.
+  ## Customer type
+    <Frame>
+      <img src="https://cdn.prod.website-files.com/63569f390f3a7ad4c76d2bd6/670e3492b8af7e403998631d_670e348652aa9119b8d40ec5_Mail%252038%2520Company%2520vs%2520Individual.png" />
+    </Frame>
 
- [Learn more](/guide/customers/customer-management#companies-vs-individuals)
+    Users can specify whether the customer is a company or an individual by setting the customer type.
 
- <Frame>
-   <img src="https://cdn.prod.website-files.com/63569f390f3a7ad4c76d2bd6/670e3492b8af7e403998631d_670e348652aa9119b8d40ec5_Mail%252038%2520Company%2520vs%2520Individual.png" />
- </Frame>
+    By default, if no customer type is specified, customers are created without a defined type and you will need to assign one manually.
 
- ## Send tax invoices
- Lago invoices are now fully compliant with local legislation in Australia, Indonesia, New Zealand and the United Arab Emirates.
+    [Learn more](/guide/customers/customer-management#companies-vs-individuals)
 
- In those countries, it is mandatory to emit "Tax Invoices" accord to specific rules. This can now be handled with Lago.
+  ## Send tax invoices
+    <Frame>
+      <img src="https://cdn.prod.website-files.com/63569f390f3a7ad4c76d2bd6/670e342075003c7364903b11_670e34092f78a79d6fac4518_Tax%2520invoice.png" />
+    </Frame>
 
- <Frame>
-   <img src="https://cdn.prod.website-files.com/63569f390f3a7ad4c76d2bd6/670e342075003c7364903b11_670e34092f78a79d6fac4518_Tax%2520invoice.png" />
- </Frame>
+    Lago invoices are now fully compliant with local legislation in Australia, Indonesia, New Zealand and the United Arab Emirates.
 
- ## Retrieve all events using the API
- Users can now retrieve and filters all events using the API. The endpoint also allows for filtering by:
- - `code`
- - `external_subscription_id`
- - `timestamp_from`
- - `timestamp_to`
+    In those countries, it is mandatory to emit "Tax Invoices" accord to specific rules. This can now be handled with Lago.
 
- [Learn more](/api-reference/events/list-events)
+    ## Retrieve all events using the API
+    Users can now retrieve and filters all events using the API. The endpoint also allows for filtering by:
+    - `code`
+    - `external_subscription_id`
+    - `timestamp_from`
+    - `timestamp_to`
+
+    [Learn more](/api-reference/events/list-events)
 </Update>
 
 <Update label="September 2024">
