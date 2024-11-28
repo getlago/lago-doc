@@ -55,15 +55,15 @@ This feature is only available to users with a premium license. Please **[contac
   </Tab>
 </Tabs>
 
-## A payment provider is connected for this customer
-
-A payment intent will be generated for the amount shown. 
-
-- If the payment fails, and email will be sent requesting payment, with a URL to pay (except for Gocardless where no payment URL is provided).
-- When the payment is successful, the attached invoices will automatically be updated with a succeeded payment status.
-
-## No payment provider is available for this customer
-
-An email will be sent requesting payment for the overdue balance.
-
-- When the payment is successful, you will have to manually update the payment status of said invoices.
+## Dunning behaviour
+<Tabs>
+  <Tab title="Customer connected to a PSP">
+    1. **Automatic payment attempt**: Lago will initiate a payment intent for the specified amount via the connected PSP.
+    2. **Failed payment**: If the payment fails, an email will be sent to the customer with a payment request and a URL to complete the payment (excluding GoCardless).
+    3. **Successful payment**: Upon success, the attached invoices will automatically reflect a “succeeded” payment status.
+  </Tab>
+  <Tab title="Customer not connected to a PSP">
+    1. **Payment request email**: An email will be sent to the customer requesting payment for the overdue balance.
+    2. **Manual update**: Once the payment is received, you must manually update the payment status of the relevant invoices
+  </Tab>
+</Tabs>

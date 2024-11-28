@@ -1,6 +1,6 @@
 ---
 title: "Automatic dunning"
-description: "Automate how to communicate with your customers to remind them of overdue invoices and attempt to recover their overdue balance using dunning campaigns."
+description: "Automate customer communications to remind them of overdue invoices and recover outstanding balances through targeted dunning campaigns."
 ---
 
 <Info>
@@ -11,128 +11,59 @@ This feature is available upon request only. Please **[contact us](mailto:hello@
 
 ## Create campaigns
 
-Automatic dunning relies on the concept of dunning campaign, which then can be applied at the organization level, or per customer. You can create several campaigns to accommodate different needs: different thresholds or different cadences for instance. The goal of a campaign is to collect payment for a customer's overdue balance.
+Automatic dunning uses campaigns that can be applied organization-wide or tailored to individual customers. Create multiple campaigns to suit varying thresholds or cadences, all aimed at recovering overdue payments. To set up a new campaign, go to Settings > Dunning and follow these steps:
 
-<Frame caption="Set dunning at the organization level">
-<img src="/guide/dunning/images/dunning_org_level.png" />
-</Frame>
-
-Follow these steps to create a new campaign
-
-1. Access the dunning settings page through the **Settings** section > **Dunning** tab;
-2. In the **Dunning campaigns** section, click **“Add”** to create a new campaign;
+1. Assign a name, code, and description for easy identification.
+2. Set an overdue balance threshold with its designated currency.
+3. Add additional currencies for thresholds as needed.
+4. Specify the delay between attempts.
+5. Define the number of attempts for the campaign.
+6. Mark the campaign as the default, if applicable.
 
 
-### Campaign settings
+### Overdue balance threshold
 
-These settings allow you to identify a campaign.
+You can define thresholds for all supported currencies. When a customer reaches the specified threshold in their invoiced currency, the dunning campaign is triggered.
+If a customer’s invoiced currency is not supported in the campaign, they will not be eligible for it.
 
-1. Enter its **`name`**;
-2. Assign it a unique **`code`** (i.e. unique ID as defined in your backend system); and
-3. Add a **`description`** *(optional).*
+### Attempts & delay
 
-### Trigger settings
-
-These settings define when a campaign should start running for a customer. 
-
-4. Define an **`overdue balance threshold`.**
-
-At least one threshold is required to be able to save a campaign.
-
-You can define as many thresholds as currencies you support. When a dunning campaign applies to a customer, as soon as they reach this threshold, the campaign will launch for this customer.
-
-If a customer is invoiced in a currency that you don't support in your dunning campaign, they won't be eligible to this dunning campaign.
-
-### Attempt settings
-
-5. You can **`preview the email`** sent in case no payment provider is linked, or if the payment from an attempt fails.
-6. Add **`a delay between attempts`,** in days.
-
-The first attempt of a dunning campaign will happen when the overdue balance threshold is met. The next attempts will be triggered after the delay you have set.
-
-7. Decide to **`End the flow after`** a number of attempts.
+A dunning campaign begins when the overdue balance threshold is reached. Subsequent attempts follow the set delay. The campaign ends once the overdue balance is paid or all attempts have been exhausted.
 
 
-### Default campaign for your organization
+### Set dunning as default
 
-8. You can choose to **`Set as default campaign for your organization`**. 
+Setting a default campaign at the organization level applies it to all customers inheriting the organization’s dunning behavior, except for those who:
 
+- Have a specific campaign assigned to them, or
+- Have dunning deactivated.
 
-<Frame caption="Create a dunning campaign">
-<img src="/guide/dunning/images/dunning_create_campaign.png" />
-</Frame>
-
-
-
-## Automatic dunning at the organization level
-When defining a default campaign at the organization level, the campaign will apply to all customers inheriting the organization dunning behavior, except those for whom:
-
-- a specific campaign has been applied,
-- dunning has been deactivated.
-
-It is possible to have no campaign defined as default for the organization, and apply dunning campaigns independently to each customer.
-
-This setting is also available from the list of dunning campaigns, from where you can directly set a campaign as default for the organization.
+Alternatively, you can choose not to define a default campaign and assign dunning campaigns individually to each customer.
 
 
-## Automatic dunning at the customer level
+## Automatic dunning on customer
 
-If a campaign has been set as default for the organization, by default it will apply to all customers. You can chose to override this behavior at the customer level.
-
-
-1. Access the customer settings page through the **Customer** details page > **Settings** tab;
-2. In the **Dunning** section, click **“Edit”** to change the dunning behavior;
-3. Select the behavior you want to apply.
-
-<Frame caption="Apply a dunning campaign at the customer level">
-<img src="/guide/dunning/images/dunning_customer_level.png" />
-</Frame>
-
-
-
-### Fallback to default dunning behavior from organization
-The behavior defined at the organization level will prevail: either a campaign is applied, or no dunning is set.
-
-### Apply a specific campaign for a customer
-
-Only the campaigns with a threshold defined in the customer's currency are available.
-The campaign will apply as soon as the behavior is saved, and the customer will no longer listen to what has been defined at the organization level.
-
-#### Deactivate dunning 
-
-No automatic dunning attempt will impact this customer, whether it is the default organization campaign or a campaign applied at the customer level.
-
-You can still trigger manual duning requests for the customer.
-
-<Frame caption="Apply a dunning campaign at the customer level">
-<img src="/guide/dunning/images/dunning_edit_behavior.png" />
-</Frame>
-
+If a default campaign is set for the organization, it will automatically apply to all customers. However, you can override this at the customer level by either assigning a different dunning campaign or deactivating dunning for that specific customer.
 
 ### Change from one campaign to another
+If you change the default campaign or assign a different campaign to a customer, any ongoing dunning process will stop. The new campaign will take precedence and start from the beginning.
 
-If you change the default campaign to apply another, or if you change the campaign applied to a customer, dunning could running for some customers. In that case the current campaign will be stopped, and the new campaign will take precedence and start from zero.
 
+## Dunning behaviour
+<Tabs>
+  <Tab title="Customer connected to a PSP">
+    1. **Automatic payment attempt**: Lago will initiate a payment intent for the specified amount via the connected PSP.
+    2. **Failed payment**: If the payment fails, an email will be sent to the customer with a payment request and a URL to complete the payment (excluding GoCardless).
+    3. **Successful payment**: Upon success, the attached invoices will automatically reflect a “succeeded” payment status.
+  </Tab>
+  <Tab title="Customer not connected to a PSP">
+    1. **Payment request email**: An email will be sent to the customer requesting payment for the overdue balance.
+    2. **Manual update**: Once the payment is received, you must manually update the payment status of the relevant invoices
+  </Tab>
+</Tabs>
 
-## Behavior of a campaign
+## Edit a dunning campaign
+You can edit all details of a dunning campaign, but note that changes may directly impact customers linked to the campaign and could trigger new dunning attempts.
 
-Once a campaign is applied to a customer:
-
-1. Its threshold will be monitored. 
-2. When the customer's overdue balance reaches the threshold, a first payment request will be triggered during the coming hour. Depending if a payment provider is available for the customer or not, a payment intent and/or an email will be triggered. 
-3. If a second attempt is planned, after the defined delay the overdue balance will be checked again. If still above the threshold, a new attempt will be triggered. New attempts will be triggered this way until the maximum number of attempts defined is reached. 
-4. If reaching the end of the planned attempts, the dunning campaign will be considered as completed. No further attempts will be triggered, unless the campaign applied to the customer is changed.
-
-### A payment provider is connected for the customer
-
-A payment intent will be generated for the amount shown.
-
-- If the payment fails, and email will be sent requesting payment, with a URL to pay (except for Gocardless where no payment URL is provided).
-- When the payment is successful, the attached invoices will automatically be updated with a succeeded payment status.
-
-### No payment provider is available for the customer
-
-An email will be sent requesting payment for the overdue balance.
-
-- When the payment is successful, you will have to manually update the payment status of said invoices.
-
+## Delete a dunning campaign
+Deleting a dunning campaign will immediately stop the current campaign for all associated customers, and no further dunning attempts will be made. If the deleted campaign is not the default, customers linked to it will revert to the organization’s settings and may be enrolled in the default dunning campaign, if one is set.
