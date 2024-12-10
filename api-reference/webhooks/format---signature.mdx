@@ -142,7 +142,7 @@ decoded_signature['data'] == request.body
   import hmac
   import base64
 
-  calc_sig = hmac.new(LAGO_API_KEY, request.body.encode(), 'sha256').digest()
+  calc_sig = hmac.new(LAGO_HMAC_KEY, request.body.encode(), 'sha256').digest()
   base64_sig = base64.b64encode(calc_sig).decode()
   request.headers.get('X-Lago-Signature') == base64_sig
   ```
@@ -151,7 +151,7 @@ decoded_signature['data'] == request.body
   import crypto from 'crypto';
 
   const signature = request.header('X-Lago-Signature')
-  const hmac = crypto.createHmac('sha256', 'YOUR_ORGANIZATION_API_KEY')
+  const hmac = crypto.createHmac('sha256', 'YOUR_ORGANIZATION_HMAC_KEY')
 
   hmac.update(request.body)
 
@@ -164,7 +164,7 @@ decoded_signature['data'] == request.body
   require 'openssl'
 
   signature =  request.headers['X-Lago-Signature']
-  hmac = OpenSSL::HMAC.digest('sha-256', 'YOUR_ORGANIZATION_API_KEY', request.body)
+  hmac = OpenSSL::HMAC.digest('sha-256', 'YOUR_ORGANIZATION_HMAC_KEY', request.body)
   base64_hmac = Base64.strict_encode64(hmac)
 
   base64_hmac == signature
@@ -174,7 +174,7 @@ decoded_signature['data'] == request.body
   $signature = $_SERVER['X-Lago-Signature'];
 
   $requestBody = file_get_contents('php://input');
-  $hmac = hash_hmac('sha256', $requestBody, 'YOUR_ORGANIZATION_API_KEY', true);
+  $hmac = hash_hmac('sha256', $requestBody, 'YOUR_ORGANIZATION_HMAC_KEY', true);
   $base64Signature = base64_encode($hmac);
 
   $valid = hash_equals($signature, $base64Signature);
