@@ -16,7 +16,6 @@ description: "Below is a list of the event types we currently send. Please note 
   `credit_note_payment_provider_refund_error` object. Sent when there is an error related to the refund process (i.e. the payment provider cannot refund the customer).
 </ParamField>
 
-
 ## Customers
 ### Basic customer information
 <ParamField path="customer.created" type="data.object">
@@ -162,6 +161,30 @@ description: "Below is a list of the event types we currently send. Please note 
   [Wallet object](/api-reference/wallets/wallet-object). Sent when the ongoing balance is negative or equal to 0.
 </ParamField>
 
+<ParamField path="wallet_transaction.payment_failure" type="data.object">
+  Sent when a wallet transaction payment—normally responsible for issuing an invoice upon successful completion—is declined.
+
+  <Accordion title="Payload example">
+    ```json
+    {
+      "webhook_type": "wallet_transaction.payment_failure",
+      "object_type": "payment_provider_wallet_transaction_payment_error",
+      "payment_provider_wallet_transaction_payment_error": {
+        "lago_wallet_transaction_id": "4df9ef1d-d13b-4ff1-850d-ca89f0c0f9fb",
+        "lago_customer_id": "90a33125-0c2d-4117-8978-cfb367487783",
+        "external_customer_id": "paymentfailure",
+        "provider_customer_id": "cus_RVCkzr7PASt28882",
+        "payment_provider": "stripe",
+        "payment_provider_code": "stripe_prod",
+        "provider_error": {
+          "message": "Your card was declined.",
+          "error_code": "card_declined"
+        }
+      }
+    }
+    ```
+  </Accordion>
+</ParamField>
 
 
 
