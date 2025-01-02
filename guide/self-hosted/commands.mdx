@@ -48,3 +48,12 @@ To remove the cache for all subscriptions, you can alternatively use this comman
 # In the rails Console
 Subscription.find_each {|s| Subscriptions::ChargeCacheService.expire_for_subscription(s) }
 ```
+
+## Audit logs of a subscription
+Use this to view all changes applied to a subscription and identify which membership made those changes.
+
+```ruby
+# In the rails Console
+subscription = Subscription.find_by(external_id: 'YOUR_SUB_EXTERNAL_ID')
+subscription.versions
+```
