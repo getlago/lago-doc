@@ -51,13 +51,71 @@ To update your organization's information and logo:
 For the logo, you can upload a JPG or PNG file with a maximum size of 800 KB.
 </Info>
 
+### Add an invoice custom section
+A custom invoice section is an additional section displayed above the custom footer on an invoice. 
+It allows you to set a title and include specific details (e.g. bank details). 
+Custom invoice sections can be applied at the organization level, impacting all customer invoices, or set per customer for greater granularity.
+
+To create an invoice custom section:
+1. Click **"Settings"** in the side menu;
+2. Open the **"Invoice"** tab;
+3. Click on **"Add"** in the **"Invoice custom section** block;
+4. Provide the necessary details, including the title and content.
+5. Click **Preview** to see how the section will appear on an invoice.
+6. Toggle the switch to apply the custom section to all customer invoices within the organization.
+
+<Info>
+You can display multiple custom invoice sections on invoices. Note that they will be sorted alphabetically by the custom section name.
+</Info>
+
+You can override the organization-level setting for specific customers by either assigning a different invoice custom section or deactivating the option for that customer. To do so:
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click on a specific customer;
+    2. Navigate to the **Settings** tab;
+    3. Click on **Edit** in the Invoice custom section;
+    4. Add a specific custom invoice section for the customer; or
+    5. Choose to deactivate the invoice custom section for this customer.
+
+    <Frame caption="Adding an invoice custom section to customer">
+        <img src="/guide/invoicing/images/invoice-custom-section-on-customer.png" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+      <CodeGroup>
+      ```bash Update the customer invoice custom section
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/customers" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "customer": {
+		        …
+            "skip_invoice_custom_sections": false, // If true, no invoice custom sections will be applied to the customer
+            "invoice_custom_section_codes": ["eu_bank_details"] // Leave empty to use the organization-level settings
+            …
+          }
+        }'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+Once the settings are updated, all newly finalized invoices for the organization or specific customer will reflect the changes.
+
+
+
 ### Add a custom footer
+A custom footer is a universal footer applied to all invoices and credit notes across all customers. 
+It is typically used to display your company’s legal information or other standard details.
 <Tabs>
   <Tab title="Dashboard">
     To update the footer of the invoice:
     1. Click **"Settings"** in the side menu;
     2. Open the **"Invoice"** tab;
-    3. Select **"Edit"** in the **"Invoice default footer"** block;
+    3. Click on **"Edit"** in the **"Invoice default footer"** block;
     4. Enter your text (maximum 600 characters); and
     5. Click **"Save information"** to confirm.
 
@@ -77,27 +135,9 @@ For the logo, you can upload a JPG or PNG file with a maximum size of 800 KB.
         --header 'Content-Type: application/json' \
         --data-raw '{
           "organization": {
-            "name": "Name1",
-            "webhook_url": "https://test-example.example",
-            "country": "CZ",
-            "address_line1": "address1",
-            "address_line2": null,
-            "state": "state1",
-            "zipcode": "10000",
-            "email": "org@email.com",
-            "city": "city125",
-            "legal_name": null,
-            "legal_number": null,
-            "tax_identification_number": "EU123456789",
-            "timezone": "Europe/Paris",
-            "email_settings": [
-              "invoice.finalized",
-              "credit_note.created"
-            ],
+            …
             "billing_configuration": {
               "invoice_footer": "footer custom",
-              "invoice_grace_period": 3,
-              "document_locale": "fr",
             }
           }
         }'
@@ -131,26 +171,8 @@ For the logo, you can upload a JPG or PNG file with a maximum size of 800 KB.
         --header 'Content-Type: application/json' \
         --data-raw '{
           "organization": {
-            "name": "Name1",
-            "webhook_url": "https://test-example.example",
-            "country": "CZ",
-            "address_line1": "address1",
-            "address_line2": null,
-            "state": "state1",
-            "zipcode": "10000",
-            "email": "org@email.com",
-            "city": "city125",
-            "legal_name": null,
-            "legal_number": null,
-            "tax_identification_number": "EU123456789",
-            "timezone": "Europe/Paris",
-            "email_settings": [
-              "invoice.finalized",
-              "credit_note.created"
-            ],
+            …
             "billing_configuration": {
-              "invoice_footer": "footer custom",
-              "invoice_grace_period": 3,
               "document_locale": "fr"
             }
           }
