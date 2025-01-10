@@ -65,13 +65,14 @@ func main() {
 lagoClient := lago.New().
     SetApiKey("__YOUR_API_KEY__")
 
+expirationAt := time.Date(2022, 8, 8, 23, 59, 59, 0, time.UTC)
 couponInput := &lago.CouponInput{
     Name:               "Coupon",
-        Code:               "coupon",
-        AmountCents:        1500,
-        AmountCurrency:     lago.EUR,
-        Expiration:         lago.CouponExpirationTimeLimit,
-        ExpirationAt:       "2022-08-08T23:59:59Z",
+    Code:               "coupon",
+    AmountCents:        1500,
+    AmountCurrency:     lago.EUR,
+    Expiration:         lago.CouponExpirationTimeLimit,
+    ExpirationAt:       &expirationAt,
 }
 
 coupon := lagoClient.Coupon().Update(couponInput)

@@ -64,9 +64,10 @@ func main() {
 lagoClient := lago.New().
     SetApiKey("__YOUR_API_KEY__")
 
+expirationAt := time.Date(2022, 7, 7, 23, 59, 59, 0, time.UTC)
 walletInput := &lago.WalletInput{
     Name:            "Prepaid Credits",
-    ExpirationAt:    "2022-07-07T23:59:59Z"
+    ExpirationAt:    &expirationAt,
 }
 
 wallet, err := lagoClient.Wallet().Update(walletInput, "__WALLET_ID__")
