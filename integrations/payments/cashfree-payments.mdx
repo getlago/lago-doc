@@ -1,0 +1,87 @@
+---
+title: "Cashfree Payments"
+description: "Make your users pay Lago invoices with Cashfree Payments, India's leading payments and API banking company."
+---
+
+
+<Info>
+    This integration is community-maintained, and therefore Lago provides only limited support.
+</Info>
+
+
+## Payments in India
+Cashfree is a leading payment platform in India, offering an end-to-end suite of payment and payout products tailored to the country's needs. 
+Its extensive coverage of payment methods—including credit/debit cards, net banking, UPI, and popular wallets like Paytm, PhonePe, and Amazon Pay—enables businesses to seamlessly collect payments from Indian customers with minimal friction.
+This integration streamlines the collection of Lago invoices in India by leveraging multiple local payment methods.
+
+## Connect Cashfree to Lago
+
+To connect Cashfree to Lago, navigate to your Lago UI, then go to **Integrations** > **Built by community**, and add a new **Cashfree Payments** connection:
+
+1. Click **Add a connection**.
+2. Type a connection **name**.
+3. Type a unique connection **code**.
+4. Paste your Cashfree **Client ID**.
+5. Paste your Cashfree **Client Secret**.
+6. Provide the **redirect URL** to redirect your users when a payment is processed.
+
+<Frame caption="Connect your Cashfree account from Lago UI">
+  <img src="/integrations/images/cashfree-payment-connection-flow.png" />
+</Frame>
+
+## Create a webhook endpoint
+<Tip>
+    To complete this process, you will need:
+
+    - Your Lago **organization ID**, available in the **"API keys & ID"** tab of the
+    **"Developers"** section;
+    - The **connection code** you created during the Cashfree setup process.
+</Tip>
+
+If you want Lago to automatically retrieve the status of the payments processed
+via Cashfree Payments, you must create a webhook endpoint in Cashfree. To do so:
+
+1. Log in to your Cashfree Payments account;
+2. Add the following Webhook URL in the **Webhooks** > **Payment Link** section of the Cashfree Payments dashboard;
+3. Enter the following URL: `https://api.getlago.com/webhooks/cashfree/{{__YOUR_ORG_ID__}}?code={{__YOUR_CONNECTION_CODE}}` (you must replace `organization_id` with your Lago organization ID, and the `connection_code` by the targeted Lago connection); and
+4. Save the creation of this webhook endpoint.
+
+<Frame caption="Webhook endpoint creation in Cashfree Payments">
+  <img src="/integrations/images/cashfree-webhook-connection.png" />
+</Frame>
+
+## Collect payments via Cashfree
+
+### Connect a Lago Customer to Cashfree
+To begin collecting payments for your Lago invoices via Cashfree, you need to link a Lago customer to a Cashfree connection. 
+When creating or editing a customer in Lago, simply select the relevant Cashfree connection under **external apps** to enable invoice payments.
+
+<Frame caption="Link Lago Customers to Cashfree Payments">
+  <img src="/integrations/images/cashfree-link-lago-customer.png" />
+</Frame>
+
+### Generate a checkout link
+Note that payments through Cashfree does not automatically proceed when Lago generates an invoice. You need to programmatically generate a checkout link by calling the [following endpoint](/api-reference/invoices/payment-url):
+
+```bash Request
+curl --request POST \
+  --url https://api.getlago.com/api/v1/invoices/{lago_id}/payment_url \
+  --header 'Authorization: Bearer <token>'
+```
+
+By generating this checkout link, you can forward it to your customer to complete payment using their preferred method from India. Once the payment is processed, Lago automatically retrieves the invoice status from Cashfree.
+
+```json Response
+{
+  "invoice_payment_details": {
+    "lago_customer_id": "13b901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_invoice_id": "1e501a90-938s-1a90-1a90-1a901a901a80",
+    "external_customer_id": "53dj371e-4ea2-bcf9-57d3a41bc6ba",
+    "payment_provider": "cashfree",
+    "payment_url": "https://cashfree.payment_link"
+  }
+}
+```
+
+### Cashfree payment errors
+If an error occurs during the Cashfree payment process for a Lago invoice, Lago sends a [`payment_request.payment_failure`](https://docs.getlago.com/api-reference/webhooks/messages#param-payment-request-payment-failure) webhook containing the error details.
