@@ -1,0 +1,125 @@
+---
+title: "Migration to v1.20.0"
+---
+
+Dear Lago Community, 👋
+
+We will soon release a new version of Lago, including infrastructure improvements to ensure scalability.
+
+# What changes will be made?
+
+One of the changes concerns zero fees, which have no accounting value but still require compute resources. In the next and subsequent versions, Lago will no longer generate these fees.
+
+We know that some of our users have been relying on the `invoice.fees.from_date` and `invoice.fees.to_date` fields linked to zero fees for certain internal processes.
+Therefore, we have introduced a new `invoice.billing_periods` field to provide you with the dates of the billing period for each type of charge (see example below).
+
+```diff
+{
+  "webhook_type": "invoice.created",
+  "object_type": "invoice",
+  "invoice": {
+    "lago_id": "__INVOICE_ID__",
+    // TRUNCATED
++    "billing_periods": [
++      {
++        "lago_subscription_id": "__SUBSCRIPTION_ID__",
++        "external_subscription_id": "__EXT_SUBSCRIPTION_ID__",
++        "lago_plan_id": "__PLAN_ID__",
++        "subscription_from_datetime": "2024-12-21T00:00:00Z",
++        "subscription_to_datetime": "2025-01-20T23:59:59Z",
++        "charges_from_datetime": "2024-12-21T00:00:00Z",
++        "charges_to_datetime": "2025-01-20T23:59:59Z",
++        "invoicing_reason": "subscription_periodic"
++      }
++    ]
+    // TRUNCATED
+  }
+}
+```
+
+In addition, if you are running a self-hosted instance of Lago, upgrading it will trigger a migration to delete existing zero fees.
+This migration may take some time, so if your database contains a large volume of fees, we recommend that you perform the migration before deploying the new version (see steps below).
+
+<Note>
+Cloud users do not need to follow the instructions below, as the migration will be performed by the Lago Team.
+</Note>
+
+# What should self-hosted users do?
+
+## 1. Check the number of fees
+
+You can run the following SQL query to check the number of fee objects that will be removed from the database.
+If the result is greater than 1M (one million), you should perform the migration before deploying the new version.
+
+```
+SELECT count(fees.id) 
+FROM fees
+        INNER JOIN invoices ON fees.invoice_id = invoices.id
+WHERE
+        invoices.status IN (1, 2, 6) -- finalized, voided and closed
+        AND fees.fee_type = 0 -- charge
+        AND fees.amount_cents = 0
+        AND fees.units = 0
+        AND fees.pay_in_advance = false
+        AND fees.true_up_parent_fee_id IS NULL
+        AND fees.id NOT IN (
+          SELECT f.true_up_parent_fee_id
+          FROM fees f
+          WHERE f.true_up_parent_fee_id IS NOT NULL
+        )
+        AND fees.id NOT IN (
+          SELECT fee_id
+          FROM adjusted_fees
+          WHERE adjusted_fees.fee_id IS NOT NULL
+        )
+```
+
+## 2. Remove zero fees
+
+To delete existing zero fees, open a Rails console in a production instance using `bundle exec rails c` and run the following script:
+
+```
+class FeesTax < ApplicationRecord; end
+
+sql = <<~SQL
+  SELECT fees.id FROM fees
+  INNER JOIN invoices ON fees.invoice_id = invoices.id
+  WHERE
+    invoices.status IN (1, 2, 6) -- finalized, voided and closed
+    AND fees.fee_type = 0 -- charge
+    AND fees.amount_cents = 0
+    AND fees.units = 0
+    AND fees.pay_in_advance = false
+    AND fees.true_up_parent_fee_id IS NULL
+    AND fees.id NOT IN (
+      SELECT f.true_up_parent_fee_id
+      FROM fees f
+      WHERE f.true_up_parent_fee_id IS NOT NULL
+    )
+    AND fees.id NOT IN (
+      SELECT fee_id
+      FROM adjusted_fees
+      WHERE adjusted_fees.fee_id IS NOT NULL
+    )
+    LIMIT 1000
+SQL
+
+while (ids = ActiveRecord::Base.connection.select_all(sql).rows.map(&:first)).any?
+  FeesTax.where(fee_id: ids).delete_all
+  Fee.where(id: ids).delete_all
+
+  puts "Deleted #{ids.size} fees - #{Time.current.iso8601}"
+end
+
+puts "All fees have been removed - #{Time.current.iso8601}"
+```
+
+It can take a long time to complete this operation. In case of error, you can retry until the script outputs `All fees have been removed - {time}`.
+
+# What is the timeline?
+
+In order to streamline the billing process, we recommend that you perform the migration as soon as possible, and deploy `v1.20.0` as soon as it's available (we will release it **before the end of February**).
+
+Please let us know if you have any questions, we will be happy to help. Thanks!
+
+The Lago Team
