@@ -1,0 +1,155 @@
+---
+title: "Preview an invoice"
+description:
+  "With Lago, you can preview invoices even if the customer doesn't exist yet or for an active subscription, allowing you to generate dry-run invoices or estimate potential bills."
+---
+
+By using the `/invoices/preview` endpoint, you can generate a preview of an invoice for a potential purchase or to estimate the dry-run invoice of an active subscription. 
+This preview calculates the total invoice amount, itemizes each charge, and applies any relevant taxes or discounts. 
+By creating a preview, you can share the projected payment details without generating or finalizing an invoice.
+
+Lago returns an invoice payload detailing all line items, applying any eligible discounts, and calculating the total amount.
+
+## Simple invoice preview
+To create a basic invoice preview for an existing customer, provide the appropriate customer `external_id` along with the relevant subscription or plan details. 
+Lago will then generate a preview invoice on-demand, prorating all line items based on the `billing_time` (calendar or anniversary).
+
+```bash
+  LAGO_URL="https://api.getlago.com"
+  API_KEY="__YOUR_API_KEY__"
+
+  curl --location --request POST "$LAGO_URL/api/v1/invoices/preview" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "customer": {
+        "external_id": "hooli_1234"
+      },
+      "plan_code": "premium",
+      "billing_time": "calendar"
+    }'
+```
+
+## Preview an invoice for a specific date
+Additionally, you can request an invoice preview for a specific date by including the `subscription_at` field. 
+This instructs Lago to calculate and prorate all line items according to the date you specify.
+
+```bash
+  LAGO_URL="https://api.getlago.com"
+  API_KEY="__YOUR_API_KEY__"
+
+  curl --location --request POST "$LAGO_URL/api/v1/invoices/preview" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "customer": {
+        "external_id": "hooli_1234"
+      },
+      "plan_code": "premium",
+      "billing_time": "calendar",
+      "subscription_at": "2025-01-25"
+    }'
+```
+
+## Preview for non-existing customers
+You can generate an invoice preview for a customer who isn't yet registered in your system or created in Lago. 
+This is especially useful for showing estimated costs to potential customers evaluating your product. In this scenario, you won't pass a customer `external_id`; instead, provide all relevant customer information you wish to capture.
+
+```bash
+  LAGO_URL="https://api.getlago.com"
+  API_KEY="__YOUR_API_KEY__"
+
+  curl --location --request POST "$LAGO_URL/api/v1/invoices/preview" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "customer": {
+      "name": "Gavin Belson",
+      "tax_identification_number": "1234567890",
+      "customer_type": "company",
+      "shipping_address": {
+          "address_line1": "100 Hooli Street",
+          "city": "San Francisco",
+          "zipcode": "998828",
+          "country": "US"
+        }
+      },
+      "plan_code": "premium",
+      "billing_time": "calendar",
+      "subscription_at": "2025-01-25"
+    }'
+```
+
+## Include taxes in invoice previews
+If you have an external tax setup, you can include tax details in the invoice preview payload. Lago will then calculate and apply taxes accordingly. 
+If Lago is integrated with a tax provider (e.g., Anrok), you only need to pass the relevant integration data in the customer integration payload.
+
+```bash
+  LAGO_URL="https://api.getlago.com"
+  API_KEY="__YOUR_API_KEY__"
+
+  curl --location --request POST "$LAGO_URL/api/v1/invoices/preview" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "customer": {
+      "name": "Gavin Belson",
+      "tax_identification_number": "1234567890",
+      "customer_type": "company",
+      "shipping_address": {
+          "address_line1": "100 Hooli Street",
+          "city": "San Francisco",
+          "zipcode": "998828",
+          "country": "US"
+        },
+        "integration_customers": [
+          {
+            "integration_type": "anrok",
+            "integration_code": "anrok_prod"
+          }
+        ]
+      },
+      "plan_code": "premium",
+      "billing_time": "calendar",
+      "subscription_at": "2025-01-25"
+    }'
+```
+
+## Include discounts in invoice previews
+You can include discounts in an invoice preview through either of these methods:
+1. **Apply an existing coupon or a prepaid credit to the customer:** When a coupon or credit is already associated with the customer, Lago automatically applies the discount to the invoice preview; or
+2. **Provide coupon details in the request payload:** Pass your own coupon information directly in the invoice preview payload, and Lago will apply the discount accordingly.
+
+```bash
+  LAGO_URL="https://api.getlago.com"
+  API_KEY="__YOUR_API_KEY__"
+
+  curl --location --request POST "$LAGO_URL/api/v1/invoices/preview" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "customer": {
+      "name": "Gavin Belson",
+      "tax_identification_number": "1234567890",
+      "customer_type": "company",
+      "shipping_address": {
+          "address_line1": "100 Hooli Street",
+          "city": "San Francisco",
+          "zipcode": "998828",
+          "country": "US"
+        }
+      },
+      "plan_code": "premium",
+      "billing_time": "calendar",
+      "subscription_at": "2025-01-25",
+      "coupons": [
+        {
+          "code": "discount_01",
+          "name": "Discount 01",
+          "coupon_type": "fixed_amount",
+          "amount_cents": 1200,
+          "amount_currency": "USD"
+        }
+      ]
+    }'
+```
