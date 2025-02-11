@@ -7,6 +7,9 @@ description:
 The messages are sent as a `POST` to the URL defined in the settings of your
 Lago workspace.
 
+If you return an error (other than a 2xx's HTTP response) or if there is a network issue, 
+the webhook will be sent again. Lago will try to send the webhook 3 times.
+
 ## Message format[](#message-format "Direct link to heading")
 
 `POST __WEBHOOK_URL__`
@@ -18,6 +21,12 @@ Lago workspace.
   "__OBJECT__": {}
 }
 ```
+
+## Unique Key[](#unique-key "Direct link to heading")
+
+Lago sends an idempotency key (unique identifier) in the HTTP headers named `X-Lago-Unique-Key`. This key can be used
+to ensure you process a webhook only once.
+
 
 ## Signature[](#signature "Direct link to heading")
 
