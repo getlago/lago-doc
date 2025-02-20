@@ -36,7 +36,7 @@ Lago will then generate a preview invoice on-demand, prorating all line items ba
 Additionally, you can request an invoice preview for a specific date by including the `subscription_at` field. 
 This instructs Lago to calculate and prorate all line items according to the date you specify.
 
-```bash
+```bash {13}
   LAGO_URL="https://api.getlago.com"
   API_KEY="__YOUR_API_KEY__"
 
@@ -57,7 +57,7 @@ This instructs Lago to calculate and prorate all line items according to the dat
 You can generate an invoice preview for a customer who isn't yet registered in your system or created in Lago. 
 This is especially useful for showing estimated costs to potential customers evaluating your product. In this scenario, you won't pass a customer `external_id`; instead, provide all relevant customer information you wish to capture.
 
-```bash
+```bash {8-18}
   LAGO_URL="https://api.getlago.com"
   API_KEY="__YOUR_API_KEY__"
 
@@ -86,7 +86,7 @@ This is especially useful for showing estimated costs to potential customers eva
 If you have an external tax setup, you can include tax details in the invoice preview payload. Lago will then calculate and apply taxes accordingly. 
 If Lago is integrated with a tax provider (e.g., Anrok), you only need to pass the relevant integration data in the customer integration payload.
 
-```bash
+```bash {18-23}
   LAGO_URL="https://api.getlago.com"
   API_KEY="__YOUR_API_KEY__"
 
@@ -122,7 +122,7 @@ You can include discounts in an invoice preview through either of these methods:
 1. **Apply an existing coupon or a prepaid credit to the customer:** When a coupon or credit is already associated with the customer, Lago automatically applies the discount to the invoice preview; or
 2. **Provide coupon details in the request payload:** Pass your own coupon information directly in the invoice preview payload, and Lago will apply the discount accordingly.
 
-```bash
+```bash {22-30}
   LAGO_URL="https://api.getlago.com"
   API_KEY="__YOUR_API_KEY__"
 
@@ -153,5 +153,34 @@ You can include discounts in an invoice preview through either of these methods:
           "amount_currency": "USD"
         }
       ]
+    }'
+```
+
+## Dry-run invoices for active subscriptions
+You can preview or estimate the total amount and all applicable fees for active subscriptions. 
+This returns the price that customers will be charged in the next billing period, including fees, taxes and any applicable discounts.
+
+```bash {19-21}
+  LAGO_URL="https://api.getlago.com"
+  API_KEY="__YOUR_API_KEY__"
+
+  curl --location --request POST "$LAGO_URL/api/v1/invoices/preview" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "customer": {
+        "external_id": "customer_001",
+        "name": "test 1",
+        "shipping_address": {
+            "address_line1": "77 rue du Chemin Vert",
+            "city": "Rome",
+            "zipcode": "75011",
+            "country": "IT"
+        },
+        "tax_identification_number": "1234567890"
+      },
+      "subscriptions": {
+          "external_ids": ["e372c4e4-99ec-41a4-a51b-7c165eb5cb88"]
+      }
     }'
 ```
