@@ -153,16 +153,30 @@ description: "Below is a list of the event types we currently send. Please note 
 
 ## Wallets and prepaid credits
 
-<ParamField path="wallet_transaction.updated" type="data.object">
-  [Wallet transaction object](/api-reference/wallets/wallet-transaction-object). Sent when a wallet transaction is updated. For example, when wallet transaction is marked as settled.
+<ParamField path="wallet.created" type="data.object">
+  [Wallet object](/api-reference/wallets/wallet-object). Sent when a wallet is created.
+</ParamField>
+
+<ParamField path="wallet.updated" type="data.object">
+  [Wallet object](/api-reference/wallets/wallet-object). Sent when a wallet is updated. Please note that you won’t receive this message if the wallet’s ongoing balance is updated.
+</ParamField>
+
+<ParamField path="wallet.terminated" type="data.object">
+  [Wallet object](/api-reference/wallets/wallet-object). Sent when a wallet is terminated.
 </ParamField>
 
 <ParamField path="wallet.depleted_ongoing_balance" type="data.object">
   [Wallet object](/api-reference/wallets/wallet-object). Sent when the ongoing balance is negative or equal to 0.
 </ParamField>
 
+
+<ParamField path="wallet_transaction.updated" type="data.object">
+  [Wallet transaction object](/api-reference/wallets/wallet-transaction-object). Sent when a wallet transaction is updated. For example, when wallet transaction is marked as settled.
+</ParamField>
+
+
 <ParamField path="wallet_transaction.payment_failure" type="data.object">
-  Sent when a wallet transaction payment—normally responsible for issuing an invoice upon successful completion—is declined.
+  Sent when a wallet transaction payment is declined.
 
   <Accordion title="Payload example">
     ```json
