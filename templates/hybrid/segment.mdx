@@ -42,7 +42,7 @@ As these are **unique users**, we must ensure that each user is counted only onc
 
 Now let's see how we can implement Segment's pricing plans using Lago.
 
-## Step 1: Keep track of unique users
+## Step 1- Keep track of unique users
 
 Segment has implemented a graduated pricing model, based on the number of MTUs.
 | MTUs           | Price                  |
@@ -88,15 +88,15 @@ Therefore, we need to calculate the number of unique users in order to implement
   </Tab>
 </Tabs>
 
-## Step 2: Create a plan with tiers
-It’s time to create our **Team plan**. The subscription part is similar to the 'Free plan' (except that the amount is now $120). We can also add the 14-day free trial currently offered by Segment.
+## Step 2- Create a plan with tiers
+It's time to create our **Team plan**. The subscription part is similar to the 'Free plan' (except that the amount is now $120). We can also add the 14-day free trial currently offered by Segment.
 
 <Tabs>
   <Tab title="Dashboard">
     To charge customers for consumption (i.e. based on MTUs), we need to add a charge to our plan.
     Using the `mtu` billable metric created previously, we have implemented the graduated pricing model to reproduce Segment's pricing, including 10,000 free units (i.e. 10,000 unique users).
 
-    Following this example, for a customer on the ‘Team’ plan with 30,000 MTUs, at the end of the month, their invoice will amount to:
+    Following this example, for a customer on the 'Team' plan with 30,000 MTUs, at the end of the month, their invoice will amount to:
     - $120 (first 10,000 MTUs)
     - $180 (next 15,000 MTUs)
     - $55 (last 5,000 MTUs)
@@ -165,7 +165,7 @@ It’s time to create our **Team plan**. The subscription part is similar to the
   </Tab>
 </Tabs>
 
-## Step 3: Ingest usage for unique users in real-time
+## Step 3- Ingest usage for unique users in real-time
 <Tabs>
   <Tab title="Dashboard">
     For every user accessing Segment's platform, an event is dispatched containing the `user_id` property. Lago seamlessly handles deduplication to ensure accurate tracking of unique users.

@@ -4,7 +4,7 @@ description:
   "Replicate Algolia's pay-as-you-go pricing model with Lago."
 ---
 
-In this article, you will learn how to build a ‘pay-as-you-go’ billing system.
+In this article, you will learn how to build a 'pay-as-you-go' billing system.
 This template is suitable for companies whose pricing fully depends on usage, such as cloud service providers and API companies, that only charge their customers for the resources they consume.
 
 ## Summary
@@ -33,18 +33,18 @@ For its two main products, Algolia Search and Algolia Recommend, the platform of
 | Monthly price | $1.50 / 1,000 requests | $0.60 / 1,000 requests |
 | Free usage (each month)| 10,000 requests  | 10,000 requests |
 
-Although users don’t need to subscribe to access the platform, Algolia offers its customers **discounts** based on volume and commitment (rates available upon request).
+Although users don't need to subscribe to access the platform, Algolia offers its customers **discounts** based on volume and commitment (rates available upon request).
 We are going to teach you how to replicate this pricing with our billing solution.
 
 
-## Step 1: Aggregate usage to compute number of requests
+## Step 1- Aggregate usage to compute number of requests
 Lago monitors consumption by converting events into billable metrics. For Algolia, there would be two billable metrics based on the number of requests for the Search and Recommendation APIs.
 As the platform handles **high volumes of requests**, it would be inefficient to create an event each time a request is made. Instead, Algolia could simply send an event once an hour or hour a day with the total number of requests.
 
 
 <Tabs>
   <Tab title="Dashboard">
-    Through the user interface, we have created two billable metrics called **‘Search requests’** and **‘Recommend requests’**. For these metrics, we use the ‘sum’ aggregation type based on the volume of requests.
+    Through the user interface, we have created two billable metrics called **'Search requests'** and **'Recommend requests'**. For these metrics, we use the 'sum' aggregation type based on the volume of requests.
     At the end of the billing period, Lago will calculate the sum of requests for each metric using the value of each event (i.e. the event property) and reset the amount to 0 as the aggregation type is metered.
 
     <Frame>
@@ -76,12 +76,12 @@ As the platform handles **high volumes of requests**, it would be inefficient to
   </Tab>
 </Tabs>
 
-## Step 2: Create a plan with multiple charges
-Now that we have all our billable metrics, we can replicate Algolia’s pricing. As this is a ‘pay-as-you-go’ plan, there is no subscription fee. In the plan settings, we can simply define a monthly billing period and then add our charges.
+## Step 2- Create a plan with multiple charges
+Now that we have all our billable metrics, we can replicate Algolia's pricing. As this is a 'pay-as-you-go' plan, there is no subscription fee. In the plan settings, we can simply define a monthly billing period and then add our charges.
 
 <Tabs>
   <Tab title="Dashboard">
-    For both charges, we use the **package pricing model**. This model allows us to create packages of units and define a unique package price. Customers will be charged for usage based on packages of 1,000 requests. Algolia offers 10,000 requests for free each month, for both APIs. Beyond this limit, each ‘opened’ package is due, which means that 800 Search requests cost the same price as 1,000 requests (i.e. $1.50).
+    For both charges, we use the **package pricing model**. This model allows us to create packages of units and define a unique package price. Customers will be charged for usage based on packages of 1,000 requests. Algolia offers 10,000 requests for free each month, for both APIs. Beyond this limit, each 'opened' package is due, which means that 800 Search requests cost the same price as 1,000 requests (i.e. $1.50).
     At the end of each billing period (i.e. each month), Lago will automatically invoice each customer according to their consumption, then all counts and calculations will be reset to zero for the next period.
 
     <Frame>
@@ -133,11 +133,11 @@ Now that we have all our billable metrics, we can replicate Algolia’s pricing.
 </Tabs>
 
 
-## Step 3: Offer volume and commitment discounts through subscriptions
+## Step 3- Offer volume and commitment discounts through subscriptions
 
-_“When committing to the equivalent of 100 Search units per month or more, you automatically unlock a discount compared to PAYGO. Please contact sales for more information.”_
+_"When committing to the equivalent of 100 Search units per month or more, you automatically unlock a discount compared to PAYGO. Please contact sales for more information."_
 
-Algolia doesn't provide much information about their volume and commitment discounts but we know that customers who commit to making at least 100,000 Search requests per month (for Algolia, a “Search unit” is a package of 1,000 requests) can benefit from a **reduced price**.
+Algolia doesn't provide much information about their volume and commitment discounts but we know that customers who commit to making at least 100,000 Search requests per month (for Algolia, a "Search unit" is a package of 1,000 requests) can benefit from a **reduced price**.
 We are going to make some assumptions to see how we could implement this logic.
 
 
@@ -270,11 +270,11 @@ Another option would be to drop the package pricing model and use the **graduate
 
 
 ## Wrap-up
-‘Pay-as-you-go’ pricing strategies are popular among API companies like Algolia.
+'Pay-as-you-go' pricing strategies are popular among API companies like Algolia.
 With Lago, you can adapt this template to your products and services, using some of our most popular features:
 
 1. **Plan models**, with or without subscription;‍
-2. **Billable metrics**, including the ‘sum’ aggregation type; and‍
+2. **Billable metrics**, including the 'sum' aggregation type; and‍
 3. **Charges**, including our package and graduated pricing models.
 
 Give it a try, click [here](https://www.getlago.com/get-started) to get started!
