@@ -84,6 +84,8 @@ event is JSON with the following fields:
     define `1650893379` for _Mon Apr 25 2022 13:29:39 GMT+0000_ or `1651682217`for
     _Wed May 04 2022 16:36:57 GMT+0000_.
 
+    You can ingest usage event in seconds or milliseconds. (more information about the timestamp [here](#event-timestamp))
+
     **This `timestamp` is not mandatory to send the event**. If you do not specify a
     timestamp on your own, Lago automatically defines the reception date of the
     event as the event timestamp.
@@ -126,6 +128,13 @@ the other ones are ignored.
 In case you are not sure if an event has been ingested, we recommend you to send
 it multiple times (or to replay it). Once again, with the uniqueness of the
 `transaction_id`, your customers won't be badly affected.
+
+## Event timestamp
+We typically **log usage-based events using timestamps in seconds**, such as `1741219251`, which represents the number of seconds since January 1, 1970 (the Unix epoch).
+
+However, when higher precision is required, **you can also use a timestamp with millisecond accuracy** in the format `1741219251.590`. Here, the dot acts as the decimal separator, clearly distinguishing the whole seconds from the fractional milliseconds (590 ms in the previous example). 
+
+This format minimizes ambiguity and ensures consistency when sending usage-based events.
 
 ## User action trigger or periodic trigger[](#user-action-trigger-or-periodic-trigger "Direct link to heading")
 
