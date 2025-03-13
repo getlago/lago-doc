@@ -28,7 +28,7 @@ description: "Below is a list of the event types we currently send. Please note 
 
 ### External payment providers
 <ParamField path="customer.payment_provider_created" type="data.object">
-  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in the payment provider’s application. This allows you to retrieve the identifier assigned to the customer by the payment service provider.
+  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in the payment provider's application. This allows you to retrieve the identifier assigned to the customer by the payment service provider.
 </ParamField>
 
 <ParamField path="customer.checkout_url_generated" type="data.object">
@@ -36,11 +36,11 @@ description: "Below is a list of the event types we currently send. Please note 
 </ParamField>
 
 <ParamField path="customer.payment_provider_error" type="data.object">
-  `payment_provider_customer_error` object. Sent when there is an error related to the creation of a customer in the payment provider’s system.
+  `payment_provider_customer_error` object. Sent when there is an error related to the creation of a customer in the payment provider's system.
 </ParamField>
 
 <ParamField path="invoice.payment_failure" type="data.object">
-  `payment_provider_invoice_payment_error` object. Sent when there is an error related to the payment process. Usually occurs when no valid payment method is defined for the customer in the payment service provider’s application.
+  `payment_provider_invoice_payment_error` object. Sent when there is an error related to the payment process. Usually occurs when no valid payment method is defined for the customer in the payment service provider's application.
 </ParamField>
 
 <ParamField path="invoice.payment_dispute_lost" type="data.object">
@@ -49,16 +49,16 @@ description: "Below is a list of the event types we currently send. Please note 
 
 ### External accounting providers
 <ParamField path="customer.accounting_provider_created" type="data.object">
-  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in the accounting provider’s application (like NetSuite). This allows you to retrieve the identifier assigned to the customer by the accounting service provider.
+  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in the accounting provider's application (like NetSuite). This allows you to retrieve the identifier assigned to the customer by the accounting service provider.
 </ParamField>
 
 <ParamField path="customer.accounting_provider_error" type="data.object">
-  `accounting_provider_customer_error` object. Sent when there is an error related to the accounting provider sync. Usually occurs when something went wrong in the accounting service provider’s application.
+  `accounting_provider_customer_error` object. Sent when there is an error related to the accounting provider sync. Usually occurs when something went wrong in the accounting service provider's application.
 </ParamField>
 
 ### External tax providers
 <ParamField path="customer.tax_provider_error" type="data.object">
-  `tax_provider_error` object. Sent when there is an error related to the tax provider sync. This usually occurs due to issues with item mappings, customer definitions, or within the service provider’s application.
+  `tax_provider_error` object. Sent when there is an error related to the tax provider sync. This usually occurs due to issues with item mappings, customer definitions, or within the service provider's application.
 </ParamField>
 
 ## Event ingestion
@@ -125,6 +125,17 @@ description: "Below is a list of the event types we currently send. Please note 
   [Payment request object](/api-reference/payment-requests/payment-request-object). Sent when the payment attached to a payment request is updated to a new payment status, through the `payment_status field.
 </ParamField>
 
+## Payment receipts
+
+<ParamField path="payment_receipt.created" type="data.object">
+  Payment receipt object. Sent when a payment receipt is created. 
+  This event serves as a signal to your application that the receipt creation is complete and the payment has been recorded.
+</ParamField>
+
+<ParamField path="payment_receipt.generated" type="data.object">
+  Payment receipt object. Sent when the PDF file has been generated for a payment receipt. This will allow your application to retrieve the PDF receipt.
+</ParamField>
+
 ## Subscriptions and fees
 
 <ParamField path="fee.created" type="data.object">
@@ -158,7 +169,7 @@ description: "Below is a list of the event types we currently send. Please note 
 </ParamField>
 
 <ParamField path="wallet.updated" type="data.object">
-  [Wallet object](/api-reference/wallets/wallet-object). Sent when a wallet is updated. Please note that you won’t receive this message if the wallet’s ongoing balance is updated.
+  [Wallet object](/api-reference/wallets/wallet-object). Sent when a wallet is updated. Please note that you won't receive this message if the wallet's ongoing balance is updated.
 </ParamField>
 
 <ParamField path="wallet.terminated" type="data.object">
