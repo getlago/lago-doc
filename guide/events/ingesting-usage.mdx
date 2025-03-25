@@ -56,6 +56,16 @@ event is JSON with the following fields:
     - If a `transaction_id` is new to Lago, the event is ingested;
     - If a `transaction_id` has already been received by Lago, it's ignored and API will return a `422: "Unprocessable Entity"`
 
+    <Warning>
+      If your Lago's organization is configured to use the new Clickhouse-based event pipeline (designed for high-volume processing), the idempotency logic is handled differently.
+
+      Event uniqueness is maintained with both `transaction_id` and `timestamp` fields:
+
+      - If `transaction_id` and `timestamp` are new to Lago, the event is ingested;
+      - If `transaction_id` and `timestamp` have already been received by Lago, the event will replace the previous one
+
+    </Warning>
+
     <Tip>
       **Good practice:**
       Send the id of the transaction coming from your backend.
@@ -92,7 +102,7 @@ event is JSON with the following fields:
 
   </Accordion>
     <Accordion title="5. The event precise amount cent">
-    The event’s precise amount in cents refers to the amount sent to Lago when using a dynamic charge model. 
+    The event’s precise amount in cents refers to the amount sent to Lago when using a dynamic charge model.
     This value must be specified in cents.
 
     **The precise_total_amount_cents is not mandatory when sending the event.** If you do not specify an amount, Lago will automatically set it to 0, and the event will not be included in the charge aggregation.
@@ -129,10 +139,20 @@ In case you are not sure if an event has been ingested, we recommend you to send
 it multiple times (or to replay it). Once again, with the uniqueness of the
 `transaction_id`, your customers won't be badly affected.
 
+<Warning>
+  If your Lago's organization is configured to use the new Clickhouse-based event pipeline (designed for high-volume processing), the idempotency logic is handled differently.
+
+  Event uniqueness is maintained with both `transaction_id` and `timestamp` fields:
+
+  - If `transaction_id` and `timestamp` are new to Lago, the event is ingested;
+  - If `transaction_id` and `timestamp` have already been received by Lago, the event will replace the previous one
+
+</Warning>
+
 ## Event timestamp
 We typically **log usage-based events using timestamps in seconds**, such as `1741219251`, which represents the number of seconds since January 1, 1970 (the Unix epoch).
 
-However, when higher precision is required, **you can also use a timestamp with millisecond accuracy** in the format `1741219251.590`. Here, the dot acts as the decimal separator, clearly distinguishing the whole seconds from the fractional milliseconds (590 ms in the previous example). 
+However, when higher precision is required, **you can also use a timestamp with millisecond accuracy** in the format `1741219251.590`. Here, the dot acts as the decimal separator, clearly distinguishing the whole seconds from the fractional milliseconds (590 ms in the previous example).
 
 This format minimizes ambiguity and ensures consistency when sending usage-based events.
 
