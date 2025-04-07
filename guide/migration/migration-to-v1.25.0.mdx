@@ -48,21 +48,41 @@ This sequence is required to ensure data consistency and proper functionality.
    ```
 3. Run the following commands in sequence:
 
+   <Note>
+   All fees are processed in background jobs, with 1000 fees per batch. You can monitor the progress in the Sidekiq console by checking the batch number argument in the job details.
+   </Note>
+
    a. Populate organization_id from invoices:
    ```ruby
    DatabaseMigrations::PopulateFeesWithOrganizationFromInvoiceJob.perform_later
    ```
    Wait for all jobs in Sidekiq to be executed.
+   <Note>
+   Expected processing speed is at least 15 minutes per 1M fees. The actual time may vary depending on your system's resources and database size.
+   </Note>
+   You can verify that the job is fully executed by running:
+   ```ruby
+   Fee.unscoped.where(organization_id: nil).where.not(invoice_id: nil).count
+   ```
+   This should return 0 when all fees have been processed.
 
    b. Populate organization_id from subscriptions:
    ```ruby
    DatabaseMigrations::PopulateFeesWithOrganizationFromSubscriptionJob.perform_later
    ```
    Wait for all jobs in Sidekiq to be executed.
+   <Note>
+   Expected processing speed is at least 20 minutes per 1M fees. The actual time may vary depending on your system's resources and database size.
+   </Note>
+   You can verify that the job is fully executed by running:
+   ```ruby
+   Fee.unscoped.where(organization_id: nil).where.not(subscription_id: nil).count
+   ```
+   This should return 0 when all fees have been processed.
 
    c. Verify that all fees have organization_id:
    ```ruby
-   Fee.where(organization_id: nil).count
+   Fee.unscoped.where(organization_id: nil).count
    ```
    This should return 0.
 
@@ -71,6 +91,9 @@ This sequence is required to ensure data consistency and proper functionality.
    DatabaseMigrations::PopulateFeesWithBillingEntityIdJob.perform_later
    ```
    Wait for all jobs in Sidekiq to be executed.
+   <Note>
+   Expected processing speed is at least 15 minutes per 1M fees. The actual time may vary depending on your system's resources and database size.
+   </Note>
 
    e. Verify that all fees have billing_entity_id:
    ```ruby
