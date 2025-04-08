@@ -1,0 +1,114 @@
+---
+title: "Migration to v1.25.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about important changes in Lago v1.25.0 that will enhance performance and enable new features.
+
+# Why are we doing this?
+
+We are making these changes to:
+1. Improve performance by populating the existing `organization_id` field on fees for historical data, which will optimize database queries
+2. Enable new features by adding `billing_entity_id` to fees, which will support upcoming functionality
+
+# What are the changes?
+
+## 1. Populating `organization_id` on fees
+
+While the `organization_id` field already exists on fees, we need to populate it for historical data to improve query performance and prepare for upcoming features. This change requires a data migration to populate the field for existing fees.
+
+## 2. Adding `billing_entity_id` to fees
+
+We're introducing the `billing_entity_id` field to fees to support new features in the pipeline. This change also requires a data migration to populate the field for existing fees.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions, as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you're upgrading to v1.25.0, you must complete all the migration steps below to ensure data consistency and proper functionality.
+
+If you're upgrading to v1.25.1 or newer, you must first:
+1. Upgrade to v1.25.0
+2. Complete all the migration steps below
+3. Only then proceed with upgrading to v1.25.1 or newer
+
+This sequence is required to ensure data consistency and proper functionality.
+</Warning>
+
+## Migration Steps
+
+1. Install the new version of Lago (v1.25.0)
+2. Open the Rails console on your API server:
+   ```bash
+   rails c
+   ```
+3. Run the following commands in sequence:
+
+   <Note>
+   All fees are processed in background jobs, with 1000 fees per batch. You can monitor the progress in the Sidekiq console by checking the batch number argument in the job details.
+   </Note>
+
+   a. Populate organization_id from invoices:
+   ```ruby
+   DatabaseMigrations::PopulateFeesWithOrganizationFromInvoiceJob.perform_later
+   ```
+   Wait for all jobs in Sidekiq to be executed.
+   <Note>
+   Expected processing speed is at least 15 minutes per 1M fees. The actual time may vary depending on your system's resources and database size.
+   </Note>
+   You can verify that the job is fully executed by running:
+   ```ruby
+   Fee.unscoped.where(organization_id: nil).where.not(invoice_id: nil).count
+   ```
+   This should return 0 when all fees have been processed.
+
+   b. Populate organization_id from subscriptions:
+   ```ruby
+   DatabaseMigrations::PopulateFeesWithOrganizationFromSubscriptionJob.perform_later
+   ```
+   Wait for all jobs in Sidekiq to be executed.
+   <Note>
+   Expected processing speed is at least 20 minutes per 1M fees. The actual time may vary depending on your system's resources and database size.
+   </Note>
+   You can verify that the job is fully executed by running:
+   ```ruby
+   Fee.unscoped.where(organization_id: nil).where.not(subscription_id: nil).count
+   ```
+   This should return 0 when all fees have been processed.
+
+   c. Verify that all fees have organization_id:
+   ```ruby
+   Fee.unscoped.where(organization_id: nil).count
+   ```
+   This should return 0.
+
+   d. Populate billing_entity_id:
+   ```ruby
+   DatabaseMigrations::PopulateFeesWithBillingEntityIdJob.perform_later
+   ```
+   Wait for all jobs in Sidekiq to be executed.
+   <Note>
+   Expected processing speed is at least 15 minutes per 1M fees. The actual time may vary depending on your system's resources and database size.
+   </Note>
+
+   e. Verify that all fees have billing_entity_id:
+   ```ruby
+   Fee.where(billing_entity_id: nil).count
+   ```
+   This should return 0.
+
+# Timeline
+
+We recommend performing this migration as soon as possible after the release of v1.25.0 to ensure optimal performance and access to new features.
+
+# Get involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your continued support!
+
+The Lago Team
