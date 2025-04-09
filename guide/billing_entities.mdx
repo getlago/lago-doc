@@ -1,0 +1,177 @@
+---
+title: "Billing Entities"
+description: "Billing entities allow organizations to have different configurations for different customers, resulting in invoices being generated differently based on the billing entity assigned to each customer."
+---
+
+<Warning>
+  The Billing Entities feature is currently in development. Not all functionality described in this documentation is fully available yet. We are actively working on expanding this feature.
+</Warning>
+
+<Info>
+  All organizations have at least one billing entity. Additional billing entities are available as a premium feature. The default entity for an organization is the oldest active billing entity, and it will be used for requests if no billing entity is provided.
+</Info>
+
+## Overview[](#overview "Direct link to heading")
+
+Billing entities are instances that enable organizations to:
+- Have different configurations for different customers
+- Generate invoices with different settings based on the assigned billing entity
+- Customize invoice generation rules per customer segment
+- Maintain separate billing configurations for different business units or customer types
+
+## Default Behavior[](#default-behavior "Direct link to heading")
+
+<Info>
+  If no billing entity is specified for a customer, the organization's default billing entity will be used automatically.
+</Info>
+
+<!-- ## Create a Billing Entity[](#create-billing-entity "Direct link to heading")
+
+<Tabs>
+  <Tab title="Dashboard">
+    To create a billing entity through the user interface:
+
+    1. Access the **"Billing Entities"** section via the side menu
+    2. Click **"Add a billing entity"**
+    3. Enter a unique code for your billing entity and name
+    4. Configure the billing entity settings
+    5. Click **"Add billing entity"** to confirm
+
+    <Info>
+      The billing entity code must be unique within your organization.
+    </Info>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Create a billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/billing_entities" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "code": "acme_corp",
+          "name": "Acme Corporation",
+          "invoice_prefix": "ACM",
+          "invoice_footer": "Thank you for your business",
+          "invoice_template": "default"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs> -->
+
+## Create Customer with Billing Entity[](#create-customer-with-billing-entity "Direct link to heading")
+
+<Tabs>
+  <Tab title="Dashboard">
+    When creating a new customer, you can assign a billing entity during the creation process:
+    1. Access the **"Customers"** section via the side menu
+    2. Click **"Add a customer"**
+    3. Fill in the customer details
+    4. Select a billing entity from the dropdown menu
+    5. Click **"Add customer"** to confirm
+  </Tab>
+  <Tab title="API">
+    You can create a customer with a billing entity via the API. Note that is no billing_entity_code provided, the default billing entity will be used.
+    <CodeGroup>
+    ```bash Create a customer with billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "name": "Gavin Belson",
+          "email": "gavin@hooli.com",
+          "billing_entity_code": "acme_corp"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Assign Billing Entity to Customer[](#assign-billing-entity "Direct link to heading")
+
+<Tabs>
+  <Tab title="Dashboard">
+    To assign a billing entity to an existing customer:
+    1. Select a customer from the list
+    2. Click **"Edit"** in the customer details
+    3. Select the desired billing entity from the dropdown
+    4. Click **"Save"** to confirm
+  </Tab>
+  <Tab title="API">
+    You can assign a billing entity to a customer via the API:
+    <CodeGroup>
+    ```bash Assign billing entity to customer
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v1/customers/{customer_external_id}" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "billing_entity_code": "acme_corp"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+<Warning>
+  A customer can only be assigned to a different billing entity if they are still editable. A customer is considered editable when they have:
+  - No active subscriptions
+  - No applied add-ons
+  - No invoices
+  - No applied coupons with a specific currency
+  - No wallets
+</Warning>
+
+## Premium Feature[](#premium-feature "Direct link to heading")
+
+<Warning>
+  Multiple billing entities are available as a premium feature. Contact your account manager to enable this feature for your organization.
+</Warning>
+
+## Configuration Options[](#configuration-options "Direct link to heading")
+
+Each billing entity can be configured with different settings:
+
+- Invoice prefix
+- Invoice footer text
+- Invoice template
+- Custom sections
+- Payment terms
+- Tax settings
+- Currency settings
+- Billing address format
+- Invoice numbering format
+
+<Info>
+  Changes to billing entity configurations will affect all customers assigned to that billing entity.
+</Info>
+
+## Best Practices[](#best-practices "Direct link to heading")
+
+1. **Use meaningful codes**: Choose billing entity codes that are easy to identify and understand
+2. **Plan your structure**: Consider your customer segments and business units when creating billing entities
+3. **Document configurations**: Keep track of the different configurations used across billing entities
+4. **Regular review**: Periodically review billing entity assignments to ensure they still meet your business needs
+5. **Default entity**: Maintain a well-configured default billing entity for new customers
+
+## Limitations[](#limitations "Direct link to heading")
+
+- Each customer can only be assigned to one billing entity at a time
+- Billing entity configurations cannot be changed retroactively for existing invoices
+- Some settings may be restricted based on your subscription plan
+- Billing entity changes may require customer notification depending on your business rules
