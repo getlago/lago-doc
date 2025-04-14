@@ -400,3 +400,18 @@ In the event of a **lost** payment dispute within Stripe, Lago initiates an auto
 - The invoice becomes non-voidable;
 - Generating a credit note is possible; however, refunding the payment back to the original payment method is not permitted; and
 - The invoice cannot be resent for collection.
+
+## Restricted Stripe API key
+In case you're using Lago Cloud, and want to limit the scope granted to the Stripe API key which is shared with Lago, you can create a [restricted Stripe API key](https://docs.stripe.com/keys-best-practices#limit-access). At minimum, you'll need to grant it the following resource permissions, otherwise Stripe integration will not work properly:
+
+* Core
+  * Charges - `Write` (to create refunds when creating credit notes)
+  * Customers - `Write`
+  * Events - `Read` (to receive webhooks with event details)
+  * Funding Instructions - `Write` (to create and read bank details)
+  * Payment Intents - `Write` (to create payments)
+  * Payment Methods - `Write` (to update customer's payment methods)
+* Checkout
+  * Checkout Sessions - `Write` (to generate checkout URLs)
+* Webhook
+  * Webhook Endpoints - `Write` (to create and update webhooks)
