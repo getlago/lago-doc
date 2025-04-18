@@ -1,0 +1,97 @@
+---
+title: "Payment pre-authorization"
+description: "Learn how to validate payment methods before creating, upgrading, or downgrading customer subscriptions."
+---
+
+<Info>
+  **Beta Feature**
+  
+  This feature is currently in beta. The behavior, request parameters, and response format may change before the final release.
+</Info>
+
+<Warning>
+  **Stripe Integration Only**
+  
+  While Lago supports multiple payment providers, payment pre-authorization is currently only available with Stripe.
+</Warning>
+
+## Introduction
+
+By default, when creating a subscription, Lago follows this process:
+
+1. Creates and activates the subscription (unless scheduled for the future or it's a downgrade);
+2. Generates the invoice asynchronously; and
+3. Processes the payment asynchronously.
+
+This means it's possible to create an active subscription for a customer even if the payment later fails. While this behavior is intentional, it may not be ideal for all use cases.
+
+To address this, Lago now offers payment pre-authorization, **allowing you to verify the validity of a payment method for a specific amount before creating the subscription.**
+
+<Info>
+**Important**: If the pre-authorization fails, the entire process is aborted and no subscription is created.
+</Info>
+
+## How pre-authorization Works
+
+Pre-authorization creates a Payment Intent in Stripe to verify that the payment amount can be collected. When successful, the amount is temporarily held on the customer's account but not captured. 
+
+**Note**: The held funds are automatically released immediately after successful verification.
+
+Pre-authorization can fail for several reasons:
+
+- Invalid card details;
+- Insufficient funds; and
+- 3D Secure authentication requirement.
+
+Please note that if 3D Secure authentication is required, it may prevent subscription creation.
+
+## Understanding the limitations
+
+While pre-authorization helps reduce payment failures, it cannot guarantee successful invoice payment because:
+
+1. Conditions may change between pre-authorization and actual payment:
+   - Customer's account balance may decrease
+   - Card may be blocked or expired
+2. A bank might approve the pre-authorization but still require 3D Secure authentication for the actual payment
+
+## Implementation guide
+
+To implement pre-authorization, use the `POST /api/v1/subscriptions` endpoint with additional parameters. The standard `subscription` parameters remain unchanged.
+
+You must manually specify the amount to authorize, as the final amount (including taxes) is only calculated during invoice generation.
+
+### Request format
+
+```json
+{
+  "authorization": {
+    "amount_cents": 100,    // Amount in cents (e.g., 100 = 1 EUR)
+    "amount_currency": "EUR"
+  },
+  "subscription": {
+    // Standard subscription parameters
+  }
+}
+```
+
+### Response format
+
+```json
+{
+  "status": 422,
+  "error": "Unprocessable Entity",
+  "code": "provider_error",
+  "provider": {
+    "code": "stripe_code"
+  },
+  "error_details": {
+    "code": "error_code",
+    "message": "error_message",
+    "request_id": "request_id",
+    "http_status": "http_status",
+    "http_body": {
+      // Complete Stripe error response
+    }
+  }
+}
+```
