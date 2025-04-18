@@ -1,0 +1,42 @@
+---
+title: "Record manual payments"
+description:
+  "On top of our native integrations with leading payment providers, you can also record manual payments."
+---
+
+For manual or non-Lago-native payment methods, you can record payments via the API or UI. 
+Both partial and full payments can be recorded; however, an invoice's payment status will only update to succeeded when it is fully settled.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To record a payment:
+      1. Navigate to an unpaid invoice;
+      2. Click the “Record Payment” button;
+      3. Select the payment date;
+      4. Enter the payment reference;
+      5. Specify the payment amount (partial or full); and
+      6. Confirm to record the payment.
+
+  <Frame caption="Record a manual payment">
+    <img src="/guide/payments/images/record-payment.png" />
+  </Frame>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Record a manual payment
+      curl --request POST \
+      --url https://api.getlago.com/api/v1/payments \
+      --header 'Authorization: Bearer <token>' \
+      --header 'Content-Type: application/json' \
+      --data '{
+      "payment": {
+        "invoice_id": "486b147a-02a1-4ccf-8603-f3541fc25e7a",
+        "amount_cents": 100,
+        "reference": "ref1",
+        "paid_at": "2025-02-20"
+      }
+    }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
