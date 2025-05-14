@@ -1,0 +1,70 @@
+---
+title: "Migration to v1.28.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about important changes in Lago v1.28.0 that will enhance data consistency and prepare for upcoming features.
+
+# Why are we doing this?
+
+We are making these changes to:
+1. Ensure data consistency by aligning `billing_entity_sequential_id` with `organization_sequential_id` in invoices
+2. Prepare for upcoming features that will rely on consistent sequential IDs across the system
+
+# What are the changes?
+
+## Populating `billing_entity_sequential_id` in invoices
+
+We're introducing a data migration to ensure that `billing_entity_sequential_id` matches `organization_sequential_id` for all invoices. This change will maintain data consistency and prepare the system for future enhancements.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions, as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you're upgrading to v1.28.0, you must complete all the migration steps below to ensure data consistency and proper functionality.
+</Warning>
+
+## Migration Steps
+
+1. Install the new version of Lago (v1.28.0)
+2. Open the Rails console on your API server:
+   ```bash
+   rails c
+   ```
+3. Run the following command:
+
+   <Note>
+   All invoices are processed in background jobs, with 1000 invoices per batch. You can monitor the progress in the Sidekiq console by checking the batch number argument in the job details.
+   </Note>
+
+   ```ruby
+   DatabaseMigrations::PopulateInvoicesBillingEntitySequentialIdJob.perform_later
+   ```
+   Wait for all jobs in Sidekiq to be executed.
+   <Note>
+   Expected processing speed is at least 1-2 seconds per 1K invoices. The actual time may vary depending on your system's resources and database size.
+   </Note>
+
+   You can verify that the job is fully executed by running:
+   ```ruby
+   Invoice.where("organization_sequential_id != 0")
+     .where("billing_entity_sequential_id != organization_sequential_id")
+     .count
+   ```
+   This should return 0 when all invoices have been processed.
+
+# Timeline
+
+We recommend performing this migration as soon as possible after the release of v1.28.0 to ensure optimal performance and access to new features.
+
+# Get involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your continued support!
+
+The Lago Team
