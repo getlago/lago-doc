@@ -1,153 +1,180 @@
 ---
 title: "Taxes"
 description:
-  "When generating invoices, you may need to apply vat or other taxes.
-  By creating taxes and applying them to the organization or/and customers, 
-  their invoices will be directly affected."
+  "When generating invoices, you may need to apply VAT or other taxes. By creating tax objects and applying them to billing entities and/or customers, the corresponding invoices will reflect the appropriate tax rates."
 ---
 
-## Create taxes[](#create-taxes "Direct link to heading")
+## External integration
 
-**Follow those steps to add a new tax:**
+Let your tax provider handle the complexity of tax logic! We support integrations that allow seamless tax automation.
+
+If you'd like to explore these integrations or be connected to a provider, feel free to contact us.
+
+<CardGroup cols={1}>
+  <Card
+    title="Anrok"
+    icon={
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 32 32"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect width="32" height="32" rx="8" fill="#1D192F" />
+        <path
+          d="M13.8039 8.80078C15.2157 8.80078 16.6275 8.80078 18.0392 8.80078C18.1333 8.98902 18.2141 9.18401 18.3239 9.364C19.8784 11.9154 21.4329 14.466 22.9953 17.0121C23.3153 17.5333 23.6643 18.0381 24 18.5503V20.2752C23.5224 21.0904 23.0408 21.9041 22.5694 22.7231C22.4643 22.906 22.3396 22.9833 22.1098 22.981C20.9741 22.9683 19.8384 22.969 18.7035 22.981C18.4659 22.9833 18.3263 22.9165 18.2063 22.7171C17.4306 21.4316 16.6424 20.1537 15.8573 18.8735C15.8024 18.7835 15.7388 18.698 15.6792 18.6103C15.6369 18.7183 15.6471 18.8023 15.6596 18.8863C15.8518 20.2174 15.4588 21.3476 14.4133 22.2633C13.7929 22.8063 13.0384 23.0515 12.2353 23.2008H11.451C11.3898 23.1798 11.331 23.1513 11.2682 23.14C9.71686 22.8633 8.69098 22.0061 8.1898 20.5797C8.10353 20.3352 8.06196 20.0772 8 19.8252C8 19.6002 8 19.3752 8 19.1502C8.02353 19.0677 8.05647 18.986 8.0698 18.902C8.36627 16.9821 10.2886 15.5947 12.3043 15.8287C13.1318 15.9247 13.8384 16.2591 14.4965 16.7414C14.4706 16.6266 14.4298 16.5276 14.3741 16.4369C13.6165 15.1979 12.8651 13.9553 12.0925 12.7253C11.9341 12.4733 11.9004 12.2829 12.0635 12.0144C12.4384 11.4001 12.7757 10.7657 13.1176 10.1342C13.3553 9.69398 13.5757 9.24551 13.8039 8.80078Z"
+          fill="white"
+        />
+      </svg>
+    }
+    href="/integrations/taxes/anrok"
+  >
+    Anrok is a global sales tax platform built for software companies.  
+    <br />
+    <Tooltip tip="This integration is maintained by Lago.">Official</Tooltip>
+  </Card>
+</CardGroup>
+
+---
+
+## Create taxes at the organization level
+
+Before applying taxes to invoices, you need to create a tax object at the organization level. You can then assign it to billing entities or specific customers.
+
+**To create a tax:**
+
 <Tabs>
   <Tab title="Dashboard">
-    1. Access the tax settings page through the **Settings** section > **Taxes** tab;
-    2. In the upper right corner of the list, click **"Add"** to create a new tax;
-    3. Enter its `name`;
-    4. Assign it a unique `code` (i.e. unique ID as defined in your backend system);
-    5. Add a `description` *(optional)*; and
-    6. Define the `rate` that applies.
-
-    <Frame caption="Create a tax in the settings">
-    <img src="/guide/invoicing/images/create-tax.png" />
-    </Frame>
+    1. Go to **Settings** > **Taxes** tab  
+    2. Click **"Add"** (top-right corner)  
+    3. Provide a `name`  
+    4. Set a unique `code` (used as an identifier in your backend)  
+    5. (Optional) Add a `description`  
+    6. Define the applicable `rate` (e.g., 20.00 for 20%)  
   </Tab>
   <Tab title="API">
-      <CodeGroup>
-      ```bash Premium Plan Example
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
+    <CodeGroup>
+    ```bash
+    # Create a tax object
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
 
-      curl --location --request POST "$LAGO_URL/api/v1/taxes" \
+    curl --location --request POST "$LAGO_URL/api/v1/taxes" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
         "tax": {
-          "name": "french vat",
+          "name": "French VAT",
           "code": "french_vat",
-          "description":"French standard VAT",
-          "rate": 20.00,
-          "applied_to_organization": false
+          "description": "French standard VAT",
+          "rate": 20.00
         }
       }'
-      ```
-      </CodeGroup>
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
 
-## Editing and deleting taxes[](#edit-delete-taxes "Direct link to heading")
+---
 
-A tax can be deleted or edited even if it is linked to an organization or a customer. 
-However, it's important to note that any change made to a tax object, including its removal, has an impact on all existing draft invoices or upcoming invoices associated with this tax.
+## Edit or delete taxes
 
-Available actions include:
-- **Edit**: allows you to modify the name, code and rate of the tax object; and
-- **Delete**: allows you to delete the tax object and remove it from the list (this action cannot be undone).
+Taxes can be edited or deleted even if they are already applied to billing entities or customers. However, any change will affect all draft or upcoming invoices linked to that tax.
+
+**Available actions:**
+- **Edit**: Modify the tax name, code, or rate
+- **Delete**: Remove the tax from your system (irreversible)
+
+---
 
 ## Apply taxes to objects
-When generating invoices, you may need to apply taxes. 
-The tax rate applies to all fees (i.e. subscription fees and charges) and appears on the invoices.
 
-### Taxes at the organization level
+When generating invoices, taxes can be applied at various levels and will impact all associated fees (subscriptions, usage-based charges, etc.).
 
-To apply tax objects to the organization:
+---
+
+### At the billing entity level
+
 <Tabs>
   <Tab title="Dashboard">
-    1. Access the invoice settings page through the **Settings** section > **Invoice** tab;
-    2. In the **Taxes on organization** section, click **"Add"** to add a new tax;
-    3. Select the tax object you want to apply; and
-    4. Repeat the action if you want to add another tax.
-    <Frame caption="Add a tax on the organization">
-    <img src="/guide/invoicing/images/tax-on-organization.png" />
-    </Frame>
+    1. Go to **Settings** > Select your **Billing entity** > **Taxes** tab  
+    2. Click **"Add"** to apply a tax  
+    3. Choose the tax object  
+    4. Repeat to apply multiple taxes
   </Tab>
   <Tab title="API">
-      <CodeGroup>
-      ```bash Premium Plan Example
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
-
-      curl --location --request PUT "$LAGO_URL/api/v1/taxes" \
+    <CodeGroup>
+    ```bash
+    # Add taxes to a billing entity
+    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/{code}" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
-        "tax": {
-          "code": "french_vat",
-          "applied_to_organization": true
+        "billing_entity": {
+          "tax_codes": ["tax_fr", "tax_it"]
         }
       }'
-      ```
-      </CodeGroup>
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
 
+---
 
-### Taxes at the customer level
+### At the customer level
 
-To apply tax objects to a specific customer:
 <Tabs>
   <Tab title="Dashboard">
-    1. Access the customer settings page through the **Customer** details page > **Settings** tab;
-    2. In the **Tax rates** section, click **"Add a tax"** to add a new tax;
-    3. Select the tax object you want to apply; and
-    4. Repeat the action if you want to add another tax.
-    <Frame caption="Add a tax on the customer">
-    <img src="/guide/invoicing/images/tax-on-customer.png" />
+    1. Go to **Customer details** > **Settings**  
+    2. Under **Tax rates**, click **"Add a tax"**  
+    3. Select the appropriate tax  
+    4. Repeat for multiple taxes
+
+    <Frame caption="Add a tax to a customer">
+      <img src="/guide/invoicing/images/tax-on-customer.png" />
     </Frame>
   </Tab>
   <Tab title="API">
-      <CodeGroup>
-      ```bash Premium Plan Example
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
-
-      curl --location --request PUT "$LAGO_URL/api/v1/customers" \
+    <CodeGroup>
+    ```bash
+    # Add taxes to a customer
+    curl --location --request PUT "$LAGO_URL/api/v1/customers" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
         "customer": {
           "code": "acme_inc",
-          "tax_codes": ["french_vat"]
+          "tax_codes": ["tax_fr"]
         }
       }'
-      ```
-      </CodeGroup>
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
 
+---
 
-### Taxes at the plan and charges level
+### At the plan and charge level
 
-Follow these steps to apply tax objects to a plan:
 <Tabs>
   <Tab title="Dashboard">
-    1. Ensure that you have already created the necessary taxes on your account.
-    2. Navigate to the **Plan** section and click on **Add a plan**.
-    3. In the **Plan settings** section, click on **Add a tax rate**.
-    4. If you have usage-based charges, expand the **More options** section for the charge and click on **Add a tax rate** to define taxes specific to that charge.
-    5. **Note**: If taxes are defined on charges, they will override the tax rate defined at the plan level.
-    6. Complete the process of creating your plan and apply it to customers to generate an invoice.
-    <Frame caption="Add a tax on the charge">
-    <img src="/guide/invoicing/images/tax-on-charges.png" />
+    1. Ensure your tax objects are created  
+    2. Navigate to **Plans** > **Add a plan**  
+    3. In the plan settings, click **Add a tax rate**  
+    4. For usage-based charges, expand **More options** and click **Add a tax rate**  
+    5. Note: taxes set at the charge level override the plan-level taxes  
+    6. Save and apply the plan to customers
+
+    <Frame caption="Add a tax to a charge">
+      <img src="/guide/invoicing/images/tax-on-charges.png" />
     </Frame>
   </Tab>
   <Tab title="API">
-      <CodeGroup>
-      ```bash Add taxes to a plan and to charges
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
-
-      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+    <CodeGroup>
+    ```bash
+    # Add taxes to a plan and its charges
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -155,96 +182,101 @@ Follow these steps to apply tax objects to a plan:
           "name": "Starter",
           "code": "starter",
           "interval": "monthly",
-          "description": "",
           "amount_cents": 9900,
           "amount_currency": "USD",
-          "trial_period": "",
-          "pay_in_advance": true,
-          "bill_charges_monthly": null,
-          "tax_codes": ["french_standard_vat"]
+          "tax_codes": ["french_standard_vat"],
           "charges": [
             {
-              "lago_billable_metric_id": "61ddebee-f8ac-4794-90cf-d626b55ab0ed",
               "billable_metric_code": "user_seat",
               "charge_model": "standard",
               "invoiceable": true,
               "pay_in_advance": false,
               "prorated": false,
               "min_amount_cents": 0,
-              "tax_codes":["french_standard_vat"]
+              "tax_codes": ["french_standard_vat"],
               "properties": {
                 "amount": "0.10"
               }
-            }	
+            }
           ]
         }
       }'
-      ```
-      </CodeGroup>
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
 
-### Taxes at the add-on level
+---
 
-Follow these steps to apply tax objects to a add-on:
+### At the add-on level
+
 <Tabs>
   <Tab title="Dashboard">
-    1. Make sure you have already set up the required taxes within your account.
-    2. Navigate to the "Add-ons" section and click on "Add an add-on."
-    3. Within the "Add-on settings" area, click on "Add a tax rate."
-    4. Finish creating your add-on and apply it to customers using a one-off invoice to generate the invoice.
-    <Frame caption="Add a tax on the add-on">
-    <img src="/guide/invoicing/images/tax-on-add-on.png"/>
+    1. Make sure taxes are set up in your account  
+    2. Go to **Add-ons** > **Add an add-on**  
+    3. In the add-on settings, click **Add a tax rate**  
+    4. Complete creation and apply to customers via one-off invoices
+
+    <Frame caption="Add a tax to an add-on">
+      <img src="/guide/invoicing/images/tax-on-add-on.png" />
     </Frame>
   </Tab>
   <Tab title="API">
-      <CodeGroup>
-      ```bash Add taxes to an add-on
-      {
-        "add_on": {
-          "name": "Setup fee",
-          "code": "setup_fee",
-          "amount_cents": 100000,
-          "amount_currency": "USD",
-          "description": "",
-          "tax_codes": ["french_standard_vat"]
-        }
+    <CodeGroup>
+    ```bash
+    # Add tax to an add-on
+    {
+      "add_on": {
+        "name": "Setup fee",
+        "code": "setup_fee",
+        "amount_cents": 100000,
+        "amount_currency": "USD",
+        "tax_codes": ["french_standard_vat"]
       }
-      ```
-      </CodeGroup>
+    }
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
-<br />
+
 <Tip>
-  Keep in mind that tax rates defined at the add-on level can be overridden when creating a one-off invoice.
+Tax rates defined at the add-on level can be overridden when creating a one-off invoice.
 </Tip>
 
+---
 
 ## Tax hierarchy
 
-### Invoice linked to a subscription
-When an invoice linked to a subscription is generated, 
-the taxation process follows a hierarchy that determines how taxes are applied to different fees:
+### For Subscription Invoices
 
-1. Taxes defined at the **organization** level will impact all invoice fees (subscription & charges).
-2. Taxes defined at the **customer** level will override the organization-level taxes and impact all invoice fees (subscription & charges).
-3. Taxes defined at the **plan** level will override the customer-level taxes and impact all invoice fees (subscription & charges).
-4. Taxes defined at the **charge** level will override the plan-level taxes but will impact only the fee associated with that particular charge.
+When generating invoices for subscriptions, taxes are applied in the following order of priority:
 
+1. **Billing entity** taxes apply to all invoice fees (subscriptions and charges)  
+2. **Customer** taxes override billing entity taxes  
+3. **Plan** taxes override customer taxes  
+4. **Charge**-level taxes override plan taxes, but only affect the specific charge  
+5. If the customer is linked to a **tax provider** (e.g., Anrok), the provider's calculation overrides all other tax levels
 
-### Invoice linked to a one-off-invoice
-When an invoice linked to a one-off is generated, the taxation process follows a hierarchy that determines how taxes are applied to different fees:
+---
 
-1. Taxes defined at the **organization** level will impact all invoice fees
-2. Taxes defined at the **customer** level will override the organization-level taxes and impact all invoice fees
-3. Taxes defined at the **add-on** level will override the customer-level taxes and impact only the fee associated with that particular add-on
-4. While creating a one-off invoice, taxes defined at the **fees** level will override add-on-level taxes but will solely impact the fee associated with that particular add-on.
+### For one-off invoices
 
-### Invoice linked to prepaid credit
+For one-off invoices, the hierarchy is:
 
-Since we treat the purchase of credits as an upfront payment before usage, invoices generated for prepaid credit purchases will not include any taxes.
+1. **Organization** taxes apply to all fees  
+2. **Customer** taxes override organization taxes  
+3. **Add-on** taxes override customer taxes for the add-on only  
+4. **Fee-level** taxes (set at invoice creation) override add-on-level taxes for the specific fee
+
+---
+
+### For prepaid credit invoices
+
+Prepaid credits are considered upfront payments. Therefore, invoices for credit purchases do **not** include any tax.
+
+---
 
 ## Auto-detect european taxes with Lago
 
-Lago now features an automatic European tax detection integration for your customers. 
-Check out our easy-to-follow [integration guide](/integrations/taxes/lago-eu-taxes).
+Lago supports automatic tax detection for European customers.  
+Refer to our [integration guide](/integrations/taxes/lago-eu-taxes) to set it up.
