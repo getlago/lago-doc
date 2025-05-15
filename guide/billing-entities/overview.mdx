@@ -1,0 +1,113 @@
+---
+title: "Overview"
+description: "Billing entities allow an organization to manage different billing configurations."
+---
+
+<Info>
+  This feature is currently in beta and available to a limited number of users. To request access, please contact us.
+</Info>
+
+<Warning>
+  Managing multiple billing entities is a premium feature. Contact your account manager to enable it for your organization.
+</Warning>
+
+## Create a billing entity
+
+Billing entities let you manage your end customers under distinct billing configurations.
+
+To create a billing entity, follow these steps:
+
+<Tabs>
+  <Tab title="Dashboard">
+    Using the user interface:
+    1. Click **Settings** in the side navigation bar.
+    2. In the **Settings** menu, click **"Add a billing entity"**.
+    3. Enter a **name** and a **unique code** for your billing entity.
+    4. Configure the entity’s settings as needed.
+    5. Click **"Add billing entity"** to confirm.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Create a billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/billing_entities" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "code": "acme_corp",
+          "name": "Acme Corporation",
+          "invoice_prefix": "ACM",
+          "invoice_footer": "Thank you for your business"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+> ℹ️ The first billing entity created in your organization is considered the **default**.
+>
+> Billing entity settings only apply to the customers assigned to that specific entity. More information is available in the following sections.
+
+---
+
+## Edit a billing entity
+
+You can update all billing entity information **except the code** after creation.
+
+To edit a billing entity:
+
+<Tabs>
+  <Tab title="Dashboard">
+    Using the user interface:
+    1. Click **Settings** in the side navigation bar.
+    2. In the **Settings** menu, select the relevant billing entity.
+    3. Click any section to edit its settings.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Update a billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/{code}" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "name": "Acme Corporation",
+          "invoice_prefix": "ACM",
+          "invoice_footer": "Thank you for your business"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+---
+
+## Delete a billing entity
+
+Deleting a billing entity is **not available** via the Dashboard or API.
+To delete a billing entity, please contact the Lago team directly.
+
+---
+
+## Assign a billing entity to a customer
+
+When creating a customer, you can assign it to a billing entity in two ways:
+
+- Through the Dashboard by selecting the billing entity.
+- Via API by passing the `billing_entity_code` in the customer creation payload.
+
+If no billing entity is specified via API, the customer will automatically be assigned to the **default** billing entity to avoid breaking changes.
+
+> ⚠️ A customer can only be linked to one billing entity.
+>  
+> If you need the same customer under a different billing entity, we recommend creating a new customer.
+
+Once a customer is linked to a subscription, invoice, coupon, or wallet, **you cannot change their billing entity**.
