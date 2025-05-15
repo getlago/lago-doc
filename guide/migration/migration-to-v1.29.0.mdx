@@ -1,0 +1,164 @@
+---
+title: "Migration to v1.29.0"
+---
+
+Dear Lago Community, 👋
+
+We’re writing to inform you of upcoming changes in the Lago API that may impact your workflows.
+
+## TLDR;
+
+Deprecation on **November 12, 2025** of:
+
+- `PUT /organization` endpoint
+- `applied_to_organization` field in `POST /taxes`
+- `applied_to_organization` field in `PUT /taxes`
+
+<Warning>
+	If you’re using a version below `v1.20.0`, please first follow the migration steps for [v1.20.0](/guide/migration/migration-to-v1.20.0), then for [v1.25.0](/guide/migration/migration-to-v1.25.0), then for [v1.28.1](/guide/migration/migration-to-v1.28.1). 
+	Only after completing those should you proceed to v1.29.0.
+</Warning>
+
+## Why are we doing this?
+
+In our efforts to improve Lago’s scalability and flexibility, we’re updating our API to streamline feature delivery and maintain relevant endpoints.
+This sets the stage for supporting multiple billing entities within a single Lago account.
+
+## Timeline
+
+We will maintain the current API logic until **November 12, 2025**. However, after this date, previous versions will no longer be supported. 
+We kindly ask you to update your integration before that day to avoid any potential breaking change.
+
+## What are the changes
+
+### 1. From `PUT /organization` to `PUT /billing_entities/{code}`
+
+**Impact:**
+
+- Introducing `PUT /billing_entities/{code}`
+- Deprecating `PUT /organization`
+
+In the initiative of supporting multiple billing entities within a single Lago account, the organization object won’t carry any invoicing settings and information. 
+To update them you’ll have to target the `PUT /billing_entities/{code}`.
+
+```diff "PUT /organization"
+{
+-  "organization": {
+-    "webhook_url": "https://webhook.brex.com",
+-    "country": "US",
+-    "address_line1": "100 Brex Street",
+-    "address_line2": null,
+-    "state": "NYC",
+-    "zipcode": "10000",
+-    "email": "brex@brex.com",
+-    "city": "New York",
+-    "legal_name": null,
+-    "legal_number": null,
+-    "net_payment_term": 30,
+-    "tax_identification_number": "US123456789",
+-    "timezone": "America/New_York",
+-    "default_currency": "USD",
+-    "document_numbering": "per_customer",
+-    "document_number_prefix": "LAGO-INV",
+-    "email_settings": [
+-      "invoice.finalized",
+-      "credit_note.created"
+-    ],
+-    "billing_configuration": {
+-      "invoice_footer": "This is my customer footer",
+-      "invoice_grace_period": 3,
+-      "document_locale": "en",
+-      "vat_rate": 12.5
+-    }
+-  }
+}
+```
+
+```diff "PUT /billing_entities/code"
+{
++  "billing_entity": {
++    "country": "US",
++    "address_line1": "100 Brex Street",
++    "address_line2": null,
++    "state": "NYC",
++    "zipcode": "10000",
++    "email": "brex@brex.com",
++    "city": "New York",
++    "legal_name": null,
++    "legal_number": null,
++    "net_payment_term": 30,
++    "tax_identification_number": "US123456789",
++    "timezone": "America/New_York",
++    "default_currency": "USD",
++    "document_numbering": "per_customer",
++    "document_number_prefix": "LAGO-INV",
++    "email_settings": ["invoice.finalized", "credit_note.created"],
++    "invoice_footer": "This is my customer footer",
++    "invoice_grace_period": 3,
++    "document_locale": "en",
++    "tax_codes": []
+  }
+}
+```
+
+### 2. From `applied_to_organization` field in `POST|PUT /taxes` to `PUT /billing_entities/{code}`
+
+**Impact:**
+
+- Introducing `PUT /billing_entities/{code}`
+- Deprecating `applied_to_organization` in `POST /taxes` and `PUT /taxes`
+
+In the initiative of supporting multiple billing entities within a single Lago account, the organization object won’t carry any invoicing settings and information. 
+You won’t be able to apply a tax to the organization anymore, you’ll have to add these values to a targeted billing entity using `PUT /billing_entities/{code}`.
+
+```diff "PUT /organization"
+{
+  "tax": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "name": "TVA",
+    "code": "french_standard_vat",
+    "description": "French standard VAT",
+    "rate": 20,
+-   "applied_to_organization": true,
+    "created_at": "2023-07-06T14:35:58Z"
+  }
+}
+```
+
+```diff "PUT /billing_entities/code"
+{
+	"billing_entity": {
+	  "country": "US",
+	  "address_line1": "100 Brex Street",
+	  "address_line2": null,
+	  "state": "NYC",
+	  "zipcode": "10000",
+	  "email": "brex@brex.com",
+	  "city": "New York",
+	  "legal_name": null,
+	  "legal_number": null,
+	  "net_payment_term": 30,
+	  "tax_identification_number": "US123456789",
+	  "timezone": "America/New_York",
+	  "default_currency": "USD",
+	  "document_numbering": "per_customer",
+	  "document_number_prefix": "LAGO-INV",
+	  "email_settings": ["invoice.finalized", "credit_note.created"],
+	  "invoice_footer": "This is my customer footer",
+	  "invoice_grace_period": 3,
+	  "document_locale": "en",
++	  "tax_codes": []
+	}
+}
+```
+
+## Get involved
+
+Your feedback is important to us. If you have any questions, encounter issues, or have suggestions, please reach out to us via the Slack community.
+
+We understand that breaking changes may require you to adapt, so we apologize for any inconvenience caused. 
+Our team is committed to providing support throughout this transition process to minimize disruptions.
+
+Thanks for your understanding and continued support.
+
+The Lago Team

@@ -1,5 +1,6 @@
 ---
 title: "Net payment term"
+description: "Number of days a customer has to pay an invoice after it has been finalized"
 ---
 
 A net payment term refers to the specified number of days within which the end customer is required to settle the invoice after its finalization. 
@@ -21,33 +22,32 @@ When the `payment_due_date` has passed, the invoice is flagged as overdue (`paym
 
 The invoice stays flagged as overdue until the payment is `succeeded`, or `payment_dispute_lost_at` is applied, or the invoice is voided.
 
-## Define a net payment term at organization level[](#define-a-net-payment-term-at-organization-level "Direct link to heading")
+## Define a net payment term at entity level[](#define-a-net-payment-term-at-entity-level "Direct link to heading")
 
-The organization's net payment term applies to all customers by default.
+The entity's net payment term applies to all customers link to this object by default.
 
 <Tabs>
   <Tab title="Dashboard">
-      To define a net payment term at the organization level via the user interface, follow these steps:
+      To define a net payment term at the enitty level via the user interface, follow these steps:
 
-      1. Access the **"Settings"** section using the side menu;
-      2. Navigate to the **"Invoice"** tab;
-      3. Click **"Edit"** in the **"Net payment term"** section;
+      1. Access the **Settings** section using the side menu;
+      2. Navigate to the **Billing entity** > **Invoicing setting** section;
+      3. Click **Edit** in the **Net payment term** section;
       4. Select the desired number of days for the payment term or opt for a custom duration; and
       5. Confirm by clicking **"Edit net payment term"**.
   </Tab>
   <Tab title="API">
-    You can also modify the organization’s net payment term at any time through [the API](/api-reference/organizations/update).
-    Define a net payment term in days by using the `net_payment_term` argument within the `organization` object.
+    You can also modify the entity’s net payment term at any time through the API
       <CodeGroup>
-      ```bash Add a net payment term on the organization
+      ```bash Add a net payment term on the billing entity
       LAGO_URL="https://api.getlago.com"
       API_KEY="__YOUR_API_KEY__"
 
-      curl --location --request PUT "$LAGO_URL/api/v1/organizations" \
+      curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/{code}" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
-        "organization": {
+        "billing_entity": {
 			    "net_payment_term": 15
         }
       }'
@@ -90,5 +90,5 @@ The organization's net payment term applies to all customers by default.
   </Tab>
 </Tabs>
 
-The customer's net payment term supersedes the one defined at the organization level. 
+The customer's net payment term supersedes the one defined at the entity level. 
 It exclusively applies to the associated customer.
