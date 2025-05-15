@@ -51,8 +51,9 @@ If you're upgrading to v1.28.1, you must complete all the migration steps below 
 
    You can verify that the job is fully executed by running:
    ```ruby
-   Invoice.where("organization_sequential_id != 0")
-     .where("billing_entity_sequential_id != organization_sequential_id")
+   Invoice
+     .where("organization_sequential_id != 0 AND billing_entity_sequential_id IS NULL")
+     .or(Invoice.where("organization_sequential_id != 0 AND billing_entity_sequential_id != organization_sequential_id"))
      .count
    ```
    This should return 0 when all invoices have been processed.
