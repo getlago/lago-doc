@@ -1,0 +1,69 @@
+---
+title: "Migration to v1.28.1"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about a fix in Lago v1.28.1 that addresses an issue with the previous migration to v1.28.0.
+
+# Why are we doing this?
+
+During the migration to v1.28.0, we discovered that some invoices were missed in the data fix. Specifically, invoices with `billing_entity_sequential_id` equal to `nil` were excluded from the previous SQL query. This fix ensures that all invoices are properly updated.
+
+# What are the changes?
+
+## Fix for missing invoices in the billing entity sequential ID migration
+
+We're re-running the data migration to ensure that `billing_entity_sequential_id` matches `organization_sequential_id` for ALL invoices, including those that were previously missed due to having a `nil` billing entity sequential ID.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions, as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you're upgrading to v1.28.1, you must complete all the migration steps below to ensure data consistency and proper functionality.
+</Warning>
+
+## Migration Steps
+
+1. Install the new version of Lago (v1.28.1)
+2. Open the Rails console on your API server:
+   ```bash
+   rails c
+   ```
+3. Run the following command:
+
+   <Note>
+   All invoices are processed in background jobs, with 1000 invoices per batch. You can monitor the progress in the Sidekiq console by checking the batch number argument in the job details.
+   </Note>
+
+   ```ruby
+   DatabaseMigrations::PopulateInvoicesBillingEntitySequentialIdJob.perform_later
+   ```
+   Wait for all jobs in Sidekiq to be executed.
+   <Note>
+   Expected processing speed is at least 1-2 seconds per 1K invoices. The actual time may vary depending on your system's resources and database size.
+   </Note>
+
+   You can verify that the job is fully executed by running:
+   ```ruby
+    Invoice
+        .where("organization_sequential_id != 0 AND billing_entity_sequential_id IS NULL")
+        .or(Invoice.where("organization_sequential_id != 0 AND billing_entity_sequential_id != organization_sequential_id"))
+        .count
+    ```
+   This should return 0 when all invoices have been processed.
+
+# Timeline
+
+We recommend performing this migration as soon as possible after the release of v1.28.1 to ensure optimal performance and access to new features.
+
+# Get involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your continued support!
+
+The Lago Team 
