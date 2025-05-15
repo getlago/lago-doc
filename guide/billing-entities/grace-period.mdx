@@ -1,0 +1,155 @@
+---
+title: "Grace period"
+description: "Configure a buffer between invoice generation and finalization to review invoices."
+---
+
+<Info>
+
+**PREMIUM FEATURE** ✨
+This feature is only available to users with a premium license. Please
+**[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago
+Self-Hosted Premium.
+
+</Info>
+
+A grace period is the number of days during which invoices remain in `draft` status, allowing you to review and modify them before they are finalized and sent for payment collection.
+
+In the illustration below, the billing period spans one month, followed by a three-day grace period.
+
+<Frame caption="Illustration of the grace period">
+  <img src="/guide/billing-entity/images/grace-period-timeline-299de2425036f803f20825e8a42ab401.png" />
+</Frame>
+
+## Define a grace period at billing entity level[](#define-a-grace-period-at-organization-level "Direct link to heading")
+
+The grace period set at the billing entity level applies to all customers linked to this entity by default.
+
+<Tabs>
+  <Tab title="Dashboard">
+      To set a grace period from the Lago Dashboard:
+
+      1. Access the **"Settings"** section via the side menu;
+      2. Open the **Billing entity** > **"Invoicing settings"** section;
+      3. Click **"Edit"** in the **"Grace period"** section;
+      4. Enter the number of days associated with the grace period; and
+      5. Click **"Edit grace period"** to confirm.
+
+      <Warning>
+        If you shorten the organization's grace period, some invoices in `draft`
+        status may be automatically `finalized`. For instance, if the initial grace
+        period was five days, but then three days into the grace period you decide to
+        reduce it to two days, then all `draft` invoices will automatically switch to
+        `finalized`.
+      </Warning>
+  </Tab>
+  <Tab title="API">
+    You can also modify the entity's grace period at any time through [the API](/api-reference/billing-entity/update).
+      <CodeGroup>
+      ```bash Add a grace period on the organization {28}
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/{code}" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "organization": {
+              "invoice_grace_period": 3
+          }
+        }'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+
+## Define a grace period at customer level[](#define-a-grace-period-at-customer-level "Direct link to heading")
+
+<Tabs>
+  <Tab title="Dashboard">
+      To define a grace period at customer level through the user interface:
+			
+			1. Go to the **Customers** section in the side menu;  
+			2. Select a customer;  
+			3. Open the **Settings** tab in the customer view;  
+			4. Click **Add grace period** in the **Grace period** section;  
+			5. Enter the number of grace period days; and  
+			6. Click **Add grace period** to confirm.
+
+      <Warning>
+        If you shorten the customer's grace period, some invoices in `draft` status
+        may be automatically `finalized`. For instance, if the initial grace period
+        was five days, but then three days into the grace period you decide to reduce
+        it to two days, then all `draft` invoices will automatically switch to
+        `finalized`.
+      </Warning>
+  </Tab>
+  <Tab title="API">
+    You can also modify the customer's grace period at any time through the Dashboard or [the API](/api-reference/customers/create).
+      <CodeGroup>
+      ```bash Add a grace period on the customer {28}
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/customers" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "customer": {
+            "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+            "address_line1": "5230 Penfield Ave",
+            "address_line2": "",
+            "city": "Woodland Hills",
+            "country": "US",
+            "currency": "EUR",
+            "email": "dinesh@piedpiper.test",
+            "legal_name": "Coleman-Blair",
+            "legal_number": "49-008-2965",
+            "tax_identification_number": "EU123456789",
+            "logo_url": "http://hooli.com/logo.png",
+            "name": "Gavin Belson",
+            "phone": "1-171-883-3711 x245",
+            "state": "CA",
+            "timezone": "Europe/Paris",
+            "url": "http://hooli.com",
+            "zipcode": "91364",
+            "tax_codes": []
+            "billing_configuration": {
+              "invoice_grace_period": 3,
+              "payment_provider": "stripe",
+              "provider_customer_id": "cus_12345",
+              "sync": true,
+              "sync_with_provider": true,
+              "document_locale": "fr",
+            },
+            "metadata": [
+              {
+                "key": "Name",
+                "value": "John",
+                "display_in_invoice": true
+              }
+            ]
+          }
+        }'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+The customer-specific grace period overrides the billing entity’s default grace period. It only applies to the customer it is configured for.
+
+
+## Application scope and possible actions[](#application-scope-and-possible-actions "Direct link to heading")
+
+The grace period applies exclusively to **subscription** invoices. It does not apply to invoices related to add-ons or credit purchases.
+
+The creation of a `draft` invoice triggers the `invoice.drafted`
+[webhook](/api-reference/webhooks/messages).
+
+While an invoice is in draft status, you can:
+- **Add usage records** by sending event with a valid timestamp within the billing period
+- **Edit specific fees** (adjusting total amount or unit count)
+- **Apply coupons** to the customer’s account
+- **Add credits** to the customer’s wallet or credit note wallet
+
+Please follow this page to know more about these actions.
