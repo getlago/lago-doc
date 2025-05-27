@@ -49,3 +49,9 @@ regardless of the pricing for usage-based charges.
 When a subscription is downgraded:
 
 - The new plan is applied at the end of the current billing period to ensure that your customer fully benefits from the plan they have already paid for. The newly applied plan will be in a pending state.
+
+## Webhook messages for upgrades and downgrades
+When a subscription is upgraded or downgraded:
+- A `subscription.terminated` webhook message is triggered for the initial plan, with a `next_plan_code` defined in the payload;
+- A `subscription.started` webhook message is triggered for the new plan, with a `previous_plan_code` defined in the payload;
+- The `subscription.external_id` is persisted between the two to ensure the continuity of the subscription.
