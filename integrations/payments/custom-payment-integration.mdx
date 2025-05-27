@@ -1,0 +1,239 @@
+---
+title: "Custom payment integration"
+description:
+  "This guide helps you integrate Lago with a custom payment provider. Build your own integration by following the steps below."
+---
+
+## Overview
+This guide shows how to integrate a non-natively supported Payment Service Provider (PSP) into Lago.
+
+It is modeled on the MoneyHash integration, and in most cases, you should duplicate and adapt the [MoneyHash](https://github.com/getlago/lago-api/pulls?q=moneyhash) work from the following references:
+- [MoneyHash Backend PRs](https://github.com/getlago/lago-api/pull/3418)
+- [MoneyHash Frontend PRs](https://github.com/getlago/lago-front/pulls?q=moneyhash)
+
+<Info>
+    Among all our native integrations, the Stripe one represents the gold standard and should always serve as the reference implementation.
+</Info>
+
+## Backend integration (API)
+
+### API Version
+If your PSP integration supports multiple versions, ensure you specify the version—for example, we are setting it for Stripe in this [Pull Request #3300](https://github.com/getlago/lago-api/pull/3300).
+
+### SDK
+Don't hesitate to import any required gem if necessary.
+
+### Services
+Our codebase relies a lot on services. Some general rules:
+
+- Extend `BaseService`
+- Always return a result (never nil)
+- A service should have one single method named `call`
+
+Although the Stripe examples use services with multiple methods, we now recommend creating separate services each with a single call method; **if you prefer a single class with multiple public methods, you may ignore this guidance.**
+
+```
+Example:
+
+# Instead of
+PaymentProviderCustomers::StripeService#create
+PaymentProviderCustomers::StripeService#update
+PaymentProviderCustomers::StripeService#generate_checkout_url
+
+# We recomend
+PaymentProviderCustomers::Stripe::CreateService#call
+PaymentProviderCustomers::Stripe::UpdateService#call
+PaymentProviderCustomers::Stripe::GenerateCheckoutUrlService#call
+```
+
+### Payment Provider Class
+All payment provider subscriptions inherit from the PaymentProviderSubscription class via STI. For instance, to support Checkout.com, register a new `CheckoutComSubscription` in `app/models/payment_provider_subscriptions/checkout_com_subscription.rb`.
+
+A few notes about providers:
+- Store custom provider details with `settings_accessors` instead of adding database columns;
+- Use `secret_accessors` to securely store sensitive data (e.g., API keys); and
+- Map the new PSP's payment status values to Lago's three statuses: processing, success, and failed.
+
+```ruby
+module PaymentProviders
+	class CheckoutComProvider < BaseProvider
+    # Lago payment_status -> Checkout.com statuses mapping
+    PROCESSING_STATUSES = %w[].freeze
+    SUCCESS_STATUSES = %w[].freeze
+    FAILED_STATUSES = %w[].freeze
+	
+	  secrets_accessors :api_key
+	
+		validates :api_key, presence: true
+	
+    def payment_type
+      "checkout_com"
+    end
+  end
+end
+```
+
+Ensure the new Payment Provider is included in every provider switch/case statement:
+```ruby
+case type
+    when 'moneyhash'
+        PaymentProviders::MoneyHashProvider.new(provider_instance)
+    when 'checkout_com'
+        PaymentProviders::CheckoutComProvider.new(provider_instance)
+    ...
+end
+```
+
+### Webhooks
+Ideally, configure the new Payment Provider to send webhooks any time a payment or customer is updated. The Stripe integration is the most mature and should serve as the reference implementation. The callback URL must include both the `organization_id` and the provider `code`:
+```ruby
+URI.join(
+  ENV["LAGO_API_URL"],
+  "webhooks/checkoutcom/#{organization_id}?code=#{URI.encode_www_form_component(payment_provider.code)}"
+)
+```
+
+See `PaymentProviders::Stripe::RegisterWebhookService` for more details.
+
+To process webhook messages:
+
+- Register route;
+- Add method to `app/controllers/webhooks_controller.rb`;
+- Save the webhook in `IncomingWebhook` and dispatch a job to process it; and
+- Ideally, one service maps to one webhook type.
+
+The Stripe integration has been partially refactored but still preserves backward compatibility with `HandleEvent` job arguments, so your services can be simpler.
+
+### Backend integration checklist
+
+Here is a list of files and classes you may need to create or update, each accompanied by a brief description. In our case, we take the example of a new integration with Checkout.com, but you can adapt the following list to your PSP.
+
+#### 1. Models
+| File                                                     | Purpose                                                                                   |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `app/models/payment_provider_customers/checkout_com_customer.rb` | Define Checkout.com-specific customer model (inherits from BaseCustomer).                 |
+| `app/models/payment_providers/checkout_com_provider.rb`    | Define Checkout.com provider model (inherits from BaseProvider).                         |
+| `app/models/customer.rb`                               | Add `PAYMENT_PROVIDERS` enum value + has_one relation to Checkout.com customer.             |
+| `app/models/organization.rb`                          | Add `has_many` relation.                                                                    |
+| `app/serializers/v1/customer_serializer.rb`           | Map Checkout.com customer settings for API responses.                                     |
+
+
+#### 2. GraphQL Input Types 
+| File                                                           | Purpose                                                                                   |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `app/graphql/types/payment_providers/checkout_com_input.rb`    | Define GraphQL input type for Checkout.com settings.                                      |
+| `app/graphql/types/payment_providers/checkout_com.rb`          | Define GraphQL object type for Checkout.com provider.                                     |
+| `app/graphql/mutations/payment_providers/checkout_com/base.rb` | Abstract base mutation class for Checkout.com (inherit common logic).                    |
+| `app/graphql/mutations/payment_providers/checkout_com/create.rb` | Mutation to create a Checkout.com provider instance.                                      |
+| `app/graphql/mutations/payment_providers/checkout_com/update.rb` | Mutation to update a Checkout.com provider instance.                                      |
+| `app/graphql/resolvers/payment_providers_resolver.rb`          | Add `provider_type`.                                                                      |
+| `app/graphql/types/customers/object.rb`                        | Add `provider_customer`.                                                                  |
+| `app/graphql/types/mutation_type.rb`                           | Define mutations.                                                                         |
+| `app/graphql/types/payment_providers/object.rb`                | Define `resolve_type`.                                                                   |
+
+
+
+#### 3. Provider Handling
+| File                                                            | Purpose                                                                                     |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `app/services/payment_providers/checkout_com_service.rb`        | Entry service for handling Checkout.com logic.                                              |
+| `app/services/payment_providers/checkout_com/base_service.rb`   | Shared methods for Checkout.com-related services.                                            |
+
+
+#### 4. Customer Handling
+| File                                                              | Purpose                                                                                     |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `app/services/payment_provider_customers/checkout_com_service.rb` | Handle customer-related logic (create, sync).                                               |
+| `app/jobs/payment_provider_customers/checkout_com_create_job.rb`  | Background job to create a customer in Checkout.com.                                        |
+| `app/services/payment_providers/checkout_com/customers/create_service.rb` | Actual service to create customers.                                                        |
+| `app/services/payment_providers/create_customer_factory.rb`       | Add service mapping.                                                                        |
+| `app/services/payment_provider_customers/factory.rb`              | Add service mapping.                                                                        |
+
+
+
+#### 5. Payment Flows
+| File                                                            | Purpose                               |
+| --------------------------------------------------------------- | ------------------------------------- |
+| Edit `app/services/payment_providers/create_payment_factory.rb` | Add service mapping.                 |
+
+
+
+#### 6. Invoices
+| File                                                              | Purpose                                                                                     |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `app/jobs/invoices/payments/checkout_com_create_job.rb`            | Background job to process invoice payments via Checkout.com.                               |
+| `app/services/invoices/payments/checkout_com_service.rb`          | Service handling payment flow at invoice level.                                             |
+| `app/services/payment_providers/checkout_com/payments/create_service.rb` | Create actual payment via Checkout.com.                                                    |
+| `app/services/invoices/payments/payment_providers/factory.rb`     | Add service mapping.                                                                        |
+
+
+
+#### 7. Payment Requests
+| File                                                               | Purpose                                                                                     |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `app/jobs/payment_requests/payments/checkout_com_create_job.rb`    | Handle ad-hoc payment requests.                                                             |
+| `app/services/payment_requests/payments/checkout_com_service.rb`  | Handle service logic for payment requests.                                                  |
+| `app/services/payment_requests/payments/payment_providers/factory.rb` | Add service mapping.                                                                        |
+
+
+#### 8. Checkout URL 
+| File                                                                  | Purpose                                                       |
+| --------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `app/jobs/payment_provider_customers/checkout_com_checkout_url_job.rb` | Generate hosted checkout URL for payments.                    |
+
+
+#### 9. Webhook Handling
+| File                                                                      | Purpose                                                           |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `app/controllers/webhooks_controller.rb`                                  | Add a new action for Checkout.com webhooks.                       |
+| `config/routes.rb`                                                        | Add route for `/webhooks/checkout_com`.                           |
+| `app/services/payment_providers/checkout_com/handle_incoming_webhook_service.rb` | Handle incoming webhook events from Checkout.com.                 |
+| `app/services/payment_providers/checkout_com/validate_incoming_webhook_service.rb` | Validate webhook payloads and signatures.                        |
+| `app/jobs/payment_providers/checkout_com/handle_event_job.rb`             | Async processing of webhook events.                               |
+| `app/services/inbound_webhooks/process_service.rb`                        | Add service mapping.                                              |
+| `app/services/inbound_webhooks/validate_payload_service.rb`               | Add service mapping.                                              |
+
+#### 10. Specs
+Find all related specs in `/specs/*.rb`
+
+
+## Frontend integration (UI)
+All frontend actions are located in the [lago-front](https://github.com/getlago/lago-front) repository.
+
+Please refer to an existing PSP implementation to make sure you use the latest code guidelines and structure, as code might evolve in the future.
+
+To ease the work on the Frontend side, make sure all type and enums are updated on the Backend first and run the `codegen` script to get the new graph.
+
+### New integration CRUD
+Any new integration needs to be listed on the page `src/pages/settings/Integrations.tsx`
+
+Then, new routes and components need to be created for the PSP connection lists, details, edition and deletion.
+
+To start, have a look at these files in the app:
+```plaintext
+src/
+├── pages/
+│   └── settings/
+│       ├── Integrations.tsx
+│       ├── [PSPName]IntegrationDetails.tsx
+│       └── [PSPName]Integrations.tsx
+├── components/
+│   └── settings/
+│       ├── Add[PSPName]Dialog.tsx
+│       └── Delete[PSPName]Dialog.tsx
+└── public/
+    └── images/
+        └── [PSPName].svg
+```
+
+Please make sure the SVG is as clean as possible and uses viewbox rather than width and height (viewBox="0 0 40 40”, refer to other images). You can use https://svgomg.net/ to help.
+
+### Customer link
+You also need to update the customer flow to allow connection to your new PSP.
+
+This happens primarily in the `PaymentProvidersAccordion` component. It needs to be updated to handle the selection of this new PSP option.
+
+### Global UI updates
+Update the following places responsible for displaying PSP information:
+- `src/components/PaymentProviderChip.tsx` (displays the PSP chip in multiple places)
+- `src/pages/PaymentDetails.tsx` (if you wish to have clickable payment url links)
