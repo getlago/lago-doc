@@ -1,0 +1,69 @@
+---
+title: "Audit logs"
+description: "The audit logs enable organization admins to efficiently track member activity, providing detailed records of who performed each action, what was done, and when it occurred."
+---
+
+## Activity logs
+Activity logs provide a record of actions initiated within your organization, including actions performed through the UI, via the API, or triggered automatically by the system (e.g., automated billing operations).
+
+
+### Activity logs retention
+Access to the activity log is limited to paid tiers:
+1. Free users do not have access to activity logs;
+2. Premium users can view activity logs for up to 30 days; and
+3. Enterprise customers with the appropriate paid add-on can access the full activity log history without time limits.
+
+
+### How to access activity logs
+<Tabs>
+  <Tab title="Dashboard">
+    Only organization admins can access Activity Logs through the Developers Console.
+    To view the logs:
+    1. Click the **Developers** icon in the navigation sidebar;
+    2. Select the **Activity Logs** tab; and
+    3. View paginated activity logs directly in this section.
+
+    <Frame caption="Activity logs in the Developers Console">
+        <img src="/guide/security/images/activity-logs.png" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Activity logs
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v1/activity_logs" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+
+### Activity log details
+Each activity log includes a set of properties that provide context about the recorded action:
+
+- **Type**: The name of the activity (e.g., `plan.updated`, `customer.created`, `invoice.drafted`);
+- **Description**: A brief explanation of the activity;
+- **Activity ID**: A unique identifier for the activity log entry;
+- **Resource Type**: The type of object affected (e.g., `Wallet`, `Invoice`, `Customer`);
+- **Resource ID**: The identifier of the impacted resource (e.g., `invoice_id`, `customer_id`);
+- **Customer External ID**: Identifies the customer related to the activity;
+- **Subscription External ID**: Identifies the subscription related to the activity;
+- **Log Date**: The timestamp of the activity;
+- **User**: The organization member who triggered the activity; and
+- **Source**: Indicates the origin of the action.
+  - `front` – triggered from the UI
+  - `api` – triggered from the API
+  - `system` – triggered automatically by the system (e.g., billing)
+
+In addition to the above, the **Activity Payload** section provides contextual data:
+- **Changes**: Details of modified data (available for update actions only); and
+- **New Object**: The full payload of the newly created object.
+
+
+
+### Filtering activity logs
+All of the fields listed above can be used to filter activity logs, either through the UI or via the API.
