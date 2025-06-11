@@ -1,0 +1,107 @@
+---
+title: "Database maintenance"
+description: "Keeping your Postgres at its best"
+---
+
+Lago relies a lot on Postgres. If you're hosting your own instance, you must ensure Postgres is correctly configured.
+
+First, we recommend installing PgHero and keeping an eye on slow queries: [https://github.com/ankane/pghero]().
+
+
+
+## `ANALYZE` and `VACCUM`
+
+Postgres needs to [analyze and vacuum](https://www.postgresql.org/docs/current/routine-vacuuming.html#ROUTINE-VACUUMING) regularly for optimal performance.
+
+Postgres can do it automatically for you. Make sure the `autovacuum_analyze_scale_factor`
+and `autovacuum_vacuum_scale_factor` are set to a sensible value. We recommend `0.1` by default,
+but it depends on the size of your tables.
+
+```sql
+SELECT
+	current_setting('autovacuum_analyze_scale_factor') AS analyze_scale_factor,
+	current_setting('autovacuum_vacuum_scale_factor') AS vacuum_scale_factor;
+```
+
+```sql
+ALTER SYSTEM
+SET autovacuum_vacuum_scale_factor = 0.1;
+
+ALTER SYSTEM
+SET autovacuum_analyze_scale_factor = 0.1;
+
+SELECT pg_reload_conf();
+```
+
+Some tables need extra attention and usually much lower values: `events`, `invoices`, `charges` and `fees`.
+Configure custom override values for these tables.
+
+For example, the `events` table should use a value lower than `0.01`.
+
+Because this factor is a ratio, it's expected to lower it from time to time as your table size grows.
+
+```
+ALTER TABLE events
+SET (
+    autovacuum_vacuum_scale_factor = 0.01,
+    autovacuum_analyze_scale_factor = 0.01
+);
+```
+
+<Info>
+  **The most important table to monitor is `events`.** Depending on your implementation, this table can receive big
+  burst of data and should be analyzed and vacuumed often.
+</Info>
+
+### When to run manually
+
+If you send events in batch, it's recommended to analyze and vacuum your `events` table after the batch is ingested:
+
+```sql
+VACUUM ANALYZE events;
+```
+
+Most subscriptions are billed on the first of the month, therefore it's also recommended to analyze and vacuum all tables
+before and after billing day.
+
+### Monitor your tables
+
+Check the state of your tables with the following query.
+
+```sql
+SELECT
+    s.relname AS tname,
+    (
+        SELECT
+            option_value
+        FROM
+            pg_options_to_table(c.reloptions)
+        WHERE
+            option_name = 'autovacuum_vacuum_scale_factor'
+    )::float AS autovacuum_vacuum_scale_factor,
+    (
+        SELECT
+            option_value
+        FROM
+            pg_options_to_table(c.reloptions)
+        WHERE
+            option_name = 'autovacuum_analyze_scale_factor'
+    )::float AS autovacuum_analyze_scale_factor,
+    s.last_vacuum,
+    s.last_autovacuum,
+    s.last_analyze,
+    s.last_autoanalyze,
+    s.n_dead_tup AS dead_tuples,
+    s.n_live_tup AS live_tuples,
+    CASE
+        WHEN s.n_live_tup = 0 THEN 0
+        ELSE ROUND(s.n_dead_tup::numeric * 100 / s.n_live_tup, 1)
+    END AS dead_tuple_ratio
+FROM
+    pg_stat_user_tables s
+    JOIN pg_class c ON s.relid = c.oid
+ORDER BY
+	autovacuum_analyze_scale_factor ASC,
+	autovacuum_vacuum_scale_factor ASC,
+    live_tuples DESC;
+```
