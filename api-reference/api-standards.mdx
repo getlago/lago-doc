@@ -1,0 +1,56 @@
+---
+title: "API standards"
+---
+
+Lago API endpoints follow common RESTful standards.
+
+## Authentication
+
+Authentication is required for most endpoints, via an API key provided in the `Authorization` header as:
+
+```http
+Authorization: Bearer <your_api_key>
+```
+
+## HTTP status codes
+
+HTTP status codes communicate the outcome of each API request. For example, a successful request returns `200 OK`, while a malformed request returns `400 Bad Request`. More information about error codes can be found in the [Errors](./errors) section.
+
+## Request and response body
+
+Unless otherwise noted, both requests and responses use a JSON body, and the `Content-Type` header is expected to be set to `application/json`.
+
+## Query parameters
+
+Query parameters allow you to filter, search, and paginate API results. The Lago API supports several types of query parameters, described below.
+
+### Simple parameters
+
+Simple query parameters are sent as key-value pairs. These parameters are used for pagination or to filter results by a single value:
+
+```http List subscriptions
+GET /api/v1/subscriptions?page=1&per_page=20&external_customer_id=123
+```
+
+In this case, the parameter will be described in the API reference as:
+
+<ParamField query="external_customer_id" type="string">
+  The customer external unique identifier (provided by your own application)
+
+  Example: `"5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba"`
+</ParamField>
+
+### Array parameters
+
+Array parameters are sent as multiple entries of the same key, always ending with square brackets (`[]`). These parameters are used to filter results by multiple values:
+
+```http List applied coupons
+GET /api/v1/applied_coupons?coupon_code[]=10_OFF&coupon_code[]=20_OFF
+```
+
+In this case, the parameter will be described in the API reference as:
+
+<ParamField query="coupon_code[]" type="enum<string>[]">
+  The coupon codes to filter the applied coupons by.
+</ParamField>
+
