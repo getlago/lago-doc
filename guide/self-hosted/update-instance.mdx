@@ -11,43 +11,71 @@ Lago's speed is rapidly increasing—remarkably fast. Billing updates occur freq
 ## Why update your Lago self-hosted instance?
 
 ### Bug fixes and security enhancements
-Updating your Lago open source instance serves a key purpose: resolving bugs and enhancing security protocols. 
-Just like any software, glitches may emerge, impacting operations and even jeopardizing security. 
-This is particularly vital in intricate tasks like metering, billing calculations, tax application, and managing financial statements. 
+Updating your Lago open source instance serves a key purpose: resolving bugs and enhancing security protocols.
+Just like any software, glitches may emerge, impacting operations and even jeopardizing security.
+This is particularly vital in intricate tasks like metering, billing calculations, tax application, and managing financial statements.
 By keeping up with updates, you guarantee your instance remains unaffected by recognized problems and vulnerabilities.
 This proactive approach maintains a resilient and secure operational landscape for your company.
 
 ### Access to new features
-Lago consistently evolves to meet the needs of its users. Each update introduces a host of new features aimed at enhancing the user 
-experience and expanding the capabilities of the platform. Some notable new features that updates might bring include core billing 
-enhancements, tax-related features, and additional settings options. By updating regularly, you can take advantage of these features and 
+Lago consistently evolves to meet the needs of its users. Each update introduces a host of new features aimed at enhancing the user
+experience and expanding the capabilities of the platform. Some notable new features that updates might bring include core billing
+enhancements, tax-related features, and additional settings options. By updating regularly, you can take advantage of these features and
 streamline your workflows.
 
 ## Determining update frequency
-The frequency of updates varies based on the development cycle of Lago. Generally, updates are released approximately once a week. 
-Keeping an eye on the [release notes](https://github.com/getlago/lago/releases) provided by the Lago team will give you insight into when updates are available and what changes they 
-entail. Regularly monitoring these release notes will allow you to stay informed and plan your updates accordingly. Billing updates occur 
-frequently, precisely every 1 or 2 weeks. Over the course of a year, we've completed over 70 releases, culminating in approximately 
+The frequency of updates varies based on the development cycle of Lago. Generally, updates are released approximately once a week.
+Keeping an eye on the [release notes](https://github.com/getlago/lago/releases) provided by the Lago team will give you insight into when updates are available and what changes they
+entail. Regularly monitoring these release notes will allow you to stay informed and plan your updates accordingly. Billing updates occur
+frequently, precisely every 1 or 2 weeks. Over the course of a year, we've completed over 70 releases, culminating in approximately
 30 comprehensive [product updates](https://www.getlago.com/changelog).
 
 ## A seamless update process
-Updating your Lago open source instance doesn't have to be a daunting task. With a clear procedure in place, you can ensure 
+Updating your Lago open source instance doesn't have to be a daunting task. With a clear procedure in place, you can ensure
 a smooth transition to the latest version. Here's a step-by-step guide to help you navigate the update process:
 
 ### 1. Access your instance repository
-Navigate to the repository where your Lago open source instance is stored. This is typically where you initially cloned or 
+Navigate to the repository where your Lago open source instance is stored. This is typically where you initially cloned or
 downloaded the instance.
 
-### 2. Pull the latest code
-In the repository directory, execute the following command to pull the latest code from the remote repository:
+### 2. Check you current version
+In the repository directory, execute the following command to check the current Lago version:
 
 ```bash
-git pull
+git describe --tags --abbrev=0
 ```
-This command fetches the most recent changes from the remote repository and merges them into your local instance.
 
-### 3. Restart the updated instance
-Once the code is up-to-date, navigate to the directory containing your Docker Compose file. 
+### 3. Check for the bridge releases
+
+<Note>
+  Bridge releases are released as mandatory intermediary relased that must be installed before upgrading to higher versions.
+</Note>
+
+Check the migration guides for (bridge releases)[https://getlago.com/docs/guide/migration] and follow the update instructions for each intermediary releases.
+
+### 4. Fetch the latest release
+Still in the repository directory, execute the following command to pull the latest release from the remote repository:
+
+```bash
+# Fetch all tags
+git fetch --tags
+
+# Checkout the latest tag
+git checkout $(git describe --tags --abbrev=0)
+```
+
+This command fetches the most recent release from the remote repository and merges them into your local instance.
+
+<Note>
+  To fetch the code of a specif release, use the following command:
+
+  ```bash
+  git checkout v1.29.0 # Replace with the right version number
+  ```
+</Note>
+
+### 5. Restart the updated instance
+Once the code is up-to-date, navigate to the directory containing your Docker Compose file.
 Execute the following command to start the updated instance:
 
 ```bash
@@ -56,7 +84,7 @@ docker compose up
 
 This command will rebuild and launch your Lago instance with the latest changes.
 
-### 4. Testing new features 
+### 6. Testing new features
 After the instance restarts, you can now test our new features and give feedback to the team.
 
 ## Addressing concerns about breaking changes
