@@ -4,7 +4,7 @@ description: "For more advanced calculations, you can use SQL custom expressions
 ---
 
 ## Creating a SQL Custom Expression
-When creating a billable metric, you can choose between using a simple aggregation field or a custom expression. 
+When creating a billable metric, you can choose between using a simple aggregation field or a custom expression.
 **Custom expressions allow you to define more advanced computation logic**, which is useful when the required aggregation involves complex calculations that Lago should handle.
 
 <Tabs>
@@ -26,10 +26,10 @@ When creating a billable metric, you can choose between using a simple aggregati
   </Tab>
 
   <Tab title="API">
-      Here are few examples of custom expressions you can create for a billable metric:
+      Here are a few examples of custom expressions you can create for a billable metric:
       <CodeGroup>
-      
-    ```bash Storage {13}
+
+    ```bash Storage {13, 14}
       LAGO_URL="https://api.getlago.com"
       API_KEY="__YOUR_API_KEY__"
 
@@ -42,8 +42,8 @@ When creating a billable metric, you can choose between using a simple aggregati
             "code": "storage",
             "description": "Number of GB consumed",
             "aggregation_type": "sum_agg",
-            "expression": "(event.properties.ended_at - event.timestamp) / 3600",
-            "field_name": "total",
+            "expression": "event.properties.gb * event.properties.replicas * (event.properties.ended_at - event.properties.started_at) / 3600",
+            "field_name": "consumed_gb_hours",
             "recurring": false
           }
         }'
@@ -62,8 +62,8 @@ When creating a billable metric, you can choose between using a simple aggregati
             "code": "seats",
             "description": "Number of seats used",
             "aggregation_type": "unique_count_agg",
-            "expression": "concat(event.properties.user_id, ‘-‘ , event.properties.app_id)",
-            "field_name": "total",
+            "expression": "CONCAT(event.properties.user_id, '-' , event.properties.app_id)",
+            "field_name": "seat_id",
             "recurring": true
           }
         }'
@@ -78,15 +78,133 @@ When creating a billable metric, you can choose between using a simple aggregati
     Custom expressions can be used with any aggregation type except `COUNT`.
 </Info>
 
-## Examples of SQL Custom Expressions
+## Supported Expressions
 A variety of SQL custom expressions are available for use. Here are a few examples:
 
-- **Concatenation:** `CONCAT(value1, '_', value2)`
-- **Math operations:** `((value1 * value2) / value3)`
-- **Rounding:** `ROUND(value1 / value2)`
+- **Concatenation:** `CONCAT(event.properties.user_id, '-', event.properties.app_id)`
+- **Math operations:** `(event.properties.cpu_number * 25 * event.properties.duration_msec) + (event.properties.memory_mb * 0.000001 * event.properties.duration_msec)`
+- **Rounding:** `ROUND(event.properties.duration_msec * 1000)`
 
-If you need a SQL custom expression that isn't supported by default in Lago, **feel free to contact our team** or **consider contributing to the open-source version**.
+You can find the full list of supported expressions below:
 
+- [Event attributes](#event-attributes)
+- [Atoms](#atoms)
+- [Operators](#operators)
+- [Functions](#functions)
+  - [`CONCAT`](#CONCAT)
+  - [`ROUND`](#ROUND)
+  - [`FLOOR`](#FLOOR)
+  - [`CEIL`](#CEIL)
+
+If you need a custom expression that isn't supported by default in Lago, **feel free to contact our team** or **consider contributing to the open-source version**.
+
+### Event attributes
+
+Lago expressions may include the following event attributes:
+
+- `event.code` (event code)
+- `event.timestamp` (event timestamp)
+- `event.properties.[property_name]` (event property)
+
+For example, `event.properties.my_property` is a valid event attribute.
+
+### Atoms
+
+Lago expressions may include atoms:
+
+- `123` (integer)
+- `123.45` (decimal)
+- `'Hello, world!'` (string)
+
+### Operators
+
+Lago expressions may include basic operators:
+
+- `+` (addition)
+- `-` (subtraction)
+- `*` (multiplication)
+- `/` (division)
+- unary minus (`-12`)
+
+### Functions
+
+#### `CONCAT`
+
+The `CONCAT` function is used to concatenate two or more strings.
+
+```SQL
+CONCAT(str1, str2[,strs,...])
+```
+
+**Parameters:**
+- `str1`: The first string to concatenate
+- `str2`: The second string to concatenate
+- `strs`: (Optional) Additional strings to concatenate.
+
+**Returns:** A string with the concatenated strings.
+
+**Examples:**
+- `CONCAT(event.properties.user_id, '-', event.properties.app_id)`
+
+#### `ROUND`
+
+The `ROUND` function is used to round a number to a specified number of decimal places.
+
+```SQL
+ROUND(value, precision)
+```
+
+**Parameters:**
+- `value`: The number to round
+- `precision`: (Optional) Number of decimal places. Defaults to `0`.
+
+**Returns:** A number rounded to the specified precision.
+
+**Examples:**
+- `ROUND(14.2355)` returns `14`
+- `ROUND(14.2355, 0)` returns `14`
+- `ROUND(14.2355, 2)` returns `14.24`
+- `ROUND(14.2355, -1)` returns `10`
+
+#### `FLOOR`
+
+The `FLOOR` function is used to round a number down to the nearest integer.
+
+```SQL
+FLOOR(value, precision)
+```
+
+**Parameters:**
+- `value`: The number to round
+- `precision`: (Optional) Number of decimal places. Defaults to `0`.
+
+**Returns:** A number rounded down to the specified precision.
+
+**Examples:**
+- `FLOOR(16.2365)` returns `16`
+- `FLOOR(16.2365, 0)` returns `16`
+- `FLOOR(16.2365, 2)` returns `16.23`
+- `FLOOR(16.2365, -1)` returns `10`
+
+#### `CEIL`
+
+The `CEIL` function is used to round a number up to the nearest integer.
+
+```SQL
+CEIL(value, precision)
+```
+
+**Parameters:**
+- `value`: The number to round
+- `precision`: (Optional) Number of decimal places. Defaults to `0`.
+
+**Returns:** A number rounded up to the specified precision.
+
+**Examples:**
+- `CEIL(14.2345)` returns `15`
+- `CEIL(14.2345, 0)` returns `15`
+- `CEIL(14.2345, 2)` returns `14.24`
+- `CEIL(14.2345, -1)` returns `20`
 
 ## Testing your SQL Custom Expression
 Lago provides a testing tool to help you validate the custom expressions you've created. A sample event is used to test your expression. You can override any field in the test event.
