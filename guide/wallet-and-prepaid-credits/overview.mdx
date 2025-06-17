@@ -85,12 +85,61 @@ Keep track of your wallet's real-time balance. Lago provides two types of balanc
 
 ## Application scope[](#application-scope "Direct link to heading")
 
-Prepaid credits are deducted from the subtotal of the next invoice(s), after
-tax.
+Prepaid credits settled in a wallet are applied to upcoming **subscription invoices**. They are deducted from the post-tax subtotal, after any credit notes have been applied.
+```
+## EXAMPLE OF INVOICE
 
-![Invoice partially paid with prepaid credits](/guide/images/prepaid-credits-invoice-ecd9e8ad653b516efb08c6b48e1e48fe.png)
+All subscriptions fee    $50.00
+All usage-based fees     $20.00
+Coupons                 -$10.00
+-------------------------------
+Subtotal (excl. tax)     $60.00
+Tax (10%)                $ 6.00
+-------------------------------
+Subtotal (incl. tax)     $66.00
+Credit notes             $20.00
+Prepaid credits          $30.00
+-------------------------------
+Total                    $16.00
+```
 
 <Info>Prepaid credits do not apply to one-off invoices.</Info>
+
+By default, prepaid credits apply to all fee types—subscriptions, charges, and commitments. You can refine this behavior by configuring limitation rules directly in the wallet.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To limit the scope of prepaid credits through the user interface:
+    1. Create or edit an existing wallet.
+    2. In the “Limit wallet credits to specific object” section, add one or more object limitations.
+    3. Keep in mind: selecting all items has the same effect as selecting none. For this reason, we recommend leaving all options unselected unless a specific restriction is needed.
+  </Tab>
+  <Tab title="API">
+    ```bash Scope wallet to specific fee
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header "Content-Type: application/json" \
+      --data-raw '{
+        "wallet": {
+          "external_customer_id": "hooli_1234",
+          "name": "Prepaid credits",
+          "rate_amount": 1.0,
+          "paid_credits": 100.0,
+          "granted_credits": 50.0,
+          "currency": "USD",
+          "applies_to": {
+            "fee_type": ["charge", "commitment", "subscription"]
+          }
+        }
+      }'
+    ```
+
+  </Tab>
+</Tabs>
+
 
 ## Invoicing after successful payment option
 
