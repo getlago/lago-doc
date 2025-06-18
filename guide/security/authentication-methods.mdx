@@ -2,6 +2,11 @@
 title: "Authentication Methods"
 description: "Lago supports multiple login methods. You can manage which ones are available to your users, and choose to enforce one as required."
 ---
+# Authentication Methods
+
+Lago supports multiple login methods. You can manage which ones are available to your users, and optionally enforce a specific method for your organization.
+
+---
 
 ## Available login methods
 
@@ -16,40 +21,65 @@ description: "Lago supports multiple login methods. You can manage which ones ar
 
 ---
 
-## Enforce a login method
+## Enforcing a login method
 
-You can enforce a single login method for your entire organization.  
+You can enforce a single login method for your entire organization.
+
 When enforcement is active:
 
 - All other login methods are disabled
 - Users must sign in using the required method
-- New invites will only work with the required method
+- New invites will only work with the enforced method
 
 > **Example**: If you enforce Okta SSO, Google and password login will be disabled.
 
+### To enforce a method:
+1. Go to **Settings > Authentication**
+2. Find the method you want to enforce (e.g. Okta)
+3. Click the action menu (`⋮`)
+4. Select **Set as required**
+
+### To remove enforcement:
+1. Go to **Settings > Authentication**
+2. Find the enforced method
+3. Click the action menu (`⋮`)
+4. Select **Remove requirement**
+
+This will re-enable previously available login methods.
+
+> Want to learn more about setting up Okta?  
+> → [See the SSO setup guide](../single-sign-on)
+
 ---
 
-## Enable or disable methods
+## Enabling or disabling a login method
 
-You can manually enable or disable methods like password login and Google login in **Settings > Authentication**.  
-Okta SSO is only available if the integration is configured.
+You can enable or disable individual login methods (e.g. password login or Google login) at any time. Only **one method must remain enabled**.
 
-> ⚠️ At least one login method must remain active at all times.
+Even if a method is disabled, it will still appear on the login page (which is shared across organizations).  
+However, users attempting to log in via a disabled method will see an error message and won't be able to continue.
 
----
+### To disable a method:
+1. Go to **Settings > Authentication**
+2. Find the method you want to disable (e.g. Google)
+3. Click the action menu (`⋮`)
+4. Select **Disable this method**
 
-## Remove enforcement
+The method will still appear on the login screen but will not be usable for your organization.
 
-You can remove enforcement at any time. This re-enables all previously allowed methods.
+### To enable a method:
+1. Go to **Settings > Authentication**
+2. Find the method you want to re-enable
+3. Click the action menu (`⋮`)
+4. Select **Enable this method**
+
+The method will become available again for users in your organization.
+
+> ⚠️ At least one login method must remain enabled at all times.
 
 ---
 
 ## Edge cases
 
-- A user who previously used a now-disabled method will not be able to log in.
-- You don’t need to reinvite users. Their identity stays the same as long as they use the same email.
-
----
-
-Want to enforce SSO with Okta?  
-→ [See the SSO setup guide](../single-sign-on)
+- A user trying to log in with a disabled method will receive an error message.
+- You do **not** need to reinvite users when changing authentication settings. As long as they use the same email, their account remains linked.
