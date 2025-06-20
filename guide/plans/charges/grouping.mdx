@@ -1,17 +1,50 @@
 ---
-title: "Custom grouping"
-description: "Group line-item by specific key on an invoice PDF"
+title: "Group keys"
 ---
 
-## Custom invoice grouping[](#invoice-grouping "Direct link to heading")
+## Pricing group keys
 
-Grouping invoice line items in a way that provides clearer insight for your customers can be more beneficial than sticking to the default charge setup in Lago.
-For instance, as an AI service provider, you might prefer to regroup all fees associated to one charge by a specific `model` used by a customer, without the need to individually list each model in Lago.
-When setting up a charge with a `standard` charge model, you can use `model_name` as an event property in the `grouped_by` attribute. If every event reported to Lago includes a `model_name`, Lago is capable of adjusting your invoice so that charges are organized under the respective model name for that particular charge. Consequently, Lago will also automatically allocate the usage costs for each model.
-You can specify multiple `grouped_by` keys for your charge; the order you set them in dictates how they will be displayed on the invoice, affecting the presentation of charges.
+AI and infrastructure platforms often tailor pricing based on variables such as geography, hosting provider, or service tier. Lago's Pricing Group Keys offer a streamlined way to support this kind of dynamic pricing without duplicating product definitions.
+
+With pricing group keys, you can group usage events to a single product based on configurable dimensions—like cloud provider, model type, deployment region, or instance class. This allows you to reflect real-world cost variations while keeping your product catalog clean and manageable.
+
+When setting up a charge, you define the relevant keys. You don't need to predefine every possible value. Instead, Lago intelligently routes each usage event to the correct pricing group based on the attributes provided at runtime.
+
+
+### Define pricing group keys
+To define a pricing group key, you need to:
+1. Go to the plan where you want to configure dynamic pricing;
+2. Select the charge you want to apply the pricing group key to;
+3. In the charge settings, enter a key in the Pricing Group Key field (e.g., region, cloud, instance_type);
+4. Send usage events that include this key in the properties object, using any value without predefining them; and
+5. Lago will automatically group usage into the correct pricing bucket based on the key's value.
 
 <Note>
-The `grouped_by` feature is exclusively available for the `standard` charge model.
+Pricing group keys are available for all charge models. You can define multiple pricing group keys for a single charge.
 </Note>
 
-Lago is currently improving this feature, please contact us for more information.
+### Example of pricing group keys
+Let's define a pricing group key called `regions` for a charge used to calculate Storage costs for your customers.
+
+<Frame caption="Define a pricing group key">
+    <img src="/guide/plans/images/pricing-group-key.png"/>
+</Frame>
+
+By sending usage events with a `regions` property, you can include any number of region values. Lago will automatically group and aggregate usage based on the values provided in your events.
+```json
+{
+  "event": {
+    "transaction_id": "{{$randomUUID}}",
+    "external_subscription_id": "8546dce0-d9e6-4544-ac8a-fbc77340cd9f",
+    "code": "storage",
+    "properties": {
+      "gb": 20,
+      "regions": "us-east-1"
+    }
+  }
+}
+```
+
+<Frame caption="Calculate usage with pricing group values">
+    <img src="/guide/plans/images/pricing-group-usage.png"/>
+</Frame>
