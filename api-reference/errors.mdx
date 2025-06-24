@@ -1,0 +1,75 @@
+---
+title: "Errors"
+---
+
+The Lago API uses standard HTTP response codes to clearly indicate the result of each API request:
+
+- **2xx**: Success - The request was processed successfully.
+- **4xx**: Client Error - There was an issue with the request, such as missing parameters, invalid input, or unauthorized access.
+- **5xx**: Server Error - An error occurred on Lago's side while processing the request.
+
+For some 4xx errors, the response body will include additional information to help you understand and resolve the specific problem.
+
+<ResponseExample >
+  ```json Validation errors
+  {
+    "status": 422,
+    "error": "Unprocessable Entity",
+    "code": "validation_errors",
+    "error_details": {
+      "code": [
+        "value_is_mandatory"
+      ]
+    }
+  }
+  ```
+
+  ```json Not found
+  {
+    "status": 404,
+    "error": "Not Found",
+    "code": "subscription_not_found"
+  }
+  ```
+
+  ```json Forbidden
+  {
+    "status": 403,
+    "error": "Forbidden",
+    "code": "feature_unavailable"
+  }
+  ```
+
+  ```json Unauthorized
+  {
+    "status": 401,
+    "error": "Unauthorized"
+  }
+  ```
+</ResponseExample>
+
+
+### Error fields
+
+<ResponseField name="status" type="number" required>
+  The HTTP status code.
+</ResponseField>
+
+<ResponseField name="error" type="string" required>
+  A generic error message.
+</ResponseField>
+
+<ResponseField name="code" type="string">
+  A generic error code representing the type of error.
+</ResponseField>
+
+<ResponseField name="provider.code" type="string" >
+  The code of the payment provider that caused the error when applicable.
+</ResponseField>
+
+<ResponseField name="error_details" type="object" >
+  An object containing the error details. It usually maps the field names that caused the error to an array of
+  error messages/codes.
+
+  For specific errors, such as a payment provider error, the `error_details` may include other fields.
+</ResponseField>

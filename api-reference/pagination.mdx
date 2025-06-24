@@ -1,0 +1,61 @@
+---
+title: "Pagination"
+---
+
+Many API endpoints that return lists of resources support pagination, enabling you to manage large result sets efficiently. You can control which results are returned by specifying the `page` and `per_page` query parameters.
+
+Paginated responses include a `meta` object that provides detailed pagination information, such as:
+
+- `current_page`: The current page number.
+- `next_page`: The next page number, if available.
+- `prev_page`: The previous page number, if available.
+- `total_pages`: The total number of pages.
+- `total_count`: The total number of records available.
+
+<ResponseExample>
+  ```json
+  {
+    "coupons": [
+      // ...
+    ],
+    "meta": {
+      "current_page": 1,
+      "next_page": 2,
+      "prev_page": 1,
+      "total_pages": 10,
+      "total_count": 100
+  }
+  ```
+</ResponseExample>
+
+### Parameters
+
+<ParamField query="page" type="integer" required="false" default={1}>
+  The page number to return.
+</ParamField>
+
+<ParamField query="per_page" type="integer" required="false" >
+  The number of results per page. In most cases, the default value is `100`.
+</ParamField>
+
+### List response
+
+<ResponseField name="meta.current_page" type="number" required>
+  The current page number.
+</ResponseField>
+
+<ResponseField name="meta.next_page" type="number" >
+  The next page number.
+</ResponseField>
+
+<ResponseField name="meta.prev_page" type="number" >
+  The previous page number.
+</ResponseField>
+
+<ResponseField name="meta.total_pages" type="number" required>
+  The total number of pages.
+</ResponseField>
+
+<ResponseField name="meta.total_count" type="number" required>
+  The total number of records.
+</ResponseField>
