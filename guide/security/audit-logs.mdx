@@ -68,3 +68,71 @@ All of the fields listed above can be used to filter activity logs, either throu
 
 ### Activity logs per object
 In the UI, you can view activity logs for a specific object by clicking on the desired object (e.g., a specific customer, plan, invoice, etc.), and access the **Activity Logs** tab.
+
+
+
+## API logs
+API logs offer a comprehensive record of all API requests and calls made within your organization. They serve as an essential tool for monitoring activity, troubleshooting issues, and auditing system usage.
+
+### API logs limitations
+1. **Operation scope:** Only `POST`, `PUT`, and `DELETE` requests are currently recorded in the API logs. All `GET` requests are excluded at this time.
+2. **Excluded endpoints:** API calls related to metering and high-throughput ingestion, such as `POST /api/v1/events` or `POST /api/v1/batch_events`, are intentionally omitted from logging to ensure performance and scalability.
+
+### API logs retention
+Access to the API requests logs is limited to paid tiers:
+1. Free users do not have access to API logs;
+2. Premium users can view API logs for up to 30 days; and
+3. Enterprise customers with the appropriate paid add-on can access the full API log history without time limits.
+
+### How to access API logs
+<Tabs>
+  <Tab title="Dashboard">
+    Only organization admins can access API Logs through the Developers Console.
+    To view the logs:
+    1. Click the **Developers** icon in the navigation sidebar;
+    2. Select the **API Logs** tab; and
+    3. View paginated activity logs directly in this section.
+
+    <Frame caption="API logs in the Developers Console">
+        <img src="/guide/security/images/api-logs.png" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash API Requests Logs
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v1/api_logs" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+
+### API log details
+Each API log includes a set of properties that provide context about the recorded action:
+
+- **Endpoint**: The API endpoint that was called;
+- **Request ID**: A unique identifier for the request;
+- **Request Method**: The HTTP method used for the request (e.g., `POST`, `PUT`, `DELETE`);
+- **API key**: The API key used for the request;
+- **API version**: The API version used for the request;
+- **Origin**: The origin URL of the request;
+- **Client**: The SDK or Client used for the request (e.g., `RubySDK`, `PythonSDK` or `PostmanRuntime/7.44.1`); and
+- **HTTP status code**: The HTTP status code of the response (e.g., `200`, `400`, `404`).
+
+In addition to the above, the **Event Payload** section provides contextual data:
+- **Request Body**: The payload of the request; and
+- **Response Body**: The payload of the response.
+
+
+
+### Filtering API logs
+All the fields described above can be used to filter API logs, either through the UI or programmatically via the API. Here are som key filtering behaviors to note:
+
+**Exact Path Matching**: Supplying a full, exact path (e.g., `/api/v1/customers`) will return only requests made to that specific endpoint. It will **not** include requests to extended paths like `/api/v1/customers/123`.
+
+**Wildcard Path Matching**: You can use wildcard patterns (e.g., `/api/v1/customers/*`) to match all sub-paths related to a resource. This is useful for retrieving all activity tied to specific objects or nested routes.
