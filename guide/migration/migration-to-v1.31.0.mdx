@@ -1,0 +1,158 @@
+---
+title: "Migration to v1.31.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about important changes in Lago v1.31.0 that will enhance data consistency. application performances and prepare upcoming features.
+
+# What are the changes?
+
+## Filling `organization_id` on every tables of the application
+
+The `organization_id` column was recently added on every tables related to an organization.
+Since filling this column is an heavy task, no migration was backfilling it for existing records. It was only populated on newly created records.
+
+As we now need to be able to rely on this column in the application, we have to make sures that every single records has an `organization_id` value.
+
+# Why are we doing this?
+
+These changes are made to increase the performannces of the application and to ease the development on future features.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you’re using a version below `v1.20.0`, please first follow the migration steps for [v1.20.0](/guide/migration/migration-to-v1.20.0), then for [v1.25.0](/guide/migration/migration-to-v1.25.0), then for [v1.28.1](/guide/migration/migration-to-v1.28.1), then for [v1.29.0](/guide/migration/migration-to-v1.29.0).
+Only after completing those should you proceed to v1.31.0.
+</Warning>
+
+## Migration Steps
+
+1. Install the Lago version 1.30.0
+2. Open a shell (bash) on your API server
+3. Run the migration task:
+
+```bash
+bundle exec rails migrations:fill_organization_id
+```
+
+  The task will:
+  - Check for all database table to identify the ones that require a migration
+  - Enqueue jobs for each tables needing a backfill
+  - Loop over all migrating tables until all records are updated
+
+  <Note>
+  All resources are processed in background jobs, with 1000 records per batch.
+  The task will monitor the values and give you the number of remaing records.
+  </Note>
+
+  ```bash
+  ##################################
+  Starting filling organization_id
+
+  #### Checking for resource to fill ####
+  "- Checking AddOn::AppliedTax: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking AdjustedFee: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking AppliedCoupon: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking AppliedInvoiceCustomSection: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking AppliedUsageThreshold: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking BillableMetricFilter: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking BillingEntity::AppliedTax: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking ChargeFilterValue: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking ChargeFilter: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Charge::AppliedTax: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Charge: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Commitment::AppliedTax: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Commitment: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking CouponTarget: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking CreditNoteItem: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking CreditNote::AppliedTax: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking CreditNote: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Credit: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Metadata::CustomerMetadata: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Customer::AppliedTax: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking DataExportPart: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking DunningCampaignThreshold: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Fee::AppliedTax: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking IdempotencyRecord: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking IntegrationCollectionMappings::BaseCollectionMapping: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking IntegrationCustomers::BaseCustomer: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking IntegrationItem: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking IntegrationMappings::BaseMapping: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking IntegrationResource: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Metadata::InvoiceMetadata: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking InvoiceSubscription: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking PaymentRequest::AppliedInvoice: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Invoice::AppliedTax: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking PaymentProviderCustomers::BaseCustomer: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Payment: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Payment: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Plan::AppliedTax: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking RecurringTransactionRule: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Refund: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Subscription: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking UsageThreshold: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking WalletTransaction: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Wallet: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking Webhook: 🔎"
+  "  -> Nothing to do ✅"
+
+  #### All good, ready to Upgrade! ✅ ####
+  ```
+
+4. Install Lago v1.31.0
+
+# Get Involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
