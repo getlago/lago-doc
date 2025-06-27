@@ -21,7 +21,7 @@ For the logo, you can upload a JPG or PNG file with a maximum size of 800 KB.
 ### Add a custom invoice section[](#add-custom-invoice-section "Direct link to heading")
 A custom invoice section is an additional section displayed above the custom footer on an invoice. 
 It allows you to set a title and include specific details (e.g. bank details). 
-Custom invoice sections can be applied at the organization level, impacting all customer invoices, or set per customer for greater granularity.
+Custom invoice sections can be applied at the billing entity level, impacting all customer invoices attached to it, or set per customer for greater granularity.
 
 To create an invoice custom section:
 1. Click **"Settings"** in the side menu;
@@ -29,7 +29,8 @@ To create an invoice custom section:
 3. Click on **"Add"** in the **"Invoice custom section** block;
 4. Provide the necessary details, including the title and content.
 5. Click **Preview** to see how the section will appear on an invoice.
-6. Toggle the switch to apply the custom section to all customer invoices within the organization.
+6. Apply this invoice custom section to a billing entity or a customer.
+
 
 <Info>
 You can display multiple custom invoice sections on invoices. Note that they will be sorted alphabetically by the custom section name.
@@ -57,7 +58,7 @@ You can override the entity-level setting for specific customers by either assig
           "customer": {
 		        …
             "skip_invoice_custom_sections": false, // If true, no invoice custom sections will be applied to the customer
-            "invoice_custom_section_codes": ["eu_bank_details"] // Leave an empty array to use the organization-level settings
+            "invoice_custom_section_codes": ["eu_bank_details"] // Leave an empty array to use the billing entity-level settings
             …
           }
         }'
@@ -66,7 +67,7 @@ You can override the entity-level setting for specific customers by either assig
   </Tab>
 </Tabs>
 
-Once the settings are updated, all newly finalized invoices for the organization or specific customer will reflect the changes.
+Once the settings are updated, all newly finalized invoices for the billing entity or specific customer will reflect the changes.
 
 
 
@@ -88,7 +89,7 @@ If you need granularity per customer, please refer to the **custom invoice secti
     </Frame>
   </Tab>
   <Tab title="API">
-      You can update the customer footer of invoices by changing the `invoice_footer` in the `billing_configuration` object of your organization endpoint.
+      You can update the customer footer of invoices by changing the `invoice_footer` in your billing entity endpoint.
       <CodeGroup>
       ```bash Update the customer footer of your invoices
       LAGO_URL="https://api.getlago.com"
@@ -122,7 +123,7 @@ If you need granularity per customer, please refer to the **custom invoice secti
       The entity's default language can be overwritten by the customer's preferred language ([learn more](/guide/customers/invoice-customer#preferred-language)).
   </Tab>
   <Tab title="API">
-      You can update the customer footer of invoices by changing the `document_locale` in the `billing_configuration` object of your organization endpoint.
+      You can update the customer footer of invoices by changing the `document_locale` in the `billing_configuration` object of your billing entity endpoint.
       <CodeGroup>
       ```bash Update the documents locale
       LAGO_URL="https://api.getlago.com"
@@ -132,7 +133,7 @@ If you need granularity per customer, please refer to the **custom invoice secti
         --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
-          "organization": {
+          "billing_entity": {
             …
             "document_locale": "fr"
           }
