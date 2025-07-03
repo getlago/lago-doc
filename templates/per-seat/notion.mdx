@@ -9,35 +9,15 @@ In this article, you will learn how to build a 'fair' billing system, with charg
 
 This template is suitable for companies whose pricing depends on persistent metrics, such as productivity software (e.g. number of days users are active), fintechs (e.g. number of days payment cards are active) and data platforms (e.g. number of days integrations are active).
 
-## Summary
-
-<Steps>
-  <Step title="Create recurring metrics">
-    Create a billable metric to track user activity. [(More
-    here)](#step-1-create-recurring-metrics).
-  </Step>
-  <Step title="Set up a 'fair' pricing model">
-    Set up prorata pricing for a pay-as-you-go plan. [(More
-    here)](#step-2-set-up-a-fair-pricing-model).
-  </Step>
-  <Step title="Offer credits to your customers">
-    Create a wallet to assign credits. [(More
-    here)](#step-3-offer-credits-to-your-customers).
-  </Step>
-</Steps>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=EAmRNU92Bgrh7w_B&amp;start=62" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Pricing structure
 
 Notion offers a Personal Pro plan for individuals who want to collaborate with friends or clients, and a Team plan through which members can set up a collaborative workspace. While the Personal Pro plan is limited to one member, the Team plan allows companies to invite as many members as they need.
 
-| Model                   | Personal Pro plan | Team plan                   |
-| ----------------------- | ----------------- | --------------------------- |
-| Pages and blocks        | Unlimited         | Unlimited                   |
-| Members                 | Just one          | Unlimited                   |
-| Guests                  | Unlimited         | Unlimited                   |
-| File uploads            | Unlimited         | Unlimited                   |
-| Collaborative workspace | No                | Yes                         |
-| Price                   | $5 billed monthly | $10 per user billed monthly |
+| Model                    | Team plan                   |
+| -----------------------  | --------------------------- |
+| Price                    | $10 per user billed monthly |
 
 In its FAQ section, Notion explains how adding and removing members work:
 
@@ -51,169 +31,80 @@ _"You can earn credit by using Notion across your devices and trying out new fea
 
 Here's how you can replicate this pricing and billing system with Lago.
 
-## Step 1- Create recurring metrics
+## Get started
 
-Lago monitors usage by converting events into billable metrics. Notion's pricing is based on users, so we need to create a billable metric to keep track of the users associated with each customer account.
+<Steps>
+  <Step title="Create a recurring billable metric">
+    Create a recurring billable metric to track user activity over time.
+    
+    Refer to the [API reference](/api-reference/billable-metrics/create) to create the billable metric object.
 
-There are two types of metrics:
+    1. Set the `aggregation_type` to `unique_count_agg`
+    2. Set the `field_name` to `user_id`
+    3. Set `recurring` to `true` for persistent tracking
 
-- **Metered metrics** that are reset to zero at the end of each billing period; and
-- **Recurring metrics** that can be carried over several billing periods.
+    <Info>
+      When a new member is successfully added to the customer account, the backend system will generate an event,
+      including the `user_id` and `operation_type: 'add'`. When a member is removed from the customer account, the
+      backend system will also generate an event, including the `user_id` and `operation_type: 'remove'`.
+    </Info>
 
-When a new member is added to a Notion account, they are likely to remain active for some time (probably more than just a month). Therefore, we should create a recurring metric for our users.
+    Refer to the [guide on recurring metrics](/guides/billable-metrics/recurring) to learn more.
+  </Step>
+  <Step title="Create a plan with prorated pricing">
+    Create a plan with prorated charges for fair per-seat billing.
 
-<Tabs>
-  <Tab title="Dashboard">
-    The aggregation type is a recurring **count unique** and will allow us to record the period of activity of each user (i.e. from the day the member is added to the account until the day they are removed).
+    Refer to the [API reference](/api-reference/plans/create) to create the plan object.
 
-    When a new member is successfully added to the customer account, the backend system will generate an event, including the **user_id** and **"operation_type": "add"**. When a member is removed from the customer account, the backend system will also generate an event, including the **user_id** and **"operation_type": "remove"**.
+    1. Set the `amount_cents` to `0` since there is no subscription fee
+    2. Set the `charges` to:
 
-    At the end of the billing period, Lago will automatically calculate the number of days of activity for each user.
-
-    <Frame caption="How to create a recurring metric">
-      <img src="/templates/images/notion-recurring-metric.png" />
-    </Frame>
-
-  </Tab>
-  <Tab title="API">
-    ```bash
-    # Create a recurring billable metric
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-
-    curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "billable_metric": {
-        "name": "Users",
-        "code": "users",
-        "description": "Team members with access to the collaborative space",
-        "aggregation_type": "unique_count_agg",
-        "weighted_interval": null,
-        "recurring": true,
-        "field_name": "user_id",
-        "filters": []
+    ```json
+    {
+      "charge_model": "standard",
+      "invoiceable": true,
+      "prorated": true, // for fair daily billing
+      "properties": {
+        "amount": "10" // $10 per user per month
       }
     }
     ```
 
-  </Tab>
-</Tabs>
+    Refer to the [guide on prorated charges](/guides/plans/charges/prorated) to learn more.
+  </Step>
+  <Step title="Create a wallet for credits">
+    Set up a credit system to allow customers to earn and use credits.
 
-## Step 2- Set up a 'fair' pricing model
+    Refer to the [API reference](/api-reference/wallets/create) to create the wallet object.
 
-When creating a new plan, the first step is to define the plan model, including billing frequency and subscription fee. Notion's Team plan is **'pay-as-you-go'**, which means that there's no subscription fee (i.e. customers only pay for what they use).
+    1. [Create a new customer](/api-reference/customers/create)
+    2. [Create a new wallet](/api-reference/wallets/create) for the customer
 
-<Tabs>
-  <Tab title="Dashboard">
-    This plan can be billed annually (\$96 per user) or monthly (\$10 per user). Depending on the billing cycle, we add a **standard charge** of \$96 or \$10, associated with our billable metric. For example, for the monthly plan, one unit represents one active user for a full month.
+    Refer to the [guide on wallets](/guides/wallets/overview) to learn more.
+  </Step>
+  <Step title="Ingest user activity events">
+    Send events when users are added or removed from accounts.
 
-    We turn **Prorate charge amount** on so that when a new user is added in the middle of the billing cycle, they will be billed a prorated amount that corresponds to the percentage of the billing cycle remaining. This same logic is also applied when users are removed.
-
-    <Frame caption="How to create a 'pay-as-you-go' plan">
-      <img src="/templates/images/notion-plan-per-seat.png" />
-    </Frame>
-
-    To understand how it works, we can add a new customer and assign them the monthly Team plan we just created. Today is October 9th and a member is immediately added to the customer account. In the **debugger**, we can see the corresponding event, sent by the backend system via the API.
-
-    <Frame caption="Example of event when adding a user">
-      <img src="/templates/images/notion-add-user-event.png" />
-    </Frame>
-
-    In the **'Usage' tab** of the customer view, we can see that the customer's current usage is $7.42. As there's one active user and 23 days left in October (including October 9th), the billing system plans to bill 0.74194 units at the end of the period (23 days left divided by 31 days in October).
-
-    <Frame caption="Usage report updated in real time">
-      <img src="/templates/images/notion-usage-report.png" />
-    </Frame>
-
-  </Tab>
-
-  <Tab title="API">
     ```bash
-    # Create a plan with prorata
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-    curl --location --request POST "$LAGO_URL/api/v1/plans" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "plan": {
-        "name": "Notion Team plan",
-        "code": "notion_team_plan",
-        "interval": "monthly",
-        "amount_cents": 0,
-        "amount_currency": "USD",
-        "trial_period": 0.0,
-        "pay_in_advance": false,
-        "bill_charges_monthly": null,
-        "charges": [
-          {
-            "billable_metric_id": "d4f8056c-6321-4a82-9cd7-1e08313764f4",
-            "billable_metric_code": "users",
-            "charge_model": "standard",
-            "invoiceable": true,
-            "pay_in_advance": false,
-            "prorated": true,
-            "min_amount_cents": 0,
-            "properties": {
-              "amount": "10"
-            },
-            "filters": [],
-            "taxes": []
+    curl --location --request POST 'https://api.getlago.com/api/v1/events' \
+      --header 'Authorization: Bearer __API_KEY__' \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "event": {
+          "transaction_id": "{{$randomUUID}}",
+          "code": "users",
+          "external_customer_id": "__YOUR_CUSTOMER_ID__",
+          "properties": {
+            "user_id": "user_123",
+            "operation_type": "add"
           }
-        ],
-      }
-    }
+        }
+      }'
     ```
-  </Tab>
-</Tabs>
 
-If the same user is removed before the end of the month, Lago will automatically recalculate the number of **billable days** (i.e. the number of billing units).
-
-## Step 3- Offer credits to your customers
-
-Now that our pricing is ready, we can set up our credit system. Notion customers earn credits when they use the app across different devices and try out new features.
-
-<Frame caption="Notion 'Earn credit' tab">
-  <img src="/templates/images/notion-credits.png" />
-</Frame>
-
-<Tabs>
-  <Tab title="Dashboard">
-    In the **'Wallets' tab** of the customer view, we can create a new wallet, which will allow us to grant credits to our customer. If later they complete additional tasks, we'll be able to top up their wallet with free credits.
-
-    <Frame caption="How to create a new wallet">
-      <img src="/templates/images/notion-wallet-creation.png" />
-    </Frame>
-
-    Credits are automatically deducted from the customer's next invoice(s).
-
-  </Tab>
-
-  <Tab title="API">
-    ```bash
-    # Create a wallet
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-    curl --location --request POST "$LAGO_URL/api/v1/wallets" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "wallet": {
-        "name": "Notion Credits",
-        "rate_amount": "1.0",
-        "paid_credits": "0.0",
-        "granted_credits": "10.0",
-        "currency": "USD",
-        "expiration_at": null,
-        "expiration_date": null,
-        "recurring_transaction_rules": []
-      }
-    }
-    ```
-  </Tab>
-</Tabs>
+    Refer to the [API reference](/api-reference/events/usage) to create an event.
+  </Step>
+</Steps>
 
 ## Wrap-up
 
