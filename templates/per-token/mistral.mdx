@@ -24,77 +24,735 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 <Steps>
   <Step title="Create a billable metric">
     Create a single billable metric to track token usage across different models and input/output types.
-    
-    Refer to the [API reference](/api-reference/billable-metrics/create) to create the billable metric object.
 
-    1. Set the `aggregation_type` to `sum_agg`
-    2. Set the `field_name` to `tokens`
-    3. Set the `filters` to:
-    ```json
-    [
-      {
-        "key": "model",
-        "values": [
-          "mistral-small",
-          "mistral-medium",
-          "mistral-large"
-        ]
-      },
-      {
-        "key": "type",
-        "values": ["input", "output"]
-      }
-    ]
+    1. Add a unique `code` for your billable metric
+    2. Set `aggregation_type` to `sum_agg`
+    3. Set `recurring` to `false`
+    4. Set `filters` to distinguish between Mistral models and token types
+
+    <Tabs>
+
+    <Tab title="cURL">
+
+    ```bash highlight={10,12-13,14-24}
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billable_metric": {
+          "name": "AI Tokens",
+          "code": "__BILLABLE_METRIC_CODE__",
+          "description": "Token usage across Mistral AI models",
+          "aggregation_type": "sum_agg",
+          "field_name": "tokens",
+          "recurring": false,
+          "filters": [
+            {
+              "key": "model",
+              "values": ["mistral-small", "mistral-medium", "mistral-large"]
+            },
+            {
+              "key": "type", 
+              "values": ["input", "output"]
+            }
+          ]
+        }
+      }'
     ```
 
-    Refer to the [guide on filters](/guides/billable-metrics/filters) to learn more.
+    </Tab>
+
+    <Tab title="Python">
+
+    ```python highlight={20,22-24,26}
+    from lago_python_client.client import Client
+    from lago_python_client.exceptions import LagoApiError
+    from lago_python_client.models import BillableMetric, BillableMetricFilter
+
+    client = Client(api_key='__API_KEY__')
+
+    # Mistral-specific filters
+    model_filter = BillableMetricFilter(
+      key='model',
+      values=['mistral-small', 'mistral-medium', 'mistral-large']
+    )
+    
+    type_filter = BillableMetricFilter(
+      key='type',
+      values=['input', 'output']
+    )
+
+    billable_metric = BillableMetric(
+      name='AI Tokens',
+      code='__BILLABLE_METRIC_CODE__',
+      description='Token usage across Mistral AI models',
+      aggregation_type='sum_agg',
+      field_name='tokens',
+      recurring=False,
+      filters=[model_filter, type_filter]
+    )
+
+    try:
+        client.billable_metrics.create(billable_metric)
+    except LagoApiError as e:
+        repair_broken_state(e)  # do something on error or raise your own exception
+    ```
+
+    </Tab>
+
+    <Tab title="Ruby">
+
+    ```ruby highlight={7,9-11,12-20}
+    require 'lago-ruby-client'
+
+    client = Lago::Api::Client.new(api_key: '__API_KEY__')
+
+    client.billable_metrics.create({
+      name: 'AI Tokens',
+      code: '__BILLABLE_METRIC_CODE__', 
+      description: 'Token usage across Mistral AI models',
+      aggregation_type: 'sum_agg',
+      field_name: 'tokens',
+      recurring: false,
+      filters: [
+        {
+          key: 'model',
+          values: ['mistral-small', 'mistral-medium', 'mistral-large']
+        },
+        {
+          key: 'type',
+          values: ['input', 'output']
+        }
+      ]
+    })
+    ```
+
+    </Tab>
+
+    <Tab title="Javascript">
+
+    ```js highlight={4,6-8,9-17}
+    await client.billableMetrics.createBillableMetric({
+      billable_metric: {
+        name: "AI Tokens",
+        code: "__BILLABLE_METRIC_CODE__",
+        description: "Token usage across Mistral AI models", 
+        aggregation_type: "sum_agg",
+        field_name: "tokens",
+        recurring: false,
+        filters: [
+          {
+            key: "model",
+            values: ["mistral-small", "mistral-medium", "mistral-large"]
+          },
+          {
+            key: "type",
+            values: ["input", "output"]
+          }
+        ]
+      }
+    });
+    ```
+
+    </Tab>
+
+    <Tab title="Go">
+
+    ```go highlight={9,11-13,14-22}
+    import "fmt"
+    import "github.com/getlago/lago-go-client"
+
+    func main() {
+      lagoClient := lago.New().SetApiKey("__API_KEY__")
+
+      bmInput := &lago.BillableMetricInput{
+        Name:            "AI Tokens",
+        Code:            "__BILLABLE_METRIC_CODE__",
+        Description:     "Token usage across Mistral AI models",
+        AggregationType: lago.SumAggregation,
+        FieldName:       "tokens",
+        Recurring:       false,
+        Filters: []map[string]interface{}{
+          {
+            "key":    "model",
+            "values": []string{"mistral-small", "mistral-medium", "mistral-large"},
+          },
+          {
+            "key":    "type", 
+            "values": []string{"input", "output"},
+          },
+        },
+      }
+
+      billableMetric, err := lagoClient.BillableMetric().Create(bmInput)
+      if err != nil {
+        panic(err)
+      }
+      fmt.Println(billableMetric)
+    }
+    ```
+
+    </Tab>
+
+    </Tabs>
+
+    Refer to the [API reference](/api-reference/billable-metrics/create) and [guide on filters](/guides/billable-metrics/filters) to learn more.
   </Step>
   <Step title="Create a plan">
-    Create a plan to price packages of tokens used.
+    Create a plan to price packages of tokens used with Mistral's specific pricing tiers.
 
-    Refer to the [API reference](/api-reference/plans/create) to create the plan object.
+    1. Add a unique `code` for your plan
+    2. Under `charges`, configure pricing tiers for different models and token types
 
-    1. Set the `amount_cents` to `0` since there is no subscription fee
-    2. Set the `charges` to:
-    ```json
-    [
-      {
-        "charge_model": "package",
-        "filters": [
-          {
-            "invoice_display_name": "mistral-small-input",
-            "properties": { // $1 per 1M input tokens
-              "amount": "1",
-              "free_units": 0,
-              "package_size": 1000000
-            },
-            "values": {
-              "model": ["mistral-small"],
-              "type": ["input"]
+    <Tabs>
+
+    <Tab title="cURL">
+
+    ```bash highlight={10,14-69}
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/plans" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "plan": {
+          "name": "Mistral AI Pricing",
+          "code": "__PLAN_CODE__",
+          "amount_cents": 0,
+          "amount_currency": "USD",
+          "interval": "monthly",
+          "charges": [
+            {
+              "billable_metric_code": "__BILLABLE_METRIC_CODE__",
+              "charge_model": "package",
+              "filters": [
+                {
+                  "invoice_display_name": "mistral-small-input",
+                  "properties": {
+                    "amount": "1",
+                    "free_units": 0,
+                    "package_size": 1000000
+                  },
+                  "values": {
+                    "model": ["mistral-small"],
+                    "type": ["input"]
+                  }
+                },
+                {
+                  "invoice_display_name": "mistral-small-output", 
+                  "properties": {
+                    "amount": "3",
+                    "free_units": 0,
+                    "package_size": 1000000
+                  },
+                  "values": {
+                    "model": ["mistral-small"],
+                    "type": ["output"]
+                  }
+                },
+                {
+                  "invoice_display_name": "mistral-large-input",
+                  "properties": {
+                    "amount": "4", 
+                    "free_units": 0,
+                    "package_size": 1000000
+                  },
+                  "values": {
+                    "model": ["mistral-large"],
+                    "type": ["input"]
+                  }
+                },
+                {
+                  "invoice_display_name": "mistral-large-output",
+                  "properties": {
+                    "amount": "12",
+                    "free_units": 0, 
+                    "package_size": 1000000
+                  },
+                  "values": {
+                    "model": ["mistral-large"],
+                    "type": ["output"]
+                  }
+                }
+              ]
             }
-          },
-          ... // Add more filters for other combinations
-        ]
-      }
-    ]
+          ]
+        }
+      }'
     ```
 
-    Refer to the [guide on charges with filters](/guide/plans/charges/charges-with-filters) to learn more.
+    </Tab>
+
+    <Tab title="Python">
+
+    ```python highlight={41,8-36}
+    from lago_python_client.client import Client
+    from lago_python_client.exceptions import LagoApiError
+    from lago_python_client.models import Plan, Charge, ChargeFilter
+
+    client = Client(api_key='__API_KEY__')
+
+    # Mistral-specific charge filters with pricing
+    small_input_filter = ChargeFilter(
+      invoice_display_name="mistral-small-input",
+      properties={"amount": "1", "free_units": 0, "package_size": 1000000},
+      values={"model": ["mistral-small"], "type": ["input"]}
+    )
+    
+    small_output_filter = ChargeFilter(
+      invoice_display_name="mistral-small-output", 
+      properties={"amount": "3", "free_units": 0, "package_size": 1000000},
+      values={"model": ["mistral-small"], "type": ["output"]}
+    )
+    
+    large_input_filter = ChargeFilter(
+      invoice_display_name="mistral-large-input",
+      properties={"amount": "4", "free_units": 0, "package_size": 1000000},
+      values={"model": ["mistral-large"], "type": ["input"]}
+    )
+    
+    large_output_filter = ChargeFilter(
+      invoice_display_name="mistral-large-output",
+      properties={"amount": "12", "free_units": 0, "package_size": 1000000},
+      values={"model": ["mistral-large"], "type": ["output"]}
+    )
+
+    charge = Charge(
+      billable_metric_code="__BILLABLE_METRIC_CODE__",
+      charge_model="package",
+      filters=[small_input_filter, small_output_filter, large_input_filter, large_output_filter]
+    )
+
+    plan = Plan(
+      name="Mistral AI Pricing",
+      code="__PLAN_CODE__",
+      amount_cents=0,
+      amount_currency="USD", 
+      interval="monthly",
+      charges=[charge]
+    )
+
+    try:
+        client.plans.create(plan)
+    except LagoApiError as e:
+        repair_broken_state(e)  # do something on error or raise your own exception
+    ```
+
+    </Tab>
+
+    <Tab title="Ruby">
+
+    ```ruby highlight={7,12-35}
+    require 'lago-ruby-client'
+
+    client = Lago::Api::Client.new(api_key: '__API_KEY__')
+
+    client.plans.create({
+      name: "Mistral AI Pricing",
+      code: "__PLAN_CODE__",
+      amount_cents: 0,
+      amount_currency: "USD",
+      interval: "monthly",
+      charges: [
+        {
+          billable_metric_code: "__BILLABLE_METRIC_CODE__",
+          charge_model: "package",
+          filters: [
+            {
+              invoice_display_name: "mistral-small-input",
+              properties: { amount: "1", free_units: 0, package_size: 1000000 },
+              values: { model: ["mistral-small"], type: ["input"] }
+            },
+            {
+              invoice_display_name: "mistral-small-output",
+              properties: { amount: "3", free_units: 0, package_size: 1000000 },
+              values: { model: ["mistral-small"], type: ["output"] }
+            },
+            {
+              invoice_display_name: "mistral-large-input", 
+              properties: { amount: "4", free_units: 0, package_size: 1000000 },
+              values: { model: ["mistral-large"], type: ["input"] }
+            },
+            {
+              invoice_display_name: "mistral-large-output",
+              properties: { amount: "12", free_units: 0, package_size: 1000000 },
+              values: { model: ["mistral-large"], type: ["output"] }
+            }
+          ]
+        }
+      ]
+    })
+    ```
+
+    </Tab>
+
+    <Tab title="Javascript">
+
+    ```js highlight={4,9-32}
+    await client.plans.createPlan({
+      plan: {
+        name: "Mistral AI Pricing",
+        code: "__PLAN_CODE__",
+        amount_cents: 0,
+        amount_currency: "USD",
+        interval: "monthly",
+        charges: [
+          {
+            billable_metric_code: "__BILLABLE_METRIC_CODE__",
+            charge_model: "package",
+            filters: [
+              {
+                invoice_display_name: "mistral-small-input",
+                properties: { amount: "1", free_units: 0, package_size: 1000000 },
+                values: { model: ["mistral-small"], type: ["input"] }
+              },
+              {
+                invoice_display_name: "mistral-small-output",
+                properties: { amount: "3", free_units: 0, package_size: 1000000 },
+                values: { model: ["mistral-small"], type: ["output"] }
+              },
+              {
+                invoice_display_name: "mistral-large-input",
+                properties: { amount: "4", free_units: 0, package_size: 1000000 },
+                values: { model: ["mistral-large"], type: ["input"] }
+              },
+              {
+                invoice_display_name: "mistral-large-output", 
+                properties: { amount: "12", free_units: 0, package_size: 1000000 },
+                values: { model: ["mistral-large"], type: ["output"] }
+              }
+            ]
+          }
+        ]
+      }
+    });
+    ```
+
+    </Tab>
+
+    <Tab title="Go">
+
+    ```go highlight={9,14-36}
+    import "fmt"
+    import "github.com/getlago/lago-go-client"
+
+    func main() {
+      lagoClient := lago.New().SetApiKey("__API_KEY__")
+
+      planInput := &lago.PlanInput{
+        Name:           "Mistral AI Pricing",
+        Code:           "__PLAN_CODE__", 
+        AmountCents:    0,
+        AmountCurrency: "USD",
+        Interval:       "monthly",
+        Charges: []lago.ChargeInput{
+          {
+            BillableMetricCode: "__BILLABLE_METRIC_CODE__",
+            ChargeModel:        "package",
+            Filters: []map[string]interface{}{
+              {
+                "invoice_display_name": "mistral-small-input",
+                "properties": map[string]interface{}{
+                  "amount": "1", "free_units": 0, "package_size": 1000000,
+                },
+                "values": map[string]interface{}{
+                  "model": []string{"mistral-small"}, "type": []string{"input"},
+                },
+              },
+              {
+                "invoice_display_name": "mistral-large-output",
+                "properties": map[string]interface{}{
+                  "amount": "12", "free_units": 0, "package_size": 1000000,
+                },
+                "values": map[string]interface{}{
+                  "model": []string{"mistral-large"}, "type": []string{"output"},
+                },
+              },
+              // Add other combinations...
+            },
+          },
+        },
+      }
+
+      plan, err := lagoClient.Plan().Create(planInput)
+      if err != nil {
+        panic(err)
+      }
+      fmt.Println(plan)
+    }
+    ```
+
+    </Tab>
+
+    </Tabs>
+
+    Refer to the [API reference](/api-reference/plans/create) and [guide on charges with filters](/guide/plans/charges/charges-with-filters) to learn more.
   </Step>
     <Step title="Prepay usage with credits">
-    Prepay usage with credits and set top-up rules in real-time.
+    Prepay usage with credits and set top-up rules in real-time for your AI customers.
 
-    1. [Create a new customer](/api-reference/customers/create)
-    2. [Create a new wallet](/api-reference/wallets/create) for the customer    
+    **First, create a customer:**
+
+    1. Set a unique `external_id` to identify your customer
+
+    <Tabs>
+
+    <Tab title="cURL">
+
+    ```bash highlight={9}
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "__EXTERNAL_CUSTOMER_ID__",
+          "name": "AI Startup Inc",
+          "email": "john@doe.com",
+          "currency": "USD",
+          "timezone": "America/New_York"
+        }
+      }'
+    ```
+
+    </Tab>
+
+    <Tab title="Python">
+
+    ```python highlight={8}
+    from lago_python_client.client import Client
+    from lago_python_client.exceptions import LagoApiError
+    from lago_python_client.models import Customer
+
+    client = Client(api_key='__API_KEY__')
+
+    customer = Customer(
+      external_id="__EXTERNAL_CUSTOMER_ID__",
+      name="AI Startup Inc",
+      email="billing@ai-startup.com",
+      currency="USD",
+      timezone="America/New_York"
+    )
+
+    try:
+        client.customers.create(customer)
+    except LagoApiError as e:
+        repair_broken_state(e)  # do something on error or raise your own exception
+    ```
+
+    </Tab>
+
+    <Tab title="Ruby">
+
+    ```ruby highlight={6}
+    require 'lago-ruby-client'
+
+    client = Lago::Api::Client.new(api_key: '__API_KEY__')
+
+    client.customers.create(
+      external_id: "__EXTERNAL_CUSTOMER_ID__",
+      name: "AI Startup Inc", 
+      email: "billing@ai-startup.com",
+      currency: "USD",
+      timezone: "America/New_York"
+    )
+    ```
+
+    </Tab>
+
+    <Tab title="Javascript">
+
+    ```js highlight={2}
+    const customerObject = {
+      external_id: "__EXTERNAL_CUSTOMER_ID__",
+      name: "AI Startup Inc",
+      email: "billing@ai-startup.com",
+      currency: "USD",
+      timezone: "America/New_York"
+    };
+
+    await client.customers.createCustomer({ customer: customerObject });
+    ```
+
+    </Tab>
+
+    <Tab title="Go">
+
+    ```go highlight={8}
+    import "fmt"
+    import "github.com/getlago/lago-go-client"
+
+    func main() {
+      lagoClient := lago.New().SetApiKey("__API_KEY__")
+
+      customerInput := &lago.CustomerInput{
+        ExternalID: "__EXTERNAL_CUSTOMER_ID__",
+        Name:       "AI Startup Inc",
+        Email:      "billing@ai-startup.com",
+        Currency:   "USD",
+        Timezone:   "America/New_York",
+      }
+
+      customer, err := lagoClient.Customer().Create(customerInput)
+      if err != nil {
+        panic(err)
+      }
+      fmt.Println(customer)
+    }
+    ```
+
+    </Tab>
+
+    </Tabs>
+
+    **Then, create a wallet with credits:**
+
+    1. Link wallet to customer with `external_customer_id`
+    2. Set the wallet `currency` 
+    3. Configure the `rate_amount` for credit conversion
+
+    <Tabs>
+
+    <Tab title="cURL">
+
+    ```bash highlight={10-12}
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "wallet": {
+          "name": "AI Credits",
+          "external_customer_id": "__EXTERNAL_CUSTOMER_ID__",
+          "currency": "USD",
+          "rate_amount": "1.0"
+          "paid_credits": "100.0",
+          "granted_credits": "25.0",
+        }
+      }'
+    ```
+
+    </Tab>
+
+    <Tab title="Python">
+
+    ```python highlight={9,10,13}
+    from lago_python_client.client import Client
+    from lago_python_client.exceptions import LagoApiError
+    from lago_python_client.models import Wallet
+
+    client = Client(api_key='__API_KEY__')
+
+    wallet = Wallet(
+      name="AI Credits",
+      external_customer_id="__EXTERNAL_CUSTOMER_ID__",
+      currency="USD",
+      paid_credits="100.0",
+      granted_credits="25.0",
+      rate_amount="1.0"
+    )
+
+    try:
+        client.wallets.create(wallet)
+    except LagoApiError as e:
+        repair_broken_state(e)  # do something on error or raise your own exception
+    ```
+
+    </Tab>
+
+    <Tab title="Ruby">
+
+    ```ruby highlight={7,8,11}
+    require 'lago-ruby-client'
+
+    client = Lago::Api::Client.new(api_key: '__API_KEY__')
+
+    client.wallets.create({
+      name: "AI Credits",
+      external_customer_id: "__EXTERNAL_CUSTOMER_ID__",
+      currency: "USD",
+      paid_credits: "100.0",
+      granted_credits: "25.0",
+      rate_amount: "1.0"
+    })
+    ```
+
+    </Tab>
+
+    <Tab title="Javascript">
+
+    ```js highlight={4,5,8}
+    await client.wallets.createWallet({
+      wallet: {
+        name: "AI Credits",
+        external_customer_id: "__EXTERNAL_CUSTOMER_ID__",
+        currency: "USD",
+        paid_credits: 100.0,
+        granted_credits: 25.0,
+        rate_amount: 1.0
+      }
+    });
+    ```
+
+    </Tab>
+
+    <Tab title="Go">
+
+    ```go highlight={9,10,13}
+    import "fmt"
+    import "github.com/getlago/lago-go-client"
+
+    func main() {
+      lagoClient := lago.New().SetApiKey("__API_KEY__")
+
+      walletInput := &lago.WalletInput{
+        Name:               "AI Credits",
+        ExternalCustomerID: "__EXTERNAL_CUSTOMER_ID__",
+        Currency:           "USD",
+        PaidCredits:        "100.0",
+        GrantedCredits:     "25.0",
+        RateAmount:         "1.0",
+      }
+
+      wallet, err := lagoClient.Wallet().Create(walletInput)
+      if err != nil {
+        panic(err)
+      }
+      fmt.Println(wallet)
+    }
+    ```
+
+    </Tab>
+
+    </Tabs>
+
+    Refer to [customer creation](/api-reference/customers/create) and [wallet creation](/api-reference/wallets/create) documentation.
   </Step>
   <Step title="Ingest usage via events">
     Send usage events to Lago to track usage.  
 
-    ```bash
+    1. Reference your billable metric with `code`
+    2. Identify the customer with `external_customer_id`
+    3. Include usage and filters data in `properties`
+
+    <Tabs>
+
+    <Tab title="cURL">
+
+    ```bash highlight={10-16}
     LAGO_URL="https://api.getlago.com"
+    API_KEY="__API_KEY__"
 
     curl --location --request POST "$LAGO_URL/api/v1/events" \
-      --header 'Authorization: Bearer __API_KEY__' \
+      --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
         "event": {
@@ -109,6 +767,111 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
         }
       }'
     ```
+
+    </Tab>
+
+    <Tab title="Python">
+
+    ```python highlight={9,10,11-15}
+    from lago_python_client.client import Client
+    from lago_python_client.exceptions import LagoApiError
+    from lago_python_client.models import Event
+
+    client = Client(api_key='__API_KEY__')
+
+    event = Event(
+      transaction_id="{{$randomUUID}}",
+      code="__BILLABLE_METRIC_CODE__",
+      external_customer_id="__EXTERNAL_CUSTOMER_ID__",
+      properties={
+        "tokens": 2000000,
+        "model": "mistral-small",
+        "type": "input"
+      }
+    )
+
+    try:
+        client.events.create(event)
+    except LagoApiError as e:
+        repair_broken_state(e)  # do something on error or raise your own exception
+    ```
+
+    </Tab>
+
+    <Tab title="Ruby">
+
+    ```ruby highlight={7,8,9-13}
+    require 'lago-ruby-client'
+
+    client = Lago::Api::Client.new(api_key: '__API_KEY__')
+
+    client.events.create(
+      transaction_id: "{{$randomUUID}}",
+      code: "__BILLABLE_METRIC_CODE__",
+      external_customer_id: "__EXTERNAL_CUSTOMER_ID__",
+      properties: {
+        tokens: 2000000,
+        model: "mistral-small",
+        type: "input"
+      }
+    )
+    ```
+
+    </Tab>
+
+    <Tab title="Javascript">
+
+    ```js highlight={4,5,6-10}
+    await client.events.createEvent({
+      event: {
+        transaction_id: "{{$randomUUID}}",
+        code: "__BILLABLE_METRIC_CODE__",
+        external_customer_id: "__EXTERNAL_CUSTOMER_ID__",
+        properties: {
+          tokens: 2000000,
+          model: "mistral-small",
+          type: "input"
+        }
+      }
+    });
+    ```
+
+    </Tab>
+
+    <Tab title="Go">
+
+    ```go highlight={10,11,12-16}
+    import "fmt"
+    import "github.com/getlago/lago-go-client"
+
+    func main() {
+      ctx := context.Background()
+      lagoClient := lago.New().SetApiKey("__API_KEY__")
+
+      eventInput := &lago.EventInput{
+        TransactionID:        "{{$randomUUID}}",
+        Code:                "__BILLABLE_METRIC_CODE__",
+        ExternalCustomerID:  "__EXTERNAL_CUSTOMER_ID__",
+        Properties: map[string]interface{}{
+          "tokens": 2000000,
+          "model":  "mistral-small",
+          "type":   "input",
+        },
+      }
+
+      res, err := lagoClient.Event().Create(ctx, eventInput)
+      if err != nil {
+        // err is *lago.Error
+        panic(err)
+      }
+      // res is *lago.Event
+      fmt.Println(*res)
+    }
+    ```
+
+    </Tab>
+
+    </Tabs>
 
     Refer to the [API reference](/api-reference/events/usage) to create an event.
   </Step>
