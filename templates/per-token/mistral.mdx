@@ -27,8 +27,9 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     1. Add a unique `code` for your billable metric
     2. Set `aggregation_type` to `sum_agg`
-    3. Set `recurring` to `false`
-    4. Set `filters` to distinguish between Mistral models and token types
+    3. Set `field_name` to `tokens`
+    4. Set `recurring` to `false`
+    5. Set `filters` to distinguish between models and token types
 
     <Tabs>
 
@@ -67,14 +68,13 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Python">
 
-    ```python highlight={20,22-24,26}
+    ```python highlight={19,21-24}
     from lago_python_client.client import Client
     from lago_python_client.exceptions import LagoApiError
     from lago_python_client.models import BillableMetric, BillableMetricFilter
 
     client = Client(api_key='__API_KEY__')
 
-    # Mistral-specific filters
     model_filter = BillableMetricFilter(
       key='model',
       values=['mistral-small', 'mistral-medium', 'mistral-large']
@@ -105,7 +105,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Ruby">
 
-    ```ruby highlight={7,9-11,12-20}
+    ```ruby highlight={7,9-11,12-21}
     require 'lago-ruby-client'
 
     client = Lago::Api::Client.new(api_key: '__API_KEY__')
@@ -134,7 +134,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Javascript">
 
-    ```js highlight={4,6-8,9-17}
+    ```js highlight={4,6-8,9-18}
     await client.billableMetrics.createBillableMetric({
       billable_metric: {
         name: "AI Tokens",
@@ -161,7 +161,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Go">
 
-    ```go highlight={9,11-13,14-22}
+    ```go highlight={9,11-13,14-23}
     import "fmt"
     import "github.com/getlago/lago-go-client"
 
@@ -289,14 +289,14 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Python">
 
-    ```python highlight={41,8-36}
+    ```python highlight={41,45}
     from lago_python_client.client import Client
     from lago_python_client.exceptions import LagoApiError
     from lago_python_client.models import Plan, Charge, ChargeFilter
 
     client = Client(api_key='__API_KEY__')
 
-    # Mistral-specific charge filters with pricing
+    # Filters for different models and token types
     small_input_filter = ChargeFilter(
       invoice_display_name="mistral-small-input",
       properties={"amount": "1", "free_units": 0, "package_size": 1000000},
@@ -321,6 +321,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
       values={"model": ["mistral-large"], "type": ["output"]}
     )
 
+    # Charge for all filters
     charge = Charge(
       billable_metric_code="__BILLABLE_METRIC_CODE__",
       charge_model="package",
@@ -328,7 +329,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
     )
 
     plan = Plan(
-      name="Mistral AI Pricing",
+      name="Mistral Plan",
       code="__PLAN_CODE__",
       amount_cents=0,
       amount_currency="USD", 
@@ -346,7 +347,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Ruby">
 
-    ```ruby highlight={7,12-35}
+    ```ruby highlight={7,11-38}
     require 'lago-ruby-client'
 
     client = Lago::Api::Client.new(api_key: '__API_KEY__')
@@ -392,7 +393,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Javascript">
 
-    ```js highlight={4,9-32}
+    ```js highlight={4,8-35}
     await client.plans.createPlan({
       plan: {
         name: "Mistral AI Pricing",
@@ -436,7 +437,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Go">
 
-    ```go highlight={9,14-36}
+    ```go highlight={9,13-39}
     import "fmt"
     import "github.com/getlago/lago-go-client"
 
@@ -493,11 +494,9 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
     Refer to the [API reference](/api-reference/plans/create) and [guide on charges with filters](/guide/plans/charges/charges-with-filters) to learn more.
   </Step>
     <Step title="Prepay usage with credits">
-    Prepay usage with credits and set top-up rules in real-time for your AI customers.
+    Prepay usage with credits and set top-up rules in real-time for your customers.
 
-    **First, create a customer:**
-
-    1. Set a unique `external_id` to identify your customer
+    1. Create a customer with a unique `external_id`
 
     <Tabs>
 
@@ -611,17 +610,14 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     </Tabs>
 
-    **Then, create a wallet with credits:**
-
-    1. Link wallet to customer with `external_customer_id`
-    2. Set the wallet `currency` 
-    3. Configure the `rate_amount` for credit conversion
+    2. Then, create a wallet with the customer's `external_customer_id`,
+    set the wallet `currency` and `rate_amount` for credit conversion
 
     <Tabs>
 
     <Tab title="cURL">
 
-    ```bash highlight={10-12}
+    ```bash highlight={10,11,14}
     LAGO_URL="https://api.getlago.com"
     API_KEY="__API_KEY__"
 
@@ -633,9 +629,9 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
           "name": "AI Credits",
           "external_customer_id": "__EXTERNAL_CUSTOMER_ID__",
           "currency": "USD",
-          "rate_amount": "1.0"
           "paid_credits": "100.0",
           "granted_credits": "25.0",
+          "rate_amount": "1.0"
         }
       }'
     ```
@@ -740,14 +736,14 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
     Send usage events to Lago to track usage.  
 
     1. Reference your billable metric with `code`
-    2. Identify the customer with `external_customer_id`
+    2. Reference the customer's subscription with `external_subscription_id`
     3. Include usage and filters data in `properties`
 
     <Tabs>
 
     <Tab title="cURL">
 
-    ```bash highlight={10-16}
+    ```bash highlight={10,11,12-16}
     LAGO_URL="https://api.getlago.com"
     API_KEY="__API_KEY__"
 
@@ -758,7 +754,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
         "event": {
           "transaction_id": "{{$randomUUID}}",
           "code": "__BILLABLE_METRIC_CODE__",
-          "external_customer_id": "__EXTERNAL_CUSTOMER_ID__",
+          "external_subscription_id": "__EXTERNAL_SUBSCRIPTION_ID__",
           "properties": {
             "tokens": 2000000,
             "model": "mistral-small",
@@ -772,7 +768,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Python">
 
-    ```python highlight={9,10,11-15}
+    ```python highlight={8,9,10-14}
     from lago_python_client.client import Client
     from lago_python_client.exceptions import LagoApiError
     from lago_python_client.models import Event
@@ -782,7 +778,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
     event = Event(
       transaction_id="{{$randomUUID}}",
       code="__BILLABLE_METRIC_CODE__",
-      external_customer_id="__EXTERNAL_CUSTOMER_ID__",
+      external_subscription_id="__EXTERNAL_SUBSCRIPTION_ID__",
       properties={
         "tokens": 2000000,
         "model": "mistral-small",
@@ -800,7 +796,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Ruby">
 
-    ```ruby highlight={7,8,9-13}
+    ```ruby highlight={6,7,8-12}
     require 'lago-ruby-client'
 
     client = Lago::Api::Client.new(api_key: '__API_KEY__')
@@ -808,7 +804,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
     client.events.create(
       transaction_id: "{{$randomUUID}}",
       code: "__BILLABLE_METRIC_CODE__",
-      external_customer_id: "__EXTERNAL_CUSTOMER_ID__",
+      external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
       properties: {
         tokens: 2000000,
         model: "mistral-small",
@@ -821,12 +817,12 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Javascript">
 
-    ```js highlight={4,5,6-10}
+    ```js highlight={3,4,5-9}
     await client.events.createEvent({
       event: {
         transaction_id: "{{$randomUUID}}",
         code: "__BILLABLE_METRIC_CODE__",
-        external_customer_id: "__EXTERNAL_CUSTOMER_ID__",
+        external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
         properties: {
           tokens: 2000000,
           model: "mistral-small",
@@ -840,7 +836,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
 
     <Tab title="Go">
 
-    ```go highlight={10,11,12-16}
+    ```go highlight={9,10,11-15}
     import "fmt"
     import "github.com/getlago/lago-go-client"
 
@@ -849,9 +845,9 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
       lagoClient := lago.New().SetApiKey("__API_KEY__")
 
       eventInput := &lago.EventInput{
-        TransactionID:        "{{$randomUUID}}",
-        Code:                "__BILLABLE_METRIC_CODE__",
-        ExternalCustomerID:  "__EXTERNAL_CUSTOMER_ID__",
+        TransactionID:          "{{$randomUUID}}",
+        Code:                   "__BILLABLE_METRIC_CODE__",
+        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
         Properties: map[string]interface{}{
           "tokens": 2000000,
           "model":  "mistral-small",
@@ -874,6 +870,79 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
     </Tabs>
 
     Refer to the [API reference](/api-reference/events/usage) to create an event.
+  </Step>
+  <Step title="Monitor current usage">
+    Track real-time customer usage for the current billing period.
+
+    1. Reference the customer's `external_id`
+    2. Reference the customer's `external_subscription_id`
+
+    <Tabs>
+      <Tab title="cURL">
+        ```bash highlight={3,4,6}
+        LAGO_URL="https://api.getlago.com"
+
+        curl --location --request GET "$LAGO_URL/api/v1/customers/__EXTERNAL_CUSTOMER_ID__/current_usage?external_subscription_id=__EXTERNAL_SUBSCRIPTION_ID__" \
+          --header 'Authorization: Bearer __API_KEY__' \
+          --header 'Content-Type: application/json'
+        ```
+      </Tab>
+      <Tab title="Python">
+        ```python highlight={7}
+        from lago_python_client.client import Client
+        from lago_python_client.exceptions import LagoApiError
+
+        client = Client(api_key='__API_KEY__')
+
+        try:
+            customer_usage = client.customers.current_usage('__EXTERNAL_CUSTOMER_ID__', '__EXTERNAL_SUBSCRIPTION_ID__')
+            print(customer_usage)
+        except LagoApiError as e:
+            print(e)
+        ```
+      </Tab>
+      <Tab title="Ruby">
+        ```ruby highlight={4-6}
+        require 'lago-ruby-client'
+
+        client = Lago::Api::Client.new(api_key: '__API_KEY__')
+
+        customer_usage = client.customer.current_usage(
+          '__EXTERNAL_CUSTOMER_ID__', '__EXTERNAL_SUBSCRIPTION_ID__'
+        )
+        ```
+      </Tab>
+      <Tab title="JavaScript">
+        ```javascript highlight={5-8}
+        import { Client } from 'lago-javascript-client'
+
+        const client = Client('__API_KEY__')
+
+        const customerUsage = await client.customers.findCustomerCurrentUsage(
+          '__EXTERNAL_CUSTOMER_ID__',
+          { external_subscription_id: '__EXTERNAL_SUBSCRIPTION_ID__' }
+        )
+        ```
+      </Tab>
+      <Tab title="Go">
+        ```go highlight={7}
+        import "fmt"
+        import "github.com/getlago/lago-go-client"
+
+        func main() {
+          lagoClient := lago.New().SetApiKey("__API_KEY__")
+
+          customerUsage, err := lagoClient.Customer().CurrentUsage("__EXTERNAL_CUSTOMER_ID__")
+          if err != nil {
+            fmt.Println(err)
+            return
+          }
+
+          fmt.Println(customerUsage)
+        }
+        ```
+      </Tab>
+    </Tabs>
   </Step>
 </Steps>
 
