@@ -4,6 +4,11 @@ description:
   "Replicate OpenAI's per-token pricing model with Lago."
 ---
 
+import SetupLago from "/snippets/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/templates/create-customer.mdx";
+import CreateSubscription from "/snippets/templates/create-subscription.mdx";
+import CustomerUsage from "/snippets/templates/customer-usage.mdx";
+
 In this article, you will learn how to build a billing system with Lago based on tokens.
 This template is suitable for Large Language Model (LLM) and Generative AI companies whose pricing can vary based on the application or model used.
 
@@ -21,127 +26,100 @@ For OpenAI, pricing depends on the language model used. Here are several price p
 ## Get started
 
 <Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
+
   <Step title="Create a billable metric">
     Create a single billable metric to track token usage across different models and input/output types.
 
     1. Add a unique `code` for your billable metric
     2. Set `aggregation_type` to `sum_agg`
-    3. Set `field_name` to `total`
+    3. Set `field_name` to `tokens`
     4. Set `recurring` to `false`
-    5. Set `filters` to distinguish between OpenAI models and token types
+    5. Set `filters` to distinguish between models and token types
 
-    <Tabs>
+    <CodeGroup>
+      ```bash cURL highlight={7,9-21}
+      curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "AI Tokens",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "description": "Token usage across OpenAI models",
+            "aggregation_type": "sum_agg",
+            "field_name": "tokens",
+            "recurring": false,
+            "filters": [
+              {
+                "key": "model",
+                "values": ["8k", "32k"]
+              },
+              {
+                "key": "type", 
+                "values": ["input", "output"]
+              }
+            ]
+          }
+        }'
+      ```
 
-    <Tab title="cURL">
+      ```python Python highlight={3-6,8-11,15,17-20,23}
+      from lago_python_client.models import BillableMetric, BillableMetricFilter
 
-    ```bash highlight={10,12-14,15-25}
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__API_KEY__"
+      model_filter = BillableMetricFilter(
+        key='model',
+        values=['8k', '32k']
+      )
+      
+      type_filter = BillableMetricFilter(
+        key='type',
+        values=['input', 'output']
+      )
 
-    curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "billable_metric": {
-          "name": "AI Tokens",
-          "code": "__BILLABLE_METRIC_CODE__",
-          "description": "Token usage across OpenAI models",
-          "aggregation_type": "sum_agg",
-          "field_name": "total",
-          "recurring": false,
-          "filters": [
-            {
-              "key": "model",
-              "values": ["8k", "32k"]
-            },
-            {
-              "key": "type", 
-              "values": ["input", "output"]
-            }
-          ]
-        }
-      }'
-    ```
+      billable_metric = BillableMetric(
+        name='Tokens',
+        code='__BILLABLE_METRIC_CODE__',
+        description='Token usage across OpenAI models',
+        aggregation_type='sum_agg',
+        field_name='tokens',
+        recurring=False,
+        filters=[model_filter, type_filter]
+      )
 
-    </Tab>
+      client.billable_metrics.create(billable_metric)
+      ```
 
-    <Tab title="Python">
+      ```ruby Ruby highlight={3,5-17}
+      client.billable_metrics.create({
+        name: 'Tokens',
+        code: '__BILLABLE_METRIC_CODE__', 
+        description: 'Token usage across OpenAI models',
+        aggregation_type: 'sum_agg',
+        field_name: 'tokens',
+        recurring: false,
+        filters: [
+          {
+            key: 'model',
+            values: ['8k', '32k']
+          },
+          {
+            key: 'type',
+            values: ['input', 'output']
+          }
+        ]
+      })
+      ```
 
-    ```python highlight={20,22-25}
-    from lago_python_client.client import Client
-    from lago_python_client.exceptions import LagoApiError
-    from lago_python_client.models import BillableMetric, BillableMetricFilter
-
-    client = Client(api_key='__API_KEY__')
-
-    # OpenAI-specific filters
-    model_filter = BillableMetricFilter(
-      key='model',
-      values=['8k', '32k']
-    )
-    
-    type_filter = BillableMetricFilter(
-      key='type',
-      values=['input', 'output']
-    )
-
-    billable_metric = BillableMetric(
-      name='AI Tokens',
-      code='__BILLABLE_METRIC_CODE__',
-      description='Token usage across OpenAI models',
-      aggregation_type='sum_agg',
-      field_name='total',
-      recurring=False,
-      filters=[model_filter, type_filter]
-    )
-
-    try:
-        client.billable_metrics.create(billable_metric)
-    except LagoApiError as e:
-        repair_broken_state(e)  # do something on error or raise your own exception
-    ```
-
-    </Tab>
-
-    <Tab title="Ruby">
-
-    ```ruby highlight={7,9-11,12-21}
-    require 'lago-ruby-client'
-
-    client = Lago::Api::Client.new(api_key: '__API_KEY__')
-
-    client.billable_metrics.create({
-      name: 'AI Tokens',
-      code: '__BILLABLE_METRIC_CODE__', 
-      description: 'Token usage across OpenAI models',
-      aggregation_type: 'sum_agg',
-      field_name: 'total',
-      recurring: false,
-      filters: [
-        {
-          key: 'model',
-          values: ['8k', '32k']
-        },
-        {
-          key: 'type',
-          values: ['input', 'output']
-        }
-      ]
-    })
-    ```
-
-    </Tab>
-
-    <Tab title="Javascript">
-
-    ```js highlight={4,6-8,9-18}
-    await client.billableMetrics.createBillableMetric({
-      billable_metric: {
-        name: "AI Tokens",
+      ```js Javascript highlight={3,5-7,8-17,20}
+      const billableMetric = {
+        name: "Tokens",
         code: "__BILLABLE_METRIC_CODE__",
         description: "Token usage across OpenAI models", 
         aggregation_type: "sum_agg",
-        field_name: "total",
+        field_name: "tokens",
         recurring: false,
         filters: [
           {
@@ -153,29 +131,20 @@ For OpenAI, pricing depends on the language model used. Here are several price p
             values: ["input", "output"]
           }
         ]
-      }
-    });
-    ```
+      };
 
-    </Tab>
+      await client.billableMetrics.createBillableMetric(billableMetric);
+      ```
 
-    <Tab title="Go">
-
-    ```go highlight={9,11-13,14-23}
-    import "fmt"
-    import "github.com/getlago/lago-go-client"
-
-    func main() {
-      lagoClient := lago.New().SetApiKey("__API_KEY__")
-
+      ```go Go highlight={3,5-17,20}
       bmInput := &lago.BillableMetricInput{
-        Name:            "AI Tokens",
+        Name:            "Tokens",
         Code:            "__BILLABLE_METRIC_CODE__",
         Description:     "Token usage across OpenAI models",
         AggregationType: lago.SumAggregation,
-        FieldName:       "total",
+        FieldName:       "tokens",
         Recurring:       false,
-        Filters: []map[string]interface{}{
+        Filters:         []map[string]interface{}{
           {
             "key":    "model",
             "values": []string{"8k", "32k"},
@@ -188,213 +157,139 @@ For OpenAI, pricing depends on the language model used. Here are several price p
       }
 
       billableMetric, err := lagoClient.BillableMetric().Create(bmInput)
-      if err != nil {
-        panic(err)
-      }
-      fmt.Println(billableMetric)
-    }
-    ```
+      ```
+    </CodeGroup>
 
-    </Tab>
-
-    </Tabs>
-
-    Refer to the [API reference](/api-reference/billable-metrics/create) and [guide on filters](/guides/billable-metrics/filters) to learn more.
+    Refer to the [API reference](/api-reference/billable-metrics/create) and [guide on filters](/guide/billable-metrics/filters) to learn more.
   </Step>
+
   <Step title="Create a plan">
     Create a plan to price packages of tokens used with OpenAI's specific pricing tiers.
 
     1. Add a unique `code` for your plan
-    2. Under `charges`, configure pricing tiers for different OpenAI models and token types
+    2. Under `charges`, configure pricing tiers for different models and token types
 
-    <Tabs>
-
-    <Tab title="cURL">
-
-    ```bash highlight={10,14-69}
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__API_KEY__"
-
-    curl --location --request POST "$LAGO_URL/api/v1/plans" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "plan": {
-          "name": "OpenAI Pricing",
-          "code": "__PLAN_CODE__",
-          "amount_cents": 0,
-          "amount_currency": "USD",
-          "interval": "monthly",
-          "charges": [
-            {
-              "billable_metric_code": "__BILLABLE_METRIC_CODE__",
-              "charge_model": "package",
-              "filters": [
-                {
-                  "invoice_display_name": "8k-input",
-                  "properties": {
-                    "amount": "0.03",
-                    "free_units": 0,
-                    "package_size": 1000
+    <CodeGroup>
+      ```bash cURL expandable highlight={7,11-66}
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "OpenAI Pricing",
+            "code": "__PLAN_CODE__",
+            "amount_cents": 0,
+            "amount_currency": "USD",
+            "interval": "monthly",
+            "charges": [
+              {
+                "billable_metric_code": "__BILLABLE_METRIC_CODE__",
+                "charge_model": "package",
+                "filters": [
+                  {
+                    "invoice_display_name": "8k-input",
+                    "properties": {
+                      "amount": "0.03",
+                      "free_units": 0,
+                      "package_size": 1000000
+                    },
+                    "values": {
+                      "model": ["8k"],
+                      "type": ["input"]
+                    }
                   },
-                  "values": {
-                    "model": ["8k"],
-                    "type": ["input"]
-                  }
-                },
-                {
-                  "invoice_display_name": "8k-output", 
-                  "properties": {
-                    "amount": "0.06",
-                    "free_units": 0,
-                    "package_size": 1000
+                  {
+                    "invoice_display_name": "8k-output", 
+                    "properties": {
+                      "amount": "0.06",
+                      "free_units": 0,
+                      "package_size": 1000000
+                    },
+                    "values": {
+                      "model": ["8k"],
+                      "type": ["output"]
+                    }
                   },
-                  "values": {
-                    "model": ["8k"],
-                    "type": ["output"]
-                  }
-                },
-                {
-                  "invoice_display_name": "32k-input",
-                  "properties": {
-                    "amount": "0.06", 
-                    "free_units": 0,
-                    "package_size": 1000
+                  {
+                    "invoice_display_name": "32k-input",
+                    "properties": {
+                      "amount": "0.06", 
+                      "free_units": 0,
+                      "package_size": 1000000
+                    },
+                    "values": {
+                      "model": ["32k"],
+                      "type": ["input"]
+                    }
                   },
-                  "values": {
-                    "model": ["32k"],
-                    "type": ["input"]
-                  }
-                },
-                {
-                  "invoice_display_name": "32k-output",
-                  "properties": {
-                    "amount": "0.12",
-                    "free_units": 0, 
-                    "package_size": 1000
-                  },
-                  "values": {
-                    "model": ["32k"],
-                    "type": ["output"]
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      }'
-    ```
+                  {
+                    "invoice_display_name": "32k-output",
+                    "properties": {
+                      "amount": "0.12",
+                      "free_units": 0, 
+                      "package_size": 1000000
+                    },
+                    "values": {
+                      "model": ["32k"],
+                      "type": ["output"]
+                    }
+                  } 
+                ]
+              }
+            ]
+          }
+        }'
+      ```
 
-    </Tab>
+      ```python Python expandable highlight={4-8,10-14,16-20,22-26,29-33,37,41,44}
+      from lago_python_client.models import Plan, Charge, ChargeFilter
 
-    <Tab title="Python">
+      # Filters for different models and token types
+      small_input_filter = ChargeFilter(
+        invoice_display_name="8k-input",
+        properties={"amount": "0.03", "free_units": 0, "package_size": 1000000},
+        values={"model": ["8k"], "type": ["input"]}
+      )
+      
+      small_output_filter = ChargeFilter(
+        invoice_display_name="8k-output", 
+        properties={"amount": "0.06", "free_units": 0, "package_size": 1000000},
+        values={"model": ["8k"], "type": ["output"]}
+      )
+      
+      large_input_filter = ChargeFilter(
+        invoice_display_name="32k-input",
+        properties={"amount": "0.06", "free_units": 0, "package_size": 1000000},
+        values={"model": ["32k"], "type": ["input"]}
+      )
+      
+      large_output_filter = ChargeFilter(
+        invoice_display_name="32k-output",
+        properties={"amount": "0.12", "free_units": 0, "package_size": 1000000},
+        values={"model": ["32k"], "type": ["output"]}
+      )
 
-    ```python highlight={40,44}
-    from lago_python_client.client import Client
-    from lago_python_client.exceptions import LagoApiError
-    from lago_python_client.models import Plan, Charge, ChargeFilter
+      # Charge for all filters
+      charge = Charge(
+        billable_metric_code="__BILLABLE_METRIC_CODE__",
+        charge_model="package",
+        filters=[small_input_filter, small_output_filter, large_input_filter, large_output_filter]
+      )
 
-    client = Client(api_key='__API_KEY__')
+      plan = Plan(
+        name="OpenAI Plan",
+        code="__PLAN_CODE__",
+        amount_cents=0,
+        amount_currency="USD", 
+        interval="monthly",
+        charges=[charge]
+      )
 
-    # OpenAI-specific charge filters with pricing
-    openai_8k_input = ChargeFilter(
-      invoice_display_name="8k-input",
-      properties={"amount": "0.03", "free_units": 0, "package_size": 1000},
-      values={"model": ["8k"], "type": ["input"]}
-    )
-    
-    openai_8k_output = ChargeFilter(
-      invoice_display_name="8k-output", 
-      properties={"amount": "0.06", "free_units": 0, "package_size": 1000},
-      values={"model": ["8k"], "type": ["output"]}
-    )
-    
-    openai_32k_input = ChargeFilter(
-      invoice_display_name="32k-input",
-      properties={"amount": "0.06", "free_units": 0, "package_size": 1000},
-      values={"model": ["32k"], "type": ["input"]}
-    )
-    
-    openai_32k_output = ChargeFilter(
-      invoice_display_name="32k-output",
-      properties={"amount": "0.12", "free_units": 0, "package_size": 1000},
-      values={"model": ["32k"], "type": ["output"]}
-    )
+      client.plans.create(plan)
+      ```
 
-    charge = Charge(
-      billable_metric_code="__BILLABLE_METRIC_CODE__",
-      charge_model="package",
-      filters=[openai_8k_input, openai_8k_output, openai_32k_input, openai_32k_output]
-    )
-
-    plan = Plan(
-      name="OpenAI Pricing",
-      code="__PLAN_CODE__",
-      amount_cents=0,
-      amount_currency="USD", 
-      interval="monthly",
-      charges=[charge]
-    )
-
-    try:
-        client.plans.create(plan)
-    except LagoApiError as e:
-        repair_broken_state(e)  # do something on error or raise your own exception
-    ```
-
-    </Tab>
-
-    <Tab title="Ruby">
-
-    ```ruby highlight={7,11-38}
-    require 'lago-ruby-client'
-
-    client = Lago::Api::Client.new(api_key: '__API_KEY__')
-
-    client.plans.create({
-      name: "OpenAI Pricing",
-      code: "__PLAN_CODE__",
-      amount_cents: 0,
-      amount_currency: "USD",
-      interval: "monthly",
-      charges: [
-        {
-          billable_metric_code: "__BILLABLE_METRIC_CODE__",
-          charge_model: "package",
-          filters: [
-            {
-              invoice_display_name: "8k-input",
-              properties: { amount: "0.03", free_units: 0, package_size: 1000 },
-              values: { model: ["8k"], type: ["input"] }
-            },
-            {
-              invoice_display_name: "8k-output",
-              properties: { amount: "0.06", free_units: 0, package_size: 1000 },
-              values: { model: ["8k"], type: ["output"] }
-            },
-            {
-              invoice_display_name: "32k-input", 
-              properties: { amount: "0.06", free_units: 0, package_size: 1000 },
-              values: { model: ["32k"], type: ["input"] }
-            },
-            {
-              invoice_display_name: "32k-output",
-              properties: { amount: "0.12", free_units: 0, package_size: 1000 },
-              values: { model: ["32k"], type: ["output"] }
-            }
-          ]
-        }
-      ]
-    })
-    ```
-
-    </Tab>
-
-    <Tab title="Javascript">
-
-    ```js highlight={4,8-35}
-    await client.plans.createPlan({
-      plan: {
+      ```ruby Ruby expandable highlight={3,7-34}
+      client.plans.create({
         name: "OpenAI Pricing",
         code: "__PLAN_CODE__",
         amount_cents: 0,
@@ -407,49 +302,78 @@ For OpenAI, pricing depends on the language model used. Here are several price p
             filters: [
               {
                 invoice_display_name: "8k-input",
-                properties: { amount: "0.03", free_units: 0, package_size: 1000 },
+                properties: { amount: "0.03", free_units: 0, package_size: 1000000 },
                 values: { model: ["8k"], type: ["input"] }
               },
               {
                 invoice_display_name: "8k-output",
-                properties: { amount: "0.06", free_units: 0, package_size: 1000 },
+                properties: { amount: "0.06", free_units: 0, package_size: 1000000 },
                 values: { model: ["8k"], type: ["output"] }
               },
               {
-                invoice_display_name: "32k-input",
-                properties: { amount: "0.06", free_units: 0, package_size: 1000 },
+                invoice_display_name: "32k-input", 
+                properties: { amount: "0.06", free_units: 0, package_size: 1000000 },
                 values: { model: ["32k"], type: ["input"] }
               },
               {
-                invoice_display_name: "32k-output", 
-                properties: { amount: "0.12", free_units: 0, package_size: 1000 },
+                invoice_display_name: "32k-output",
+                properties: { amount: "0.12", free_units: 0, package_size: 1000000 },
                 values: { model: ["32k"], type: ["output"] }
               }
             ]
           }
         ]
-      }
-    });
-    ```
+      })
+      ```
 
-    </Tab>
+      ```js Javascript expandable highlight={3,7-34,37}
+      const plan = {
+        name: "OpenAI Pricing",
+        code: "__PLAN_CODE__",
+        amount_cents: 0,
+        amount_currency: "USD",
+        interval: "monthly",
+        charges: [
+          {
+            billable_metric_code: "__BILLABLE_METRIC_CODE__",
+            charge_model: "package",
+            filters: [
+              {
+                invoice_display_name: "8k-input",
+                properties: { amount: "0.03", free_units: 0, package_size: 1000000 },
+                values: { model: ["8k"], type: ["input"] }
+              },
+              {
+                invoice_display_name: "8k-output",
+                properties: { amount: "0.06", free_units: 0, package_size: 1000000 },
+                values: { model: ["8k"], type: ["output"] }
+              },
+              {
+                invoice_display_name: "32k-input",
+                properties: { amount: "0.06", free_units: 0, package_size: 1000000 },
+                values: { model: ["32k"], type: ["input"] }
+              },
+              {
+                invoice_display_name: "32k-output", 
+                properties: { amount: "0.12", free_units: 0, package_size: 1000000 },
+                values: { model: ["32k"], type: ["output"] }
+              }
+            ]
+          }
+        ]
+      };
 
-    <Tab title="Go">
+      await client.plans.createPlan({ plan });
+      ```
 
-    ```go highlight={9,13-39}
-    import "fmt"
-    import "github.com/getlago/lago-go-client"
-
-    func main() {
-      lagoClient := lago.New().SetApiKey("__API_KEY__")
-
+      ```go Go expandable highlight={3,7-50,53}
       planInput := &lago.PlanInput{
         Name:           "OpenAI Pricing",
         Code:           "__PLAN_CODE__", 
         AmountCents:    0,
         AmountCurrency: "USD",
         Interval:       "monthly",
-        Charges: []lago.ChargeInput{
+        Charges:        []lago.ChargeInput{
           {
             BillableMetricCode: "__BILLABLE_METRIC_CODE__",
             ChargeModel:        "package",
@@ -457,41 +381,67 @@ For OpenAI, pricing depends on the language model used. Here are several price p
               {
                 "invoice_display_name": "8k-input",
                 "properties": map[string]interface{}{
-                  "amount": "0.03", "free_units": 0, "package_size": 1000,
+                  "amount": "0.03", "free_units": 0, "package_size": 1000000,
                 },
                 "values": map[string]interface{}{
                   "model": []string{"8k"}, "type": []string{"input"},
                 },
               },
               {
+                "invoice_display_name": "8k-output",
+                "properties": map[string]interface{}{
+                  "amount": "0.06", "free_units": 0, "package_size": 1000000,
+                },
+                "values": map[string]interface{}{
+                  "model": []string{"8k"}, "type": []string{"output"},
+                },
+              },
+              {
+                "invoice_display_name": "32k-input",
+                "properties": map[string]interface{}{
+                  "amount": "0.06", "free_units": 0, "package_size": 1000000,
+                },
+                "values": map[string]interface{}{
+                  "model": []string{"32k"}, "type": []string{"input"},
+                },
+              },
+              {
                 "invoice_display_name": "32k-output",
                 "properties": map[string]interface{}{
-                  "amount": "0.12", "free_units": 0, "package_size": 1000,
+                  "amount": "0.12", "free_units": 0, "package_size": 1000000,
                 },
                 "values": map[string]interface{}{
                   "model": []string{"32k"}, "type": []string{"output"},
                 },
               },
-              // Add other combinations...
             },
           },
         },
       }
 
       plan, err := lagoClient.Plan().Create(planInput)
-      if err != nil {
-        panic(err)
-      }
-      fmt.Println(plan)
-    }
-    ```
-
-    </Tab>
-
-    </Tabs>
+      ```
+    </CodeGroup>
 
     Refer to the [API reference](/api-reference/plans/create) and [guide on charges with filters](/guide/plans/charges/charges-with-filters) to learn more.
   </Step>
+
+  <Step title="Create a customer">
+    Create a customer with a unique `external_id`.
+    
+    <CreateCustomer />
+
+    Refer to the [API reference](/api-reference/customers/create) in the documentation.
+  </Step>
+
+  <Step title="Create a subscription">
+    Create a subscription for the customer with the plan's `code`.
+
+    <CreateSubscription />
+
+    Refer to [API reference](/api-reference/subscriptions/assign-plan) and [guide on assigning plans](/guide/subscriptions/assign-plan) in the documentation.
+  </Step>
+
   <Step title="Ingest usage via events">
     Send usage events to Lago to track usage.  
 
@@ -512,7 +462,7 @@ For OpenAI, pricing depends on the language model used. Here are several price p
       --header 'Content-Type: application/json' \
       --data-raw '{
         "event": {
-          "transaction_id": "{{$randomUUID}}",
+          "transaction_id": "__TRANSACTION_ID__",
           "code": "__BILLABLE_METRIC_CODE__",
           "external_subscription_id": "__EXTERNAL_SUBSCRIPTION_ID__",
           "properties": {
@@ -536,7 +486,7 @@ For OpenAI, pricing depends on the language model used. Here are several price p
     client = Client(api_key='__API_KEY__')
 
     event = Event(
-      transaction_id="{{$randomUUID}}",
+      transaction_id="__TRANSACTION_ID__",
       code="__BILLABLE_METRIC_CODE__",
       external_subscription_id="__EXTERNAL_SUBSCRIPTION_ID__",
       properties={
@@ -562,7 +512,7 @@ For OpenAI, pricing depends on the language model used. Here are several price p
     client = Lago::Api::Client.new(api_key: '__API_KEY__')
 
     client.events.create(
-      transaction_id: "{{$randomUUID}}",
+      transaction_id: "__TRANSACTION_ID__",
       code: "__BILLABLE_METRIC_CODE__",
       external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
       properties: {
@@ -580,7 +530,7 @@ For OpenAI, pricing depends on the language model used. Here are several price p
     ```js highlight={4,5-10}
     await client.events.createEvent({
       event: {
-        transaction_id: "{{$randomUUID}}",
+        transaction_id: "__TRANSACTION_ID__",
         code: "__BILLABLE_METRIC_CODE__",
         external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
         properties: {
@@ -605,7 +555,7 @@ For OpenAI, pricing depends on the language model used. Here are several price p
       lagoClient := lago.New().SetApiKey("__API_KEY__")
 
       eventInput := &lago.EventInput{
-        TransactionID:          "{{$randomUUID}}",
+        TransactionID:          "__TRANSACTION_ID__",
         Code:                   "__BILLABLE_METRIC_CODE__",
         ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
         Properties: map[string]interface{}{
@@ -631,78 +581,9 @@ For OpenAI, pricing depends on the language model used. Here are several price p
 
     Refer to the [API reference](/api-reference/events/usage) to create an event.
   </Step>
+
   <Step title="Monitor current usage">
-    Track real-time customer usage for the current billing period.
-
-    1. Reference the customer's `external_id`
-    2. Reference the customer's `external_subscription_id`
-
-    <Tabs>
-      <Tab title="cURL">
-        ```bash highlight={3,4,6}
-        LAGO_URL="https://api.getlago.com"
-
-        curl --location --request GET "$LAGO_URL/api/v1/customers/__EXTERNAL_CUSTOMER_ID__/current_usage?external_subscription_id=__EXTERNAL_SUBSCRIPTION_ID__" \
-          --header 'Authorization: Bearer __API_KEY__' \
-          --header 'Content-Type: application/json'
-        ```
-      </Tab>
-      <Tab title="Python">
-        ```python highlight={7}
-        from lago_python_client.client import Client
-        from lago_python_client.exceptions import LagoApiError
-
-        client = Client(api_key='__API_KEY__')
-
-        try:
-            customer_usage = client.customers.current_usage('__EXTERNAL_CUSTOMER_ID__', '__EXTERNAL_SUBSCRIPTION_ID__')
-            print(customer_usage)
-        except LagoApiError as e:
-            print(e)
-        ```
-      </Tab>
-      <Tab title="Ruby">
-        ```ruby highlight={4-7}
-        require 'lago-ruby-client'
-
-        client = Lago::Api::Client.new(api_key: '__API_KEY__')
-
-        customer_usage = client.customer.current_usage(
-          '__EXTERNAL_CUSTOMER_ID__', '__EXTERNAL_SUBSCRIPTION_ID__'
-        )
-        ```
-      </Tab>
-      <Tab title="JavaScript">
-        ```javascript highlight={5-8}
-        import { Client } from 'lago-javascript-client'
-
-        const client = Client('__API_KEY__')
-
-        const customerUsage = await client.customers.findCustomerCurrentUsage(
-          '__EXTERNAL_CUSTOMER_ID__',
-          { external_subscription_id: '__EXTERNAL_SUBSCRIPTION_ID__' }
-        )
-        ```
-      </Tab>
-      <Tab title="Go">
-        ```go highlight={7}
-        import "fmt"
-        import "github.com/getlago/lago-go-client"
-
-        func main() {
-          lagoClient := lago.New().SetApiKey("__API_KEY__")
-
-          customerUsage, err := lagoClient.Customer().CurrentUsage("__EXTERNAL_CUSTOMER_ID__")
-          if err != nil {
-            fmt.Println(err)
-            return
-          }
-
-          fmt.Println(customerUsage)
-        }
-        ```
-      </Tab>
-    </Tabs>
+    <CustomerUsage />
   </Step>
 </Steps>
 
