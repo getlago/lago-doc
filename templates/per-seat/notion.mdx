@@ -3,13 +3,16 @@ title: "Clone Notion pricing"
 description: "Replicate Notion's per-seat pricing model with Lago."
 ---
 
+import SetupLago from "/snippets/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/templates/create-customer.mdx";
+import CreateSubscription from "/snippets/templates/create-subscription.mdx";
+import CustomerUsage from "/snippets/templates/customer-usage.mdx";
+
 Set up a per-user (or 'per-seat) pricing like [Notion](https://www.notion.so/product), the collaboration software for innovative teams, including plans based on the number of users and prepaid credits.
 
-In this article, you will learn how to build a 'fair' billing system, with charges calculated according to the number of days of use.
+In this template, you will learn how to build a 'fair' billing system, with charges calculated according to the number of days of use.
 
 This template is suitable for companies whose pricing depends on persistent metrics, such as productivity software (e.g. number of days users are active), fintechs (e.g. number of days payment cards are active) and data platforms (e.g. number of days integrations are active).
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=EAmRNU92Bgrh7w_B&amp;start=62" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Pricing structure
 
@@ -19,90 +22,335 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
 | -----------------------  | --------------------------- |
 | Price                    | $10 per user billed monthly |
 
-In its FAQ section, Notion explains how adding and removing members work:
-
-_"If you added members, your account will be charged a prorated amount based on the percentage of the billing cycle left at the time each member was added. If you removed members, your account will be credited in the same way."_
-
-Notion's per-seat pricing is what we call a **'fair' pricing model**, where fees are calculated based on the number of days each user is active.
-
-In addition to this, users can complete tasks to earn credits with which they can pay their Notion bill:
-
-_"You can earn credit by using Notion across your devices and trying out new features. Go to the Earn Credit tab in Settings & Members to learn more."_
-
-Here's how you can replicate this pricing and billing system with Lago.
-
 ## Get started
 
 <Steps>
-  <Step title="Create a recurring billable metric">
-    Create a recurring billable metric to track user activity over time.
-    
-    Refer to the [API reference](/api-reference/billable-metrics/create) to create the billable metric object.
-
-    1. Set the `aggregation_type` to `unique_count_agg`
-    2. Set the `field_name` to `user_id`
-    3. Set `recurring` to `true` for persistent tracking
-
-    <Info>
-      When a new member is successfully added to the customer account, the backend system will generate an event,
-      including the `user_id` and `operation_type: 'add'`. When a member is removed from the customer account, the
-      backend system will also generate an event, including the `user_id` and `operation_type: 'remove'`.
-    </Info>
-
-    Refer to the [guide on recurring metrics](/guides/billable-metrics/recurring) to learn more.
+  <Step title="Set up Lago">
+    <SetupLago />
   </Step>
-  <Step title="Create a plan with prorated pricing">
+
+  <Step title="Create a billable metric">
+    Create a recurring billable metric to track user activity over time.
+
+    1. Add a unique `code` for your billable metric
+    2. Set the `aggregation_type` to `unique_count_agg` for counting unique users
+    3. Set the `field_name` to `user_id` to identify individual users
+    4. Set `recurring` to `true` for persistent tracking across billing periods
+
+    <CodeGroup>
+      ```bash cURL highlight={7,9-11}
+      curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "Active Users",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "description": "Number of active users in the workspace",
+            "aggregation_type": "unique_count_agg",
+            "field_name": "user_id",
+            "recurring": true
+          }
+        }'
+      ```
+
+      ```python Python highlight={5,7-9,12}
+      from lago_python_client.models import BillableMetric
+
+      billable_metric = BillableMetric(
+        name='Active Users',
+        code='__BILLABLE_METRIC_CODE__',
+        description='Number of active users in the workspace',
+        aggregation_type='unique_count_agg',
+        field_name='user_id',
+        recurring=True
+      )
+
+      client.billable_metrics.create(billable_metric)
+      ```
+
+      ```ruby Ruby highlight={3,5-7}
+      client.billable_metrics.create({
+        name: 'Active Users',
+        code: '__BILLABLE_METRIC_CODE__',
+        description: 'Number of active users in the workspace',
+        aggregation_type: 'unique_count_agg',
+        field_name: 'user_id',
+        recurring: true
+      })
+      ```
+
+      ```javascript JavaScript highlight={3,5-7,10}
+      const billableMetric = {
+        name: 'Active Users',
+        code: '__BILLABLE_METRIC_CODE__',
+        description: 'Number of active users in the workspace',
+        aggregation_type: 'unique_count_agg',
+        field_name: 'user_id',
+        recurring: true
+      };
+
+      await client.billableMetrics.createBillableMetric({ billableMetric })
+      ```
+
+      ```go Go highlight={3,5-7,10}
+      billableMetricInput := &lago.BillableMetricInput{
+        Name:             "Active Users",
+        Code:             "__BILLABLE_METRIC_CODE__",
+        Description:      "Number of active users in the workspace",
+        AggregationType:  "unique_count_agg",
+        FieldName:        "user_id",
+        Recurring:        true,
+      }
+
+      billableMetric, err := client.BillableMetric().Create(ctx, billableMetricInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/billable-metrics/create) and the [guide on recurring metrics](/guides/billable-metrics/recurring) to learn more.
+  </Step>
+
+  <Step title="Create a plan">
     Create a plan with prorated charges for fair per-seat billing.
 
-    Refer to the [API reference](/api-reference/plans/create) to create the plan object.
-
     1. Set the `amount_cents` to `0` since there is no subscription fee
-    2. Set the `charges` to:
+    2. Set the `charge_model` to `standard` for simple per-unit pricing
+    3. Enable `prorated` billing for fair daily calculations
+    4. Set the `amount` to `10` for $10 per user per month
 
-    ```json
-    {
-      "charge_model": "standard",
-      "invoiceable": true,
-      "prorated": true, // for fair daily billing
-      "properties": {
-        "amount": "10" // $10 per user per month
-      }
-    }
-    ```
-
-    Refer to the [guide on prorated charges](/guides/plans/charges/prorated) to learn more.
-  </Step>
-  <Step title="Create a wallet for credits">
-    Set up a credit system to allow customers to earn and use credits.
-
-    Refer to the [API reference](/api-reference/wallets/create) to create the wallet object.
-
-    1. [Create a new customer](/api-reference/customers/create)
-    2. [Create a new wallet](/api-reference/wallets/create) for the customer
-
-    Refer to the [guide on wallets](/guides/wallets/overview) to learn more.
-  </Step>
-  <Step title="Ingest user activity events">
-    Send events when users are added or removed from accounts.
-
-    ```bash
-    curl --location --request POST 'https://api.getlago.com/api/v1/events' \
-      --header 'Authorization: Bearer __API_KEY__' \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "event": {
-          "transaction_id": "{{$randomUUID}}",
-          "code": "__BILLABLE_METRIC_CODE__",
-          "external_customer_id": "__EXTERNAL_CUSTOMER_ID__",
-          "properties": {
-            "user_id": "user_123",
-            "operation_type": "add"
+    <CodeGroup>
+      ```bash cURL highlight={7,13-23}
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Team Plan",
+            "code": "__PLAN_CODE__",
+            "description": "Per-seat pricing for team collaboration",
+            "amount_cents": 0,
+            "amount_currency": "USD",
+            "interval": "monthly",
+            "pay_in_advance": false,
+            "charges": [
+              {
+                "billable_metric_code": "__BILLABLE_METRIC_CODE__",
+                "charge_model": "standard",
+                "invoiceable": true,
+                "prorated": true,
+                "properties": {
+                  "amount": "10"
+                }
+              }
+            ]
           }
+        }'
+      ```
+
+      ```python Python highlight={3-11,15,21,24}
+      from lago_python_client.models import Plan, Charge
+
+      charge = Charge(
+        billable_metric_code='__BILLABLE_METRIC_CODE__',
+        charge_model='standard',
+        invoiceable=True,
+        prorated=True,
+        properties={
+          'amount': '10'
         }
-      }'
-    ```
+      )
+
+      plan = Plan(
+        name='Team Plan',
+        code='__PLAN_CODE__',
+        description='Per-seat pricing for team collaboration',
+        amount_cents=0,
+        amount_currency='USD',
+        interval='monthly',
+        pay_in_advance=False,
+        charges=[charge]
+      )
+
+      client.plans.create(plan)
+      ```
+
+      ```ruby Ruby highlight={3,9-19}
+      client.plans.create({
+        name: 'Team Plan',
+        code: '__PLAN_CODE__',
+        description: 'Per-seat pricing for team collaboration',
+        amount_cents: 0,
+        amount_currency: 'USD',
+        interval: 'monthly',
+        pay_in_advance: false,
+        charges: [
+          {
+            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            charge_model: 'standard',
+            invoiceable: true,
+            prorated: true,
+            properties: {
+              amount: '10'
+            }
+          }
+        ]
+      })
+      ```
+
+      ```javascript Javascript highlight={3,9-19,22}
+      const plan = {
+        name: 'Team Plan',
+        code: '__PLAN_CODE__',
+        description: 'Per-seat pricing for team collaboration',
+        amount_cents: 0,
+        amount_currency: 'USD',
+        interval: 'monthly',
+        pay_in_advance: false,
+        charges: [
+          {
+            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            charge_model: 'standard',
+            invoiceable: true,
+            prorated: true,
+            properties: {
+              amount: '10'
+            }
+          }
+        ]
+      };
+
+      await client.plans.createPlan({ plan })
+      ```
+
+      ```go Go highlight={3,9-19,22}
+      planInput := &lago.PlanInput{
+        Name:           "Team Plan",
+        Code:           "__PLAN_CODE__",
+        Description:    "Per-seat pricing for team collaboration",
+        AmountCents:    0,
+        AmountCurrency: "USD",
+        Interval:       "monthly",
+        PayInAdvance:   false,
+        Charges: []*lago.PlanChargeInput{
+          {
+            BillableMetricCode: "__BILLABLE_METRIC_CODE__",
+            ChargeModel:        "standard",
+            Invoiceable:        true,
+            Prorated:           true,
+            Properties: map[string]interface{}{
+              "amount": "10",
+            },
+          },
+        },
+      }
+
+      plan, err := client.Plan().Create(ctx, planInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/plans/create) and the [guide on prorated charges](/guides/plans/charges/prorated) to learn more.
+  </Step>
+
+  <Step title="Create a customer">
+    Create a customer with a unique `external_id`.
+
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a subscription">
+    Create a subscription for the customer with the plan's `code`.
+
+    <CreateSubscription />
+  </Step>
+
+  <Step title="Ingest user activity events">
+    Send usage events to Lago to track usage.  
+
+    1. Reference your billable metric with `code`
+    2. Reference the customer's subscription with `external_subscription_id`
+    3. Include `user_id` in properties to track individual users
+    4. Set `operation_type` to `add` when adding users, `remove` when removing
+
+    <CodeGroup>
+      ```bash cURL highlight={7-12}
+      curl --location --request POST "$LAGO_URL/api/v1/events" \
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "external_subscription_id": "__EXTERNAL_SUBSCRIPTION_ID__",
+            "properties": {
+              "user_id": "user_123",
+              "operation_type": "add"
+            }
+          }
+        }'
+      ```
+
+      ```python Python highlight={5-10,13}
+      from lago_python_client.models import Event
+
+      event = Event(
+        transaction_id='__TRANSACTION_ID__',
+        code='__BILLABLE_METRIC_CODE__',
+        external_subscription_id='__EXTERNAL_SUBSCRIPTION_ID__',
+        properties={
+          'user_id': 'user_123',
+          'operation_type': 'add'
+        }
+      )
+
+      client.events.create(event)
+      ```
+
+      ```ruby Ruby highlight={3-8}
+      client.events.create({
+        transaction_id: '__TRANSACTION_ID__',
+        code: '__BILLABLE_METRIC_CODE__',
+        external_subscription_id: '__EXTERNAL_SUBSCRIPTION_ID__',
+        properties: {
+          user_id: 'user_123',
+          operation_type: 'add'
+        }
+      })
+      ```
+
+      ```javascript Javascript highlight={3-8,11}
+      const event = {
+        transaction_id: '__TRANSACTION_ID__',
+        code: '__BILLABLE_METRIC_CODE__',
+        external_subscription_id: '__EXTERNAL_SUBSCRIPTION_ID__',
+        properties: {
+          user_id: 'user_123',
+          operation_type: 'add'
+        }
+      };
+
+      await client.events.createEvent({ event })
+      ```
+
+      ```go Go highlight={3-8,11}
+      eventInput := &lago.EventInput{
+        TransactionID:        "__TRANSACTION_ID__",
+        Code:                 "__BILLABLE_METRIC_CODE__",
+        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
+        Properties: map[string]interface{}{
+          "user_id":        "user_123",
+          "operation_type": "add",
+        },
+      }
+
+      event, err := client.Event().Create(ctx, eventInput)
+      ```
+    </CodeGroup>
 
     Refer to the [API reference](/api-reference/events/usage) to create an event.
+  </Step>
+
+  <Step title="Monitor current usage">
+    <CustomerUsage />
   </Step>
 </Steps>
 
