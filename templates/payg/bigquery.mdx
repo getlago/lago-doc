@@ -4,6 +4,11 @@ description:
   "Replicate BigQuery's pay-as-you-go pricing model and offer free upfront credits with Lago."
 ---
  
+import SetupLago from "/snippets/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/templates/create-customer.mdx";
+import CreateSubscription from "/snippets/templates/create-subscription.mdx";
+import CustomerUsage from "/snippets/templates/customer-usage.mdx";
+
 In this article, you will learn how to offer free upfront credits for new users on a 'pay-as-you-go' pricing model. 
 This template is fitted for infra companies, like this BigQuery example, but is also widely used among AI companies to let new users try their products easily. 
 [Mistral](https://mistral.ai/news/2024-ft-hackathon/#:~:text=We%20offer%20%24100%20free%20credits%20to%20selected%20hackathon%20participants) or [Perplexity](https://docs.perplexity.ai/docs/pricing#:~:text=pplx%2Dapi%20implements%20a%20usage,of%20free%20credit%20every%20month) are other great examples.
@@ -20,78 +25,454 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
 ## Get started
 
 <Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
+
   <Step title="Create a billable metric">
     Create a billable metric to track data processing volume.
     
-    Refer to the [API reference](/api-reference/billable-metrics/create) to create the billable metric object.
-
-    1. Set the `aggregation_type` to `sum_agg`
-    2. Set the `field_name` to `data_processed_volume`
+    1. Set the `aggregation_type` to `sum_agg` to sum all data processed
+    2. Set the `field_name` to `data_processed_volume` for tracking usage
     3. Set `recurring` to `false` for metered billing
+
+    <CodeGroup>
+      ```bash cURL highlight={7,9-11}
+      curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "BigQuery Data Processing",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "description": "Data processing volume in TiB",
+            "aggregation_type": "sum_agg",
+            "field_name": "data_processed_volume",
+            "recurring": false
+          }
+        }'
+      ```
+
+      ```python Python highlight={5,7-9,12}
+      from lago_python_client.models import BillableMetric
+
+      billable_metric = BillableMetric(
+        name='BigQuery Data Processing',
+        code='__BILLABLE_METRIC_CODE__',
+        description='Data processing volume in TiB',
+        aggregation_type='sum_agg',
+        field_name='data_processed_volume',
+        recurring=False
+      )
+
+      client.billable_metrics.create(billable_metric)
+      ```
+
+      ```ruby Ruby highlight={3,5-7}
+      client.billable_metrics.create({
+        name: 'BigQuery Data Processing',
+        code: '__BILLABLE_METRIC_CODE__',
+        description: 'Data processing volume in TiB',
+        aggregation_type: 'sum_agg',
+        field_name: 'data_processed_volume',
+        recurring: false
+      })
+      ```
+
+      ```javascript JavaScript highlight={3,5-7,10}
+      const billableMetric = {
+        name: 'BigQuery Data Processing',
+        code: '__BILLABLE_METRIC_CODE__',
+        description: 'Data processing volume in TiB',
+        aggregation_type: 'sum_agg',
+        field_name: 'data_processed_volume',
+        recurring: false
+      };
+
+      await client.billableMetrics.createBillableMetric({ billableMetric })
+      ```
+
+      ```go Go highlight={3,5-7,10}
+      billableMetricInput := &lago.BillableMetricInput{
+        Name:             "BigQuery Data Processing",
+        Code:             "__BILLABLE_METRIC_CODE__",
+        Description:      "Data processing volume in TiB",
+        AggregationType:  "sum_agg",
+        FieldName:        "data_processed_volume",
+        Recurring:        false,
+      }
+
+      billableMetric, err := client.BillableMetric().Create(ctx, billableMetricInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/billable-metrics/create) to create a billable metric.
   </Step>
-  <Step title="Create a plan with graduated pricing">
+
+  <Step title="Create a plan">
     Create a plan with graduated pricing to include free tier usage.
 
-    Refer to the [API reference](/api-reference/plans/create) to create the plan object.
-
     1. Set the `amount_cents` to `0` since there is no subscription fee
-    3. Set the `charges` to:
+    2. Use `graduated` charge model with BigQuery's $6.25 per TiB rate
+    3. Configure first 10 TiB as free, then $6.25 per TiB after that
 
-    ```json
-    [
-      {
-        "charge_model": "graduated",
-        "properties": {
-          "graduated_ranges": [
+    <CodeGroup>
+      ```bash cURL highlight={7,10,12-33}
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "BigQuery On-Demand",
+            "code": "__PLAN_CODE__",
+            "interval": "monthly",
+            "description": "Pay-as-you-go BigQuery pricing with free tier",
+            "amount_cents": 0,
+            "amount_currency": "USD",
+            "charges": [
+              {
+                "billable_metric_code": "__BILLABLE_METRIC_CODE__",
+                "charge_model": "graduated",
+                "properties": {
+                  "graduated_ranges": [
+                    {
+                      "from_value": 0,
+                      "to_value": 10000,
+                      "per_unit_amount": "0",
+                      "flat_amount": "0"
+                    },
+                    {
+                      "from_value": 10001,
+                      "to_value": null,
+                      "per_unit_amount": "6.25",
+                      "flat_amount": "0"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }'
+      ```
+
+      ```python Python highlight={3-22,26,29,31,34}
+      from lago_python_client.models import Plan, Charge
+
+      charge = Charge(
+        billable_metric_code='__BILLABLE_METRIC_CODE__',
+        charge_model='graduated',
+        properties={
+          'graduated_ranges': [
             {
-              "from_value": 0,
-              "to_value": 10000,
-              "per_unit_amount": "0",
-              "flat_amount": "0"
+              'from_value': 0,
+              'to_value': 10000,
+              'per_unit_amount': '0',
+              'flat_amount': '0'
             },
             {
-              "from_value": 10001,
-              "to_value": null,
-              "per_unit_amount": "6.25",
-              "flat_amount": "0"
+              'from_value': 10001,
+              'to_value': None,
+              'per_unit_amount': '6.25',
+              'flat_amount': '0'
             }
           ]
         }
-      }
-    ]
-    ```
-  </Step>
-  <Step title="Create a wallet with free credits">
-    “Start your 90-day free BigQuery trial which includes $300 worth of free usage”
+      )
 
-    BigQuery lets new users try its product for free by offering upfront credits valid for 90 days. We can replicate this logic using Lago’s wallet feature and add prepaid free credits to it.
+      plan = Plan(
+        name='BigQuery On-Demand',
+        code='__PLAN_CODE__',
+        interval='monthly',
+        description='Pay-as-you-go BigQuery pricing with free tier',
+        amount_cents=0,
+        amount_currency='USD',
+        charges=[charge]
+      )
 
-    1. [Create a new customer](/api-reference/customers/create)
-    2. [Create a new wallet](/api-reference/wallets/create) with $300 of free credits
-    3. Set `expiration_at` to 90 days from now for the trial period (ISO 8601 datetime format)
-  </Step>
-  <Step title="Ingest usage via events">
-    Send usage events to Lago to track data processing volume.
+      client.plans.create(plan)
+      ```
 
-    ```bash
-    LAGO_URL="https://api.getlago.com"
-
-    curl --location --request POST "$LAGO_URL/api/v1/events" \
-      --header 'Authorization: Bearer __API_KEY__' \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "event": {
-          "transaction_id": "{{$randomUUID}}",
-          "code": "__BILLABLE_METRIC_CODE__",
-          "external_customer_id": "__EXTERNAL_CUSTOMER_ID__",
-          "properties": {
-            "data_processed_volume": 10
+      ```ruby Ruby highlight={3,6,8-29}
+      client.plans.create({
+        name: 'BigQuery On-Demand',
+        code: '__PLAN_CODE__',
+        interval: 'monthly',
+        description: 'Pay-as-you-go BigQuery pricing with free tier',
+        amount_cents: 0,
+        amount_currency: 'USD',
+        charges: [
+          {
+            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            charge_model: 'graduated',
+            properties: {
+              graduated_ranges: [
+                {
+                  from_value: 0,
+                  to_value: 10000,
+                  per_unit_amount: '0',
+                  flat_amount: '0'
+                },
+                {
+                  from_value: 10001,
+                  to_value: nil,
+                  per_unit_amount: '6.25',
+                  flat_amount: '0'
+                }
+              ]
+            }
           }
+        ]
+      })
+      ```
+
+      ```javascript JavaScript highlight={3,6,8-29,32}
+      const plan = {
+        name: 'BigQuery On-Demand',
+        code: '__PLAN_CODE__',
+        interval: 'monthly',
+        description: 'Pay-as-you-go BigQuery pricing with free tier',
+        amount_cents: 0,
+        amount_currency: 'USD',
+        charges: [
+          {
+            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            charge_model: 'graduated',
+            properties: {
+              graduated_ranges: [
+                {
+                  from_value: 0,
+                  to_value: 10000,
+                  per_unit_amount: '0',
+                  flat_amount: '0'
+                },
+                {
+                  from_value: 10001,
+                  to_value: null,
+                  per_unit_amount: '6.25',
+                  flat_amount: '0'
+                }
+              ]
+            }
+          }
+        ]
+      };
+
+      await client.plans.createPlan({ plan })
+      ```
+
+      ```go Go highlight={3,6,8-29,32}
+      planInput := &lago.PlanInput{
+        Name:           "BigQuery On-Demand",
+        Code:           "__PLAN_CODE__",
+        Interval:       "monthly",
+        Description:    "Pay-as-you-go BigQuery pricing with free tier",
+        AmountCents:    0,
+        AmountCurrency: "USD",
+        Charges: []*lago.ChargeInput{
+          {
+            BillableMetricCode: "__BILLABLE_METRIC_CODE__",
+            ChargeModel:        "graduated",
+            Properties: map[string]interface{}{
+              "graduated_ranges": []map[string]interface{}{
+                {
+                  "from_value":       0,
+                  "to_value":         10000,
+                  "per_unit_amount":  "0",
+                  "flat_amount":      "0",
+                },
+                {
+                  "from_value":       10001,
+                  "to_value":         nil,
+                  "per_unit_amount":  "6.25",
+                  "flat_amount":      "0",
+                },
+              },
+            },
+          },
+        },
+      }
+
+      plan, err := client.Plan().Create(ctx, planInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/plans/create) and [guide on graduated pricing](/guide/plans/charges/charge-models/graduated) to learn more.
+  </Step>
+
+  <Step title="Create a customer">
+    Create a customer with a unique `external_id`.
+    
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a wallet with free credits">
+    BigQuery lets new users try its product for free by offering upfront credits valid for 90 days. We can replicate this logic using Lago's wallet feature.
+
+    1. Create a wallet with $300 of free credits for the customer
+    2. Set `expiration_at` to 90 days from now for the trial period
+
+    <CodeGroup>
+      ```bash cURL highlight={6,8-11}
+      curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "wallet": {
+            "external_customer_id": "__EXTERNAL_CUSTOMER_ID__",
+            "name": "BigQuery Trial Credits",
+            "rate_amount": "1.0",
+            "paid_credits": "300.0",
+            "granted_credits": "0.0",
+            "expiration_at": "2024-12-31T23:59:59Z"
+          }
+        }'
+      ```
+
+      ```python Python highlight={5,7-10,13}
+      from lago_python_client.models import Wallet
+      from datetime import datetime, timedelta
+
+      wallet = Wallet(
+        external_customer_id='__EXTERNAL_CUSTOMER_ID__',
+        name='BigQuery Trial Credits',
+        rate_amount='1.0',
+        paid_credits='300.0',
+        granted_credits='0.0',
+        expiration_at=(datetime.now() + timedelta(days=90)).isoformat() + 'Z'
+      )
+      
+      client.wallets.create(wallet)
+      ```
+
+      ```ruby Ruby highlight={2,4-7}
+      client.wallets.create({
+        external_customer_id: '__EXTERNAL_CUSTOMER_ID__',
+        name: 'BigQuery Trial Credits',
+        rate_amount: '1.0',
+        paid_credits: '300.0',
+        granted_credits: '0.0',
+        expiration_at: (Date.today + 90).strftime('%Y-%m-%dT23:59:59Z')
+      })
+      ```
+
+      ```javascript JavaScript highlight={2,4-7,10}
+      const wallet = {
+        external_customer_id: '__EXTERNAL_CUSTOMER_ID__',
+        name: 'BigQuery Trial Credits',
+        rate_amount: '1.0',
+        paid_credits: '300.0',
+        granted_credits: '0.0',
+        expiration_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+      }
+
+      await client.wallets.createWallet({ wallet })
+      ```
+
+      ```go Go highlight={4,6-9,12}
+      import "time"
+
+      walletInput := &lago.WalletInput{
+        ExternalCustomerID: "__EXTERNAL_CUSTOMER_ID__",
+        Name:               "BigQuery Trial Credits",
+        RateAmount:         "1.0",
+        PaidCredits:        "300.0",
+        GrantedCredits:     "0.0",
+        ExpirationAt:       time.Now().AddDate(0, 0, 90).Format(time.RFC3339),
+      }
+
+      wallet, err := client.Wallet().Create(ctx, walletInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/wallets/create) to create a wallet.
+
+    2. Create a subscription for the customer with the plan's `code`.
+
+    <CreateSubscription />
+  </Step>
+
+  <Step title="Ingest usage via events">
+    Send usage events to Lago to track usage.  
+
+    1. Reference your billable metric with `code`
+    2. Reference the customer's subscription with `external_subscription_id`
+    3. Include usage and filters data in `properties`
+
+    <CodeGroup>
+      ```bash cURL highlight={7-11}
+      curl --location --request POST "$LAGO_URL/api/v1/events" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "external_subscription_id": "__EXTERNAL_SUBSCRIPTION_ID__",
+            "properties": {
+              "data_processed_volume": 10
+            }
+          }
+        }'
+      ```
+
+      ```python Python highlight={5-9}
+      from lago_python_client.models import Event
+
+      event = Event(
+        transaction_id="__TRANSACTION_ID__",
+        code="__BILLABLE_METRIC_CODE__",
+        external_subscription_id="__EXTERNAL_SUBSCRIPTION_ID__",
+        properties={
+          "data_processed_volume": 10
         }
-      }'
-    ```
+      )
+
+      client.events.create(event)
+      ```
+
+      ```ruby Ruby highlight={3-7}
+      client.events.create(
+        transaction_id: "__TRANSACTION_ID__",
+        code: "__BILLABLE_METRIC_CODE__",
+        external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
+        properties: {
+          data_processed_volume: 10
+        }
+      )
+      ```
+
+      ```js Javascript highlight={3-7,10}
+      const event = {
+        transaction_id: "__TRANSACTION_ID__",
+        code: "__BILLABLE_METRIC_CODE__",
+        external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
+        properties: {
+          data_processed_volume: 10
+        }
+      };
+
+      await client.events.createEvent({ event });
+      ```
+
+      ```go Go highlight={3-7,10}
+      eventInput := &lago.EventInput{
+        TransactionID:          "__TRANSACTION_ID__",
+        Code:                   "__BILLABLE_METRIC_CODE__",
+        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
+        Properties: map[string]interface{}{
+          "data_processed_volume": 10,
+        },
+      }
+
+      event, err := client.Event().Create(ctx, eventInput)
+      ```
+    </CodeGroup>
 
     Refer to the [API reference](/api-reference/events/usage) to create an event.
+  </Step>
+
+  <Step title="Monitor current usage">
+    <CustomerUsage />
   </Step>
 </Steps>
 
