@@ -1,0 +1,54 @@
+<CodeGroup>
+    ```bash cURL highlight={6-8}
+    curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "subscription": {
+          "external_customer_id": "__EXTERNAL_CUSTOMER_ID__",
+          "plan_code": "__PLAN_CODE__",
+          "external_id": "__EXTERNAL_SUBSCRIPTION_ID__"
+        }
+      }'
+    ```
+
+    ```python Python highlight={4-6,9}
+    from lago_python_client.models import Subscription
+
+    subscription = Subscription(
+      external_customer_id="__EXTERNAL_CUSTOMER_ID__",
+      plan_code="__PLAN_CODE__",
+      external_id="__EXTERNAL_SUBSCRIPTION_ID__"
+    )
+
+    client.subscriptions.create(subscription)
+    ```
+
+    ```ruby Ruby highlight={2-4}
+    client.subscriptions.create(
+      external_customer_id: "__EXTERNAL_CUSTOMER_ID__",
+      plan_code: "__PLAN_CODE__",
+      external_id: "__EXTERNAL_SUBSCRIPTION_ID__"
+    )
+    ```
+
+    ```js Javascript highlight={2-4,7}
+    const subscription = {
+      external_customer_id: "__EXTERNAL_CUSTOMER_ID__",
+      plan_code: "__PLAN_CODE__",
+      external_id: "__EXTERNAL_SUBSCRIPTION_ID__"
+    };
+
+    await client.subscriptions.createSubscription({ subscription });
+    ```
+
+    ```go Go highlight={2-4,7}
+    subscriptionInput := &lago.SubscriptionInput{
+      ExternalCustomerID: "__EXTERNAL_CUSTOMER_ID__",
+      PlanCode:           "__PLAN_CODE__",
+      ExternalID:         "__EXTERNAL_SUBSCRIPTION_ID__",
+    }
+
+    subscription, err := client.Subscription().Create(ctx, subscriptionInput)
+    ```
+</CodeGroup>
