@@ -145,19 +145,19 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
         AggregationType: lago.SumAggregation,
         FieldName:       "tokens",
         Recurring:       false,
-        Filters:         []map[string]interface{}{
+        Filters:         []lago.BillableMetricFilter{
           {
-            "key":    "model",
-            "values": []string{"mistral-small", "mistral-medium", "mistral-large"},
+            Key:    "model",
+            Values: []string{"mistral-small", "mistral-medium", "mistral-large"},
           },
           {
-            "key":    "type", 
-            "values": []string{"input", "output"},
+            Key:    "type", 
+            Values: []string{"input", "output"},
           },
         },
       }
 
-      billableMetric, err := lagoClient.BillableMetric().Create(bmInput)
+      billableMetric, err := client.BillableMetric().Create(ctx, bmInput)
       ```
     </CodeGroup>
 
@@ -378,40 +378,40 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
           {
             BillableMetricCode: "__BILLABLE_METRIC_CODE__",
             ChargeModel:        "package",
-            Filters: []map[string]interface{}{
+            Filters: []lago.ChargeFilter{
               {
-                "invoice_display_name": "mistral-small-input",
-                "properties": map[string]interface{}{
+                InvoiceDisplayName: "mistral-small-input",
+                Properties: map[string]interface{}{
                   "amount": "1", "free_units": 0, "package_size": 1000000,
                 },
-                "values": map[string]interface{}{
+                Values: map[string]string{
                   "model": []string{"mistral-small"}, "type": []string{"input"},
                 },
               },
               {
-                "invoice_display_name": "mistral-small-output",
-                "properties": map[string]interface{}{
+                InvoiceDisplayName: "mistral-small-output",
+                Properties: map[string]interface{}{
                   "amount": "3", "free_units": 0, "package_size": 1000000,
                 },
-                "values": map[string]interface{}{
+                Values: map[string]string{
                   "model": []string{"mistral-small"}, "type": []string{"output"},
                 },
               },
               {
-                "invoice_display_name": "mistral-large-input",
-                "properties": map[string]interface{}{
+                InvoiceDisplayName: "mistral-large-input",
+                Properties: map[string]interface{}{
                   "amount": "4", "free_units": 0, "package_size": 1000000,
                 },
-                "values": map[string]interface{}{
+                Values: map[string]string{
                   "model": []string{"mistral-large"}, "type": []string{"input"},
                 },
               },
               {
-                "invoice_display_name": "mistral-large-output",
-                "properties": map[string]interface{}{
+                InvoiceDisplayName: "mistral-large-output",
+                Properties: map[string]interface{}{
                   "amount": "12", "free_units": 0, "package_size": 1000000,
                 },
-                "values": map[string]interface{}{
+                Values: map[string]string{
                   "model": []string{"mistral-large"}, "type": []string{"output"},
                 },
               },
@@ -420,7 +420,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
         },
       }
 
-      plan, err := lagoClient.Plan().Create(planInput)
+      plan, err := client.Plan().Create(ctx, planInput)
       ```
     </CodeGroup>
 

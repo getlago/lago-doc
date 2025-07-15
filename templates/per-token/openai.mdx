@@ -144,14 +144,14 @@ For OpenAI, pricing depends on the language model used. Here are several price p
         AggregationType: lago.SumAggregation,
         FieldName:       "tokens",
         Recurring:       false,
-        Filters:         []map[string]interface{}{
+        Filters:         []lago.BillableMetricFilter{
           {
-            "key":    "model",
-            "values": []string{"8k", "32k"},
+            Key:    "type",
+            Values: []string{"input", "output"},
           },
           {
-            "key":    "type", 
-            "values": []string{"input", "output"},
+            Key:    "model",
+            Values: []string{"8k", "32k"},
           },
         },
       }
@@ -377,40 +377,40 @@ For OpenAI, pricing depends on the language model used. Here are several price p
           {
             BillableMetricCode: "__BILLABLE_METRIC_CODE__",
             ChargeModel:        "package",
-            Filters: []map[string]interface{}{
+            Filters: []lago.ChargeFilter{
               {
-                "invoice_display_name": "8k-input",
-                "properties": map[string]interface{}{
+                InvoiceDisplayName: "8k-input",
+                Properties: map[string]interface{}{
                   "amount": "0.03", "free_units": 0, "package_size": 1000000,
                 },
-                "values": map[string]interface{}{
+                Values: map[string]string{
                   "model": []string{"8k"}, "type": []string{"input"},
                 },
               },
               {
-                "invoice_display_name": "8k-output",
-                "properties": map[string]interface{}{
+                InvoiceDisplayName: "8k-output",
+                Properties: map[string]interface{}{
                   "amount": "0.06", "free_units": 0, "package_size": 1000000,
                 },
-                "values": map[string]interface{}{
+                Values: map[string]string{
                   "model": []string{"8k"}, "type": []string{"output"},
                 },
               },
               {
-                "invoice_display_name": "32k-input",
-                "properties": map[string]interface{}{
+                InvoiceDisplayName: "32k-input",
+                Properties: map[string]interface{}{
                   "amount": "0.06", "free_units": 0, "package_size": 1000000,
                 },
-                "values": map[string]interface{}{
+                Values: map[string]string{
                   "model": []string{"32k"}, "type": []string{"input"},
                 },
               },
               {
-                "invoice_display_name": "32k-output",
-                "properties": map[string]interface{}{
+                InvoiceDisplayName: "32k-output",
+                Properties: map[string]interface{}{
                   "amount": "0.12", "free_units": 0, "package_size": 1000000,
                 },
-                "values": map[string]interface{}{
+                Values: map[string]string{
                   "model": []string{"32k"}, "type": []string{"output"},
                 },
               },
@@ -547,32 +547,18 @@ For OpenAI, pricing depends on the language model used. Here are several price p
     <Tab title="Go">
 
     ```go highlight={10-16}
-    import "fmt"
-    import "github.com/getlago/lago-go-client"
-
-    func main() {
-      ctx := context.Background()
-      lagoClient := lago.New().SetApiKey("__API_KEY__")
-
-      eventInput := &lago.EventInput{
-        TransactionID:          "__TRANSACTION_ID__",
-        Code:                   "__BILLABLE_METRIC_CODE__",
-        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
-        Properties: map[string]interface{}{
-          "total": 5000,
-          "model": "8k",
-          "type":  "input",
-        },
-      }
-
-      res, err := lagoClient.Event().Create(ctx, eventInput)
-      if err != nil {
-        // err is *lago.Error
-        panic(err)
-      }
-      // res is *lago.Event
-      fmt.Println(*res)
+    eventInput := &lago.EventInput{
+      TransactionID:          "__TRANSACTION_ID__",
+      Code:                   "__BILLABLE_METRIC_CODE__",
+      ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
+      Properties: map[string]interface{}{
+        "total": 5000,
+        "model": "8k",
+        "type":  "input",
+      },
     }
+
+    event, err := client.Event().Create(ctx, eventInput)
     ```
 
     </Tab>
