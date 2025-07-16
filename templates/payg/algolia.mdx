@@ -4,270 +4,339 @@ description:
   "Replicate Algolia's pay-as-you-go pricing model with Lago."
 ---
 
+import SetupLago from "/snippets/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/templates/create-customer.mdx";
+import CreateSubscription from "/snippets/templates/create-subscription.mdx";
+import CustomerUsage from "/snippets/templates/customer-usage.mdx";
+
 In this article, you will learn how to build a 'pay-as-you-go' billing system.
 This template is suitable for companies whose pricing fully depends on usage, such as cloud service providers and API companies, that only charge their customers for the resources they consume.
 
-## Summary
-
-<Steps>
-  <Step title="Aggregate usage to compute number of requests">
-    Create a billable metric to track request usage.
-    [(More here)](#step-1-aggregate-usage-with-filters).
-  </Step>
-  <Step title="Create a plan with multiple charges">
-    Set up a package pricing model.
-    [(More here)](#step-2-set-up-a-per-token-pricing).
-  </Step>
-  <Step title="Offer volume and commitment discounts">
-    Leverage subscriptions for a reduced price.
-    [(More here)](#step-3-ingest-usage-in-real-time).
-  </Step>
-</Steps>
-
-
 ## Pricing structure
-For its two main products, Algolia Search and Algolia Recommend, the platform offers its customers to subscribe for free and only pay based on usage.
+For one of its products, Algolia Search, the platform offers its customers to subscribe for free and only pay based on usage.
 
-| Model      | Search API     | Recommend API      |
-|------------|------------|-------------|
-| Monthly price | $1.50 / 1,000 requests | $0.60 / 1,000 requests |
-| Free usage (each month)| 10,000 requests  | 10,000 requests |
+| Model      | Search API     |
+|------------|------------|
+| Monthly price | $1.50 / 1,000 requests |
+| Free usage (each month)| 10,000 requests  |
 
 Although users don't need to subscribe to access the platform, Algolia offers its customers **discounts** based on volume and commitment (rates available upon request).
-We are going to teach you how to replicate this pricing with our billing solution.
 
+## Get started
 
-## Step 1- Aggregate usage to compute number of requests
-Lago monitors consumption by converting events into billable metrics. For Algolia, there would be two billable metrics based on the number of requests for the Search and Recommendation APIs.
-As the platform handles **high volumes of requests**, it would be inefficient to create an event each time a request is made. Instead, Algolia could simply send an event once an hour or hour a day with the total number of requests.
+<Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
 
+  <Step title="Create billable metrics">
+    Create billable metrics to track request usage for Search and Recommend APIs.
+    
+    1. Set the `aggregation_type` to `sum_agg` to sum all request volumes
+    2. Set the `field_name` to `search_requests_volume` for Search API tracking  
+    3. Set the `recurring` to `false` for metered billing
 
-<Tabs>
-  <Tab title="Dashboard">
-    Through the user interface, we have created two billable metrics called **'Search requests'** and **'Recommend requests'**. For these metrics, we use the 'sum' aggregation type based on the volume of requests.
-    At the end of the billing period, Lago will calculate the sum of requests for each metric using the value of each event (i.e. the event property) and reset the amount to 0 as the aggregation type is metered.
-
-    <Frame>
-    <img src="/templates/images/algolia-aggregate-requests.png" />
-    </Frame>
-  </Tab>
-  <Tab title="API">
-  ```bash Create billable metrics
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
-
+    <CodeGroup>
+      ```bash cURL highlight={7,9-11}
       curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "billable_metric": {
-          "name": "Search Requests",
-          "code": "search_requests",
-          "description": "Requests made via the Search API",
-          "aggregation_type": "sum_agg",
-          "weighted_interval": null,
-          "recurring": false,
-          "field_name": "search_requests_volume",
-          "filters": []
-        }
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "Search API Requests",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "description": "Search API request volume",
+            "aggregation_type": "sum_agg",
+            "field_name": "search_requests_volume",
+            "recurring": false
+          }
+        }'
+      ```
+
+      ```python Python highlight={5,7-9,12}
+      from lago_python_client.models import BillableMetric
+      
+      billable_metric = BillableMetric(
+        name='Search API Requests',
+        code='__BILLABLE_METRIC_CODE__',
+        description='Search API request volume',
+        aggregation_type='sum_agg',
+        field_name='search_requests_volume',
+        recurring=False,
+      )
+
+      client.billable_metrics.create(billable_metric)
+      ```
+
+      ```ruby Ruby highlight={3,5-7}
+      client.billable_metrics.create({
+        name: 'Search API Requests',
+        code: '__BILLABLE_METRIC_CODE__',
+        description: 'Search API request volume',
+        aggregation_type: 'sum_agg',
+        field_name: 'search_requests_volume',
+        recurring: false
+      })
+      ```
+
+      ```javascript JavaScript highlight={3,5-7,10}
+      const billable_metric = {
+        name: 'Search API Requests',
+        code: '__BILLABLE_METRIC_CODE__',
+        description: 'Search API request volume',
+        aggregationType: 'sum_agg', 
+        fieldName: 'search_requests_volume',
+        recurring: false
+      };
+  
+      await client.billableMetrics.create({ billable_metric })
+      ```
+
+      ```go Go highlight={3,5-10} 
+      billableMetricInput := &lago.BillableMetricInput{
+        Name:           "Search API Requests",
+        Code:           "__BILLABLE_METRIC_CODE__",
+        Description:    "Search API request volume",
+        AggregationType: "sum_agg",
+        FieldName:       "search_requests_volume",
+        Recurring:       false,
       }
- 
-  ```
-  </Tab>
-</Tabs>
 
-## Step 2- Create a plan with multiple charges
-Now that we have all our billable metrics, we can replicate Algolia's pricing. As this is a 'pay-as-you-go' plan, there is no subscription fee. In the plan settings, we can simply define a monthly billing period and then add our charges.
+      billableMetric, err := client.BillableMetric().Create(ctx, billableMetricInput)
+      ```
+    </CodeGroup>
+  </Step>
 
-<Tabs>
-  <Tab title="Dashboard">
-    For both charges, we use the **package pricing model**. This model allows us to create packages of units and define a unique package price. Customers will be charged for usage based on packages of 1,000 requests. Algolia offers 10,000 requests for free each month, for both APIs. Beyond this limit, each 'opened' package is due, which means that 800 Search requests cost the same price as 1,000 requests (i.e. $1.50).
-    At the end of each billing period (i.e. each month), Lago will automatically invoice each customer according to their consumption, then all counts and calculations will be reset to zero for the next period.
+  <Step title="Create a plan">
+    Create a plan to price packages of requests used.
 
-    <Frame>
-      <img src="/templates/images/algolia-package-pricing.png" />
-    </Frame>
-  </Tab>
+    1. Set the `amount_cents` to `0` since there is no subscription fee
+    2. Set the `charges` to use `package` pricing model with Algolia's rates
+    3. Configure `free_units` of 10,000 requests per month included
 
-  <Tab title="API">
-  ```bash Create a plan with multiple charges
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
+    <CodeGroup>
+      ```bash cURL highlight={7,10,12-22}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-       "plan": {
-            "name": "Algolia Starter",
-            "code": "algolia_starter",
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Algolia Search",
+            "code": "__PLAN_CODE__",
             "interval": "monthly",
+            "description": "Pay-as-you-go pricing for Algolia Search API",
             "amount_cents": 0,
             "amount_currency": "USD",
-            "trial_period": 0.0,
-            "pay_in_advance": false,
             "charges": [
-                {
-                    "billable_metric_id": "15879740-102e-43bd-a6bc-15d865bb1b85",
-                    "billable_metric_code": "search_requests",
-                    "charge_model": "package",
-                    "invoiceable": true,
-                    "pay_in_advance": false,
-                    "prorated": false,
-                    "min_amount_cents": 0,
-                    "properties": {
-                        "amount": "1.50",
-                        "free_units": 10000,
-                        "package_size": 1000
-                    },
-                    "filters": [],
-                    "taxes": []
+              {
+                "billable_metric_code": "__BILLABLE_METRIC_CODE__",
+                "charge_model": "package",
+                "properties": {
+                  "amount": "1.50",
+                  "free_units": 10000,
+                  "package_size": 1000
                 }
-            ],
+              }
+            ]
+          }
+        }'
+      ```
+
+      ```python Python highlight={3-11,15,18,20,23}
+      from lago_python_client.models import Plan, Charge
+
+      charge = Charge(
+        billable_metric_code='__BILLABLE_METRIC_CODE__',
+        charge_model='package',
+        properties={
+          'amount': '1.50',
+          'free_units': 10000,
+          'package_size': 1000
         }
+      )
+
+      plan = Plan(
+        name='Algolia Search PAYG',
+        code='__PLAN_CODE__',
+        interval='monthly',
+        description='Pay-as-you-go pricing for Search API',
+        amount_cents=0,
+        amount_currency='USD',
+        charges=[charge]
+      )
+
+      client.plans.create(plan)
+      ```
+
+      ```ruby Ruby highlight={3,6,8-18}
+      client.plans.create({
+        name: 'Algolia Search PAYG',
+        code: '__PLAN_CODE__',
+        interval: 'monthly',
+        description: 'Pay-as-you-go pricing for Search API',
+        amount_cents: 0,
+        amount_currency: 'USD',
+        charges: [
+          {
+            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            charge_model: 'package',
+            properties: {
+              amount: '1.50',
+              free_units: 10000,
+              package_size: 1000
+            }
+          }
+        ]
+      })
+      ```
+
+      ```javascript JavaScript highlight={3,6,8-18,21}
+      const plan = {
+        name: 'Algolia Search PAYG',
+        code: '__PLAN_CODE__',
+        interval: 'monthly',
+        description: 'Pay-as-you-go pricing for Search API',
+        amount_cents: 0,
+        amount_currency: 'USD',
+        charges: [
+          {
+            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            charge_model: 'package',
+            properties: {
+              amount: '1.50',
+              free_units: 10000,
+              package_size: 1000
+            }
+          }
+        ]
+      };
+
+      await client.plans.createPlan({ plan })
+      ```
+
+      ```go Go highlight={3,6,8-18,21}
+      planInput := &lago.PlanInput{
+        Name:           "Algolia Search PAYG",
+        Code:           "__PLAN_CODE__",
+        Interval:       "monthly",
+        Description:    "Pay-as-you-go pricing for Search API",
+        AmountCents:    0,
+        AmountCurrency: "USD",
+        Charges: []*lago.PlanChargeInput{
+          {
+            BillableMetricCode: "__BILLABLE_METRIC_CODE__",
+            ChargeModel:        "package",
+            Properties: map[string]interface{}{
+              "amount":       "1.50",
+              "free_units":   10000,
+              "package_size": 1000,
+            },
+          },
+        },
       }
 
+      plan, err := client.Plan().Create(ctx, planInput)
+      ```
+    </CodeGroup>
 
+    Refer to the [API reference](/api-reference/plans/create) and [guide on package charges](/guide/plans/charges/charge-models/package) to learn more.
+  </Step>
 
-  ```
-    </Tab>
-</Tabs>
+  <Step title="Create a customer">
+    Create a customer with a unique `external_id`.
+    
+    <CreateCustomer />
+  </Step>
 
+  <Step title="Create a subscription">
+    Create a subscription for the customer with the plan's `code`.
+    
+    <CreateSubscription />
+  </Step>
 
-## Step 3- Offer volume and commitment discounts through subscriptions
+  <Step title="Ingest usage via events">
+    Send usage events to Lago to track API requests.
 
-_"When committing to the equivalent of 100 Search units per month or more, you automatically unlock a discount compared to PAYGO. Please contact sales for more information."_
+    1. Set the `code` to match your billable metric code
+    2. Include `search_requests_volume` property with the number of requests
 
-Algolia doesn't provide much information about their volume and commitment discounts but we know that customers who commit to making at least 100,000 Search requests per month (for Algolia, a "Search unit" is a package of 1,000 requests) can benefit from a **reduced price**.
-We are going to make some assumptions to see how we could implement this logic.
+    <CodeGroup>
+      ```bash cURL highlight={7-11}
+      curl --location --request POST "$LAGO_URL/api/v1/events" \
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "external_subscription_id": "__EXTERNAL_SUBSCRIPTION_ID__",
+            "properties": {
+              "search_requests_volume": 5000
+            }
+          }
+        }'
+      ```
 
+      ```python Python highlight={5-9,12}
+      from lago_python_client.models import Event
 
-If we want to keep our package pricing model, we should convert the commitment part of our plan into a **subscription**. 
-
-<Tabs>
-  <Tab title="Dashboard">
-    With the standard pricing, 100,000 requests would be charged \$150 (i.e. 100 packages of 1,000 requests at \$1.50 each). Since we want to offer a discount to our customers, we can create a new plan with a monthly subscription of \$120, paid in advance. Then, we set the package price for 1000 requests at \$1.20. Also, we include 100,000 free units, which are covered by the subscription fee.
-
-  <Frame>
-    <img src="/templates/images/algolia-subscription.png" />
-  </Frame>
-
-  </Tab>
-  
-  <Tab title="API">
-  ```bash Introduce a subscription
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
-      curl --location --request POST "$LAGO_URL/api/v1/plans" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-          "plan": {
-            "name": "Algolia committed",
-            "code": "algolia_committed",
-            "interval": "monthly",
-            "amount_cents": 12000,
-            "amount_currency": "USD",
-            "trial_period": 0.0,
-            "pay_in_advance": true,
-            "charges": [
-                {
-                    "billable_metric_id": "15879740-102e-43bd-a6bc-15d865bb1b85",
-                    "billable_metric_code": "search_requests",
-                    "charge_model": "package",
-                    "invoiceable": true,
-                    "pay_in_advance": false,
-                    "prorated": false,
-                    "min_amount_cents": 0,
-                    "properties": {
-                        "amount": "1.20",
-                        "free_units": 10000,
-                        "package_size": 1000
-                    },
-                    "filters": [],
-                    "taxes": []
-                }
-            ],
-            "taxes": []
+      event = Event(
+        transaction_id="__TRANSACTION_ID__",
+        code="__BILLABLE_METRIC_CODE__",
+        external_subscription_id="__EXTERNAL_SUBSCRIPTION_ID__",
+        properties={
+          "search_requests_volume": 5000
         }
+      )
 
-  ```
-  </Tab>
-</Tabs>
+      client.events.create(event)
+      ```
 
-
-Another option would be to drop the package pricing model and use the **graduated pricing model**. This model would allow us to create several tiers with different unit prices. 
-
-
-
-<Tabs>
-  <Tab title="Dashboard">
-    For the first 100,000 requests included in the subscription, we set a flat fee of $0 and then apply a decreasing unit price to offer a volume discount.
-
-  <Frame>
-    <img src="/templates/images/algolia-volume-discount.png" />
-  </Frame>
-
-  </Tab>
-  
-  <Tab title="API">
-  ```bash Implement volume discount
-      LAGO_URL="https://api.getlago.com"
-      API_KEY="__YOUR_API_KEY__"
-      curl --location --request POST "$LAGO_URL/api/v1/plans" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "plan": {
-            "name": "Algolia committed",
-            "code": "algolia_committed",
-            "interval": "monthly",
-            "amount_cents": 12000,
-            "amount_currency": "USD",
-            "trial_period": 0.0,
-            "pay_in_advance": true,
-            "charges": [
-                {
-                    "billable_metric_id": "15879740-102e-43bd-a6bc-15d865bb1b85",
-                    "billable_metric_code": "search_requests",
-                    "charge_model": "graduated",
-                    "invoiceable": true,
-                    "pay_in_advance": false,
-                    "prorated": false,
-                    "min_amount_cents": 0,
-                    "properties": {
-                        "graduated_ranges": [
-                            {
-                                "to_value": 100000,
-                                "from_value": 0,
-                                "flat_amount": "0",
-                                "per_unit_amount": "0"
-                            },
-                            {
-                                "to_value": 150000,
-                                "from_value": 100001,
-                                "flat_amount": "0",
-                                "per_unit_amount": "0.0011"
-                            },
-                            {
-                                "to_value": null,
-                                "from_value": 150001,
-                                "flat_amount": "0",
-                                "per_unit_amount": "0.001"
-                            }
-                        ]
-                    },
-                    "filters": [],
-                    "taxes": []
-                }
-            ],
-            "taxes": []
+      ```ruby Ruby highlight={3-7}
+      client.events.create(
+        transaction_id: "__TRANSACTION_ID__",
+        code: "__BILLABLE_METRIC_CODE__",
+        external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
+        properties: {
+          search_requests_volume: 5000
         }
+      )
+      ```
 
-  ```
-  </Tab>
-</Tabs>
+      ```js Javascript highlight={3-7,10}
+      const event = {
+        transaction_id: "__TRANSACTION_ID__",
+        code: "__BILLABLE_METRIC_CODE__",
+        external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
+        properties: {
+          search_requests_volume: 5000
+        }
+      };
 
+      await client.events.createEvent({ event });
+      ```
 
+      ```go Go highlight={3-7,10}
+      eventInput := &lago.EventInput{
+        TransactionID:          "__TRANSACTION_ID__",
+        Code:                   "__BILLABLE_METRIC_CODE__",
+        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
+        Properties: map[string]interface{}{
+          "search_requests_volume": 5000,
+        },
+      }
+
+      event, err := client.Event().Create(ctx, eventInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/events/usage) to create an event.
+  </Step>
+
+  <Step title="Monitor current usage">
+    <CustomerUsage />
+  </Step>
+</Steps>
 
 ## Wrap-up
 'Pay-as-you-go' pricing strategies are popular among API companies like Algolia.

@@ -4,29 +4,18 @@ description:
   "Replicate Segment's hybrid pricing model with Lago."
 ---
 
+import SetupLago from "/snippets/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/templates/create-customer.mdx";
+import CreateSubscription from "/snippets/templates/create-subscription.mdx";
+import CustomerUsage from "/snippets/templates/customer-usage.mdx";
+
 Build a hybrid pricing and billing system like [Segment](https://segment.com/), the Customer Data Platform leader, based on subscription plans, with a usage-based component that makes your revenue grow with your users.
 
-## Summary
-
-<Steps>
-  <Step title="Track unique users with a billable metric">
-    Meter unique users with a billable metric by using the `unique_count_agg` aggregation type.
-    [(More here)](#step-1-keep-track-of-unique-users).
-  </Step>
-  <Step title="Create a plan with tiers of MTUs">
-    Create a new price plan with tiers of tracked users, using the graduated pricing model.
-    [(More here)](#step-2-create-a-plan-with-tiers).
-  </Step>
-  <Step title="Ingest usage for unique users in real-time">
-    Ingest raw usage of users that are automatically deduplicated by Lago.
-    [(More here)](#step-3-ingest-meter-for-unique-users-in-real-time).
-  </Step>
-</Steps>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/ZmoZUeJrPms?si=U8-dxW9B-Bw81ecK&amp;start=38" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Pricing structure
 
 Segment offers three pricing plans, called 'Free', 'Team' and 'Business'. As the latter has a custom pricing, we will focus on the first two plans.
-
 
 | Plan          | Free plan     | Team plan     |
 |---------------|---------------|---------------|
@@ -38,162 +27,449 @@ Segment offers three pricing plans, called 'Free', 'Team' and 'Business'. As the
 | Trial Period  | n/a           | 14 days       |
 
 The usage-based component in Segment's pricing is related to **monthly tracked users (MTUs)**, namely the number of unique users whose data is stored on the platform each month.
-As these are **unique users**, we must ensure that each user is counted only once during the billing process.
 
-Now let's see how we can implement Segment's pricing plans using Lago.
+## Get started
 
-## Step 1- Keep track of unique users
+<Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
 
-Segment has implemented a graduated pricing model, based on the number of MTUs.
-| MTUs           | Price                  |
-|----------------|------------------------|
-| 10k-25k MTUs  | $0.012/unit            |
-| 25k-100k MTUs | $0.011/unit            |
-| 100k+ MTUs    | $0.010/unit            |
+  <Step title="Create a billable metric">
+    Create a billable metric to track unique users with deduplication.
+    
+    1. Set the `aggregation_type` to `unique_count_agg` for counting unique users
+    2. Set the `field_name` to `user_id` to identify individual users
+    3. Set `recurring` to `false` for metered billing
 
-Therefore, we need to calculate the number of unique users in order to implement our second pricing plan.
-
-<Tabs>
-  <Tab title="Dashboard">
-
-    We are going to use a billable metric, which will allow us to aggregate incoming events on the platform to measure consumption.
-
-    We have created a billable metric, called **Monthly Tracked Users**, which includes the **`user_id` property**. In addition to this, we have defined `unique_count_agg` as the aggregation type.
-
-    What does this mean? Every time the customer data platform (e.g. Segment) records a new activity, a `mtu` event will be sent to Lago, which will then use the `user_id` property to deduplicate users to get only the total number of unique ones.
-
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/ZmoZUeJrPms?si=U8-dxW9B-Bw81ecK&amp;start=38" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
-  </Tab>
-  <Tab title="API">
-    ```bash Create a metric tracking unique users
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-
-    curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-        "billable_metric": {
+    <CodeGroup>
+      ```bash cURL highlight={7,9-11}
+      curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
             "name": "Monthly Tracked Users",
-            "code": "mtu",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "description": "Unique users tracked monthly",
             "aggregation_type": "unique_count_agg",
-            "weighted_interval": null,
-            "recurring": false,
             "field_name": "user_id",
-            "filters": []
-        }
-    }'
-    ```
-  </Tab>
-</Tabs>
+            "recurring": false
+          }
+        }'
+      ```
 
-## Step 2- Create a plan with tiers
-It's time to create our **Team plan**. The subscription part is similar to the 'Free plan' (except that the amount is now $120). We can also add the 14-day free trial currently offered by Segment.
+      ```python Python highlight={5,7-9,12}
+      from lago_python_client.models import BillableMetric
 
-<Tabs>
-  <Tab title="Dashboard">
-    To charge customers for consumption (i.e. based on MTUs), we need to add a charge to our plan.
-    Using the `mtu` billable metric created previously, we have implemented the graduated pricing model to reproduce Segment's pricing, including 10,000 free units (i.e. 10,000 unique users).
+      billable_metric = BillableMetric(
+        name='Monthly Tracked Users',
+        code='__BILLABLE_METRIC_CODE__',
+        description='Unique users tracked monthly',
+        aggregation_type='unique_count_agg',
+        field_name='user_id',
+        recurring=False
+      )
 
-    Following this example, for a customer on the 'Team' plan with 30,000 MTUs, at the end of the month, their invoice will amount to:
-    - $120 (first 10,000 MTUs)
-    - $180 (next 15,000 MTUs)
-    - $55 (last 5,000 MTUs)
+      client.billable_metrics.create(billable_metric)
+      ```
 
-    Our pricing plan is now ready!
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/ZmoZUeJrPms?si=FHyQ9MXqpOOu1AEb&amp;start=103" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      ```ruby Ruby highlight={3,5-7}
+      client.billable_metrics.create({
+        name: 'Monthly Tracked Users',
+        code: '__BILLABLE_METRIC_CODE__',
+        description: 'Unique users tracked monthly',
+        aggregation_type: 'unique_count_agg',
+        field_name: 'user_id',
+        recurring: false
+      })
+      ```
 
-  </Tab>
-  <Tab title="API">
-    ```bash Create a plan with tiers of MTUs
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-    curl --location --request POST "$LAGO_URL/api/v1/plans" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-        "plan": {
-            "name": "Team",
-            "code": "team",
+      ```javascript JavaScript highlight={3,5-7,10}
+      const billableMetric = {
+        name: 'Monthly Tracked Users',
+        code: '__BILLABLE_METRIC_CODE__',
+        description: 'Unique users tracked monthly',
+        aggregation_type: 'unique_count_agg',
+        field_name: 'user_id',
+        recurring: false
+      };
+
+      await client.billableMetrics.createBillableMetric({ billableMetric });
+      ```
+
+      ```go Go highlight={3,5-7,10}
+      billableMetricInput := &lago.BillableMetricInput{
+        Name:            "Monthly Tracked Users",
+        Code:            "__BILLABLE_METRIC_CODE__",
+        Description:     "Unique users tracked monthly",
+        AggregationType: "unique_count_agg",
+        FieldName:       "user_id",
+        Recurring:       false,
+      }
+
+      billableMetric, err := client.BillableMetric().Create(ctx, billableMetricInput)
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Create a plan">
+    Create a Team plan with subscription fee and graduated usage charges.
+
+    1. Set the `amount_cents` to `12000` for $120 monthly subscription
+    2. Set `pay_in_advance` to `true` for upfront payment
+    3. Set `trial_period` to `14` days for the trial period
+    4. Configure `graduated_ranges` with Segment's tiered pricing structure
+
+    <CodeGroup>
+      ```bash cURL expandable highlight={7,10-47}
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Segment Team Plan",
+            "code": "__PLAN_CODE__",
             "interval": "monthly",
+            "description": "Team plan with subscription and graduated usage",
             "amount_cents": 12000,
             "amount_currency": "USD",
-            "trial_period": 0.0,
             "pay_in_advance": true,
+            "trial_period": 14,
             "charges": [
-                {
-                    "billable_metric_id": "f8e854e5-69a3-420f-88a2-296324ee17d0",
-                    "invoice_display_name": null,
-                    "billable_metric_code": "mtu",
-                    "created_at": "2024-05-03T22:32:09Z",
-                    "charge_model": "graduated",
-                    "invoiceable": true,
-                    "pay_in_advance": false,
-                    "prorated": false,
-                    "min_amount_cents": 0,
-                    "properties": {
-                        "graduated_ranges": [
-                            {
-                                "to_value": 10000,
-                                "from_value": 0,
-                                "flat_amount": "0",
-                                "per_unit_amount": "0"
-                            },
-                            {
-                                "to_value": 20000,
-                                "from_value": 10001,
-                                "flat_amount": "0",
-                                "per_unit_amount": "0.012"
-                            },
-                            {
-                                "to_value": null,
-                                "from_value": 20001,
-                                "flat_amount": "0",
-                                "per_unit_amount": "0.011"
-                            }
-                        ]
+              {
+                "billable_metric_code": "__BILLABLE_METRIC_CODE__",
+                "charge_model": "graduated",
+                "properties": {
+                  "graduated_ranges": [
+                    {
+                      "from_value": 0,
+                      "to_value": 10000,
+                      "flat_amount": "0",
+                      "per_unit_amount": "0"
                     },
-                    "filters": [],
-                    "taxes": []
+                    {
+                      "from_value": 10001,
+                      "to_value": 25000,
+                      "flat_amount": "0",
+                      "per_unit_amount": "0.012"
+                    },
+                    {
+                      "from_value": 25001,
+                      "to_value": 100000,
+                      "flat_amount": "0",
+                      "per_unit_amount": "0.011"
+                    },
+                    {
+                      "from_value": 100001,
+                      "to_value": null,
+                      "flat_amount": "0",
+                      "per_unit_amount": "0.010"
+                    }
+                  ]
                 }
-            ],
-            "taxes": []
-        }
-    }'
-    ```
-  </Tab>
-</Tabs>
+              }
+            ]
+          }
+        }'
+      ```
 
-## Step 3- Ingest usage for unique users in real-time
-<Tabs>
-  <Tab title="Dashboard">
-    For every user accessing Segment's platform, an event is dispatched containing the `user_id` property. Lago seamlessly handles deduplication to ensure accurate tracking of unique users.
+      ```python Python expandable highlight={3-34,38,41,43-45,48}
+      from lago_python_client.models import Plan, Charge
 
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/ZmoZUeJrPms?si=JVOOuCR31m5GwUd4&amp;start=270" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
-  </Tab>
-  <Tab title="API">
-    ```bash Ingest event for each transaction
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-    curl --location --request POST "$LAGO_URL/api/v1/events" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-        "event": {
-            "transaction_id": "{{$randomUUID}}",
-            "code": "mtu",
-            "external_customer_id": "hooli_1234",
-            "properties": {
-                "user_id": "user_id_001"
+      charge = Charge(
+        billable_metric_code='__BILLABLE_METRIC_CODE__',
+        charge_model='graduated',
+        properties={
+          'graduated_ranges': [
+            {
+              'from_value': 0,
+              'to_value': 10000,
+              'flat_amount': '0',
+              'per_unit_amount': '0'
+            },
+            {
+              'from_value': 10001,
+              'to_value': 25000,
+              'flat_amount': '0',
+              'per_unit_amount': '0.012'
+            },
+            {
+              'from_value': 25001,
+              'to_value': 100000,
+              'flat_amount': '0',
+              'per_unit_amount': '0.011'
+            },
+            {
+              'from_value': 100001,
+              'to_value': None,
+              'flat_amount': '0',
+              'per_unit_amount': '0.010'
             }
+          ]
         }
-    }'
-    ```
-  </Tab>
-</Tabs>
+      )
 
+      plan = Plan(
+        name='Segment Team Plan',
+        code='__PLAN_CODE__',
+        interval='monthly',
+        description='Team plan with subscription and graduated usage',
+        amount_cents=12000,
+        amount_currency='USD',
+        pay_in_advance=True,
+        trial_period=14,
+        charges=[charge]
+      )
+
+      client.plans.create(plan)
+      ```
+
+      ```ruby Ruby expandable highlight={3,6,8-43}
+      client.plans.create({
+        name: 'Segment Team Plan',
+        code: '__PLAN_CODE__',
+        interval: 'monthly',
+        description: 'Team plan with subscription and graduated usage',
+        amount_cents: 12000,
+        amount_currency: 'USD',
+        pay_in_advance: true,
+        trial_period: 14,
+        charges: [
+          {
+            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            charge_model: 'graduated',
+            properties: {
+              graduated_ranges: [
+                {
+                  from_value: 0,
+                  to_value: 10000,
+                  flat_amount: '0',
+                  per_unit_amount: '0'
+                },
+                {
+                  from_value: 10001,
+                  to_value: 25000,
+                  flat_amount: '0',
+                  per_unit_amount: '0.012'
+                },
+                {
+                  from_value: 25001,
+                  to_value: 100000,
+                  flat_amount: '0',
+                  per_unit_amount: '0.011'
+                },
+                {
+                  from_value: 100001,
+                  to_value: nil,
+                  flat_amount: '0',
+                  per_unit_amount: '0.010'
+                }
+              ]
+            }
+          }
+        ]
+      })
+      ```
+
+      ```javascript JavaScript expandable highlight={3,6,8-43,46}
+      const plan = {
+        name: 'Segment Team Plan',
+        code: '__PLAN_CODE__',
+        interval: 'monthly',
+        description: 'Team plan with subscription and graduated usage',
+        amount_cents: 12000,
+        amount_currency: 'USD',
+        pay_in_advance: true,
+        trial_period: 14,
+        charges: [
+          {
+            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            charge_model: 'graduated',
+            properties: {
+              graduated_ranges: [
+                {
+                  from_value: 0,
+                  to_value: 10000,
+                  flat_amount: '0',
+                  per_unit_amount: '0'
+                },
+                {
+                  from_value: 10001,
+                  to_value: 25000,
+                  flat_amount: '0',
+                  per_unit_amount: '0.012'
+                },
+                {
+                  from_value: 25001,
+                  to_value: 100000,
+                  flat_amount: '0',
+                  per_unit_amount: '0.011'
+                },
+                {
+                  from_value: 100001,
+                  to_value: null,
+                  flat_amount: '0',
+                  per_unit_amount: '0.010'
+                }
+              ]
+            }
+          }
+        ]
+      };
+
+      await client.plans.createPlan({ plan });
+      ```
+
+      ```go Go expandable highlight={3,6,8-43,46}
+      planInput := &lago.PlanInput{
+        Name:           "Segment Team Plan",
+        Code:           "__PLAN_CODE__",
+        Interval:       "monthly",
+        Description:    "Team plan with subscription and graduated usage",
+        AmountCents:    12000,
+        AmountCurrency: "USD",
+        PayInAdvance:   true,
+        TrialPeriod:    14,
+        Charges:        []*lago.PlanChargeInput{
+          {
+            BillableMetricCode: "__BILLABLE_METRIC_CODE__",
+            ChargeModel:        "graduated",
+            Properties: map[string]interface{}{
+              "graduated_ranges": []map[string]interface{}{
+                {
+                  "from_value":       0,
+                  "to_value":         10000,
+                  "flat_amount":      "0",
+                  "per_unit_amount":  "0",
+                },
+                {
+                  "from_value":       10001,
+                  "to_value":         25000,
+                  "flat_amount":      "0",
+                  "per_unit_amount":  "0.012",
+                },
+                {
+                  "from_value":       25001,
+                  "to_value":         100000,
+                  "flat_amount":      "0",
+                  "per_unit_amount":  "0.011",
+                },
+                {
+                  "from_value":       100001,
+                  "to_value":         nil,
+                  "flat_amount":      "0",
+                  "per_unit_amount":  "0.010",
+                },
+              },
+            },
+          },
+        },
+      }
+
+      plan, err := client.Plan().Create(ctx, planInput)
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Create a customer">
+    Create a customer with a unique `external_id`.
+
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a subscription">
+    Create a subscription for the customer with the plan's `code`.
+
+    <CreateSubscription />
+
+    Refer to [API reference](/api-reference/subscriptions/assign-plan) and [guide on assigning plans](/guide/subscriptions/assign-plan) in the documentation.
+  </Step>
+  
+  <Step title="Ingest usage via events">
+    Send usage events to Lago to track usage.  
+
+    1. Reference your billable metric with `code`
+    2. Reference the customer's subscription with `external_subscription_id`
+    3. Include usage and filters data in `properties`
+
+    <CodeGroup>
+      ```bash cURL highlight={7-11}
+      curl --location --request POST "$LAGO_URL/api/v1/events" \
+        --header 'Authorization: Bearer __API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "external_subscription_id": "__EXTERNAL_SUBSCRIPTION_ID__",
+            "properties": {
+              "user_id": "user_id_001"
+            }
+          }
+        }'
+      ```
+
+      ```python Python highlight={5-9,11}
+      from lago_python_client.models import Event
+
+      event = Event(
+        transaction_id='__TRANSACTION_ID__',
+        code='__BILLABLE_METRIC_CODE__',
+        external_subscription_id='__EXTERNAL_SUBSCRIPTION_ID__',
+        properties={
+          'user_id': 'user_id_001'
+        }
+      )
+
+      client.events.create(event)
+      ```
+
+      ```ruby Ruby highlight={3-7}
+      client.events.create({
+        transaction_id: '__TRANSACTION_ID__',
+        code: '__BILLABLE_METRIC_CODE__',
+        external_subscription_id: '__EXTERNAL_SUBSCRIPTION_ID__',
+        properties: {
+          user_id: 'user_id_001'
+        }
+      })
+      ```
+
+      ```javascript JavaScript highlight={3-7,10}
+      const event = {
+        transaction_id: '__TRANSACTION_ID__',
+        code: '__BILLABLE_METRIC_CODE__',
+        external_subscription_id: '__EXTERNAL_SUBSCRIPTION_ID__',
+        properties: {
+          user_id: 'user_id_001'
+        }
+      };
+
+      await client.events.createEvent({ event });
+      ```
+
+      ```go Go highlight={3-7,10}
+      eventInput := &lago.EventInput{
+        TransactionID:        "__TRANSACTION_ID__",
+        Code:                 "__BILLABLE_METRIC_CODE__",
+        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
+        Properties: map[string]interface{}{
+          "user_id": "user_id_001",
+        },
+      }
+
+      event, err := client.Event().Create(ctx, eventInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/events/usage) to create an event.
+  </Step>
+
+  <Step title="Monitor current usage">
+    <CustomerUsage />
+  </Step>
+</Steps>
 
 ## Wrap-up
 Hybrid pricing plans are very popular among SaaS, API, fintech and data companies like Segment.

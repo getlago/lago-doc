@@ -1,0 +1,66 @@
+<CodeGroup>
+    ```bash cURL highlight={6}
+    curl --location --request POST "$LAGO_URL/api/v1/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "__EXTERNAL_CUSTOMER_ID__",
+          "name": "Acme Inc",
+          "email": "john@acme.com",
+          "currency": "USD",
+          "timezone": "America/New_York"
+        }
+      }'
+    ```
+
+    ```python Python highlight={4,11}
+    from lago_python_client.models import Customer
+
+    customer = Customer(
+      external_id="__EXTERNAL_CUSTOMER_ID__",
+      name="Acme Inc",
+      email="john@acme.com",
+      currency="USD",
+      timezone="America/New_York"
+    )
+
+    client.customers.create(customer)
+    ```
+
+    ```ruby Ruby highlight={2}
+    client.customers.create(
+      external_id: "__EXTERNAL_CUSTOMER_ID__",
+      name: "Acme Inc", 
+      email: "john@acme.com",
+      currency: "USD",
+      timezone: "America/New_York"
+    )
+    ```
+
+    ```js Javascript highlight={2,9}
+    const customer = {
+      external_id: "__EXTERNAL_CUSTOMER_ID__",
+      name: "Acme Inc",
+      email: "john@acme.com",
+      currency: "USD",
+      timezone: "America/New_York"
+    };
+
+    await client.customers.createCustomer({ customer });
+    ```
+
+    ```go Go highlight={2,9}
+    customerInput := &lago.CustomerInput{
+      ExternalID: "__EXTERNAL_CUSTOMER_ID__",
+      Name:       "Acme Inc",
+      Email:      "john@acme.com",
+      Currency:   "USD",
+      Timezone:   "America/New_York",
+    }
+
+    customer, err := client.Customer().Create(ctx, customerInput)
+    ```
+</CodeGroup>
+
+Refer to the [API reference](/api-reference/customers/create) to create a customer.

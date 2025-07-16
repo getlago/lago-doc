@@ -4,213 +4,541 @@ description:
   "Replicate Stripe's per-transaction pricing model with Lago."
 ---
 
+import SetupLago from "/snippets/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/templates/create-customer.mdx";
+import CreateSubscription from "/snippets/templates/create-subscription.mdx";
+import CustomerUsage from "/snippets/templates/customer-usage.mdx";
+
 Implement a per-transaction pricing model like Stripe, the leading payments infrastructure company, including fees based on the total amount and number of transactions.
 
 In this article, you will learn how to build a per-transaction billing system with Lago, where a single event can trigger instant charges.
 This template is suitable for companies whose pricing depends on transactions, such as fintechs and marketplaces that deduct their fees from their customers' revenue.
 
-## Summary
-
-<Steps>
-  <Step title="Record a transaction usage with billable metrics">
-    Ensure transactions are promptly recorded as they occur.
-    [(More here)](#step-1-create-billable-metrics-for-transaction).
-  </Step>
-  <Step title="Price transactions with in advance charges">
-    Establish a price per transaction, incorporating upfront charges and specifying fixed fees, as well as minimum and maximum spending thresholds per transaction.
-    [(More here)](##step-2-price-transaction-with-in-advance-charges).
-  </Step>
-  <Step title="Ingest transactions in real-time">
-    Ingest each new transaction in real-time.
-    [(More here)](#step-3-ingest-transactions-in-real-time).
-  </Step>
-    <Step title="Estimate a fee for a future transaction">
-    Ingest each new transaction in real-time.
-    [(More here)](#step-4-estimate-fees-for-future-transactions).
-  </Step>
-</Steps>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=EAmRNU92Bgrh7w_B&amp;start=62" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Pricing structure
-Stripe offers 'pay-as-you-go' pricing based on successful card charges processed via its platform. 
+Stripe offers "pay-as-you-go" pricing based on successful card charges processed via its platform. 
 Stripe's API includes many payment options. Rates and fixed fees per transaction vary depending on the payment method.
 
 | Payment Method                  | Percentage Charge (based on transaction amount) | Fixed Fee (per transaction) |
 |---------------------------------|--------------------------------------------------|-----------------------------|
-| Card payments (online)           | 2.9%                                             | $0.30                       |
+| Card payments (online)          | 2.9%                                             | $0.30                       |
 | Card payments (in-person)       | 2.7%                                             | $0.05                       |
-| Wallets (Apple Pay, Alipay)     | 2.9%                                             | $0.30                       |
-| Pre-authorised debits in Canada | 1.0%                                             | $0.30                       |
-| SEPA Direct Debit               | 0.8%                                             | $0.30                       |
-| SOFORT                          | 1.4%                                             | $0.30                       |
 
-As Stripe supports more 20 payment methods in the US and most of them share the same charge model, we will focus on online card payments.
+As Stripe supports more 20 payment methods in the US and most of them share the same charge model, we will focus on card payments.
 
-Here's how you can replicate this pricing with our billing solution.
+## Get started
 
-## Step 1- Create billable metrics for transaction
+<Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
 
-<Tabs>
-  <Tab title="Dashboard">
-    Lago monitors consumption by converting events into billable metrics. For Stripe's per-transaction pricing, we can create a billable metric for each payment method.
+  <Step title="Create a billable metric">
+    Create a billable metric to track transaction usage for each payment method.
 
-    Using the `sum` aggregation type, we create a billable metric that will allow us to record transactions. In this case, the aggregation type is `metered`. It means the aggregated amount is reset to 0 at the beginning of the next billing cycle.
+    1. Set the `aggregation_type` to `sum_agg` to sum transaction amounts
+    2. Set the `field_name` to `amount` to track transaction values
+    3. Add a unique `code` for your billable metric
+    4. Configure `filters` to distinguish between payment types
 
-    When a successful card charge is processed via the platform, our backend system will generate an `online_payments` event, including the transaction amount.
-
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=EAmRNU92Bgrh7w_B&amp;start=62" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
-  </Tab>
-  <Tab title="API">
-    ```bash Create a metric for each transaction
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-
-    curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "billable_metric": {
-        "name": "SEPA",
-        "code": "sepa",
-        "description": "",
-        "aggregation_type": "sum_agg",
-        "weighted_interval": null,
-        "recurring": false,
-        "field_name": "amount",
-        "filters": []
-      }
-    }'
-    ```
-  </Tab>
-</Tabs>
-
-## Step 2- Price transaction with in advance charges
-When creating a new plan, the first thing to do is to define the plan model, including billing frequency and subscription fee. Here we can select the monthly plan interval. As we are implementing a 'pay-as-you-go' pricing model, there is no subscription fee.
-
-<Tabs>
-  <Tab title="Dashboard">
-    We want our customers to pay for their use of the payments platform, so we add charges to our plan. Each charge is associated with a billable metric (i.e. one charge per payment method in this case) and has its own pricing structure. In order to replicate Stripe's pricing, we select the percentage metered charge model then choose pay charge in-advance (`pay_in_advance` is `true`).
-    Additionally, the option to generate invoice for each event should be turned off as Stripe doesn't bill customers for individual transactions (`invoiceable` is `false`).
-
-    The percentage charge model allows us to combine a percentage charge **based on the amount of the transaction and a fixed fee**.
-
-    If you want to charge your user on this usage on a monthly basis, you can set up the same way using the Percentage charge model and charge it in arrears.
-
-    If we wanted to go even further, we could define free units. For instance, we could:
-    - Offer the first three transactions; or
-    - Offer the first $1,000; or
-    - Create a model where the first three transactions or first $1,000 would be free; or
-    - Specify minimum and maximum transaction spending limits. For instance, ensure a minimum fee of $2 per transaction, even if the result falls below this threshold.
-
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=sTjrPPQKqny72b1I&amp;start=62" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
-  </Tab>
-  <Tab title="API">
-    ```bash Pricing percentage fees in-advance
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-    curl --location --request POST "$LAGO_URL/api/v1/plans" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "plan": {
-          "name": "Basic",
-          "code": "basic",
-          "interval": "monthly",
-          "amount_cents": 0,
-          "amount_currency": "USD",
-          "pay_in_advance": false,
-          "charges": [
-            {
-              "billable_metric_id": "32c2e174-2c7c-41e7-983b-3018d08e02c1",
-              "billable_metric_code": "sepa",
-              "charge_model": "percentage",
-              "invoiceable": false,
-              "pay_in_advance": true,
-              "prorated": false,
-              "min_amount_cents": 0,
-              "properties": {
-                "rate": "0.8",
-                "fixed_amount": "0.30"
-              },
-              "filters": [],
-              "taxes": []
-            }
-          ],
-          "taxes": []
-      }
-  }'
-    ```
-  </Tab>
-</Tabs>
-
-## Step 3- Ingest transactions in real-time
-<Tabs>
-  <Tab title="Dashboard">
-    Stripe records each transaction based on their type, and charge it instantly. These activities are converted into events that are pushed to Lago.
-
-    <Frame>
-      <img src="/templates/images/mistral-tokens-usage.png" />
-    </Frame>
-    
-    For each transaction, the billing system will then automatically calculate the total amount to charge to the end user.
-    This breakdown will be displayed in the 'Usage' tab of the user interface and on the invoice sent to the customer.
-
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=ZYTvyUDiVYhGC6-5" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
-  </Tab>
-  <Tab title="API">
-    ```bash Ingest event for each transaction
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-    curl --location --request POST "$LAGO_URL/api/v1/events" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "event": {
-        "transaction_id": "{{$randomUUID}}",
-        "code": "sepa",
-        "external_customer_id": "hooli_1234",
-        "properties": {
-          "amount": 200
-        }
-      }
-    }'
-    ```
-  </Tab>
-</Tabs>
-
-## Step 4- Estimate fees for future transactions
-<Tabs>
-  <Tab title="Dashboard">
-    Stripe records each transaction based on their type, and charge it instantly. These activities are converted into events that are pushed to Lago.
-    
-    For each transaction, the billing system will then automatically calculate the total amount to charge to the end user.
-    This breakdown will be displayed in the 'Usage' tab of the user interface and on the invoice sent to the customer.
-
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/SBc7eB3T0rE?si=DrGUzrrVHhh-7tZS&amp;start=412" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
-  </Tab>
-  <Tab title="API">
-    ```bash Estimate a fee for a future transaction
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-    curl --location --request POST "$LAGO_URL/api/v1/events/estimate_fees" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "event": {
-          "external_subscription_id": "__YOUR_SUBSCRIPTION_ID__",
-          "code": "__BILLABLE_METRIC_CODE__",
-          "properties": {
-            "amount": 1200,
+    <CodeGroup>
+      ```bash cURL highlight={7,9-16}
+      curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "Transaction Amount",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "description": "Total amount of transactions processed",
+            "aggregation_type": "sum_agg",
+            "field_name": "amount",
+            "filters": [
+              {
+                "key": "type",
+                "values": ["online", "in-person"]
+              }
+            ]
           }
-        }
-      }'
-    ```
-  </Tab>
-</Tabs>
+        }'
+      ```
 
+
+      ```python Python highlight={3-6,10,12-14,17}
+      from lago_python_client.models import BillableMetric, BillableMetricFilter
+
+      billable_metric_filter = BillableMetricFilter(
+        key='type',
+        values=['online', 'in-person']
+      )
+
+      billable_metric = BillableMetric(
+        name='Transaction Amount',
+        code='__BILLABLE_METRIC_CODE__',
+        description='Total amount of transactions processed',
+        aggregation_type='sum_agg',
+        field_name='amount',
+        filters=[billable_metric_filter]
+      )
+
+      client.billable_metrics.create(billable_metric)
+      ```
+
+      ```ruby Ruby highlight={3,5-12}
+      client.billable_metrics.create({
+        name: 'Transaction Amount',
+        code: '__BILLABLE_METRIC_CODE__',
+        description: 'Total amount of transactions processed',
+        aggregation_type: 'sum_agg',
+        field_name: 'amount',
+        filters: [
+          {
+            key: 'type',
+            values: ['online', 'in-person']
+          }
+        ]
+      })
+      ```
+
+      ```javascript Javascript highlight={3,5-12,15}
+      const billableMetric = {
+        name: 'Transaction Amount',
+        code: '__BILLABLE_METRIC_CODE__',
+        description: 'Total amount of transactions processed',
+        aggregation_type: 'sum_agg',
+        field_name: 'amount',
+        filters: [
+          {
+            key: 'type',
+            values: ['online', 'in-person']
+          }
+        ]
+      };
+
+      await client.billableMetrics.createBillableMetric({ billableMetric })
+      ```
+
+      ```go Go highlight={3,5-12,15}
+      billableMetricInput := &lago.BillableMetricInput{
+        Name:            "Transaction Amount",
+        Code:            "__BILLABLE_METRIC_CODE__",
+        Description:     "Total amount of transactions processed",
+        AggregationType: "sum_agg",
+        FieldName:       "amount",
+        Filters: []lago.BillableMetricFilter{
+          {
+            Key:         "type",
+            Values:      []string{"online", "in-person"},
+          },
+        },
+      }
+
+      billableMetric, err := client.BillableMetric().Create(ctx, billableMetricInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/billable-metrics/create) and [guide on filters](/guide/billable-metrics/filters) to learn more.
+  </Step>
+
+  <Step title="Create a plan">
+    Create a plan with percentage-based charges that are paid in advance.
+
+    1. Set the `amount_cents` to `0` since there is no subscription fee
+    2. Configure `charge_model` to `percentage` for percentage-based pricing
+    3. Enable `pay_in_advance` for instant charging
+    4. Set `invoiceable` to `false` to avoid creating invoices for the charges
+    5. Set `charges` with different rates for online vs in-person payments
+
+    <CodeGroup>        
+      ```bash cURL expandable highlight={7,9,11-38}
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Payment Processing Plan",
+            "code": "__PLAN_CODE__",
+            "description": "Per-transaction pricing for payment processing",
+            "amount_cents": 0,
+            "amount_currency": "USD",
+            "pay_in_advance": true,
+            "charges": [
+              {
+                "billable_metric_id": "__BILLABLE_METRIC_ID__",
+                "invoice_display_name": "Online Card Payment",
+                "charge_model": "percentage",
+                "invoiceable": false,
+                "filters": [
+                  {
+                    "invoice_display_name": "Online Card Payment",
+                    "values": { "type": ["online"] },
+                    "properties": {
+                      "rate": "2.9",
+                      "fixed_amount": "0.30"
+                    }
+                  },
+                  {
+                    "invoice_display_name": "In-person Card Payment",
+                    "values": { "type": ["in-person"] },
+                    "properties": {
+                      "rate": "2.7",
+                      "fixed_amount": "0.05"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }'
+      ```
+      
+      ```python Python expandable highlight={3-28,33,35-36,39}
+      from lago_python_client.models import Plan, Charge
+
+      online_charge_filter = ChargeFilter(
+        invoice_display_name="Online Card Payment",
+        values={"type": ["online"]},
+        properties={
+          'rate': '2.9',
+          'fixed_amount': '0.30'
+        }
+      )
+
+      in_person_charge_filter = ChargeFilter(
+        invoice_display_name="In-person Card Payment",
+        values={"type": ["in-person"]},
+        properties={
+          'rate': '2.7',
+          'fixed_amount': '0.05'
+        }
+      )
+
+      charge = Charge(
+        billable_metric_code='__BILLABLE_METRIC_CODE__',
+        charge_model='percentage',
+        pay_in_advance=True,
+        invoiceable=False,
+        filters=[online_charge_filter, in_person_charge_filter]
+      )
+
+      plan = Plan(
+        name='Payment Processing',
+        code='__PLAN_CODE__',
+        description='Per-transaction pricing for payment processing',
+        amount_cents=0,
+        amount_currency='USD',
+        pay_in_advance=True,
+        charges=[charge]
+      )
+
+      client.plans.create(plan)
+      ```
+
+      ```ruby Ruby expandable highlight={3,5,8-33}
+      client.plans.create({
+        name: 'Payment Processing',
+        code: '__PLAN_CODE__',
+        description: 'Per-transaction pricing for payment processing',
+        amount_cents: 0,
+        amount_currency: 'USD',
+        pay_in_advance: true,
+        charges: [
+          {
+            billable_metric_id: '__BILLABLE_METRIC_ID__',
+            invoice_display_name: 'Online Card Payment',
+            charge_model: 'percentage',
+            invoiceable: false,
+            filters: [
+              {
+                invoice_display_name: 'Online Card Payment',
+                values: { type: ['online'] },
+                properties: {
+                  rate: '2.9',
+                  fixed_amount: '0.30'
+                }
+              },
+              {
+                invoice_display_name: 'In-person Card Payment',
+                values: { type: ['in-person'] },
+                properties: {
+                  rate: '2.7',
+                  fixed_amount: '0.05'
+                }
+              }
+            ]
+          }
+        ]
+      })
+      ```
+
+      ```javascript Javascript expandable highlight={3,5,7,8-33,36}
+      const plan = {
+        name: 'Payment Processing Plan',
+        code: '__PLAN_CODE__',
+        description: 'Per-transaction pricing for payment processing',
+        amount_cents: 0,
+        amount_currency: 'USD',
+        pay_in_advance: true,
+        charges: [
+          {
+            billable_metric_id: '__BILLABLE_METRIC_ID__',
+            invoice_display_name: 'Online Card Payment',
+            charge_model: 'percentage',
+            invoiceable: false,
+            filters: [
+              {
+                invoice_display_name: 'Online Card Payment',
+                values: { type: ['online'] },
+                properties: {
+                  rate: '2.9',
+                  fixed_amount: '0.30'
+                }
+              },
+              {
+                invoice_display_name: 'In-person Card Payment',
+                values: { type: ['in-person'] },
+                properties: {
+                  rate: '2.7',
+                  fixed_amount: '0.05'
+                }
+              }
+            ],
+          },
+        ],
+      };
+
+      await client.plans.createPlan({ plan });
+      ```
+
+      ```go Go expandable highlight={3,5,7,8-37,40}
+      planInput := &lago.PlanInput{
+        Name:           "Payment Processing Plan",
+        Code:           "__PLAN_CODE__",
+        Description:    "Per-transaction pricing for payment processing",
+        AmountCents:    0,
+        AmountCurrency: "USD",
+        PayInAdvance:   true,
+        Charges: []lago.ChargeInput{
+          {
+            BillableMetricID:    "__BILLABLE_METRIC_ID__",
+            InvoiceDisplayName:  "Online Card Payment",
+            ChargeModel:         "percentage",
+            Invoiceable:         false,
+            Filters: []lago.ChargeFilter{
+              {
+                InvoiceDisplayName: "Online Card Payment",
+                Values: map[string]interface{}{
+                  "type":         "online",
+                },
+                Properties: map[string]interface{}{
+                  "rate":         "2.9",
+                  "fixed_amount": "0.30",
+                },
+              },
+              {
+                InvoiceDisplayName: "In-person Card Payment",
+                Values: map[string]interface{}{
+                  "type":         "in-person",
+                },
+                Properties: map[string]interface{}{
+                  "rate":         "2.7",
+                  "fixed_amount": "0.05",
+                },
+              },
+            },
+          },
+        },
+      }
+
+      plan, err := client.Plan().Create(ctx, planInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/plans/create) and [guide on percentage charges](/guide/plans/charges/charge-models/percentage) to learn more.
+  </Step>
+
+  <Step title="Create a customer">
+    Create a customer with a unique `external_id`.
+
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a subscription">
+    Create a subscription for the customer with the plan's `code`.
+
+    <CreateSubscription />
+
+    Refer to [API reference](/api-reference/subscriptions/assign-plan) and [guide on assigning plans](/guide/subscriptions/assign-plan) in the documentation.
+  </Step>
+
+  <Step title="Ingest transactions via events">
+    Send transaction events to Lago for instant processing and charging.
+
+    1. Set the `code` to match your billable metric code
+    2. Use `external_customer_id` to identify the customer
+    3. Include `amount` in properties for the transaction value
+    4. Add `type` property to specify online or in-person payment
+
+    <CodeGroup>
+       ```bash cURL highlight={7-12}
+      curl --location --request POST "$LAGO_URL/api/v1/events" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "external_subscription_id": "__EXTERNAL_SUBSCRIPTION_ID__",
+            "properties": {
+              "amount": 200,
+              "type": "online"
+            }
+          }
+        }'
+      ```
+
+      ```python Python highlight={5-10,13}
+      from lago_python_client.models import Event
+
+      event = Event(
+        transaction_id="__TRANSACTION_ID__",
+        code="__BILLABLE_METRIC_CODE__",
+        external_subscription_id="__EXTERNAL_SUBSCRIPTION_ID__",
+        properties={
+          "amount": 200,
+          "type": "online"
+        }
+      )
+
+      client.events.create(event)
+      ```
+
+      ```ruby Ruby highlight={3-8}
+      client.events.create(
+        transaction_id: "__TRANSACTION_ID__",
+        code: "__BILLABLE_METRIC_CODE__",
+        external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
+        properties: {
+          "amount": 200,
+          "type": "online"
+        }
+      )
+      ```
+
+      ```js Javascript highlight={3-8,11}
+      const event = {
+        transaction_id: "__TRANSACTION_ID__",
+        code: "__BILLABLE_METRIC_CODE__",
+        external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
+        properties: {
+          "amount": 200,
+          "type": "online"
+        }
+      };
+
+      await client.events.createEvent({ event });
+      ```
+
+      ```go Go highlight={3-8,11}
+      eventInput := &lago.EventInput{
+        TransactionID:          "__TRANSACTION_ID__",
+        Code:                   "__BILLABLE_METRIC_CODE__",
+        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
+        Properties: map[string]interface{}{
+          "amount": 200,
+          "type":   "online",
+        },
+      }
+
+      event, err := client.Event().Create(ctx, eventInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/events/usage) to create an event.
+  </Step>
+
+  <Step title="Estimate fees for future transactions">
+    Calculate transaction fees before processing to show users expected costs.
+
+    1. Use `external_subscription_id` to identify the subscription
+    2. Set the `code` to match your billable metric code
+    3. Include `amount` for the transaction value to estimate
+    4. Add `type` to get accurate rates for payment method
+
+    <CodeGroup>
+      ```bash cURL highlight={6-11}
+      curl --location --request POST "$LAGO_URL/api/v1/events/estimate_fees" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "external_subscription_id": "__EXTERNAL_SUBSCRIPTION_ID__",
+            "code": "__BILLABLE_METRIC_CODE__",
+            "properties": {
+              "amount": 1200,
+              "type": "online"
+            }
+          }
+        }'
+      ```
+
+      ```python Python highlight={4-9,12}
+      from lago_python_client.models import Event
+
+      event = Event(
+        external_subscription_id="__EXTERNAL_SUBSCRIPTION_ID__",
+        code="__BILLABLE_METRIC_CODE__",
+        properties={
+          "amount": 1200,
+          "type": "online"
+        }
+      )
+
+      client.events.estimate_fees(event)
+      ```
+
+      ```ruby Ruby highlight={2-7}
+      client.events.estimate_fees(
+        external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
+        code: "__BILLABLE_METRIC_CODE__",
+        properties: {
+          "amount": 1200,
+          "type": "online"
+        }
+      )
+      ```
+
+      ```javascript Javascript highlight={2-7,10}
+      const event = {
+        external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__",
+        code: "__BILLABLE_METRIC_CODE__",
+        properties: {
+          "amount": 1200,
+          "type": "online"
+        }
+      };
+
+      await client.events.eventEstimateFees({ event });
+      ```
+
+      ```go Go highlight={2-7,10}
+      eventEstimateInput := &lago.EventEstimateFeesInput{
+        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
+        Code:                   "__BILLABLE_METRIC_CODE__",
+        Properties: map[string]string{
+          "amount": 1200,
+          "type": "online",
+        },
+      }
+
+      estimateFees, err := client.Event().EstimateFees(ctx, eventEstimateInput)
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/api-reference/events/estimate-fees) to estimate fees.
+  </Step>  
+</Steps>
 
 ## Wrap-up
 For fintech companies like Stripe, implementing a per-transaction pricing model is a good way to **increase revenue as customers grow and capture value everytime a transaction is processed**.
