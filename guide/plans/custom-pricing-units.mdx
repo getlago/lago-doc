@@ -1,0 +1,123 @@
+---
+title: "Custom pricing units"
+description: "A pricing unit works like a custom currency, allowing you to express charges in something other than fiat (e.g., credits or tokens)."
+---
+
+<Info>
+**Premium feature ✨**:
+Only users with a premium license can activate and use pricing units. Please [**contact us**](mailto:hello@getlago.com) to get access to Lago Cloud and Lago Self-Hosted Premium.
+</Info>
+
+## Create a pricing units
+
+You can create as many pricing units as needed. Please note that once created, a pricing unit can’t be deleted unless you contact us.
+
+To create a new pricing unit:
+
+1. Go to **Settings**
+2. In the **Your organization** section, open the **Invoices** tab
+3. Click **Create** next to the **Pricing units** section
+4. Define a **name**, **code**, **short name**, and optionally, an internal description
+
+The **short name** acts like a currency symbol on invoices. It’s limited to 3 characters (e.g., `tks` for tokens or `cdt` for credits).
+
+## Associate charges with a pricing unit
+
+Once pricing units are created, you can use them when defining a plan. For now, only charges support pricing units.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open an existing plan or create a new one
+    2. Add a new charge, existing charges can't be updated
+    3. In the charge details, pricing unit is set by default in the plan’s currency
+    4. Switch to a pricing unit by selecting one from the dropdown
+    5. Set a **conversion rate** to ensure proper invoicing
+    6. Define your **charge model** based on the selected pricing unit
+    7. Optionally, set a **spending minimum** in the same pricing unit
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```json Associate a pricing unit to a charge {18-21}
+    {
+      "plan": {
+        "name": "Standard",
+        "invoice_display_name": "Standard",
+        "code": "standard",
+        "interval": "monthly",
+        "amount_cents": "0",
+        "amount_currency": "USD",
+        "pay_in_advance": "false",
+        "charges": [
+          {
+            "billable_metric_id": "3a038c85-40fa-4ee3-9b22-18b3b6b95654",
+            "charge_model": "standard",
+            "pay_in_advance": "false",
+            "invoiceable": "true",
+            "prorated": "false",
+            "min_amount_cents": "3000",
+            "applied_pricing_unit": {
+              "code": "credits",
+              "conversion_rate": "0.50005"
+            },
+            "properties": {
+              "amount": "10"
+            }
+          }
+        ]
+      }
+    }
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Current & past usage
+
+Charges defined in pricing units will be calculated and displayed in two ways: in fiat currency (using the conversion rate set at the charge level) and in the pricing unit itself.
+
+You’ll find this information in the current and past usage data, where amounts are also shown in pricing units.
+
+<CodeGroup>
+```json Current & past usage {5-9}
+{
+  "customer_usage": {
+    "charge_usage": {
+      {
+        "pricing_unit_details": {
+          "amount_cents": 10,
+          "short_name": "CR",
+          "conversion_rate": "0.50005"
+        }
+      }
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Invoicing behaviour
+
+Even if prices are expressed in pricing units, invoices will always reflect the equivalent fiat currency amount. The invoicing experience mirrors what’s shown in the current and past usage: amounts are displayed in both fiat and the associated pricing unit.
+
+<CodeGroup>
+```json Invoicing behaviour {3-12}
+{
+  "fee": {
+    "pricing_unit_details": {
+      "lago_pricing_unit_id": "9fb3ad78-9fb3-4f4e-9e27-304c16db6abb",
+      "pricing_unit_code": "credits",
+      "short_name": "CR",
+      "amount_cents": 100000,
+      "precise_amount_cents": "100000.0",
+      "unit_amount_cents": 100,
+      "precise_unit_amount": "1.0",
+      "conversion_rate": "0.50005"
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Wallet and transactions
+
+Pricing units don’t affect wallet behavior. You can use wallets independently or alongside pricing units, depending on your use case.
