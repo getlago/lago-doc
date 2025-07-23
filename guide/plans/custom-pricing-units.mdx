@@ -1,5 +1,5 @@
 ---
-title: "Pricing units"
+title: "Custom pricing units"
 description: "A pricing unit works like a custom currency, allowing you to express charges in something other than fiat (e.g., credits or tokens)."
 ---
 
@@ -28,7 +28,7 @@ Once pricing units are created, you can use them when defining a plan. For now, 
 <Tabs>
   <Tab title="Dashboard">
     1. Open an existing plan or create a new one
-    2. Add a new charge
+    2. Add a new charge, existing charges can't be updated
     3. In the charge details, pricing unit is set by default in the plan’s currency
     4. Switch to a pricing unit by selecting one from the dropdown
     5. Set a **conversion rate** to ensure proper invoicing
@@ -78,12 +78,11 @@ Charges defined in pricing units will be calculated and displayed in two ways: i
 You’ll find this information in the current and past usage data, where amounts are also shown in pricing units.
 
 <CodeGroup>
-```json Current & past usage {6-10}
+```json Current & past usage {5-9}
 {
   "customer_usage": {
     "charge_usage": {
       {
-        …
         "pricing_unit_details": {
           "amount_cents": 10,
           "short_name": "CR",
@@ -101,20 +100,18 @@ You’ll find this information in the current and past usage data, where amounts
 Even if prices are expressed in pricing units, invoices will always reflect the equivalent fiat currency amount. The invoicing experience mirrors what’s shown in the current and past usage: amounts are displayed in both fiat and the associated pricing unit.
 
 <CodeGroup>
-```json Invoicing behaviour {4-13}
+```json Invoicing behaviour {3-12}
 {
   "fee": {
-    "item": {
-      "pricing_unit_details": {
-        "lago_pricing_unit_id": "9fb3ad78-9fb3-4f4e-9e27-304c16db6abb",
-        "pricing_unit_code": "credits",
-        "short_name": "CR",
-        "amount_cents": 100000,
-        "precise_amount_cents": "100000.0",
-        "unit_amount_cents": 100,
-        "precise_unit_amount": "1.0",
-        "conversion_rate": "0.50005"
-      }
+    "pricing_unit_details": {
+      "lago_pricing_unit_id": "9fb3ad78-9fb3-4f4e-9e27-304c16db6abb",
+      "pricing_unit_code": "credits",
+      "short_name": "CR",
+      "amount_cents": 100000,
+      "precise_amount_cents": "100000.0",
+      "unit_amount_cents": 100,
+      "precise_unit_amount": "1.0",
+      "conversion_rate": "0.50005"
     }
   }
 }
