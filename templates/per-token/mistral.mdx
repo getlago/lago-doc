@@ -171,7 +171,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
     2. Under `charges`, configure pricing tiers for different models and token types
 
     <CodeGroup>
-      ```bash cURL expandable highlight={7,11-66}
+      ```bash cURL expandable highlight={7,12-66}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
         --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
@@ -182,6 +182,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
             "amount_cents": 0,
             "amount_currency": "USD",
             "interval": "monthly",
+            "pay_in_advance": false,
             "charges": [
               {
                 "billable_metric_id": "__BILLABLE_METRIC_ID__",
@@ -242,7 +243,7 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
         }'
       ```
 
-      ```python Python expandable highlight={4-8,10-14,16-20,22-26,29-33,37,41,44}
+      ```python Python expandable highlight={4-8,10-14,16-20,22-26,29-33,37,42,45}
       from lago_python_client.models import Plan, Charge, ChargeFilter
 
       # Filters for different models and token types
@@ -283,19 +284,21 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
         amount_cents=0,
         amount_currency="USD", 
         interval="monthly",
+        pay_in_advance=False,
         charges=[charge]
       )
 
       client.plans.create(plan)
       ```
 
-      ```ruby Ruby expandable highlight={3,7-34}
+      ```ruby Ruby expandable highlight={3,8-35}
       client.plans.create({
         name: "Mistral AI Pricing",
         code: "__PLAN_CODE__",
         amount_cents: 0,
         amount_currency: "USD",
         interval: "monthly",
+        pay_in_advance: false,
         charges: [
           {
             billable_metric_id: "__BILLABLE_METRIC_ID__",
@@ -327,13 +330,14 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
       })
       ```
 
-      ```js Javascript expandable highlight={3,7-34,37}
+      ```js Javascript expandable highlight={3,8-35,38}
       const plan = {
         name: "Mistral AI Pricing",
         code: "__PLAN_CODE__",
         amount_cents: 0,
         amount_currency: "USD",
         interval: "monthly",
+        pay_in_advance: false,
         charges: [
           {
             billable_metric_id: "__BILLABLE_METRIC_ID__",
@@ -367,13 +371,14 @@ Prices are per 1M tokens used. You can think of tokens as pieces of words (learn
       await client.plans.createPlan({ plan });
       ```
 
-      ```go Go expandable highlight={3,7-50,53}
+      ```go Go expandable highlight={3,8-51,54}
       planInput := &lago.PlanInput{
         Name:           "Mistral AI Pricing",
         Code:           "__PLAN_CODE__", 
         AmountCents:    0,
         AmountCurrency: "USD",
         Interval:       "monthly",
+        PayInAdvance:   false,
         Charges:        []lago.PlanChargeInput{
           {
             BillableMetricID: "__BILLABLE_METRIC_ID__",
