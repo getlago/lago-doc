@@ -5,111 +5,196 @@ description: "Below is a list of the event types we currently send. Please note 
 
 ## Alerts
 <ParamField path="alerts.triggered" type="data.object">
-  [Triggered alert object](https://swagger.getlago.com/#/webhooks/alertTriggered). Sent when a new usage alert threshold has been crossed.
+  Sent when a new usage alert threshold has been crossed.
+  
+  [Schema example](https://swagger.getlago.com/#/webhooks/alertTriggered)
 </ParamField>
 
 
 ## Credit notes and refunds
 <ParamField path="credit_note.created" type="data.object">
-  [Credit note object](/api-reference/credit-notes/credit-note-object). Sent when a new credit note has been issued for a customer. This will allow your application to proceed with the refund.
+  Sent when a new credit note has been issued for a customer. This will allow your application to proceed with the refund.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/creditNoteCreated)
 </ParamField>
 
 <ParamField path="credit_note.generated" type="data.object">
-  [Credit note object](/api-reference/credit-notes/credit-note-object). Sent when the PDF file has been generated for a credit note. This will allow your application to retrieve the PDF credit note.
+  Sent when the PDF file has been generated for a credit note. This will allow your application to retrieve the PDF credit note.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/creditNoteGenerated)
 </ParamField>
 
 <ParamField path="credit_note.refund_failure" type="data.object">
-  `credit_note_payment_provider_refund_error` object. Sent when there is an error related to the refund process (i.e. the payment provider cannot refund the customer).
+  Sent when there is an error related to the refund process (i.e. the payment provider cannot refund the customer).
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/creditNoteRefundFailure)
 </ParamField>
 
 ## Customers
 ### Basic customer information
 <ParamField path="customer.created" type="data.object">
-  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in Lago.
+  Sent when a customer is successfully created in Lago.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerCreated)
 </ParamField>
 
 <ParamField path="customer.updated" type="data.object">
-  [Customer object](/api-reference/customers/object). Sent when a customer is successfully updated in Lago.
+  Sent when a customer is successfully updated in Lago.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerUpdated)
+</ParamField>
+
+<ParamField path="integration.provider_error" type="data.object">
+  Sent when an error was encountered while processing data on an integration
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/integrationProviderError)
 </ParamField>
 
 ### External payment providers
 <ParamField path="customer.payment_provider_created" type="data.object">
-  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in the payment provider's application. This allows you to retrieve the identifier assigned to the customer by the payment service provider.
-</ParamField>
+  Sent when a customer is successfully created in the payment provider's application. This allows you to retrieve the identifier assigned to the customer by the payment service provider.
 
-<ParamField path="customer.checkout_url_generated" type="data.object">
-  `payment_provider_customer_checkout_url` object. Sent when a checkout link is issued for a customer.
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerPaymentProviderCreated)
 </ParamField>
 
 <ParamField path="customer.payment_provider_error" type="data.object">
-  `payment_provider_customer_error` object. Sent when there is an error related to the creation of a customer in the payment provider's system.
+  Sent when there is an error related to the creation of a customer in the payment provider's system.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerPaymentProviderError)
 </ParamField>
 
-<ParamField path="invoice.payment_failure" type="data.object">
-  `payment_provider_invoice_payment_error` object. Sent when there is an error related to the payment process. Usually occurs when no valid payment method is defined for the customer in the payment service provider's application.
+<ParamField path="customer.checkout_url_generated" type="data.object">
+  Sent when a checkout link is issued for a customer.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerCheckoutUrlGenerated)
 </ParamField>
 
-<ParamField path="invoice.payment_dispute_lost" type="data.object">
-  `payment_dispute_lost` object. Sent whenever a dispute or a chargeback is lost within your payment provider.
+<ParamField path="customer.checkout_url_generated" type="data.object">
+  Sent when a checkout link is issued for a customer.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerCheckoutUrlGenerated)
 </ParamField>
 
 ### External accounting providers
 <ParamField path="customer.accounting_provider_created" type="data.object">
-  [Customer object](/api-reference/customers/object). Sent when a customer is successfully created in the accounting provider's application (like NetSuite). This allows you to retrieve the identifier assigned to the customer by the accounting service provider.
+  Sent when a customer is successfully created in the accounting provider's application (like NetSuite). This allows you to retrieve the identifier assigned to the customer by the accounting service provider.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerAccountingProviderCreated)
 </ParamField>
 
 <ParamField path="customer.accounting_provider_error" type="data.object">
-  `accounting_provider_customer_error` object. Sent when there is an error related to the accounting provider sync. Usually occurs when something went wrong in the accounting service provider's application.
+  Sent when there is an error related to the accounting provider sync. Usually occurs when something went wrong in the accounting service provider's application.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerAccountingProviderError)
+</ParamField>
+
+### External CRM providers
+
+<ParamField path="customer.crm_provider_created" type="data.object">
+  Sent when a customer has been created in the CRM provider.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerCrmProviderCreated)
+</ParamField>
+
+<ParamField path="customer.crm_provider_error" type="data.object">
+  Sent when an error was encountered while syncing a customer to a CRM provider.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerCrmProviderError)
 </ParamField>
 
 ### External tax providers
 <ParamField path="customer.tax_provider_error" type="data.object">
-  `tax_provider_error` object. Sent when there is an error related to the tax provider sync. This usually occurs due to issues with item mappings, customer definitions, or within the service provider's application.
+  Sent when there is an error related to the tax provider sync. This usually occurs due to issues with item mappings, customer definitions, or within the service provider's application.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerTaxProviderError)
+</ParamField>
+
+<ParamField path="customer.vies_check" type="data.object">
+  Sent when a VIES VAT number has been checked for a customer
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/customerViesCheck)
 </ParamField>
 
 ## Event ingestion
 
 <ParamField path="events.errors" type="data.object">
   Sent by the health check process when some events received in the previous hour do not match the validation rules.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/eventsErrors)
 </ParamField>
 
 <ParamField path="events.error" type="data.object" deprecated="true">
   This webhook is deprecated and no longer sent in Lago `v0.50.0-beta` and above. It was sent when there was an error related to the creation of an event.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/eventError)
 </ParamField>
 
 ## Invoices
 
 <ParamField path="invoice.drafted" type="data.object">
-  [Invoice object](/api-reference/invoices/invoice-object). Sent when a new invoice is in draft.
+  Sent when a new invoice is in draft.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoiceDrafted)
 </ParamField>
 
 <ParamField path="invoice.created" type="data.object">
-  [Invoice object](/api-reference/invoices/invoice-object). Sent when an invoice is finalized. 
-  This event serves as a signal to your application that the invoice processing is complete and you can proceed with the necessary billing actions or procedures.
+  Sent when an invoice is finalized. This event serves as a signal to your application that the invoice processing is complete and you can proceed with the necessary billing actions or procedures.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoiceCreated)
 </ParamField>
 
 <ParamField path="invoice.one_off_created" type="data.object">
-  [Invoice object](/api-reference/invoices/invoice-object). Sent when a one-off invoice is created. Only add-ons can be applied to one-off invoices.
+  Sent when a one-off invoice is created. Only add-ons can be applied to one-off invoices.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoiceOneOffCreated)
 </ParamField>
 
 <ParamField path="invoice.paid_credit_added" type="data.object">
-  [Invoice object](/api-reference/invoices/invoice-object). Sent when prepaid credits have been paid and added to the customer's wallet. You can use this information to generate a PDF invoice or collect the payment.
+  Sent when prepaid credits have been paid and added to the customer's wallet. You can use this information to generate a PDF invoice or collect the payment.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoicePaidCreditAdded)
 </ParamField>
 
 <ParamField path="invoice.generated" type="data.object">
-  [Invoice object](/api-reference/invoices/invoice-object). Sent when the PDF file has been generated for a customer invoice. This will allow your application to retrieve the PDF invoice.
+  Sent when the PDF file has been generated for a customer invoice. This will allow your application to retrieve the PDF invoice.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoiceGenerated)
 </ParamField>
 
 <ParamField path="invoice.payment_status_updated" type="data.object">
-  [Invoice object](/api-reference/invoices/invoice-object). Sent when the payment status of an invoice is updated based on information provided by the payment provider.
+  Sent when the payment status of an invoice is updated based on information provided by the payment provider.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoicePaymentStatusUpdated)
 </ParamField>
 
 <ParamField path="invoice.payment_overdue" type="data.object">
-  [Invoice object](/api-reference/invoices/invoice-object). Sent when the payment of an invoice is considered as overdue.
+  Sent when the payment of an invoice is considered as overdue.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoicePaymentOverdue)
 </ParamField>
 
 <ParamField path="invoice.voided" type="data.object">
-  [Invoice object](/api-reference/invoices/invoice-object). Sent when an invoice is voided.
+  Sent when an invoice is voided.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoiceVoided)
+</ParamField>
+
+<ParamField path="invoice.payment_failure" type="data.object">
+  Sent when there is an error related to the payment process. Usually occurs when no valid payment method is defined for the customer in the payment service provider's application.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoicePaymentFailure)
+</ParamField>
+
+<ParamField path="invoice.payment_dispute_lost" type="data.object">
+  Sent whenever a dispute or a chargeback is lost within your payment provider.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoicePaymentDisputeLost)
+</ParamField>
+
+<ParamField path="invoice.resynced" type="data.object">
+  Sent when an invoice has been resynced with salesforce.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/invoiceResynced)
 </ParamField>
 
 ## Payments
@@ -117,18 +202,32 @@ description: "Below is a list of the event types we currently send. Please note 
 <ParamField path="payment.requires_action" type="data.object">
   This message is triggered when a payment requires additional validation or confirmation, typically via 3D Secure (3DS). This is commonly seen in regions like India or when enhanced customer authentication is necessary.
   The `url` field contains the checkout link that initiates 3D Secure (3DS) validation for your customers. The `return_url` is the page displayed once the 3DS process is completed.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/paymentRequiresAction)
+</ParamField>
+
+<ParamField path="payment.requires_action" type="data.object">
+  This message is triggered when a an error was raised by a payment provider.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/paymentProviderError)
 </ParamField>
 
 <ParamField path="payment_request.created" type="data.object">
-  [Payment request object](/api-reference/payment-requests/payment-request-object). Sent when a manual payment request has been triggered, to request payment for the overdue balance.
+  Sent when a manual payment request has been triggered, to request payment for the overdue balance.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/paymentRequestCreated)
 </ParamField>
 
 <ParamField path="payment_request.payment_failure" type="data.object">
-  [Payment request object](/api-reference/payment-requests/payment-request-object). Sent when the payment attached to a payment request has failed. The `provider_error` field indicates the error code and message from the payment provider.
+  Sent when the payment attached to a payment request has failed. The `provider_error` field indicates the error code and message from the payment provider.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/paymentRequestPaymentFailure)
 </ParamField>
 
 <ParamField path="payment_request.payment_status_updated" type="data.object">
-  [Payment request object](/api-reference/payment-requests/payment-request-object). Sent when the payment attached to a payment request is updated to a new payment status, through the `payment_status field.
+  Sent when the payment attached to a payment request is updated to a new payment status, through the `payment_status field.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/paymentRequestPaymentStatusUpdated)
 </ParamField>
 
 ## Payment receipts
@@ -142,30 +241,69 @@ description: "Below is a list of the event types we currently send. Please note 
   Payment receipt object. Sent when the PDF file has been generated for a payment receipt. This will allow your application to retrieve the PDF receipt.
 </ParamField>
 
+## Plans
+
+<ParamField path="plan.created" type="data.object">
+  Sent when a plan is created.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/planCreated)
+</ParamField>
+
+<ParamField path="plan.updated" type="data.object">
+  Sent when a plan is updated.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/planUpdated)
+</ParamField>
+
+<ParamField path="plan.deleted" type="data.object">
+  Sent when a plan is deleted.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/planDeleted)
+</ParamField>
+
+
 ## Subscriptions and fees
 
 <ParamField path="fee.created" type="data.object">
-  [Fee object](/api-reference/fees/fee-object). Sent when a fee for a charge to be paid in advance is created. You can use this information to collect the payment of the `pay_in_advance` fee. Useful for fintech companies that need to create a statement of transactions without invoicing.
+  Sent when a fee for a charge to be paid in advance is created. You can use this information to collect the payment of the `pay_in_advance` fee. Useful for fintech companies that need to create a statement of transactions without invoicing.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/feeCreated)
+</ParamField>
+
+<ParamField path="fee.tax_provider_error" type="data.object">
+  Sent when an error was encountered while fetching taxes for a fee on a tax provider.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/feeTaxProviderError)
 </ParamField>
 
 <ParamField path="subscription.started" type="data.object">
-  [Subscription object](/api-reference/subscriptions/subscription-object). Sent when a subscription starts. The `previous_plan_code` argument is filled if the subscription has been upgraded or downgraded.
+  Sent when a subscription starts. The `previous_plan_code` argument is filled if the subscription has been upgraded or downgraded.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionStarted)
 </ParamField>
 
 <ParamField path="subscription.termination_alert" type="data.object">
-  [Subscription object](/api-reference/subscriptions/subscription-object). Alert for imminent termination of subscriptions with set end dates, sent 45 days and 15 days prior (at fixed intervals).
+  Alert for imminent termination of subscriptions with set end dates, sent 45 days and 15 days prior (at fixed intervals).
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionTerminationAlert)
 </ParamField>
 
 <ParamField path="subscription.terminated" type="data.object">
-  [Subscription object](/api-reference/subscriptions/subscription-object). Sent when a subscription is terminated. The `next_plan_code` argument is filled if the subscription has been upgraded or downgraded.
+  Sent when a subscription is terminated. The `next_plan_code` argument is filled if the subscription has been upgraded or downgraded.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionTerminated)
 </ParamField>
 
 <ParamField path="subscription.trial_ended" type="data.object">
-  [Subscription object](/api-reference/subscriptions/subscription-object). Sent when the free trial is ended for a subscription.
+  Sent when the free trial is ended for a subscription.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionTrialEnded)
 </ParamField>
 
 <ParamField path="subscription.usage_threshold_reached" type="data.object">
-  [Subscription object](/api-reference/subscriptions/subscription-object). Sent when a progressive billing threshold has been crossed.
+  Sent when a progressive billing threshold has been crossed.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionUsageThresholdReached)
 </ParamField>
 
 ## Wallets and prepaid credits
@@ -183,41 +321,27 @@ description: "Below is a list of the event types we currently send. Please note 
 </ParamField>
 
 <ParamField path="wallet.depleted_ongoing_balance" type="data.object">
-  [Wallet object](/api-reference/wallets/wallet-object). Sent when the ongoing balance is negative or equal to 0.
+  Sent when the ongoing balance is negative or equal to 0.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/walletDepletedOngoingBalance)
 </ParamField>
 
 <ParamField path="wallet_transaction.created" type="data.object">
-  [Wallet transaction object](/api-reference/wallets/wallet-transaction-object). Sent when a wallet transaction is created. For example, when new credits have been paid or offered.
+  Sent when a wallet transaction is created. For example, when new credits have been paid or offered.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/walletTransactionCreated)
 </ParamField>
 
 <ParamField path="wallet_transaction.updated" type="data.object">
-  [Wallet transaction object](/api-reference/wallets/wallet-transaction-object). Sent when a wallet transaction is updated. For example, when wallet transaction is marked as settled.
-</ParamField>
+  Sent when a wallet transaction is updated. For example, when wallet transaction is marked as settled.
 
+  [Schema example](https://swagger.getlago.com/#/webhooks/walletTransactionUpdated)
+</ParamField>
 
 <ParamField path="wallet_transaction.payment_failure" type="data.object">
   Sent when a wallet transaction payment is declined.
 
-  <Accordion title="Payload example">
-    ```json
-    {
-      "webhook_type": "wallet_transaction.payment_failure",
-      "object_type": "payment_provider_wallet_transaction_payment_error",
-      "payment_provider_wallet_transaction_payment_error": {
-        "lago_wallet_transaction_id": "4df9ef1d-d13b-4ff1-850d-ca89f0c0f9fb",
-        "lago_customer_id": "90a33125-0c2d-4117-8978-cfb367487783",
-        "external_customer_id": "paymentfailure",
-        "provider_customer_id": "cus_RVCkzr7PASt28882",
-        "payment_provider": "stripe",
-        "payment_provider_code": "stripe_prod",
-        "provider_error": {
-          "message": "Your card was declined.",
-          "error_code": "card_declined"
-        }
-      }
-    }
-    ```
-  </Accordion>
+  [Schema example](https://swagger.getlago.com/#/webhooks/walletTransactionPaymentFailure)
 </ParamField>
 
 
