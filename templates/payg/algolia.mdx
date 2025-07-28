@@ -115,7 +115,7 @@ Although users don't need to subscribe to access the platform, Algolia offers it
     3. Configure `free_units` of 10,000 requests per month included
 
     <CodeGroup>
-      ```bash cURL highlight={7,10,12-22}
+      ```bash cURL highlight={7,10,13-23}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
         --header 'Authorization: Bearer __API_KEY__' \
         --header 'Content-Type: application/json' \
@@ -127,9 +127,10 @@ Although users don't need to subscribe to access the platform, Algolia offers it
             "description": "Pay-as-you-go pricing for Algolia Search API",
             "amount_cents": 0,
             "amount_currency": "USD",
+            "pay_in_advance": false,
             "charges": [
               {
-                "billable_metric_code": "__BILLABLE_METRIC_CODE__",
+                "billable_metric_id": "__BILLABLE_METRIC_ID__",
                 "charge_model": "package",
                 "properties": {
                   "amount": "1.50",
@@ -142,11 +143,11 @@ Although users don't need to subscribe to access the platform, Algolia offers it
         }'
       ```
 
-      ```python Python highlight={3-11,15,18,20,23}
+      ```python Python highlight={3-11,15,18,21,24}
       from lago_python_client.models import Plan, Charge
 
       charge = Charge(
-        billable_metric_code='__BILLABLE_METRIC_CODE__',
+        billable_metric_id='__BILLABLE_METRIC_ID__',
         charge_model='package',
         properties={
           'amount': '1.50',
@@ -162,13 +163,14 @@ Although users don't need to subscribe to access the platform, Algolia offers it
         description='Pay-as-you-go pricing for Search API',
         amount_cents=0,
         amount_currency='USD',
+        pay_in_advance=False,
         charges=[charge]
       )
 
       client.plans.create(plan)
       ```
 
-      ```ruby Ruby highlight={3,6,8-18}
+      ```ruby Ruby highlight={3,6,9-19}
       client.plans.create({
         name: 'Algolia Search PAYG',
         code: '__PLAN_CODE__',
@@ -176,9 +178,10 @@ Although users don't need to subscribe to access the platform, Algolia offers it
         description: 'Pay-as-you-go pricing for Search API',
         amount_cents: 0,
         amount_currency: 'USD',
+        pay_in_advance: false,
         charges: [
           {
-            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            billable_metric_id: '__BILLABLE_METRIC_ID__',
             charge_model: 'package',
             properties: {
               amount: '1.50',
@@ -190,7 +193,7 @@ Although users don't need to subscribe to access the platform, Algolia offers it
       })
       ```
 
-      ```javascript JavaScript highlight={3,6,8-18,21}
+      ```javascript JavaScript highlight={3,6,9-19,22}
       const plan = {
         name: 'Algolia Search PAYG',
         code: '__PLAN_CODE__',
@@ -198,9 +201,10 @@ Although users don't need to subscribe to access the platform, Algolia offers it
         description: 'Pay-as-you-go pricing for Search API',
         amount_cents: 0,
         amount_currency: 'USD',
+        pay_in_advance: false,
         charges: [
           {
-            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            billable_metric_id: '__BILLABLE_METRIC_ID__',
             charge_model: 'package',
             properties: {
               amount: '1.50',
@@ -214,7 +218,7 @@ Although users don't need to subscribe to access the platform, Algolia offers it
       await client.plans.createPlan({ plan })
       ```
 
-      ```go Go highlight={3,6,8-18,21}
+      ```go Go highlight={3,6,9-19,22}
       planInput := &lago.PlanInput{
         Name:           "Algolia Search PAYG",
         Code:           "__PLAN_CODE__",
@@ -222,9 +226,10 @@ Although users don't need to subscribe to access the platform, Algolia offers it
         Description:    "Pay-as-you-go pricing for Search API",
         AmountCents:    0,
         AmountCurrency: "USD",
+        PayInAdvance:   false,
         Charges: []*lago.PlanChargeInput{
           {
-            BillableMetricCode: "__BILLABLE_METRIC_CODE__",
+            BillableMetricID: "__BILLABLE_METRIC_ID__",
             ChargeModel:        "package",
             Properties: map[string]interface{}{
               "amount":       "1.50",

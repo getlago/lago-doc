@@ -117,7 +117,7 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
     3. Configure first 10 TiB as free, then $6.25 per TiB after that
 
     <CodeGroup>
-      ```bash cURL highlight={7,10,12-33}
+      ```bash cURL highlight={7,10,13-34}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
         --header 'Authorization: Bearer __API_KEY__' \
         --header 'Content-Type: application/json' \
@@ -129,9 +129,10 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
             "description": "Pay-as-you-go BigQuery pricing with free tier",
             "amount_cents": 0,
             "amount_currency": "USD",
+            "pay_in_advance": false,
             "charges": [
               {
-                "billable_metric_code": "__BILLABLE_METRIC_CODE__",
+                "billable_metric_id": "__BILLABLE_METRIC_ID__",
                 "charge_model": "graduated",
                 "properties": {
                   "graduated_ranges": [
@@ -155,11 +156,11 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
         }'
       ```
 
-      ```python Python highlight={3-22,26,29,31,34}
+      ```python Python highlight={3-22,26,29,32,35}
       from lago_python_client.models import Plan, Charge
 
       charge = Charge(
-        billable_metric_code='__BILLABLE_METRIC_CODE__',
+        billable_metric_id='__BILLABLE_METRIC_ID__',
         charge_model='graduated',
         properties={
           'graduated_ranges': [
@@ -186,13 +187,14 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
         description='Pay-as-you-go BigQuery pricing with free tier',
         amount_cents=0,
         amount_currency='USD',
+        pay_in_advance=False,
         charges=[charge]
       )
 
       client.plans.create(plan)
       ```
 
-      ```ruby Ruby highlight={3,6,8-29}
+      ```ruby Ruby highlight={3,6,9-30}
       client.plans.create({
         name: 'BigQuery On-Demand',
         code: '__PLAN_CODE__',
@@ -200,9 +202,10 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
         description: 'Pay-as-you-go BigQuery pricing with free tier',
         amount_cents: 0,
         amount_currency: 'USD',
+        pay_in_advance: false,
         charges: [
           {
-            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            billable_metric_id: '__BILLABLE_METRIC_ID__',
             charge_model: 'graduated',
             properties: {
               graduated_ranges: [
@@ -225,7 +228,7 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
       })
       ```
 
-      ```javascript JavaScript highlight={3,6,8-29,32}
+      ```javascript JavaScript highlight={3,6,9-30,33}
       const plan = {
         name: 'BigQuery On-Demand',
         code: '__PLAN_CODE__',
@@ -233,9 +236,10 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
         description: 'Pay-as-you-go BigQuery pricing with free tier',
         amount_cents: 0,
         amount_currency: 'USD',
+        pay_in_advance: false,
         charges: [
           {
-            billable_metric_code: '__BILLABLE_METRIC_CODE__',
+            billable_metric_id: '__BILLABLE_METRIC_ID__',
             charge_model: 'graduated',
             properties: {
               graduated_ranges: [
@@ -260,7 +264,7 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
       await client.plans.createPlan({ plan })
       ```
 
-      ```go Go highlight={3,6,8-29,32}
+      ```go Go highlight={3,6,9-30,33}
       planInput := &lago.PlanInput{
         Name:           "BigQuery On-Demand",
         Code:           "__PLAN_CODE__",
@@ -268,9 +272,10 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
         Description:    "Pay-as-you-go BigQuery pricing with free tier",
         AmountCents:    0,
         AmountCurrency: "USD",
+        PayInAdvance:   false,
         Charges: []*lago.ChargeInput{
           {
-            BillableMetricCode: "__BILLABLE_METRIC_CODE__",
+            BillableMetricID: "__BILLABLE_METRIC_ID__",
             ChargeModel:        "graduated",
             Properties: map[string]interface{}{
               "graduated_ranges": []map[string]interface{}{

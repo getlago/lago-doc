@@ -170,7 +170,7 @@ For OpenAI, pricing depends on the language model used. Here are several price p
     2. Under `charges`, configure pricing tiers for different models and token types
 
     <CodeGroup>
-      ```bash cURL expandable highlight={7,11-66}
+      ```bash cURL expandable highlight={7,12-67}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
         --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
@@ -181,9 +181,10 @@ For OpenAI, pricing depends on the language model used. Here are several price p
             "amount_cents": 0,
             "amount_currency": "USD",
             "interval": "monthly",
+            "pay_in_advance": false,
             "charges": [
               {
-                "billable_metric_code": "__BILLABLE_METRIC_CODE__",
+                "billable_metric_id": "__BILLABLE_METRIC_ID__",
                 "charge_model": "package",
                 "filters": [
                   {
@@ -241,7 +242,7 @@ For OpenAI, pricing depends on the language model used. Here are several price p
         }'
       ```
 
-      ```python Python expandable highlight={4-8,10-14,16-20,22-26,29-33,37,41,44}
+      ```python Python expandable highlight={4-8,10-14,16-20,22-26,29-33,37,42,45}
       from lago_python_client.models import Plan, Charge, ChargeFilter
 
       # Filters for different models and token types
@@ -271,7 +272,7 @@ For OpenAI, pricing depends on the language model used. Here are several price p
 
       # Charge for all filters
       charge = Charge(
-        billable_metric_code="__BILLABLE_METRIC_CODE__",
+        billable_metric_id="__BILLABLE_METRIC_ID__",
         charge_model="package",
         filters=[small_input_filter, small_output_filter, large_input_filter, large_output_filter]
       )
@@ -282,22 +283,24 @@ For OpenAI, pricing depends on the language model used. Here are several price p
         amount_cents=0,
         amount_currency="USD", 
         interval="monthly",
+        pay_in_advance=False,
         charges=[charge]
       )
 
       client.plans.create(plan)
       ```
 
-      ```ruby Ruby expandable highlight={3,7-34}
+      ```ruby Ruby expandable highlight={3,8-35}
       client.plans.create({
         name: "OpenAI Pricing",
         code: "__PLAN_CODE__",
         amount_cents: 0,
         amount_currency: "USD",
         interval: "monthly",
+        pay_in_advance: false,
         charges: [
           {
-            billable_metric_code: "__BILLABLE_METRIC_CODE__",
+            billable_metric_id: "__BILLABLE_METRIC_ID__",
             charge_model: "package",
             filters: [
               {
@@ -326,16 +329,17 @@ For OpenAI, pricing depends on the language model used. Here are several price p
       })
       ```
 
-      ```js Javascript expandable highlight={3,7-34,37}
+      ```js Javascript expandable highlight={3,8-35,38}
       const plan = {
         name: "OpenAI Pricing",
         code: "__PLAN_CODE__",
         amount_cents: 0,
         amount_currency: "USD",
         interval: "monthly",
+        pay_in_advance: false,
         charges: [
           {
-            billable_metric_code: "__BILLABLE_METRIC_CODE__",
+            billable_metric_id: "__BILLABLE_METRIC_ID__",
             charge_model: "package",
             filters: [
               {
@@ -366,16 +370,17 @@ For OpenAI, pricing depends on the language model used. Here are several price p
       await client.plans.createPlan({ plan });
       ```
 
-      ```go Go expandable highlight={3,7-50,53}
+      ```go Go expandable highlight={3,8-51,54}
       planInput := &lago.PlanInput{
         Name:           "OpenAI Pricing",
         Code:           "__PLAN_CODE__", 
         AmountCents:    0,
         AmountCurrency: "USD",
         Interval:       "monthly",
+        PayInAdvance:   false,
         Charges:        []lago.PlanChargeInput{
           {
-            BillableMetricCode: "__BILLABLE_METRIC_CODE__",
+            BillableMetricID: "__BILLABLE_METRIC_ID__",
             ChargeModel:        "package",
             Filters: []lago.ChargeFilter{
               {
