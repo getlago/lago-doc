@@ -1,85 +1,100 @@
 ---
 title: "Entitlements"
+description: "Unify entitlements and billing in one streamlined platform with Lago."
 ---
 
-Lago partners with [Oso](https://osohq.com) to provide the best-in-class Entitlements solution.
-
-[Oso](https://www.osohq.com/)  is an authorization-as-a-service provider partnering with Lago to offer entitlements. You can use either the open-source version (available on [Github](https://github.com/osohq/oso)) or the cloud-hosted version. To create entitlements with Lago, you must open an account on Oso.
-
-Oso offers a suitable solution for Entitlements. For more information, please refer to [Oso's documentation](https://www.osohq.com/docs/guides/model/entitlements).
+In a billing system, entitlements define what a customer can access and how much they can use, based on their subscription or contract. 
+This includes feature gates, which control whether a feature is enabled or disabled for a given customer; feature privileges, which determine the level of access within a feature, such as basic or advanced functionality; allowances, which represent the included usage in a plan, like 100 API calls per month; and quotas, which are the maximum usage limits that may trigger overage charges or access restrictions. Together, these components help enforce product limits, manage access, and support accurate usage-based billing.
 
 
-## Define available features and plan's quota
-First, define the available features for each plan. For instance, the Basic plan has a limited set of features, while the Premium plan offers the full range.
+In addition to the usage-based engine for allowances and quotas, Lago lets you define Features and Entitlements.
 
-In addition to this, you can use Lago to bill metering and overage. This information can then be passed directly to Oso's `plan_quota` and `quota_used` to limit usage for a specific feature.
+## Set up your features
+<Tabs>
+  <Tab title="Dashboard">
+      Lago supports the creation of any type of feature to tailor your billing logic. To create a new feature:
 
-## Example
-[Oso's documentation](https://www.osohq.com/docs/guides/model/entitlements) explains the following example of entitlements properly.
+        1. Navigate to the **Features** section in the sidebar;
+        2. Click on **Add a Feature** to start a new entry;
+        3. Give it a unique `code` (used for programmatic actions) and a `name`;
+        4. Assign one or more **privileges** to the feature (optional); and
+        5. Click **Create feature** to finalize and save the feature to your instance.
 
-```ruby
-actor User { }
- 
-resource Organization {
-    roles = ["admin", "member"];
-    permissions = ["create_repository"];
+      A feature in Lago represents a capability that can be gated behind a plan. It's not necessarily something you bill for directly, but rather something a customer gains access to based on their subscription.
 
-    "member" if "admin";
-}
- 
- 
-resource Plan { 
-    roles = ["subscriber"];
-    relations = { subscribed_organization: Organization };
-    
-    "subscriber" if role on "subscribed_organization";
-}
- 
-resource Feature {
-    relations = { plan: Plan };
-}
- 
-declare plan_quota(Plan, Feature, Integer);
-declare quota_used(Organization, Feature, Integer);
- 
-plan_quota(Plan{"pro"}, Feature{"repository"}, 10);
-plan_quota(Plan{"basic"}, Feature{"repository"}, 0);
- 
-has_quota_remaining(org: Organization, feature: Feature) if
-    has_quota(org, feature, quota) and
-    quota_used(org, feature, used) and
-    used < quota;
- 
-has_quota(org: Organization, feature: Feature, quota: Integer) if
-    plan matches Plan and
-    has_relation(plan, "subscribed", org) and
-    plan_quota(plan, feature, quota);
- 
- 
-has_permission(user: User, "create_repository", org: Organization) if
-    has_role(user, "member", org) and
-    has_quota_remaining(org, Feature{"repository"});
- 
- 
- 
-test "members can create repositorys if they have quota" {
-    setup {
-        quota_used(Organization{"apple"}, Feature{"repository"}, 5);
-        quota_used(Organization{"netflix"}, Feature{"repository"}, 10);
-        quota_used(Organization{"amazon"}, Feature{"repository"}, 0);
-        has_relation(Plan{"pro"}, "subscribed", Organization{"apple"});
-        has_relation(Plan{"pro"}, "subscribed", Organization{"netflix"});
-        has_relation(Plan{"basic"}, "subscribed", Organization{"amazon"});
-        has_role(User{"alice"}, "member", Organization{"apple"});
-        has_role(User{"bob"}, "member", Organization{"netflix"});
-        has_role(User{"charlie"}, "member", Organization{"amazon"});
-    }
-    assert has_quota_remaining(Organization{"apple"}, Feature{"repository"});
-    # Apple has quota remaining, so all good
-    assert allow(User{"alice"}, "create_repository", Organization{"apple"});
-    # Netflix has used all quota 
-    assert_not allow(User{"bob"}, "create_repository", Organization{"netflix"});
-    # Amazon doesn't have any quota left
-    assert_not allow(User{"charlie"}, "create_repository", Organization{"amazon"});
-}
+    <Frame caption="Features section with the list of features">
+      <img src="/guide/images/features-list.png" />
+    </Frame>
+
+  </Tab>
+  <Tab title="API">
+      <CodeGroup>
+      ```test
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Define feature privileges
+
+<Tabs>
+  <Tab title="Dashboard">
+    Additionally, you can define privileges for a specific feature. Privileges allow you to configure more granular access controls across different plans. For example, the invite_member feature might allow inviting 1 member on the *Free plan*, while offering unlimited invites on the *Pro plan*.
+
+    Feature privileges can be associated with the following types:
+    - **`boolean`** – The privilege value is either `true` or `false`.
+    - **`integer`** – The privilege value is a numeric limit (e.g., `10 GPUs`).
+    - **`string`** – The privilege value is freeform text.
+    - **`select`** – The privilege value is chosen from a predefined list of options.
+
+    At this stage, you're only defining the **type** of each privilege. The actual values will be set later, when the feature is entitled to a specific plan or subscription.
+
+    <Info>
+      You can add an unlimited number of privileges to a feature.
+    </Info>  
+
+    <Frame caption="Add feature privileges">
+      <img src="/guide/images/add-feature-privileges.png" />
+    </Frame>
+
+  </Tab>
+  <Tab title="API">
+      <CodeGroup>
+      ```test
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Assign features to plans
+Once your features have been created, they can be added to your plans through a process called **Entitlements**. 
+
+Entitlements define which features a customer is allowed to use based on the plan they are subscribed to. By assigning features to specific plans, you control access to functionality across your pricing tiers.
+
+<Frame caption="Subscription and entitlement workflow">
+    <img src="/guide/images/entitlements-subscription-workflow.jpg" />
+</Frame>
+
+To assign features to a plan:
+
+1. Create a new plan or edit an existing one;
+2. Navigate to the **Advanced Settings** section;
+3. Select the features you want to entitle for that plan; and
+4. Configure the values for each feature's privileges according to the plan's rules.
+
+<Frame caption="Entitle features to a plan">
+    <img src="/guide/images/plans-entitlements.png" />
+</Frame>
+
+## Override entitlements for a subscription
+Some customers may subscribe to a standard plan but negotiate custom entitlements as part of their contract.
+
+Just like charges, **you can override any entitlement value** for a specific subscription. This creates an **overridden subscription**, where the custom entitlements apply **only** to that particular customer, without affecting the base plan or other subscribers.
+
+
+## Get entitlements for a subscription
+You can retrieve the current list of entitled features for a subscription by calling the following endpoint:
+
+```bash
+GET /api/v1/subscriptions/:subscription_external_id/entitlements
 ```
