@@ -2,13 +2,11 @@
 title: "Void invoices"
 ---
 
-Voiding an invoice is akin to deleting or canceling it in principle.
-Yet, voiding preserves a paper trail, enabling you to locate the invoice by its number.
-Voided invoices are considered as having zero value for reporting and are not payable.
+From an accounting standpoint, voiding an invoice serves the same functional purpose as canceling or deleting it, but it is legally accepted and properly documented. 
+Voiding preserves a paper trail, enabling you to locate the invoice by its number. Voided invoices are considered as having zero value for reporting and are not payable.
 Importantly, this status is final, meaning the invoice's status remains unalterable.
 
 Once you void an invoice, it remains accessible through the UI views and shows a status `voided` indicating it has been voided.
-You can void an invoice only when it's in a `finalized` status, and the payment status is not `succeeded`.
 
 <Tabs>
   <Tab title="Dashboard">
@@ -36,15 +34,68 @@ You can void an invoice only when it's in a `finalized` status, and the payment 
 
 ## Restrictions on voiding invoices
 
-You cannot void an invoice when:
+Here is the list of restrictions on voiding invoices:
 
 - The invoice is in `draft` status, as it hasn't been finalized yet; or
-- The payment status of the invoice is `succeeded`, indicating that the payment has been successfully processed; or
-- There is still credit available for one of the credit notes linked to the invoice; or
 - The invoice has already been voided.
 
-## Voiding invoices with applied discounts
 
-- Coupons applied to an invoice marked as void are lost;
-- Prepaid credits deducted from an invoice marked as void are refunded, provided the wallet is still active; and
-- Credit notes applied to an invoice marked as void are refunded to the credit note wallet.
+## Refund options when voiding an invoice
+
+<Tabs>
+  <Tab title="Dashboard">
+    When you void an invoice, you can choose how to handle the associated refund, depending on your preference and the invoice's payment status:
+
+    ### 1. Void without credit note (default)
+      - The invoice is marked as voided;
+      - Only prepaid credits used to pay the invoice will be refunded to the customer's balance (as they have been prepaid); and
+      - No credit note is issued for this voided invoice.
+
+   ### 2. Void and generate a credit note
+      - The invoice is marked as voided;
+      - A credit note is created for the voided invoice;
+      - If the invoice was already paid, you can optionally refund the original payment method using the credit note; and
+      - Alternatively, the credit note can be retained on the customer's credit note account and used toward future invoices.
+
+    <Frame caption="Refund options when voiding an invoice">
+      ![](/guide/invoicing/images/void-invoice-refund-options.png)
+    </Frame>
+
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Refund options when voiding an invoice
+      curl --request POST \
+      --url https://api.getlago.com/api/v1/invoices/{lago_id}/void \
+      --header 'Authorization: Bearer <token>' \
+      --header 'Content-Type: application/json' \
+      --data '{
+        "generate_credit_note": true,
+        "refund_amount": 2000,
+        "credit_amount": 1150
+    }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+
+## Regenerate a voided invoice
+When accessing a voided invoice, you can choose to regenerate it directly from the UI. This is a **UI-only feature** designed to simplify invoice recreation.
+
+The original line items and fees from the voided invoice will be pre-filled to help you quickly generate a new invoice.
+
+You can modify the pre-filled values as needed:
+1. Change the number of units;
+2. Change the amount; and
+3. Add new fee line items.
+
+The regenerated invoice will be **linked to the original voided invoice** for traceability and accounting purposes. Note that you cannot change the service period of the regenerated invoice.
+
+<Warning>
+  Prepaid credits, coupons, or credit note balances available at the customer level may be applied to the regenerated invoice, so ensure the final amount matches the expected total after taxes and discounts.
+</Warning>
+
+<Frame caption="Regenerate a voided invoice">
+  ![](/guide/invoicing/images/regenerate-voided-invoice.png)
+</Frame>
