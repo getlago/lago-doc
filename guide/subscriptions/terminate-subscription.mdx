@@ -28,9 +28,25 @@ description: "You can terminate a subscription at any time, whether it's active 
   </Tab>
 </Tabs>
 
-When a subscription is terminated:
-- Lago automatically generates an invoice for any outstanding usage-based charges that have not been invoiced yet;
-- If the subscription fee for the plan has been paid in advance, Lago automatically issues a credit note for the unused number of days.
+### Generate a closing invoice at subscription termination
+By default, Lago automatically generates a closing invoice for any **outstanding usage-based charges** or **pay-in-arrears subscription fees** that haven’t yet been invoiced.
+If you don’t want to generate an invoice at termination:
+- via the Dashboard, in the Termination dialog, simply switch off the **Generate final invoice** option.
+- via the API, set the `on_termination_invoice` query parameter to `skip` in the endpoint.
+
+### Generate a closing credit note at subscription termination
+If the subscription fee has been **paid in advance**, Lago automatically issues a credit note for the **unused days**.
+At termination, you can via the Dashboard:
+- Skip generating a credit note
+- Refund the unused amount (if a payment has been recorded)
+- Follow the default behavior and credit the unused amount.
+
+Via the API, set the `on_termination_credit_note` query parameter to `credit`, `refund` or `skip` in the endpoint.
+
+<Frame caption="Termination options">
+    ![](/guide/subscriptions/images/terminate-subscription-options.png)
+</Frame>
+
 
 ## Terminate a pending subscription
 
