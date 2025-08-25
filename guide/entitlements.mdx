@@ -29,7 +29,16 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
   </Tab>
   <Tab title="API">
       <CodeGroup>
-      ```test
+      ``` bash Create a feature
+      curl --request POST \
+      --url https://api.getlago.com/api/v1/features \
+      --header 'Authorization: Bearer <token>' \
+      --header 'Content-Type: application/json' \
+      --data '{
+      "code": "seats",
+      "name": "Number of seats",
+      "description": "Number of users that can be added to the account"
+    }'
       ```
       </CodeGroup>
   </Tab>
@@ -60,41 +69,123 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
   </Tab>
   <Tab title="API">
       <CodeGroup>
-      ```test
+      ``` bash Create feature with privileges
+      curl --request POST \
+      --url https://api.getlago.com/api/v1/features \
+      --header 'Authorization: Bearer <token>' \
+      --header 'Content-Type: application/json' \
+      --data '{
+      "code": "seats",
+      "name": "Number of seats",
+      "description": "Number of users that can be added to the account",
+      "privileges": [
+        {
+          "code": "max_",
+          "name": "Maximum seats",
+          "value_type": "integer"
+        },
+        {
+          "code": "min",
+          "name": "Minimum seats",
+          "value_type": "integer"
+        },
+        {
+          "code": "allow_admin_user",
+          "name": "Allow admin user",
+          "value_type": "boolean"
+        }
+      ]
+    }'
       ```
       </CodeGroup>
   </Tab>
 </Tabs>
 
-## Assign features to plans
-Once your features have been created, they can be added to your plans through a process called **Entitlements**. 
+## Map entitled deatures to your plans
 
-Entitlements define which features a customer is allowed to use based on the plan they are subscribed to. By assigning features to specific plans, you control access to functionality across your pricing tiers.
+<Tabs>
+  <Tab title="Dashboard">
+    Once your features have been created, they can be added to your plans through a process called **Entitlements**. 
+    This is where you define features that are unlocked for a specific plan and the limits, values or privileges for each feature.
 
-<Frame caption="Subscription and entitlement workflow">
-    <img src="/guide/images/entitlements-subscription-workflow.jpg" />
-</Frame>
+    Entitlements define which features a customer is allowed to use based on the plan they are subscribed to. By assigning features to specific plans, you control access to functionality across your pricing tiers.
 
-To assign features to a plan:
+    <Frame caption="Subscription and entitlement workflow">
+        <img src="/guide/images/entitlements-subscription-workflow.jpg" />
+    </Frame>
 
-1. Create a new plan or edit an existing one;
-2. Navigate to the **Advanced Settings** section;
-3. Select the features you want to entitle for that plan; and
-4. Configure the values for each feature's privileges according to the plan's rules.
+    To assign features to a plan:
 
-<Frame caption="Entitle features to a plan">
-    <img src="/guide/images/plans-entitlements.png" />
-</Frame>
+    1. Create a new plan or edit an existing one;
+    2. Navigate to the **Advanced Settings** section;
+    3. Select the features you want to entitle for that plan; and
+    4. Configure the values for each feature's privileges according to the plan's rules.
+
+    <Frame caption="Entitle features to a plan">
+        <img src="/guide/images/plans-entitlements.png" />
+    </Frame>
+
+  </Tab>
+  <Tab title="API">
+      <CodeGroup>
+      ``` bash Create plan entitlements
+      curl --request POST \
+      --url https://api.getlago.com/api/v1/plans/{code}/entitlements \
+      --header 'Authorization: Bearer <token>' \
+      --header 'Content-Type: application/json' \
+      --data '{
+      "seats": {
+        "max": 20,
+        "min": 10,
+        "allow_admin_user": false
+      },
+      "sso": {
+        "provider": "okta"
+      }
+    }'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
 
 ## Override entitlements for a subscription
-Some customers may subscribe to a standard plan but negotiate custom entitlements as part of their contract.
 
-Just like charges, **you can override any entitlement value** for a specific subscription. This creates an **overridden subscription**, where the custom entitlements apply **only** to that particular customer, without affecting the base plan or other subscribers.
+<Tabs>
+  <Tab title="Dashboard">
+    Some customers may subscribe to a standard plan but negotiate custom entitlements as part of their contract.
 
+    Just like charges, **you can override any entitlement value** for a specific subscription. 
+    This creates an **overridden subscription**, where the custom entitlements apply **only** to that particular customer, without affecting the base plan or other subscribers.
+
+  </Tab>
+  <Tab title="API">
+      <CodeGroup>
+      ``` bash Create subscription entitlements
+    curl --request PATCH \
+      --url https://api.getlago.com/api/v1/subscriptions/{external_id}/entitlements \
+      --header 'Authorization: Bearer <token>' \
+      --header 'Content-Type: application/json' \
+      --data '{
+      "seats": {
+        "max": 30,
+        "min": 20,
+        "allow_admin_user": true
+      },
+      "sso": {
+        "provider": "okta"
+      }
+    }'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
 
 ## Get entitlements for a subscription
 You can retrieve the current list of entitled features for a subscription by calling the following endpoint:
 
 ```bash
-GET /api/v1/subscriptions/:subscription_external_id/entitlements
+curl --request GET \
+  --url https://api.getlago.com/api/v1/subscriptions/{external_id}/entitlements \
+  --header 'Authorization: Bearer <token>'
 ```
+You can also track entitlement changes through the `subscription.updated` webhook.
