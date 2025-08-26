@@ -4,10 +4,28 @@ description: "Learn how to retrieve usage data for both current and past billing
 ---
 
 ## Retrieve current usage
-Current usage fetches real-time customer data for the open billing period. 
-Keep in mind that since this period isn't closed yet, invoice details may evolve over time.
 
-<RequestExample>
+<Tabs>
+  <Tab title="Dashboard">
+    The [current usage endpoint](../../api-reference/customer-usage/get-current) retrieves real-time usage data for the current open billing period. 
+    Because this billing period is still ongoing, invoice details are subject to change as new usage continues to accrue.
+
+    Whether it's fetched from the UI or the API, the response includes:
+    1. Aggregated usage data for the current period: Total units consumed and total customers' cost (so far)
+
+    2. Detailed breakdowns per metric: Units and amounts by metric and optional sub-breakdowns by filters or groupings (e.g., per project, environment, or AI models)
+
+    <Info>
+    Note: Since the billing period is not yet finalized, the retrieved data should be treated as provisional. Final invoice values may differ.
+    </Info>
+
+    <Frame caption="Retrieving current usage">
+      <img src="/guide/events/images/current-usage.png" />
+    </Frame>
+
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
     ```bash Retrieve current usage
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
@@ -18,14 +36,62 @@ Keep in mind that since this period isn't closed yet, invoice details may evolve
     --header "Authorization: Bearer $API_KEY" \
     --header 'Content-Type: application/json'
     ```
-</RequestExample>
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Retrieve projected usage
+
+<Tabs>
+  <Tab title="Dashboard">
+    Another endpoint provides an estimate of usage and billing amounts projected through the end of the current billing period. 
+    It uses current consumption trends and billing configuration to forecast the likely totals at period close. Projected usage is listed under the [projected usage endpoint](../../api-reference/customer-usage/get-projected).
+
+    Whether it's fetched from the UI or the API, the response includes:
+    1. Projected total usage units and estimated billing amount for the full billing period
+    2. Per-metric projections, including: Forecasted units and amounts for each billable metric and projections broken down by optional sub-filters or groups (e.g., per project, environment, or AI models)
+
+    <Info>
+    Note: Recurring metrics, such as Seats, typically remain stable over time, unlike metered metrics which fluctuate. Therefore, the projected usage for a recurring metric is assumed to be equal to its current usage.
+    </Info>
+
+    <Frame caption="Retrieving projected usage">
+        <img src="/guide/events/images/projected-usage.png" />
+    </Frame>
+
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Retrieve projected usage
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    EXTERNAL_CUSTOMER_ID="__EXTERNAL_CUSTOMER_ID__"
+    EXTERNAL_SUBSCRIPTION_ID="__EXTERNAL_SUBSCRIPTION_ID__"
+
+    curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/projected_usage?external_subscription_id=$EXTERNAL_SUBSCRIPTION_ID" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
 
 ## Retrieve past usage
-Retrieving historical customer usage data provides usage details for closed billing periods. 
-This data remains unchanged unless you're in a grace period, where past usage can be adjusted for a draft invoice.
 
-<RequestExample>
-    ```bash Retrieve past usage
+
+<Tabs>
+  <Tab title="Dashboard">
+   The [past usage endpoint](../../api-reference/customer-usage/get-past) allows you to retrieve customer usage data for closed billing periods. 
+    Once a billing period has ended and is marked as closed, the associated usage data becomes final and immutable, ensuring consistency in billing and reporting.
+
+    Modifying the price of a metric, or even deleting a metric, has no effect on past usage or previously issued invoices. 
+    Once a billing period is closed and its associated invoice is finalized, the past usage quantities, pricing, and resulting fees are locked.
+
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Retrieve current usage
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
     EXTERNAL_CUSTOMER_ID="__EXTERNAL_CUSTOMER_ID__"
@@ -35,4 +101,6 @@ This data remains unchanged unless you're in a grace period, where past usage ca
     --header "Authorization: Bearer $API_KEY" \
     --header 'Content-Type: application/json'
     ```
-</RequestExample>
+    </CodeGroup>
+  </Tab>
+</Tabs>

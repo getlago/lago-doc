@@ -28,9 +28,55 @@ description: "You can terminate a subscription at any time, whether it's active 
   </Tab>
 </Tabs>
 
-When a subscription is terminated:
-- Lago automatically generates an invoice for any outstanding usage-based charges that have not been invoiced yet;
-- If the subscription fee for the plan has been paid in advance, Lago automatically issues a credit note for the unused number of days.
+### Generate a closing invoice at subscription termination
+By default, Lago automatically generates a closing invoice for any **outstanding usage-based charges** or **pay-in-arrears subscription fees** that haven’t yet been invoiced.
+If you don’t want to generate an invoice at termination:
+<Tabs>
+  <Tab title="Dashboard">
+    In the Termination dialog, simply switch off the **Generate final invoice** option.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Terminate a subscription without closing invoice
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      EXTERNAL_ID="__YOUR_SUBSCRIPTION_ID__"
+
+      curl --location --request DELETE "$LAGO_URL/api/v1/subscriptions/$EXTERNAL_ID?on_termination_invoice=skip" \
+        --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+### Generate a closing credit note at subscription termination
+If the subscription fee has been **paid in advance**, Lago automatically issues a credit note for the **unused days**.
+At termination, you can : 
+<Tabs>
+  <Tab title="Dashboard">
+    In the Termination dialog, you can choose how to handle unused amounts:
+    - **Skip** – Don’t generate a credit note.
+    - **Refund** – If the invoice is paid or partially paid, the unused paid amount is refunded; any unpaid unused amount is credited back to the customer.
+    - **Credit** (default) – The unused amount is credited back to the customer.
+    
+    <Frame caption="Termination options">
+    ![](/guide/subscriptions/images/terminate-subscription-options.png)
+    </Frame>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Terminate a subscription without closing credit note
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      EXTERNAL_ID="__YOUR_SUBSCRIPTION_ID__"
+
+      curl --location --request DELETE "$LAGO_URL/api/v1/subscriptions/$EXTERNAL_ID?on_termination_credit_note=skip" \
+        --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
 
 ## Terminate a pending subscription
 

@@ -49,7 +49,7 @@ For some 4xx errors, the response body will include additional information to he
 </ResponseExample>
 
 
-### Error fields
+## Error fields
 
 <ResponseField name="status" type="number" required>
   The HTTP status code.
@@ -73,3 +73,133 @@ For some 4xx errors, the response body will include additional information to he
 
   For specific errors, such as a payment provider error, the `error_details` may include other fields.
 </ResponseField>
+
+## Error codes
+
+### bad_request_error
+```json
+{ "status": 400, "error": "BadRequest: [error.message]" }
+```
+**Examples:**
+- `coupons_must_be_an_array`
+- `subscriptions_must_be_an_object`
+
+### unauthorized_error
+```json
+{ "status": 401, "error": "[message]" }
+```
+**Examples:**
+- `Unauthorized`
+- `expired_jwt_token`
+
+### forbidden_error
+```json
+{ "status": 403, "error": "Forbidden", "code": "[error_code]" }
+```
+**Examples:**
+- `feature_unavailable`
+- `feature_not_available`
+- `[mode]_action_not_allowed_for_[resource_name]`
+
+### not_found_error
+```json
+{ "status": 404, "error": "Not Found", "code": "[resource]_not_found" }
+```
+**Examples:**
+- `invoice_not_found`
+- `customer_not_found`
+- `subscription_not_found`
+- `billing_entity_not_found`
+- `plan_not_found`
+- `add_on_not_found`
+- `coupon_not_found`
+- `tax_not_found`
+- `feature_not_found`
+- `privilege_not_found`
+- `billable_metric_not_found`
+- `webhook_endpoint_not_found`
+- `api_log_not_found`
+- `activity_log_not_found`
+- `payment_not_found`
+- `payment_receipt_not_found`
+- `fee_not_found`
+- `event_not_found`
+- `credit_note_not_found`
+- `wallet_not_found`
+- `wallet_transaction_not_found`
+- `lifetime_usage_not_found`
+- `alert_not_found`
+- `entitlement_not_found`
+
+### method_not_allowed_error
+```json
+{ "status": 405, "error": "Method Not Allowed", "code": "[error_code]" }
+```
+
+**Examples:**
+- `feature_not_supported`
+- `invalid_type_or_status`
+- `credit_note_voided`
+- `no_voidable_amount`
+- `invoices_not_overdue`
+- `invoices_have_different_currencies`
+- `invoices_not_ready_for_payment_processing`
+- `premium_integration_missing`
+- `metadata_on_draft_invoice`
+- `payment_status_update_on_draft_invoice`
+- `not_voidable`
+- `is_draft`
+- `invalid_status`
+- `last_admin`
+- `cannot_revoke_own_membership`
+- `enabled_authentication_methods_required`
+- `signup_disabled`
+- `plan_overlapping`
+- `wallet_not_active`
+- `is_succeeded`
+- `no_active_subscription`
+- `status_not_voided`
+- `invoice_not_finalized`
+- `invoice_payment_already_succeeded`
+- `invoice_due_date_in_future`
+- `invoice_dispute_lost`
+- `payment_processor_is_currently_handling_payment`
+- `invoiced_fee`
+- `eu_tax_not_applicable`
+- `not_disputable`
+- `only_one_limitation_type_per_coupon_allowed`
+
+### validation_errors
+```json
+{ "status": 422, "error": "Unprocessable Entity", "code": "validation_errors", "error_details": [validation_errors] }
+```
+
+### provider_error
+```json
+{ "status": 422, "error": "Unprocessable Entity", "code": "provider_error", "provider": { "code": "[provider_code]" }, "error_details": [serialized_error] }
+```
+
+### third_party_error
+```json
+{ "status": 422, "error": "Unprocessable Entity", "code": "third_party_error", "error_details": { "third_party": "[third_party]", "thirdparty_error": "[error_message]" } }
+```
+
+### stripe_required_error
+```json
+{ "status": 422, "error": "Unprocessable Entity", "code": "stripe_required", "message": "Only Stripe is supported for authorization" }
+```
+
+### too_many_provider_requests_error
+```json
+{ "status": 429, "error": "Too Many Provider Requests", "code": "too_many_provider_requests", "error_details": { "provider_name": "[provider_name]", "message": "[message]" } }
+```
+
+### internal_server_error
+```json
+{ "status": 500, "errors": [{ "message": "[error_message]", "backtrace": [backtrace] }], "data": {} }
+```
+
+### health_check_error
+```json
+{ "version": "[version]", "github_url": "[url]", "message": "Unhealthy", "details": "[error_message]" }
+```
