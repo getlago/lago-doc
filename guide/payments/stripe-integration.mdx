@@ -26,7 +26,7 @@ To set up the integration with Stripe through the user interface:
 </Info>
 
 ## Redirect url after checkout[](#checkout-redirect-url "Direct link to heading")
-After establishing the connection with Stripe, set a success URL where your end customer will be directed after completing the checkout. 
+After establishing the connection with Stripe, set a success URL where your end customer will be directed after completing the checkout.
 Please note that if it's not defined, your end customer will be redirected to Stripe's website.
 
 Please note that you can edit or delete the redirect URL, and this will only affect new checkout URLs created.
@@ -76,14 +76,14 @@ information, you must:
 </Frame>
 
 ## Supported payment methods
-Lago's Stripe integration accommodates a variety of payment methods, both generic and region-specific. 
+Lago's Stripe integration accommodates a variety of payment methods, both generic and region-specific.
 The checkout URL provided by Lago is designed to handle multiple payment options seamlessly.
 
 
 ### General payment methods
 <AccordionGroup>
   <Accordion title="Card payments" icon="credit-card">
-    Lago's Stripe integration includes a universal card payment method that supports various currencies, ideal for global transactions. 
+    Lago's Stripe integration includes a universal card payment method that supports various currencies, ideal for global transactions.
     This method is set as the default to facilitate recurring payments, ensuring Lago can process charges for your customers efficiently.
     ```bash
         LAGO_URL="https://api.getlago.com"
@@ -109,7 +109,7 @@ The checkout URL provided by Lago is designed to handle multiple payment options
     ```
   </Accordion>
   <Accordion title="Link" icon="link">
-    For card transactions, you can enable the [Link](https://stripe.com/payments/link) feature to offer one-click payments. 
+    For card transactions, you can enable the [Link](https://stripe.com/payments/link) feature to offer one-click payments.
     Link automatically fills in your customers' payment information, ensuring a seamless and secure checkout experience.
 
     <Warning>
@@ -179,9 +179,9 @@ The checkout URL provided by Lago is designed to handle multiple payment options
 ### Localized payment methods
 <AccordionGroup>
   <Accordion title="SEPA debits (EU only)" icon="money-bill-transfer">
-    For European customers, Lago supports Stripe SEPA Debit (Single Euro Payments Area). 
-    Accepting a mandate through this method authorizes you to debit your customers' accounts for recurring payments via Lago. 
-    The designated payment method for SEPA transactions within Lago is identified as `sepa_debit`. 
+    For European customers, Lago supports Stripe SEPA Debit (Single Euro Payments Area).
+    Accepting a mandate through this method authorizes you to debit your customers' accounts for recurring payments via Lago.
+    The designated payment method for SEPA transactions within Lago is identified as `sepa_debit`.
     It's important to note that **this payment option is exclusive to invoices in `EUR` currency**.
 
     ```bash
@@ -208,9 +208,9 @@ The checkout URL provided by Lago is designed to handle multiple payment options
     ```
   </Accordion>
   <Accordion title="ACH debits (US only)" icon="flag-usa">
-    For US-based transactions, Lago integrates Stripe ACH Debit, leveraging the Automated Clearing House for electronic bank-to-bank payments. 
-    Upon accepting a mandate, you gain authorization to execute recurring debits from your customers' accounts through Lago. 
-    The designated payment method for ACH transactions within Lago is identified as `us_bank_account`. 
+    For US-based transactions, Lago integrates Stripe ACH Debit, leveraging the Automated Clearing House for electronic bank-to-bank payments.
+    Upon accepting a mandate, you gain authorization to execute recurring debits from your customers' accounts through Lago.
+    The designated payment method for ACH transactions within Lago is identified as `us_bank_account`.
     It's important to note that **this payment option is exclusive to invoices in `USD` currency**.
 
     ```bash
@@ -237,9 +237,9 @@ The checkout URL provided by Lago is designed to handle multiple payment options
     ```
   </Accordion>
   <Accordion title="BACS debits (UK only)" icon="credit-card-front">
-    For UK transactions, Lago integrates Stripe BACS Debit, utilizing the UK's BACS system for direct bank-to-bank payments. 
-    By accepting a mandate with this method, you're authorized to initiate recurring debits from your customers' accounts through Lago. 
-    The specific payment method for BACS transactions within Lago is designated as `bacs_debit`. 
+    For UK transactions, Lago integrates Stripe BACS Debit, utilizing the UK's BACS system for direct bank-to-bank payments.
+    By accepting a mandate with this method, you're authorized to initiate recurring debits from your customers' accounts through Lago.
+    The specific payment method for BACS transactions within Lago is designated as `bacs_debit`.
     It's important to note that **this payment method is exclusively for invoices in `GBP` currency.**
 
     ```bash
@@ -266,8 +266,8 @@ The checkout URL provided by Lago is designed to handle multiple payment options
     ```
   </Accordion>
   <Accordion title="Boleto (BRL only)" icon="brazilian-real-sign">
-    For transactions in Brazil, you can process payments using Boleto vouchers. 
-    In Lago, this payment method is identified as `boleto`. 
+    For transactions in Brazil, you can process payments using Boleto vouchers.
+    In Lago, this payment method is identified as `boleto`.
     Note that Boleto is only valid for invoices denominated in Brazilian Real (BRL). Additionally, Boleto payments cannot be refunded and are unlikely to be successfully disputed.
 
     ```bash
@@ -348,21 +348,21 @@ Note: The checkout link automatically expires after 24 hours!
 By utilizing this provided checkout link, your customers can perform a pre-authorization payment. It's important to note that the pre-authorization payment will not collect any funds from the customer. Once the pre-authorization is confirmed, Lago will send the payment method details and securely store them into Stripe for future transactions.
 
 ## Regenerate checkout link on demand
-In cases where your end customer has not had the opportunity to complete the checkout process to inform their payment method 
+In cases where your end customer has not had the opportunity to complete the checkout process to inform their payment method
 or wishes to modify the saved payment information, you can generate a new checkout link using the designated [endpoint](/api-reference/customers/psp-checkout-url).
 
 ```bash
 POST /api/v1/customers/:customer_external_id/checkout_url
 ```
 
-Upon successful generation, the new checkout link will be available in the endpoint response, and it will not be delivered through a webhook message. 
+Upon successful generation, the new checkout link will be available in the endpoint response, and it will not be delivered through a webhook message.
 It is important to note that the new link will inherit the same expiration setting as the original one.
 
 It is crucial to be aware that if a customer is not associated with any payment provider, the response will contain an error message.
 
 ## Default payment method
-When you add a new payment method in Stripe, **Lago automatically sets it as the default**. 
-This guarantees that Lago uses the latest payment method for a customer. However, if you manually designate one of 
+When you add a new payment method in Stripe, **Lago automatically sets it as the default**.
+This guarantees that Lago uses the latest payment method for a customer. However, if you manually designate one of
 multiple payment methods as the default, Lago will use it for payments instead the most recent one.
 
 
@@ -372,7 +372,7 @@ start collecting payments.
 
 ### Succeeded payments
 Each time a new invoice with an **amount greater than zero** is generated by
-Lago, a payment intent will automatically be created. Stripe will record the
+Lago, a PaymentIntent will automatically be created. Stripe will record the
 invoice ID and process the payment. If the payment is successful, the status of
 the payment will switch from `pending` to `succeeded`.
 
@@ -382,15 +382,21 @@ If the payment fails, the status of the payment will switch from `pending` to
 [webhook](/api-reference/webhooks/messages).
 
 ### Payments requiring validation
-When a payment requires multi-step authentication, such as 3D Secure (3DS), Lago triggers a `payment.requires_action` [webhook](/api-reference/webhooks/messages#payment-requires-action). 
-This webhook provides the URL for completing the 3DS process. It's important to note that **most payments in India require 3DS authentication** due to [RBI regulations](https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=12051&Mode=0).
+When a payment requires multi-step authentication, such as 3D Secure (3DS), Lago triggers a `payment.requires_action` [webhook](/api-reference/webhooks/messages#payment-requires-action).
+This webhook provides the details for completing the 3DS process. Depending on your integration, you'll get a Stripe Checkout URL or details
+to use in your integration (like with Stripe Link).
+
+The invoice will be marked `pending` and the payment as `processing` until the 3DS process is completed.
+
+It's important to note that payments in Europe can request 3DS due to [SCA regulations](https://stripe.com/en-fr/guides/strong-customer-authentication)
+and most payments in India require 3DS authentication due to [RBI regulations](https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=12051&Mode=0).
 
 ### Minimum payment amount
 If the new invoice amount falls below the [minimum amount supported by Stripe](https://stripe.com/docs/currencies#minimum-and-maximum-charge-amounts), the payment status will remain as `pending`.
 
 <Warning>
   A valid payment method for the customer must be defined in Stripe for the
-  payment intent to succeed ([learn how to save payment
+  PaymentIntent to succeed ([learn how to save payment
   details](https://stripe.com/docs/payments/save-and-reuse)).
 </Warning>
 
