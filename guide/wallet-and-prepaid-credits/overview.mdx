@@ -150,6 +150,45 @@ By default, prepaid credits apply to all fee types—subscriptions, charges, and
 
 When enabled, this option delays issuing an invoice for a wallet top-up until a successful payment is made. If disabled, the invoice is issued immediately upon the wallet top-up, regardless of the payment status. This setting applies to all transactions for the wallet, but can be overridden for individual transactions or recurring rules.
 
+## Wallet transaction limits
+<Tabs>
+  <Tab title="Dashboard">
+    For each wallet, you can set minimum and maximum limits per paid transaction. 
+    When these limits are defined, any top-up attempt must fall within the specified range—transactions below the minimum or above the maximum will be rejected.
+
+    <Frame caption="Wallet transaction limits">
+      <img src="/guide/images/min-max-wallet-limits.png" />
+    </Frame>
+
+  </Tab>
+  <Tab title="API">
+    ```bash Add wallet min and max limits
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header "Content-Type: application/json" \
+      --data-raw '{
+        "wallet": {
+          "external_customer_id": "hooli_1234",
+          "name": "Prepaid credits",
+          "rate_amount": 1.0,
+          "paid_top_up_min_amount_cents": 1000,
+          "paid_top_up_max_amount_cents": 100000
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+  For a single transaction, you can ignore wallet limits at any time by adding the `ignore_paid_top_up_limits` flag to the payload, or by enabling the **Skip top-up limits for this transaction** option in the UI. 
+  This applies to both single transactions and automatic top-ups (recurring wallet transactions).
+
+    <Frame caption="Skip wallet limits for a single transaction">
+      <img src="/guide/images/skip-wallet-limits.png" />
+    </Frame>
+
 ## Expiration date and termination[](#expiration-date-and-termination "Direct link to heading")
 
 By default, if you don't set an expiration date, prepaid credits are carried
