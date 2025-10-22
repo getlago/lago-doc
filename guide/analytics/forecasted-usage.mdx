@@ -1,0 +1,58 @@
+---
+title: "(Beta) Forecasted usage"
+---
+
+## Overview
+The Forecasted Usage feature leverages machine learning to predict future usage. This helps you anticipate customer usage patterns and do revenue forecasting with confidence.
+
+The forecasting system uses a machine learning pipeline that trains multiple models on historical usage data and generates probabilistic predictions for future periods.
+
+<Frame caption="Forecasted usage dashboard">
+  <img src="/guide/analytics/images/forecasted-usage.png" />
+</Frame>
+
+## How forecasting works
+
+### Data-driven predictions
+The ML pipeline use historical usage data, grouped by billable metric, subscription, charge, and charge filter to identify patterns and trends and train ML models. It then generates forecasts 12 months ahead at monthly granularity.
+
+### Forecasting methods
+The system supports two main forecasting approaches:
+
+#### 1. Trained ML Models
+Advanced machine learning models that learn from historical patterns, including:
+- **LightGBM**: Gradient boosting model with quantile loss for probabilistic forecasting
+- **N-BEATS**: Deep learning neural network specialized for time series
+- **Ensemble**: Combines multiple models for improved accuracy
+
+These models generate three forecast scenarios (conservative, realistic, and optimistic) based on different probability quantiles.
+
+#### 2. Historical Mean
+A simpler baseline method that uses historical average usage as the forecast. It is used whenever there is insufficient data to train ML models.
+
+### Probabilistic forecasting
+All trained model forecasts include three scenarios:
+- **Conservative**: Lower-bound estimate for cautious planning
+- **Realistic**: Median forecast representing the most likely outcome
+- **Optimistic**: Upper-bound estimate for best-case scenarios
+
+This probabilistic approach helps you understand the range of possible outcomes and plan accordingly.
+
+## Filtering options
+Filter forecasted usage data by:
+- Currency
+- Customer country
+- Customer external ID
+- Customer type
+- Customer has TaxID
+- Plan code
+- Subscription external ID
+- Billable metric
+
+<Info>
+**PREMIUM FEATURE** ✨
+
+Forecasted Usage and advanced filtering options are only available to users with a premium license. Please
+**[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago
+Self-Hosted Premium.
+</Info>
