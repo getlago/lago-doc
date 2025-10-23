@@ -11,10 +11,12 @@ The Lago documentation is available at [doc.getlago.com](https://doc.getlago.com
 
 ## Running locally
 
+:warning: You need to install (mise)[https://mise.jdx.dev/installing-mise.html].
+When mise is installed : you should run `mise install`
+
 ```shell
-npm update
-npm run dev
-```
+pnpm install
+pnpm run dev
 
 Noticed that the production `openapi` spec file is linked in the `docs.json`. Locally, you can update this value
 to test with your local file but **make sure you don't commit this change**. It's recommended to create a symlink
