@@ -1,0 +1,191 @@
+---
+title: "E-invoicing"
+description: "Lago automatically generates e-invoices for your billing entities and customers that comply with local regulations"
+---
+
+## Overview
+E-invoicing is the automated exchange of invoice data between businesses in a structured digital format. 
+Governments require it to prevent tax fraud by tracking transactions in real-time, while businesses benefit from faster payments, fewer errors, and lower processing costs. 
+Instead of sending PDFs or paper invoices that need manual entry, e-invoicing systems automatically validate and process invoice data, making the entire billing cycle more efficient. 
+As more countries make e-invoicing mandatory, it's becoming the standard way businesses exchange invoices globally.
+
+
+## Supported E-invoicing jurisdictions
+
+Lago issues compliant documents for **invoices**, **credit notes**, and **payment receipts** for the following jurisdictions:
+
+| Country | Format | Type | Technical standard | Supported |
+|---------|--------|------|-------------------|--------------|
+| **🇫🇷 France** | Factur-X | Embedded XML (PDF/A-3 with XML) | CII (UN/CEFACT) | ✅ |
+| | UBL EN 16931 | XML only | UBL 2.1 | ✅ |
+| **🇩🇪 Germany** | XRechnung | XML only | CII or UBL 2.1 (EN 16931) | Soon (Q4 2025) |
+| | ZUGFeRD 2.x | Embedded XML (PDF/A-3 with XML) | CII (UN/CEFACT) | Soon (Q4 2025) |
+| **🇪🇸 Spain** | Factura-e | XML only | UBL-based | Soon (Q4 2025) |
+| | VeriFactu | XML only | UBL 2.1 or CII (format-agnostic) | Soon (Q4 2025) |
+| **🇮🇹 Italy** | FatturaPA | XML only | Proprietary XML | Soon (Q4 2025) |
+| | SDI format | XML only | Proprietary XML | Soon (Q4 2025) |
+| **🇸🇦 Saudi Arabia** | ZATCA Standard Invoice | XML only | UBL 2.1 with ZATCA extensions | Soon (Q4 2025) |
+| | ZATCA Simplified Invoice | Embedded XML (PDF/A-3 with XML) | UBL 2.1 with ZATCA extensions | Soon (Q4 2025) |
+
+
+## Activate E-invoicing in Lago
+You can enable e-invoicing at the entity level. Each entity can have its own e-invoicing configuration based on its jurisdiction.
+
+To activate e-invoicing:
+1. Go to **Settings** in your Lago dashboard;
+2. **Select the entity** you want to update;
+3. In the **General settings** section of this entity, click **Edit**; and
+4. At the bottom of the form, toggle **E-invoicing on**.
+
+<Info>
+The E-invoicing toggle appears only if Lago supports e-invoicing for the entity's country. If the option is not displayed, the country is currently not supported.
+</Info>
+
+<Frame caption="Activate E-invoicing for a Lago entity">
+  <img src="/guide/invoicing/images/activate-einvoicing.png" />
+</Frame>
+
+## Formats and contributions
+The output type is typically either an **embedded XML file** (PDF/A-3 with XML) or a **standalone XML**, depending on the requirements of each jurisdiction.
+
+Lago supports two standard e-invoicing formats: **UBL (Universal Business Language)** and **CII (Cross Industry Invoice)**.
+Using Lago's core templates for these formats, you can extend or customize them to meet the specific requirements of additional jurisdictions.
+
+If your jurisdiction is not yet supported and you'd like to contribute to a new format, please **[contact us](mailto:hello@getlago.com)**.
+
+Here is an example of an Cross Industry Invoice (CII) XML file for Factur-X in France:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100"
+                          xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100"
+                          xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100"
+                          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                          xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
+    
+    <!-- Exchange Document Context -->
+    <rsm:ExchangedDocumentContext>
+        <ram:GuidelineSpecifiedDocumentContextParameter>
+            <ram:ID>urn:cen.eu:en16931:2017</ram:ID>
+        </ram:GuidelineSpecifiedDocumentContextParameter>
+    </rsm:ExchangedDocumentContext>
+    
+    <!-- Exchange Document Header -->
+    <rsm:ExchangedDocument>
+        <ram:ID>TWI-2684-454-002</ram:ID>
+        <ram:TypeCode>386</ram:TypeCode>
+        <ram:IssueDateTime>
+            <udt:DateTimeString format="102">20250626</udt:DateTimeString>
+        </ram:IssueDateTime>
+        <ram:IncludedNote>
+            <ram:Content>Invoice ID: ffa7f66d-a23d-4559-b048-499be3668c86</ram:Content>
+        </ram:IncludedNote>
+    </rsm:ExchangedDocument>
+    
+    <!-- Supply Chain Trade Transaction -->
+    <rsm:SupplyChainTradeTransaction>
+        
+        <!-- Line Item 1: Credit -->
+        <ram:IncludedSupplyChainTradeLineItem>
+            <ram:AssociatedDocumentLineDocument>
+                <ram:LineID>1</ram:LineID>
+            </ram:AssociatedDocumentLineDocument>
+            <ram:SpecifiedTradeProduct>
+                <ram:Name>credit</ram:Name>
+                <ram:Description>credit</ram:Description>
+            </ram:SpecifiedTradeProduct>
+            <ram:SpecifiedLineTradeAgreement>
+                <ram:NetPriceProductTradePrice>
+                    <ram:ChargeAmount>1.00</ram:ChargeAmount>
+                </ram:NetPriceProductTradePrice>
+            </ram:SpecifiedLineTradeAgreement>
+            <ram:SpecifiedLineTradeDelivery>
+                <ram:BilledQuantity unitCode="C62">10.0</ram:BilledQuantity>
+            </ram:SpecifiedLineTradeDelivery>
+            <ram:SpecifiedLineTradeSettlement>
+                <ram:ApplicableTradeTax>
+                    <ram:TypeCode>VAT</ram:TypeCode>
+                    <ram:CategoryCode>O</ram:CategoryCode>
+                </ram:ApplicableTradeTax>
+                <ram:SpecifiedTradeSettlementLineMonetarySummation>
+                    <ram:LineTotalAmount>10.00</ram:LineTotalAmount>
+                </ram:SpecifiedTradeSettlementLineMonetarySummation>
+            </ram:SpecifiedLineTradeSettlement>
+        </ram:IncludedSupplyChainTradeLineItem>
+        
+        <!-- Applicable Header Trade Agreement -->
+        <ram:ApplicableHeaderTradeAgreement>
+            <ram:SellerTradeParty>
+                <ram:ID>twilio_eu</ram:ID>
+                <ram:Name>Twilio EU</ram:Name>
+                <ram:PostalTradeAddress>
+                    <ram:PostcodeCode>10001</ram:PostcodeCode>
+                    <ram:LineOne>Twilio Europe</ram:LineOne>
+                    <ram:CityName>Paris</ram:CityName>
+                    <ram:CountryID>FR</ram:CountryID>
+                </ram:PostalTradeAddress>
+            </ram:SellerTradeParty>
+            <ram:BuyerTradeParty>
+                <ram:Name>Decathlon France</ram:Name>
+                <ram:PostalTradeAddress>
+                    <ram:PostcodeCode>75011</ram:PostcodeCode>
+                    <ram:LineOne>100 rue decathlon</ram:LineOne>
+                    <ram:LineTwo>Batiment D</ram:LineTwo>
+                    <ram:CityName>Paris</ram:CityName>
+                    <ram:CountryID>FR</ram:CountryID>
+                </ram:PostalTradeAddress>
+            </ram:BuyerTradeParty>
+        </ram:ApplicableHeaderTradeAgreement>
+        
+        <!-- Applicable Header Trade Delivery -->
+        <ram:ApplicableHeaderTradeDelivery>
+            <ram:ActualDeliverySupplyChainEvent>
+                <ram:OccurrenceDateTime>
+                    <udt:DateTimeString format="102">20250527</udt:DateTimeString>
+                </ram:OccurrenceDateTime>
+            </ram:ActualDeliverySupplyChainEvent>
+        </ram:ApplicableHeaderTradeDelivery>
+        
+        <!-- Applicable Header Trade Settlement -->
+        <ram:ApplicableHeaderTradeSettlement>
+            <ram:InvoiceCurrencyCode>USD</ram:InvoiceCurrencyCode>
+            
+            <!-- Payment Means -->
+            <ram:SpecifiedTradeSettlementPaymentMeans>
+                <ram:TypeCode>30</ram:TypeCode>
+                <ram:Information>Credit transfer</ram:Information>
+            </ram:SpecifiedTradeSettlementPaymentMeans>
+            
+            <!-- Tax Information - Not applicable for prepaid credit -->
+            <ram:ApplicableTradeTax>
+                <ram:CalculatedAmount>0.00</ram:CalculatedAmount>
+                <ram:TypeCode>VAT</ram:TypeCode>
+                <ram:BasisAmount>10.00</ram:BasisAmount>
+                <ram:CategoryCode>O</ram:CategoryCode>
+                <ram:ExemptionReasonCode>VATEX-EU-O</ram:ExemptionReasonCode>
+            </ram:ApplicableTradeTax>
+            
+            <!-- Payment Terms -->
+            <ram:SpecifiedTradePaymentTerms>
+                <ram:Description>Net payment term: 0 days</ram:Description>
+                <ram:DueDateDateTime>
+                    <udt:DateTimeString format="102">20250626</udt:DateTimeString>
+                </ram:DueDateDateTime>
+            </ram:SpecifiedTradePaymentTerms>
+            
+            <!-- Monetary Summation -->
+            <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+                <ram:LineTotalAmount>10.00</ram:LineTotalAmount>
+                <ram:ChargeTotalAmount>0.00</ram:ChargeTotalAmount>
+                <ram:AllowanceTotalAmount>0.00</ram:AllowanceTotalAmount>
+                <ram:TaxBasisTotalAmount>10.00</ram:TaxBasisTotalAmount>
+                <ram:TaxTotalAmount currencyID="USD">0.00</ram:TaxTotalAmount>
+                <ram:GrandTotalAmount>10.00</ram:GrandTotalAmount>
+                <ram:TotalPrepaidAmount>0.00</ram:TotalPrepaidAmount>
+                <ram:DuePayableAmount>10.00</ram:DuePayableAmount>
+            </ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+        </ram:ApplicableHeaderTradeSettlement>
+        
+    </rsm:SupplyChainTradeTransaction>
+    
+</rsm:CrossIndustryInvoice>
+```
