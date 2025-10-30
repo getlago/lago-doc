@@ -7,7 +7,7 @@ description: "Learn how to retrieve usage data for both current and past billing
 
 <Tabs>
   <Tab title="Dashboard">
-    The [current usage endpoint](../../api-reference/customer-usage/get-current) retrieves real-time usage data for the current open billing period. 
+    The [current usage endpoint](../../api-reference/customer-usage/get-current) retrieves real-time usage data for the current open billing period.
     Because this billing period is still ongoing, invoice details are subject to change as new usage continues to accrue.
 
     Whether it's fetched from the UI or the API, the response includes:
@@ -18,6 +18,9 @@ description: "Learn how to retrieve usage data for both current and past billing
     <Info>
     Note: Since the billing period is not yet finalized, the retrieved data should be treated as provisional. Final invoice values may differ.
     </Info>
+
+    Notice that if the events were sent with timestamp in the future, they are taken into account in current usage. Yet, if you terminate the
+    subscription before the timestamp of this event, it will be ignored in the termination invoice.
 
     <Frame caption="Retrieving current usage">
       <img src="/guide/events/images/current-usage.png" />
@@ -44,7 +47,7 @@ description: "Learn how to retrieve usage data for both current and past billing
 
 <Tabs>
   <Tab title="Dashboard">
-    Another endpoint provides an estimate of usage and billing amounts projected through the end of the current billing period. 
+    Another endpoint provides an estimate of usage and billing amounts projected through the end of the current billing period.
     It uses current consumption trends and billing configuration to forecast the likely totals at period close. Projected usage is listed under the [projected usage endpoint](../../api-reference/customer-usage/get-projected).
 
     Whether it's fetched from the UI or the API, the response includes:
@@ -82,10 +85,10 @@ description: "Learn how to retrieve usage data for both current and past billing
 
 <Tabs>
   <Tab title="Dashboard">
-   The [past usage endpoint](../../api-reference/customer-usage/get-past) allows you to retrieve customer usage data for closed billing periods. 
+   The [past usage endpoint](../../api-reference/customer-usage/get-past) allows you to retrieve customer usage data for closed billing periods.
     Once a billing period has ended and is marked as closed, the associated usage data becomes final and immutable, ensuring consistency in billing and reporting.
 
-    Modifying the price of a metric, or even deleting a metric, has no effect on past usage or previously issued invoices. 
+    Modifying the price of a metric, or even deleting a metric, has no effect on past usage or previously issued invoices.
     Once a billing period is closed and its associated invoice is finalized, the past usage quantities, pricing, and resulting fees are locked.
 
   </Tab>
