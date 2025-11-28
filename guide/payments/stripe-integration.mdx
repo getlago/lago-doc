@@ -1,14 +1,13 @@
 ---
 title: "Stripe integration"
-description:
-  "Lago's native integration with Stripe allows you to collect payments
-  automatically when new invoices are generated."
+description: "Lago's native integration with Stripe allows you to collect payments automatically when new invoices are generated."
 ---
 
 ## Watch the demo video
-<iframe width="100%" height="400" src="https://www.youtube.com/embed/NH8MCMaHeFM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
-## Integration setup[](#integration-setup "Direct link to heading")
+<iframe width="100%" height="400" src="https://www.youtube.com/embed/NH8MCMaHeFM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen />
+
+## Integration setup
 
 To set up the integration with Stripe through the user interface:
 
@@ -20,14 +19,12 @@ To set up the integration with Stripe through the user interface:
 6. Click **"Connect to Stripe"** to confirm.
 
 <Info>
-  By default, customers created in Lago are not automatically created in Stripe.
-  If you want your Lago customers to be added to Stripe, you need to activate
-  this option ([learn more](#new-customer)).
+  By default, customers created in Lago are not automatically created in Stripe. If you want your Lago customers to be added to Stripe, you need to activate this option ([learn more](#new-customer)).
 </Info>
 
-## Redirect url after checkout[](#checkout-redirect-url "Direct link to heading")
-After establishing the connection with Stripe, set a success URL where your end customer will be directed after completing the checkout.
-Please note that if it's not defined, your end customer will be redirected to Stripe's website.
+## Redirect url after checkout
+
+After establishing the connection with Stripe, set a success URL where your end customer will be directed after completing the checkout. Please note that if it's not defined, your end customer will be redirected to Stripe's website.
 
 Please note that you can edit or delete the redirect URL, and this will only affect new checkout URLs created.
 
@@ -35,60 +32,52 @@ Please note that you can edit or delete the redirect URL, and this will only aff
   URL defined should always begin with `http://` or `https://`.
 </Warning>
 
-## Customer information[](#customer-information "Direct link to heading")
+## Customer information
 
-To collect payments automatically, the customer must exist in both the Lago and
-Stripe databases.
+To collect payments automatically, the customer must exist in both the Lago and Stripe databases.
 
-### New customer[](#new-customer "Direct link to heading")
+### New customer
 
-If the customer does not already exist in Stripe, you can first create them in
-Lago, either via the user interface or [the API](/api-reference/customers/create).
-When adding customer information, you must:
+If the customer does not already exist in Stripe, you can first create them in Lago, either via the user interface or [the API](/api-reference/customers/create). When adding customer information, you must:
 
 1. Define Stripe as the **default payment provider**;
 2. Leave the field associated with the **Stripe customer ID** blank;
 3. **Enable** the option to automatically create the customer in Stripe; and
 4. Define payment method options for this customer. Possible values are `card`, `link`, `sepa_debit`, `us_bank_account`, `bacs_debit`, `boleto`, `crypto` or `customer_balance`.
 
-The customer will automatically be added to Stripe. Stripe will then return the
-customer ID, which will be stored in Lago.
+The customer will automatically be added to Stripe. Stripe will then return the customer ID, which will be stored in Lago.
 
 <Frame caption="Creation of a new customer with Stripe">
-  <img src="/guide/payments/images/stripe-customer-new.png" />
+  ![](/guide/payments/images/stripe-customer-new.png)
 </Frame>
 
-### Existing customer[](#existing-customer "Direct link to heading")
+### Existing customer
 
-If the customer already exists in Stripe but not in Lago, you should create the
-customer record, either via the user interface or
-[the API](/api-reference/customers/create). When adding customer
-information, you must:
+If the customer already exists in Stripe but not in Lago, you should create the customer record, either via the user interface or [the API](/api-reference/customers/create). When adding customer information, you must:
 
 1. Define Stripe as the **default payment provider**;
 2. Provide the **Stripe customer ID**;
 3. **Disable** the option to automatically create the customer in Stripe; and
 4. Define payment method options for this customer. Possible values are `card`, `link`, `sepa_debit`, `us_bank_account`, `bacs_debit`, `boleto`, `crypto` or `customer_balance`.
 
-
 <Frame caption="Migration of an existing Stripe customer">
-  <img src="/guide/payments/images/stripe-customer-migration.png" />
+  ![](/guide/payments/images/stripe-customer-migration.png)
 </Frame>
 
 ## Supported payment methods
-Lago's Stripe integration accommodates a variety of payment methods, both generic and region-specific.
-The checkout URL provided by Lago is designed to handle multiple payment options seamlessly.
 
+Lago's Stripe integration accommodates a variety of payment methods, both generic and region-specific. The checkout URL provided by Lago is designed to handle multiple payment options seamlessly.
 
 ### General payment methods
+
 <AccordionGroup>
   <Accordion title="Card payments" icon="credit-card">
-    Lago's Stripe integration includes a universal card payment method that supports various currencies, ideal for global transactions.
-    This method is set as the default to facilitate recurring payments, ensuring Lago can process charges for your customers efficiently.
+    Lago's Stripe integration includes a universal card payment method that supports various currencies, ideal for global transactions. This method is set as the default to facilitate recurring payments, ensuring Lago can process charges for your customers efficiently.
+
     ```bash
         LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
-
+    
     curl --location --request POST "$LAGO_URL/api/v1/customers" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
@@ -109,17 +98,15 @@ The checkout URL provided by Lago is designed to handle multiple payment options
     ```
   </Accordion>
   <Accordion title="Link" icon="link">
-    For card transactions, you can enable the [Link](https://stripe.com/payments/link) feature to offer one-click payments.
-    Link automatically fills in your customers' payment information, ensuring a seamless and secure checkout experience.
+    For card transactions, you can enable the [Link](https://stripe.com/payments/link) feature to offer one-click payments. Link automatically fills in your customers' payment information, ensuring a seamless and secure checkout experience.
 
     <Warning>
       If you are using the `link` feature, it must be used in conjunction with `card`.
     </Warning>
-
     ```bash
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
-
+    
     curl --location --request POST "$LAGO_URL/api/v1/customers" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
@@ -141,6 +128,7 @@ The checkout URL provided by Lago is designed to handle multiple payment options
   </Accordion>
   <Accordion title="Bank Transfers (Customer Balance)" icon="envelope-open-dollar">
     Lago now accepts invoice payments via Stripe bank transfers (customer balance). Supported methods include:
+
     - JPY: Japan
     - GBP: United Kingdom
     - EUR: Specific SEPA countries (see Stripe documentation)
@@ -150,11 +138,10 @@ The checkout URL provided by Lago is designed to handle multiple payment options
     <Warning>
       If you are using the `customer_balance` payment method in Lago, no other payment method can be selected.
     </Warning>
-
     ```bash
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
-
+    
     curl --location --request POST "$LAGO_URL/api/v1/customers" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
@@ -177,17 +164,15 @@ The checkout URL provided by Lago is designed to handle multiple payment options
 </AccordionGroup>
 
 ### Localized payment methods
+
 <AccordionGroup>
   <Accordion title="SEPA debits (EU only)" icon="money-bill-transfer">
-    For European customers, Lago supports Stripe SEPA Debit (Single Euro Payments Area).
-    Accepting a mandate through this method authorizes you to debit your customers' accounts for recurring payments via Lago.
-    The designated payment method for SEPA transactions within Lago is identified as `sepa_debit`.
-    It's important to note that **this payment option is exclusive to invoices in `EUR` currency**.
+    For European customers, Lago supports Stripe SEPA Debit (Single Euro Payments Area). Accepting a mandate through this method authorizes you to debit your customers' accounts for recurring payments via Lago. The designated payment method for SEPA transactions within Lago is identified as `sepa_debit`. It's important to note that **`this payment option is exclusive to invoices in EUR currency`**.
 
     ```bash
         LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
-
+    
     curl --location --request POST "$LAGO_URL/api/v1/customers" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
@@ -208,15 +193,12 @@ The checkout URL provided by Lago is designed to handle multiple payment options
     ```
   </Accordion>
   <Accordion title="ACH debits (US only)" icon="flag-usa">
-    For US-based transactions, Lago integrates Stripe ACH Debit, leveraging the Automated Clearing House for electronic bank-to-bank payments.
-    Upon accepting a mandate, you gain authorization to execute recurring debits from your customers' accounts through Lago.
-    The designated payment method for ACH transactions within Lago is identified as `us_bank_account`.
-    It's important to note that **this payment option is exclusive to invoices in `USD` currency**.
+    For US-based transactions, Lago integrates Stripe ACH Debit, leveraging the Automated Clearing House for electronic bank-to-bank payments. Upon accepting a mandate, you gain authorization to execute recurring debits from your customers' accounts through Lago. The designated payment method for ACH transactions within Lago is identified as `us_bank_account`. It's important to note that **`this payment option is exclusive to invoices in USD currency`**.
 
     ```bash
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
-
+    
     curl --location --request POST "$LAGO_URL/api/v1/customers" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
@@ -237,15 +219,12 @@ The checkout URL provided by Lago is designed to handle multiple payment options
     ```
   </Accordion>
   <Accordion title="BACS debits (UK only)" icon="credit-card-front">
-    For UK transactions, Lago integrates Stripe BACS Debit, utilizing the UK's BACS system for direct bank-to-bank payments.
-    By accepting a mandate with this method, you're authorized to initiate recurring debits from your customers' accounts through Lago.
-    The specific payment method for BACS transactions within Lago is designated as `bacs_debit`.
-    It's important to note that **this payment method is exclusively for invoices in `GBP` currency.**
+    For UK transactions, Lago integrates Stripe BACS Debit, utilizing the UK's BACS system for direct bank-to-bank payments. By accepting a mandate with this method, you're authorized to initiate recurring debits from your customers' accounts through Lago. The specific payment method for BACS transactions within Lago is designated as `bacs_debit`. It's important to note that **`this payment method is exclusively for invoices in GBP currency.`**
 
     ```bash
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
-
+    
     curl --location --request POST "$LAGO_URL/api/v1/customers" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
@@ -266,14 +245,12 @@ The checkout URL provided by Lago is designed to handle multiple payment options
     ```
   </Accordion>
   <Accordion title="Boleto (BRL only)" icon="brazilian-real-sign">
-    For transactions in Brazil, you can process payments using Boleto vouchers.
-    In Lago, this payment method is identified as `boleto`.
-    Note that Boleto is only valid for invoices denominated in Brazilian Real (BRL). Additionally, Boleto payments cannot be refunded and are unlikely to be successfully disputed.
+    For transactions in Brazil, you can process payments using Boleto vouchers. In Lago, this payment method is identified as `boleto`. Note that Boleto is only valid for invoices denominated in Brazilian Real (BRL). Additionally, Boleto payments cannot be refunded and are unlikely to be successfully disputed.
 
     ```bash
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
-
+    
     curl --location --request POST "$LAGO_URL/api/v1/customers" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
@@ -294,12 +271,12 @@ The checkout URL provided by Lago is designed to handle multiple payment options
     ```
   </Accordion>
   <Accordion title="Crypto (Stablecoins)" icon="btc">
-   Lago invoices can be paid via Stripe Crypto for USD-denominated invoices only. Please note that payments must be made using stablecoins, such as USDC or USDP.
+    Lago invoices can be paid via Stripe Crypto for USD-denominated invoices only. Please note that payments must be made using stablecoins, such as USDC or USDP.
 
     ```bash
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
-
+    
     curl --location --request POST "$LAGO_URL/api/v1/customers" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
@@ -322,9 +299,11 @@ The checkout URL provided by Lago is designed to handle multiple payment options
 </AccordionGroup>
 
 ## Stripe Checkout: storing customer's payment method information
+
 <Info>
   Checkout page shows only selected payment methods for customers.
 </Info>
+
 When Lago automatically creates a customer in Stripe, you will receive a checkout link from Lago to facilitate the storage of your customer's payment method information.
 
 The payload sent by Lago will have the following structure, with the checkout link stored under `checkout_url`:
@@ -341,66 +320,89 @@ The payload sent by Lago will have the following structure, with the checkout li
   }
 }
 ```
+
 <Warning>
-Note: The checkout link automatically expires after 24 hours!
+  Note: The checkout link automatically expires after 24 hours!
 </Warning>
 
 By utilizing this provided checkout link, your customers can perform a pre-authorization payment. It's important to note that the pre-authorization payment will not collect any funds from the customer. Once the pre-authorization is confirmed, Lago will send the payment method details and securely store them into Stripe for future transactions.
 
 ## Regenerate checkout link on demand
-In cases where your end customer has not had the opportunity to complete the checkout process to inform their payment method
-or wishes to modify the saved payment information, you can generate a new checkout link using the designated [endpoint](/api-reference/customers/psp-checkout-url).
+
+In cases where your end customer has not had the opportunity to complete the checkout process to inform their payment method or wishes to modify the saved payment information, you can generate a new checkout link using the designated [endpoint](/api-reference/customers/psp-checkout-url).
 
 ```bash
 POST /api/v1/customers/:customer_external_id/checkout_url
 ```
 
-Upon successful generation, the new checkout link will be available in the endpoint response, and it will not be delivered through a webhook message.
-It is important to note that the new link will inherit the same expiration setting as the original one.
+Upon successful generation, the new checkout link will be available in the endpoint response, and it will not be delivered through a webhook message. It is important to note that the new link will inherit the same expiration setting as the original one.
 
 It is crucial to be aware that if a customer is not associated with any payment provider, the response will contain an error message.
 
 ## Default payment method
-When you add a new payment method in Stripe, **Lago automatically sets it as the default**.
-This guarantees that Lago uses the latest payment method for a customer. However, if you manually designate one of
-multiple payment methods as the default, Lago will use it for payments instead the most recent one.
 
+When you add a new payment method in Stripe, **Lago automatically sets it as the default**. This guarantees that Lago uses the latest payment method for a customer. However, if you manually designate one of multiple payment methods as the default, Lago will use it for payments instead the most recent one.
 
-## Payment intents[](#payment-intents "Direct link to heading")
-Once Stripe is connected and the customer exists in both databases, you can
-start collecting payments.
+## Payment intents
+
+Once Stripe is connected and the customer exists in both databases, you can start collecting payments.
 
 ### Succeeded payments
-Each time a new invoice with an **amount greater than zero** is generated by
-Lago, a PaymentIntent will automatically be created. Stripe will record the
-invoice ID and process the payment. If the payment is successful, the status of
-the payment will switch from `pending` to `succeeded`.
+
+Each time a new invoice with an **amount greater than zero** is generated by Lago, a PaymentIntent will automatically be created. Stripe will record the invoice ID and process the payment. If the payment is successful, the status of the payment will switch from `pending` to `succeeded`.
 
 ### Failed payments
-If the payment fails, the status of the payment will switch from `pending` to
-`failed` and Lago will generate an `invoice.payment_failure`
-[webhook](/api-reference/webhooks/messages).
+
+If the payment fails, the status of the payment will switch from `pending` to `failed` and Lago will generate an `invoice.payment_failure` [webhook](/api-reference/webhooks/messages).
 
 ### Payments requiring validation
-When a payment requires multi-step authentication, such as 3D Secure (3DS), Lago triggers a `payment.requires_action` [webhook](/api-reference/webhooks/messages#payment-requires-action).
-This webhook provides the details for completing the 3DS process. Depending on your integration, you'll get a Stripe Checkout URL or details
-to use in your integration (like with Stripe Link).
 
-The invoice will be marked `pending` and the payment as `processing` until the 3DS process is completed.
+#### Enable 3DS Support
 
-It's important to note that payments in Europe can request 3DS due to [SCA regulations](https://stripe.com/en-fr/guides/strong-customer-authentication)
-and most payments in India require 3DS authentication due to [RBI regulations](https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=12051&Mode=0).
+Navigate to **Settings \> Integrations \> Stripe** and enable **3DS Support** in your Stripe connection settings.
+
+#### How It Works
+
+**Without 3DS Support (disabled):**
+
+- Payment fails if 3DS is required by Stripe or the card issuer
+- You must manually retry using the [payment URL endpoint](/api-reference/invoices/payment-url#generate-a-payment-url)
+
+**With 3DS Support (enabled):**
+
+Lago automatically handles 3DS in two steps:
+
+1. **First attempt**: Payment tries without customer interaction (off_session mode)
+   - If 3DS is required → Payment fails
+2. **Automatic retry** (within seconds): New payment attempt with 3DS enabled
+   - Invoice payment_status : `pending`
+   - Lago sends `payment.requires_action` [webhook](/api-reference/webhooks/messages#param-payment-requires-action-1)  containing the 3DS authentication URL
+   - **You must redirect your customer to this URL** for authentication
+   - After successful authentication → Payment succeeds and Invoice payment_status becomes `succeeded`
+
+**Important:** Your application must be set up to receive the webhook and redirect customers to the 3DS URL for the automatic retry to work.
+
+#### When 3DS is Required ?
+
+- **India**: Mandatory for all card payments ([RBI regulations](https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=12051&Mode=0))
+- **Europe**: Required for most payments ([SCA regulations](https://stripe.com/en-fr/guides/strong-customer-authentication))
+- **Risk-based**: Stripe may require 3DS for high-value transactions or fraud prevention
+
+#### Recurring Payments
+
+When customers add their payment method via checkout and complete 3DS, subsequent recurring payments typically succeed without requiring 3DS again. However, card issuers or regulatory requirements may occasionally trigger 3DS on future payments.
 
 ### Minimum payment amount
+
 If the new invoice amount falls below the [minimum amount supported by Stripe](https://stripe.com/docs/currencies#minimum-and-maximum-charge-amounts), the payment status will remain as `pending`.
 
 <Warning>
-  A valid payment method for the customer must be defined in Stripe for the
-  PaymentIntent to succeed ([learn how to save payment
+  A valid payment method for the customer must be defined in Stripe for the PaymentIntent to succeed ([learn how to save payment
   details](https://stripe.com/docs/payments/save-and-reuse)).
 </Warning>
 
 ## Payment disputes
+
 In the event of a **lost** payment dispute within Stripe, Lago initiates an automatic response by marking the relevant invoice as disputed lost. This action involves populating the `dispute_lost_at` field with the timestamp when the dispute was lost. Following this update:
 
 - The invoice becomes non-voidable;
@@ -408,16 +410,17 @@ In the event of a **lost** payment dispute within Stripe, Lago initiates an auto
 - The invoice cannot be resent for collection.
 
 ## Restricted Stripe API key
+
 In case you're using Lago Cloud, and want to limit the scope granted to the Stripe API key which is shared with Lago, you can create a [restricted Stripe API key](https://docs.stripe.com/keys-best-practices#limit-access). At minimum, you'll need to grant it the following resource permissions, otherwise Stripe integration will not work properly:
 
-* Core
-  * Charges - `Write` (to create refunds when creating credit notes)
-  * Customers - `Write`
-  * Events - `Read` (to receive webhooks with event details)
-  * Funding Instructions - `Write` (to create and read bank details)
-  * Payment Intents - `Write` (to create payments)
-  * Payment Methods - `Write` (to update customer's payment methods)
-* Checkout
-  * Checkout Sessions - `Write` (to generate checkout URLs)
-* Webhook
-  * Webhook Endpoints - `Write` (to create and update webhooks)
+- Core
+  - Charges - `Write` (to create refunds when creating credit notes)
+  - Customers - `Write`
+  - Events - `Read` (to receive webhooks with event details)
+  - Funding Instructions - `Write` (to create and read bank details)
+  - Payment Intents - `Write` (to create payments)
+  - Payment Methods - `Write` (to update customer's payment methods)
+- Checkout
+  - Checkout Sessions - `Write` (to generate checkout URLs)
+- Webhook
+  - Webhook Endpoints - `Write` (to create and update webhooks)
