@@ -1,6 +1,6 @@
 # Lago Documentation
 
-The Lago documentation is available at [doc.getlago.com](https://doc.getlago.com/docs/api/intro).
+The Lago documentation is available at [doc.getlago.com](https://getlago.com/docs/).
 
 ## Current Releases
 
