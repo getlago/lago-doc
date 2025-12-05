@@ -14,7 +14,13 @@ The forecasting system uses a machine learning pipeline that trains multiple mod
 ## How forecasting works
 
 ### Data-driven predictions
-The ML pipeline use historical usage data, grouped by billable metric, subscription, charge, and charge filter to identify patterns and trends and train ML models. It then generates forecasts 12 months ahead at monthly granularity. As a rule of thumb, the forecasts are updated in the first 2 weeks of the month.
+The ML pipeline uses historical usage data, grouped by billable metric, subscription, charge, and charge filter to identify patterns and trends and train ML models.
+
+The target variable we forecast is future paid usage (as opposed to invoiced usage which may or may not be paid).
+
+The model generates forecasts for 12 months ahead at monthly granularity.
+
+As a rule of thumb, the forecasts are updated in the first 2 weeks of the month.
 
 ### Forecasting methods
 The system supports two main forecasting approaches:
@@ -38,9 +44,11 @@ All trained model forecasts include three scenarios:
 
 This probabilistic approach helps you understand the range of possible outcomes and plan accordingly.
 
+### Subscription growth
+The model explicitly models the growth in the number of subscription using the historical data of your organization.
 
 ### Limitations
-The models forecast the future usage amounts for a subset of all potential future revenue sources. The forecasting currently does not take into account new customer growth or product launches directly.
+The models forecast the future usage amounts for a subset of all potential future revenue sources.
 Recently created and unused/deleted billable metrics and charges can be excluded from the forecasts.
 
 ## Filtering options
