@@ -122,3 +122,31 @@ Each conversation is named after your first message for easy identification.
 - **Specify timeframes:** Include date ranges when relevant ("in the last 30 days", "from Q3");
 - **Name entities clearly:** Use customer `external_id`, invoice `id`, or useful identfiers when you have them; and
 - **Chain tasks together:** Complete related operations in one conversation to save time.
+
+## Technical details
+
+### System Overview
+
+```mermaid
+flowchart LR
+    Frontend["Frontend<br/>(React)"]
+    LagoAPI["Lago API<br/>(Rails)"]
+    MCP["MCP Server<br/>(Rust)"]
+    Mistral["Mistral AI"]
+    LagoREST["Lago API<br/>(REST)"]
+
+    Frontend <-->|"GraphQL<br/>WebSocket"| LagoAPI
+    LagoAPI -->|"HTTP/SSE"| MCP
+    MCP <-->|"Agents API"| Mistral
+    MCP -->|"lago-rust-client"| LagoREST
+```
+
+### Technologies
+
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| Frontend | React + Apollo Client | Chat UI & GraphQL subscriptions |
+| Backend | Rails + Action Cable | GraphQL API & WebSocket streaming |
+| MCP Server | Rust + rmcp | Model Context Protocol server |
+| AI Model | Mistral Agents API | LLM with function calling |
+| API Client | lago-rust-client | Type-safe Lago API interactions |
