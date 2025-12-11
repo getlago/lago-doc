@@ -1,0 +1,157 @@
+---
+title: "Credit note metadata"
+---
+Metadata on a credit_note object allows you to store additional structured information and context. This is especially useful when integrating Lago with external systems.
+For example, after creating a credit note, you can save your government-issued credit note ID, the synchronization status with your ERP, or any internal reference needed for your workflows.
+
+<Info>
+Metadata is stored in the `credit_note` object but is **not** displayed on the PDF file.
+</Info>
+
+## Add metadata on credit note
+
+To add metadata:
+<Tabs>
+  <Tab title="Dashboard">
+    1. Go to the credit note detail page for the credit note you want to update.  
+    2. Click **“Add metadata.”**  
+    3. Enter your key–value pairs.  
+    4. Click **Save** to confirm.  
+  </Tab>
+  <Tab title="API — At credit note creation">
+      <CodeGroup>
+      ```bash Add metadata when creating a credit note
+      LAGO_URL="https://api.getlago.com"
+      INVOICE_ID="__YOU_INVOICE_ID__"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/credit_notes" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+      "credit_note": {
+        …
+        "metadata": {
+          "sync_to_netsuite": "false",
+          "sync_to_salesforce": "false"
+        }
+      }'
+      ```
+      </CodeGroup>
+  </Tab>
+  <Tab title="API — After credit note creation">
+      <CodeGroup>
+      ```bash Add metadata to an existing credit note
+      LAGO_URL="https://api.getlago.com"
+      INVOICE_ID="__YOU_INVOICE_ID__"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "metadata": {
+          "sync_to_netsuite": "false",
+          "sync_to_salesforce": "false"
+        }
+      }'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+
+## Edit metadata on credit note
+
+To edit metadata on a credit note:
+<Tabs>
+  <Tab title="Dashboard">
+    1. Navigate to the credit note detail page.  
+    2. Click **“Edit metadata.”**  
+    3. Add, update key–value pairs.  
+    4. Save your changes.  
+  </Tab>
+  <Tab title="API — Add or edit specific keys">
+      <CodeGroup>
+      ```bash Edit or add metadata on a credit note
+      LAGO_URL="https://api.getlago.com"
+      INVOICE_ID="__YOU_INVOICE_ID__"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request PATCH "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "metadata": {
+          "sync_to_netsuite": "true",
+          "netsuite_id": "cn_1234567890"
+        }
+      }'
+      ```
+      </CodeGroup>
+  </Tab>
+  <Tab title="API — Replace all metadata">
+      <CodeGroup>
+      ```bash Replace all metadata on a credit note
+      LAGO_URL="https://api.getlago.com"
+      INVOICE_ID="__YOU_INVOICE_ID__"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request POST "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "metadata": {
+          "sync_to_netsuite": "true",
+          "netsuite_id": "cn_1234567890"
+          "sync_to_salesforce": "false"
+        }
+      }'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Delete metadata on credit note
+
+To delete metadata on a credit note:
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the credit note detail page.  
+    2. Click **“Edit metadata.”**  
+    3. Click the trash icon next to the key–value pair you want to remove.  
+    4. Save your changes.  
+  </Tab>
+  <Tab title="API — Delete a specific ke">
+      <CodeGroup>
+      ```bash Delete a specific metadata key
+      LAGO_URL="https://api.getlago.com"
+      INVOICE_ID="__YOU_INVOICE_ID__"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request DELETE "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata/:key" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json'
+      ```
+      </CodeGroup>
+  </Tab>
+  <Tab title="API — Delete all metadata">
+      <CodeGroup>
+      ```bash Delete all metadata on a credit note
+      LAGO_URL="https://api.getlago.com"
+      INVOICE_ID="__YOU_INVOICE_ID__"
+      API_KEY="__YOUR_API_KEY__"
+
+      curl --location --request DELETE "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json'
+      ```
+      </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Credit note metadata limitations
+
+1. A maximum of 50 metadata key–value pairs is allowed per credit note.
+2. Keys must be strings of up to 40 characters.
+3. Values must be strings of up to 255 characters.
