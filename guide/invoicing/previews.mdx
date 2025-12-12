@@ -1,7 +1,7 @@
 ---
 title: "Preview an invoice"
 description:
-  "With Lago, you can preview invoices even if the customer doesn't exist yet or for an active subscription, allowing you to generate dry-run invoices or estimate potential bills."
+  "With Lago, you can preview invoices even if the customer doesn't exist yet, for pending subscriptions, or for active subscriptions."
 ---
 
 <Info>✨ This feature is only available via a premium licence. Please contact hello@getlago.com to get access to Lago Cloud and Lago Self-Hosted Premium.</Info>
@@ -52,6 +52,35 @@ This instructs Lago to calculate and prorate all line items according to the dat
       "subscription_at": "2025-01-25"
     }'
 ```
+
+## Preview an invoice for a pending subscription
+
+You can preview an invoice for a subscription that has already been created but hasn't started yet (status: `pending`). This is useful when you've created a subscription with a future `subscription_at` date and want to estimate the upcoming charges.
+
+This method supports **subscriptions with price overrides**, making it ideal when your plans use zero pricing with subscription-level overrides.
+
+```bash
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/invoices/preview" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "customer": {
+      "external_id": "hooli_1234"
+    },
+    "subscriptions": {
+      "external_ids": [
+        "subscription_external_id_1"
+      ]
+    }
+  }'
+```
+
+<Info>
+In the response, the `lago_id` field for the subscription will be `null` since this is a preview. The `external_id` remains the primary identifier for your subscription.
+</Info>
 
 ## Preview for non-existing customers
 You can generate an invoice preview for a customer who isn't yet registered in your system or created in Lago. 
