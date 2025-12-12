@@ -1,0 +1,67 @@
+---
+title: "Issuing date preferences"
+description: "Control when your subscription invoices are dated."
+---
+
+## Overview
+**By default, Lago dates invoices on the first day of the new billing period** (e.g., November 1st for an October usage and subscription). 
+Some businesses need invoices dated on the last day of the billing period instead (e.g., October 31st) for accounting or compliance reasons.
+This feature gives you control over the issuing date displayed on your invoices.
+
+Note that this is configured at the **Billing Entity level** and applies to all customers under that entity. However, you can override it for specific customers when needed.
+
+## Invoice settings
+
+### Issuing date anchor
+This setting determines which **issuing date** appears on your invoice.
+
+| Option | Description | For Oct. billing period |
+|--------|-------------|----------------------------|
+| `next_period_start` (default value) | Invoice dated on first day of next billing period | Issuing Date: **November 1** |
+| `current_period_end` | Invoice dated on last day of the current billing period | Issuing Date: **October 31** |
+
+### Issuing date adjustment
+This setting controls what happens when an invoice is finalized **after** the anchor date, especially when a grace period greater than 0 is configured.
+
+| Option | Description |
+|--------|-------------|
+| `align_with_finalization_date` (default) | Invoice date updates to actual finalization date |
+| `keep_anchor` | Invoice keeps the anchor date regardless of when finalized |
+
+## Examples
+The following examples show how different combinations of settings affect the invoice issuing date for a subscription with a billing period from **October 1st to October 31st**. 
+The grace period determines when the invoice is finalized after the billing period ends.
+
+| Anchor | Adjustment | Grace Period | Invoice Issuing Date |
+|--------|------------|--------------|--------------|
+| `next_period_start` | `align_with_finalization_date` | 0 days | **November 1** |
+| `next_period_start` | `align_with_finalization_date` | 2 days | **November 3** |
+| `next_period_start` | `keep_anchor` | 2 days | **November 1** |
+| `current_period_end` | `align_with_finalization_date` | 2 days | **November 3** |
+| `current_period_end` | `keep_anchor` | 2 days | **October 31** |
+
+## Common use cases
+
+### Standard billing (default)
+| Field | Value |
+|-------|-------|
+| `subscription_invoice_issuing_date_anchor` | `next_period_start` |
+| `subscription_invoice_issuing_date_adjustment` | `align_with_finalization_date` |
+
+Best for most businesses. Invoice dates reflect when invoices are actually issued, which simplifies payment tracking and customer communication.
+
+### Period-end accounting
+| Field | Value |
+|-------|-------|
+| `subscription_invoice_issuing_date_anchor` | `current_period_end` |
+| `subscription_invoice_issuing_date_adjustment` | `keep_anchor` |
+
+Ideal for businesses that need invoices dated within the same month as the service period for revenue recognition or accounting compliance. Example: An October subscription invoice will always show October 31, even if generated in November.
+
+### Fixed period start dates
+| Field | Value |
+|-------|-------|
+| `subscription_invoice_issuing_date_anchor` | `next_period_start` |
+| `subscription_invoice_issuing_date_adjustment` | `keep_anchor` |
+
+Useful when you want consistent invoice dates aligned to billing cycle starts, regardless of processing delays. Example: Monthly invoices always dated on the 1st of each month.
