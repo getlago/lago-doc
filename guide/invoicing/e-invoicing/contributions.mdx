@@ -1,0 +1,99 @@
+---
+title: "E-Invoicing contributions"
+description: "Learn how to contribute new E-Invoicing formats and jurisdictions to Lago"
+---
+
+## Current state in Lago
+Lago currently supports two types of E-Invoicing formats: Cross Industry Invoices (CII) and Universal Business Language (UBL). Both implementations follow the French E-Invoicing structure.
+
+Some EU countries may use different naming conventions, but they generally rely on the same underlying CII or UBL data structures, with country specific additions or removals.
+
+This contribution guide is intended for developers who want to extend Lago's E-Invoicing capabilities to support additional jurisdictions or customize existing formats, especially for Peppol network compliance.
+
+
+## CII - Cross Industry Invoices (Factur-X)
+Cross Industry Invoices represent the hybrid format combining a PDF/A-3 file with an embedded XML file. The XML structure follows the CII standard, which is widely used in Europe, including France's Factur-X implementation.
+Lago supports e-invoicing for the following record types:
+- `invoice`
+- `credit_note`
+- `payments`
+
+Each record type has a dedicated `Builder` class responsible for generating the XML document in the required format.
+
+Builder classes are located at:
+```bash
+app/serializers/e_invoices/<invoices|credit_notes|payments>/<factur_x|ubl>/builder.rb
+```
+
+The Factur-X (CII) implementation lives in the Lago API project under:
+```bash
+app/serializers/e_invoices/factur_x
+```
+
+### Classes and XML Tags
+| Class | XML Tag | Description | Parameters / Notes |
+|------|--------|-------------|--------------------|
+| `FacturX::CrossIndustryInvoice` | `rsm:CrossIndustryInvoice` | Root element for the invoice and its direct children | Requires a Ruby block |
+| `FacturX::Header` | `rsm:ExchangedDocument` | Header information for the document | `type_code`: document type<br/>`notes`: optional additional information |
+| `FacturX::LineItem` | `ram:IncludedSupplyChainTradeLineItem` | Represents a single invoice line item | `data`: `FacturX::LineItem::Data` containing item details |
+| `FacturX::TradeAgreement` | `ram:ApplicableHeaderTradeAgreement` | Commercial agreement details | `options`: optional `FacturX::TradeAgreement::Options`<br/>`tax_registration`: controls tax registration rendering, default `true` |
+| `FacturX::TradeDelivery` | `ram:ApplicableHeaderTradeDelivery` | Delivery information for goods or services | `delivery_date`: date goods or services were delivered |
+| `FacturX::TradeSettlement` | `ram:ApplicableHeaderTradeSettlement` | Settlement and payment context | Requires a Ruby block |
+| `FacturX::TradeSettlementPayment` | `ram:SpecifiedTradeSettlementPaymentMeans` | Payment means used for settlement | No specific parameters |
+| `FacturX::ApplicableTradeTax` | `ram:ApplicableTradeTax` | Tax information applied to the invoice | Multiple tax related parameters |
+| `FacturX::TradeAllowanceCharge` | `ram:SpecifiedTradeAllowanceCharge` | Allowances or charges applied to the invoice | Multiple allowance and charge parameters |
+| `FacturX::PaymentTerms` | `ram:SpecifiedTradePaymentTerms` | Defines payment terms | No specific parameters |
+| `FacturX::MonetarySummation` | `ram:SpecifiedTradeSettlementHeaderMonetarySummation` | Monetary totals and summaries | `amounts`: `FacturX::MonetarySummation::Amounts` with rendered values |
+
+## UBL - Universal Business Language
+Universal Business Language (UBL) is another widely adopted E-Invoicing standard, particularly in the Peppol network. UBL invoices are XML-only documents that follow a specific schema defined by OASIS.
+
+The UBL implementation is located in the Lago API project under:
+```bash
+app/serializers/e_invoices/ubl
+```
+
+## Contributing new jurisdictions - The example of Germany
+
+### Overview
+This guide outlines the steps to contribute a new E-Invoicing format for Germany, specifically the XRechnung and ZUGFeRD formats based on UBL and CII standards.
+
+Germany supports two e-invoicing formats:
+<Columns cols={2}>
+  <Card title="ZUGFeRD 2.3.3 (EN 16931) Factur-X" icon="file">
+    This format combines a human readable PDF with embedded XML data. It is the most commonly used option due to lower implementation and operational costs compared to fiscal EDI based processes.
+  </Card>
+  <Card title="XRechnung UBL Invoice" icon="file-code">
+    This is a pure XML electronic invoice based on **UBL 2.1.** It follows German XRechnung semantic requirements and is typically transmitted via the PEPPOL network using the **PEPPOL BIS Billing 3.0** specification. It is used for German B2G compliance and EU wide interoperability.
+  </Card>
+</Columns>
+
+### Implementation notes
+**ZUGFeRD 2.3.3** has no differences compared to the French Factur-X implementation. Existing Factur-X code can be fully reused.
+**XRechnung** may require additional tags that are not present in the French UBL implementation. These tags should be added under the UBL folder.
+
+Example:
+- The `InvoicePeriod` tag is optional in standard UBL but required in XRechnung. It is currently not implemented in the French version.
+- Some tags present in the French implementation may not be valid for XRechnung. Rendering of such tags should be controlled via conditional logic based on `billing_entity.country`.
+
+```ruby
+def serialize
+  # other mandatory tags
+
+  render_specific_tag if conditions_met?
+
+  # other tags
+end
+
+private
+
+def conditions_met?
+  ["DE"].include?(billing_entity.country)
+end
+
+def render_specific_tag
+  xml["cac"].GermanySpecificTag(value)
+end
+```
+
+If a completely new and independent tag is required, create a dedicated class to render it. The corresponding `Builder` class should invoke it only when the conditions for the specific country or implementation are met.
