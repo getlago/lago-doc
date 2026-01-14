@@ -3,105 +3,59 @@ title: "RBAC - Role Base Access Control"
 description: "Define user roles & permissions in Lago."
 ---
 
-## Admin role
+<Info>
+  **PREMIUM ADD-ON** ✨
+
+  RBAC is only available to licensed users. Please [**contact us**](mailto:hello@getlago.com) to get access to this premium add-on.
+</Info>
+
+
+## System roles in Lago
+System roles are predefined by Lago and define the access scope and permissions granted to users within the Lago platform. Lago provides three primary system roles:
+
+### Admin role
 
 Admins wield full control over Lago, managing billable metrics, plans, customers, subscriptions, settings or financial analysis.
 Typically, developers with admin roles handle all critical billing operations. By default, the account creator is assigned the Admin role.
 
-<Info>
-  Only admins can invite new members and assign roles. Your account must always
-  have at least one admin.
-</Info>
-
-## Account manager role
+### Account manager role
 
 The Account manager role suits Sales or Customer Success Managers, enabling them to carry out billing tasks for customers.
 Account Managers can assign subscriptions, coupons, add-ons, and override prices but are not permitted to modify metrics or plans.
 
-## Finance & analyst role
+Here is the [full list of permissions](https://github.com/getlago/lago-api/blob/main/app/config/permissions/role-manager.yml) for this pre-built role.
+
+### Finance & analyst role
 
 The Finance & analyst role is view-only, restricted from creating or editing metrics and plans, or assigning core billing actions such as coupons,
-subscriptions. It's ideal for analyzing financial data, reviewing invoices, and issuing credit notes as necessary.
+subscriptions. It's ideal for analyzing financial data, reviewing invoices, and issuing credit notes as necessary. 
 
-## Roles and permissions
+Here is the [full list of permissions](https://github.com/getlago/lago-api/blob/main/app/config/permissions/role-finance.yml) for this pre-built role.
 
-| category          | name                 | description                                     | admin | manager | finance |
-| ----------------- | -------------------- | ----------------------------------------------- | ----- | ------- | ------- |
-| Analytics         | view                 | Access the Analytics Section                    | ✅    | ❌      | ✅      |
-| Billable Metrics  | view                 | Access Billable Metrics Section                 | ✅    | ❌      | ❌      |
-| Billable Metrics  | create               | Create a Billable Metric                        | ✅    | ❌      | ❌      |
-| Billable Metrics  | update               | Update a Billable Metric                        | ✅    | ❌      | ❌      |
-| Billable Metrics  | delete               | Delete a Billable Metric                        | ✅    | ❌      | ❌      |
-| Plans             | view                 | Access Plans Section                            | ✅    | ✅      | ✅      |
-| Plans             | create               | Create a New Plan                               | ✅    | ❌      | ❌      |
-| Plans             | update               | Update a Plan                                   | ✅    | ❌      | ❌      |
-| Plans             | delete               | Delete a Plan                                   | ✅    | ❌      | ❌      |
-| Plans             | create               | Duplicate a Plan                                | ✅    | ❌      | ❌      |
-| Addons            | view                 | Access Add-ons Section                          | ✅    | ✅      | ✅      |
-| Addons            | create               | Create a New Add-on                             | ✅    | ❌      | ❌      |
-| Addons            | update               | Update an Add-on                                | ✅    | ❌      | ❌      |
-| Addons            | delete               | Delete an Add-on                                | ✅    | ❌      | ❌      |
-| Coupons           | view                 | Access Coupons Section                          | ✅    | ✅      | ✅      |
-| Coupons           | create               | Create a New Coupon                             | ✅    | ❌      | ❌      |
-| Coupons           | update               | Update a Coupon                                 | ✅    | ❌      | ❌      |
-| Coupons           | delete               | Delete a Coupon                                 | ✅    | ❌      | ❌      |
-| Coupons           | update               | Terminate a Coupon                              | ✅    | ❌      | ❌      |
-| Coupons           | attach               | Apply a Coupon                                  | ✅    | ✅      | ❌      |
-| Coupons           | detach               | Remove a Coupon                                 | ✅    | ✅      | ❌      |
-| Customers         | view                 | Access Customers Section                        | ✅    | ✅      | ✅      |
-| Customers         | view                 | Access Customers Details                        | ✅    | ✅      | ✅      |
-| Customers         | create               | Create a New Customer                           | ✅    | ✅      | ❌      |
-| Customers         | update               | Update a Customer                               | ✅    | ✅      | ❌      |
-| Customers         | delete               | Delete a Customer                               | ✅    | ✅      | ❌      |
-| Subscriptions     | view                 | Access subscriptions                            | ✅    | ✅      | ✅      |
-| Subscriptions     | create               | Assign a New Plan                               | ✅    | ✅      | ❌      |
-| Subscriptions     | update               | Edit subscription                               | ✅    | ✅      | ❌      |
-| Subscriptions     | update               | Upgrade, Downgrade, Terminate                   | ✅    | ✅      | ❌      |
-| Wallets           | create               | Create a Wallet                                 | ✅    | ✅      | ❌      |
-| Wallets           | update               | Edit a Wallet                                   | ✅    | ✅      | ❌      |
-| Wallets           | top_up               | Top-up a Wallet                                 | ✅    | ✅      | ❌      |
-| Wallets           | terminate            | Terminate a Wallet                              | ✅    | ✅      | ❌      |
-| Invoices          | view                 | Access Invoice List                             | ✅    | ✅      | ✅      |
-| Invoices          | view                 | Download an Invoice                             | ✅    | ✅      | ✅      |
-| Invoices          | send                 | Resend an Invoice                               | ✅    | ✅      | ✅      |
-| Invoices          | update               | Update Payment Status                           | ✅    | ✅      | ✅      |
-| Invoices          | void                 | Void an Invoice                                 | ✅    | ✅      | ✅      |
-| Invoices          | create               | One-off Invoices                                | ✅    | ✅      | ✅      |
-| Invoices          | update               | Edit a Draft Invoice                            | ✅    | ✅      | ✅      |
-| Invoices          | update               | Refresh a Draft invoice                         | ✅    | ✅      | ✅      |
-| Invoices          | update               | Finalize a Draft invoice                        | ✅    | ✅      | ✅      |
-| Draft Invoices    | update               | Edit a Draft Invoice                            | ✅    | ✅      | ✅      |
-| Draft Invoices    | update               | Refresh a Draft invoice                         | ✅    | ✅      | ✅      |
-| Draft Invoices    | update               | Finalize a Draft invoice                        | ✅    | ✅      | ✅      |
-| Payments          | create               | Create a manual payment                         | ✅    | ✅      | ✅      |
-| Payments          | view                 | Access Payments list and details                | ✅    | ✅      | ✅      |
-| Credit Notes      | view                 | Access Credit Notes List                        | ✅    | ✅      | ✅      |
-| Credit Notes      | create               | Create a Credit Note                            | ✅    | ✅      | ✅      |
-| Credit Notes      | view                 | Download a Credit Note PDF                      | ✅    | ✅      | ✅      |
-| Credit Notes      | update               | Update metadata or refund status                | ✅    | ✅      | ✅      |
-| Credit Notes      | void                 | Void a Credit Note                              | ✅    | ✅      | ✅      |
-| Customer Settings | view                 | Access Customer’s Settings                      | ✅    | ✅      | ✅      |
-| Customer Settings | update:tax_rates     | Add Tax Rates                                   | ✅    | ✅      | ✅      |
-| Customer Settings | update:payment_terms | Edit Net Payment Terms                          | ✅    | ✅      | ✅      |
-| Customer Settings | update:grace_period  | Edit Grace Period                               | ✅    | ✅      | ✅      |
-| Customer Settings | update:lang          | Edit Document Language                          | ✅    | ✅      | ✅      |
-| Developers        | manage               | Access Developers Section                       | ✅    | ❌      | ❌      |
-| Developers        | keys:manage          | Access API Keys                                 | ✅    | ❌      | ❌      |
-| Developers        | manage               | Access Events List                              | ✅    | ❌      | ❌      |
-| Developers        | manage               | Access Webhooks                                 | ✅    | ❌      | ❌      |
-| Organization      | view                 | Access Organization Settings                    | ✅    | ❌      | ✅      |
-| Organization      | update               | Edit Organization Information                   | ✅    | ❌      | ✅      |
-| Organization      | invoices:view        | Access Invoices’ Global Information             | ✅    | ❌      | ✅      |
-| Organization      | invoices:update      | Edit Invoices’ Global Information               | ✅    | ❌      | ✅      |
-| Organization      | taxes:view           | Access Global Taxes Information                 | ✅    | ❌      | ❌      |
-| Organization      | taxes:update         | Edit Global Taxes Information                   | ✅    | ❌      | ❌      |
-| Organization      | emails:view          | Access Emails Settings                          | ✅    | ❌      | ❌      |
-| Organization      | emails:update        | Edit Emails Settings                            | ✅    | ❌      | ❌      |
-| Organization      | integrations:view    | Access Integrations Section                     | ✅    | ❌      | ✅      |
-| Organization      | integrations:create  | Add an Integration                              | ✅    | ❌      | ✅      |
-| Organization      | integrations:update  | Edit an Integration                             | ✅    | ❌      | ✅      |
-| Organization      | integrations:delete  | Delete an Integration                           | ✅    | ❌      | ✅      |
-| Organization      | members:view         | Access Members Section                          | ✅    | ❌      | ❌      |
-| Organization      | members:create       | Add a Member and Choose Its Role                | ✅    | ❌      | ❌      |
-| Organization      | members:update       | Edit a Member and Its Role                      | ✅    | ❌      | ❌      |
-| Organization      | members:delete       | Delete a Member                                 | ✅    | ❌      | ❌      |
+
+## Custom roles and permissions
+<Info>
+  **PREMIUM ADD-ON** ✨
+
+  This add-on is available on demand only. Please [**contact us**](mailto:hello@getlago.com) to get access to this premium add-on.
+</Info>
+
+
+Custom roles enable you to **define tailored permission sets that align with your organization's specific requirements**. There is no limit to the number of custom roles you can create. This feature is designed around the following principles:
+- Updating the permissions of a role automatically updates the permissions for all users assigned to that role; and
+- At least one role with administrative permissions must always exist.
+
+[This document](https://github.com/getlago/lago-api/blob/main/app/config/permissions/definition.yml) outlines all the potential permissions by object that can be assigned to a custom role.
+
+To create a custom role:
+1. Navigate to the **Settings** view in Lago;
+2. Access the **Roles & Permissions** section;
+3. Click on **Create Role**;
+4. Define the role `name`, `code` and `description`;
+5. Select the desired permissions from the list;
+6. Save the new custom role; and
+7. Assign users to the newly created custom role.
+
+<Frame caption="Create a custom role">
+<img src="/guide/security/images/custom-role-definition.png" />
+</Frame>
