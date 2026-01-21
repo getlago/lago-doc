@@ -1,67 +1,68 @@
 ---
-title: "Overview"
+title: "Usage based charge"
 description:
-  "In addition to the price of the plan, you can charge your customers for usage."
+  "Usage-based charges let you bill customers based on actual consumption.
+  They are tied to billable metrics and calculated from usage events collected during the billing period."
 ---
 
 ## Overview of charges[](#overview-of-charges "Direct link to heading")
-To incorporate usage-based charges into a plan, you can utilize existing billable metrics. 
-This enables you to offer "pay-as-you-go" features.
-For instance, you can create charges based on the number of API calls, the
-number of active users, transactions, compute time, etc. These additional
-charges relate to the [billable metrics](/guide/billable-metrics/create-billable-metrics) defined previously.
-Here are some important details to consider regarding usage-based charges:
+Usage-based charges allow you to add pay-as-you-go pricing to a plan.
+Each charge is linked to an existing [billable metric](/guide/billable-metrics/create-billable-metrics) and calculated from the events collected during the billing period.
 
 
-## Currency of charges[](#charges-currency "Direct link to heading")
-All charges are denominated in the same currency as the plan to ensure consistency and transparency.
+Common examples include API calls, active users, transactions, or compute time.
+Pricing follows the charge configuration (tiers, aggregation, proration, etc.), ensuring invoices reflect real usage rather than a fixed amount.
 
-## Trial period exclusions[](#trial-period-exclusion "Direct link to heading")
-It's important to note that the trial period exclusively applies to the base amount of the plan and does not extend 
-to usage-based charges.
+## Charge models and billing behavior[](#charge-models "Direct link to heading")
+Charges support a set of pricing options compared to the fixed charges.
+They can use:
+- [All charge models](/guide/plans/charges/charge-models).
 
-## Number of decimals[](#number-of-decimals "Direct link to heading")
+They can be configured to:
+- Be billed [in advance or in arrears](/guide/plans/charges/arrears-vs-advance);
+- Be billed [in full or prorated](/guide/plans/charges/prorated-vs-full);
+- Apply [spending minimums](/guide/plans/charges/spending-minimum) depending on the charge model;
+- Support [filters](/guide/plans/charges/fixe-charges) to control which events are included in usage calculations;
+- Be grouped by [presentation keys](/guide/plans/charges/grouping)to display related usage together on invoices;
+- Be marked as [invoiceable or not](/guide/plans/charges/invoiceable-vs-noninvoiceable) when billed in advance, to avoid generating too many invoices from usage events.
 
-Lago allows you create charges with up to fifteen decimals (e.g.
-\$0.000123456789123).
+## Currency[](#charges-currency "Direct link to heading")
+All usage-based charges use the same currency as the plan, ensuring consistency across invoices.
 
-Please note that charges are invoiced in `amount_cents`. Therefore, Lago
-automatically rounds prices (e.g. USD 1102 `amount_cents` \= \$11.02).
+## Trial period[](#trial-period-exclusion "Direct link to heading")
+The trial period applies only to the plan’s base amount and does not cover usage-based charges.
+Usage events recorded during the trial are always considered and billed.
+
+## Decimals precision[](#number-of-decimals "Direct link to heading")
+
+Charges can be defined with up to 15 decimal places (for example: \$0.000123456789123).
+Charges are invoiced in `amount_cents`, so Lago automatically rounds values when generating invoices (for example, USD 1102 `amount_cents` \= \$11.02).
+
 
 ## Delete a charge[](#delete-charge "Direct link to heading")
 
-You may delete a charge included in a plan associated with existing
-[subscriptions](/guide/subscriptions/assign-plan).
+You can delete a charge even if the plan is associated to active [subscriptions](/guide/subscriptions/assign-plan).
 
-If you do so and save the change:
+Once deleted and saved:
 
-- The charge will be immediately removed from all subscriptions linked to this
-  plan;
-- The charge will no longer be included in the
-  [current usage](/api-reference/customer-usage/customer-usage-object) of the customers
-  concerned; and
-- The charge will be immediately removed from all `draft` invoices associated
-  with these subscriptions.
+- The charge is immediately removed from all linked subscriptions
+-	It no longer appears in customer [current usage](/api-reference/customer-usage/customer-usage-object); and
+- It is removed from all `draft` invoices.
 
-However, the charge will still be included in all `finalized` invoices
-associated with these subscriptions.
+However, the charge will still appear on invoices `finalized` before the deletion.
 
 <Info>
-  Deleting a charge does not delete the events associated with the corresponding
-  billable metric. If later you decide to add the charge back into the plan, the
-  events received before the deletion may be taken into account in the billing
-  process (depending on the limits of the billing period).
+  Deleting a charge does not delete the underlying events.  
+  If the charge is later re-added, previously collected events may be included in billing, depending on the billing period limits.
 </Info>
 
 <Frame caption="How to delete a charge">
   <img src="/guide/plans/images/charges-delete-e8b82428bc7fe73f40f419fb6ee88dab.png"/>
 </Frame>
 
-## Update invoice display names[](#invoice-display-names "Direct link to heading")
-When creating or updating a charge within our system, you have the flexibility to customize the way it 
-appears by overriding its default name. This can be achieved by defining an `invoice display name` for the charge. 
-By doing so, the newly specified name will take precedence and be reflected across all relevant contexts, 
-including prominently on the invoice template.
+## Invoice display name[](#invoice-display-names "Direct link to heading")
+You can customize, during plan creation or edition, how a charge appears on invoices by setting an `invoice display name`.
+This name overrides the default charge name and is shown everywhere invoices are displayed.
 
 <Frame caption="How to modify the invoice display name">
   <img src="/guide/plans/images/invoice-display-name.gif"/>
