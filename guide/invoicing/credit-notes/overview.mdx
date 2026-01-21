@@ -13,39 +13,35 @@ Self-Hosted Premium.
 
 </Info>
 
-Issue a credit note to refund or credit a `finalized` invoice back to your customer’s account.
-Credit notes can be issued for all types of invoices. However, please note that credit notes cannot be issued for prepaid credit purchases that have already been consumed or are linked to a terminated wallet.
+Use credit notes to correct an invoice while keeping your financial records accurate.
+Credit notes can be issued for **all invoice types**.
 
 ## Access credit notes creation flow[](#create-credit-notes "Direct link to heading")
 
 <Info>
-  Credit notes can only be issued for invoices with the status `finalized` and
-  an amount greater than zero.
+  Credit notes can only be issued for invoices with status `finalized` and an amount **greater than zero**.
 </Info>
 
-To create a credit note through the user interface:
+To create a credit note from the Dashboard:
+1. Open the invoice
+2. Go to the **Credit notes** tab
+3. Click **Issue a credit note**
 
-1. Go to the **"Customers"** section;
-2. Select a customer to open the customer view;
-3. Open the **"Invoices"** tab;
-4. Click an invoice to see its details; and
-5. Select **"Issue a credit note"** from the **"Actions"** dropdown (upper right corner).
-
-The credit note creation process varies depending on the payment status of the
-invoice:
-
-- If the payment status of the invoice is `pending` or `failed`, the credit note
-  will allow you to credit back the customer's account; and
-- If the payment status of the invoice is `succeeded`, the credit note will
-  allow you to credit back the customer's account and/or refund them.
+The available methods depend on the payments recorded on the invoice:
+- Credit the full invoice amount (tax included) for future use
+- Refund the paid amount
+- Offset the remaining invoice amount due
 
 <Info>
-  For prepaid credits invoices, credit notes can only be issued for invoices with a `succeeded` payment status. These credit notes are refundable only for this type of invoice and will directly void prepaid credits in the associated wallet.
+  For **subscription invoices**, prepaid credits and applied credit notes cannot be refunded.
+  They can only be credited back to the customer’s account for future use.
+  Coupons are non-refundable and cannot be credited back.
 </Info>
 
-<Info>
-  On subscription invoices, prepaid credits and credit notes applied cannot be refunded. These can only be credited back to the customer's account balance. Coupons are non-refundable and cannot be credited back to the customer's account.
-</Info>
+### Prepaid credit invoices
+Prepaid credit invoices follow specific rules:
+- **If a payment is recorded:** You can refund the available wallet balance. This immediately voids the credits from the wallet.
+- **If no payment is recorded:** You can only offset the invoice. The wallet transaction is not settled and the wallet balance remains unchanged.
 
 ## Issue a credit note
 
@@ -80,6 +76,7 @@ invoice:
         "reason": "duplicated_charge",
         "credit_amount_cents": 10,
         "refund_amount_cents": 5,
+        "offset_amount_cents": 0,
         "items": [
           {
             "fee_id": "__LAGO_FEE_ID__",
@@ -97,13 +94,12 @@ invoice:
 </Tab>
 </Tabs>
 
-When the credit note is created, it will appear below the original invoice on
-the invoice details page and in the **"Credit notes"** tab of the customer view.
-In addition to this, a `credit_note.created` [webhook](/api-reference/webhooks/messages)
-will automatically be sent by Lago.
+Once created, the credit note:
+- Appears in the Credit notes tab of the customer and invoice views
+- Triggers a `credit_note.created`[webhook](/api-reference/webhooks/messages)
 
-You can link several credit notes to an invoice. Like invoices, credit notes
-have a unique number and can be downloaded in PDF format.
+You can issue **multiple credit notes** on a single invoice.
+Each credit note has a unique number and can be downloaded as a PDF.
 
 <Frame caption="Credit note detail">
 <img src="/guide/images/credit-note-39fd904adb8cc192e4e78320171c388f.png" />
@@ -112,33 +108,26 @@ have a unique number and can be downloaded in PDF format.
 
 ## Credit methods[](#credit-methods "Direct link to heading")
 
+### Offset[](#offset "Direct link to heading")
+If the invoice has an amount due greater than zero, you can offset it.
+This reduces the invoice amount due. Once it reaches zero, Lago automatically marks `invoice.payment_status` as `succeeded`.
+
 ### Refund[](#refund "Direct link to heading")
 
-When a credit note involves a refund, the amount of the refund will be included in the `credit_note.created` [webhook](/api-reference/webhooks/messages), which allows you to proceed with the payment.
+If a payment has been recorded, you can refund the paid amount.
+- If the customer is connected to a payment provider, Lago automatically triggers the refund.
+- The credit note includes a `refund_status`, updated to `pending`, `succeeded`, or `failed`.
 
-The credit note will also contain a `refund_status` field, which can be set to `pending`, `succeeded`, or `failed`. You can update the refund status via the API.
-
-Refunding a prepaid credit invoice will automatically void the corresponding prepaid credits in the active wallet.
-
-<Tip>
-If you use one of our native payment integrations, the refund process will
-automatically be triggered by Lago.
-</Tip>
+If no payment provider is connected, refund handling and `refund_status` updates are the user’s responsibility.
 
 ### Credit note wallet[](#credit-note-wallet "Direct link to heading")
 
-The amount of the credit note that is not refunded is credited to the customer's
-account via a credit note wallet. The credit amount is included in the
-`credit_note.created` [webhook](/api-reference/webhooks/messages) and displayed on the
-credit note details page.
+You can credit an amount for future use instead of refunding it.
+The credited amount is stored in a single credit note wallet and visible in the customer’s Credit notes tab.
+This balance is automatically applied to future subscription invoices.
 
 <Info>
-A credit note wallet is linked to a single credit note and therefore, to a
-single invoice. If there are several credit notes linked to the customer's
-account, Lago will create a credit note wallet for each of them.
-
 Credit note wallets are different from wallets associated with [prepaid credits](/guide/wallet-and-prepaid-credits).
-
 </Info>
 
 The total amount available in the credit note wallets will be deducted from the
@@ -161,14 +150,13 @@ Prepaid credits          $30.00
 Total                    $16.00
 ````
 
-When the credit note wallet is created, the initial `credit_status` is
-`available`. Then when the amount of the credit note wallet is zero, the status
-switches to `consumed`.
+When a credit note wallet is created, its initial `credit_status` is set to `available`. 
+Once the wallet balance reaches zero, the status automatically changes to consumed.
 
 
 ## Void available credit[](#void-credit-note "Direct link to heading")
 
-You can void the available credit linked to a specific credit note. To do so:
+You can still void any remaining credit linked to a specific credit note when needed. To do so:
 
 <Tabs>
   <Tab title="Dashboard">
@@ -195,6 +183,5 @@ You can void the available credit linked to a specific credit note. To do so:
     --header "Authorization: Bearer $API_KEY" \
     --header 'Content-Type: application/json'
 ````
-
   </Tab>
 </Tabs>
