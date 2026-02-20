@@ -1,0 +1,157 @@
+---
+title: "Migration to vX.Y.Z"
+---
+
+Dear Lago Community,
+
+We're writing to inform you about important changes in Lago vX.Y.Z that introduce **wallet traceability** — a feature that links outbound wallet transactions to their source inbound transactions, providing a full audit trail of credit consumption.
+
+# What are the changes?
+
+## Wallet Traceability
+
+This version introduces a traceability system for wallets that tracks exactly which inbound (top-up) transactions fund each outbound (consumption) transaction. The key schema changes are:
+
+- **New `wallet_transaction_consumptions` table**: A join table linking inbound and outbound wallet transactions, recording how credits flow from top-ups to consumption.
+- **New `remaining_amount_cents` column on `wallet_transactions`**: Tracks how much of each inbound transaction's balance remains available.
+- **New `traceable` boolean flag on `wallets`**: Indicates whether a wallet has been successfully migrated to the traceability system.
+- **New `prepaid_granted_credit_amount_cents` / `prepaid_purchased_credit_amount_cents` columns on `invoices`**: Breaks down invoice credit usage into granted vs. purchased credits.
+- **New consumption/funding API endpoints**: Query which inbound transactions funded a given outbound transaction, and vice versa.
+
+## Why are we doing this?
+
+1. **Credit source visibility**: Customers could not previously distinguish when free (granted) vs. purchased credits were being consumed.
+2. **Full audit trail**: Every outbound transaction now records exactly which inbound transactions funded it and in what amounts.
+3. **Invoice breakdown**: Invoices now show a breakdown of granted vs. purchased credit usage, enabling more accurate accounting and reporting.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you're using a version below `v1.20.0`, please first follow the migration steps for [v1.20.0](/guide/migration/migration-to-v1.20.0), then for [v1.25.0](/guide/migration/migration-to-v1.25.0), then for [v1.28.1](/guide/migration/migration-to-v1.28.1), then for [v1.29.0](/guide/migration/migration-to-v1.29.0), then for [v1.31.0](/guide/migration/migration-to-v1.31.0), then for [v1.32.0](/guide/migration/migration-to-v1.32.0).
+Only after completing those should you proceed to vX.Y.Z.
+</Warning>
+
+## Migration Steps
+
+### 1. Install Lago vX.Y.Z
+
+Install the new version. Schema migrations (new tables and columns) will run automatically on startup.
+
+### 2. Validate wallets (dry-run)
+
+Open a shell on your API server and run the validation task:
+
+```bash
+bundle exec rails wallets:validate_migration
+```
+
+You can scope the validation to a specific organization or limit the number of wallets processed per run:
+
+```bash
+# Validate wallets for a specific organization
+bundle exec rails wallets:validate_migration organization_id=ORG_ID
+
+# Validate a limited batch of wallets
+bundle exec rails wallets:validate_migration limit=100
+
+# Combine both options
+bundle exec rails wallets:validate_migration organization_id=ORG_ID limit=100
+```
+
+This task performs a **dry-run** analysis of all your wallets without modifying any data. It will output:
+
+- The number of wallets that **can be migrated** automatically.
+- The number of wallets that **cannot be migrated** due to data inconsistencies.
+- A CSV export of problematic wallets with details about each issue.
+
+<Note>
+If all wallets pass validation, you can skip directly to Step 4.
+</Note>
+
+### 3. Fix or handle problematic wallets
+
+Review the CSV export from Step 2. For each problematic wallet, choose one of the following approaches based on the issue type (see the [Troubleshooting](#troubleshooting-wallets-that-cannot-be-migrated) section below for details):
+
+1. **Fix the underlying data** — Correct the transaction records so the wallet passes validation, then re-run Step 2 to confirm.
+2. **Terminate and recreate** — If the data is unrecoverable, terminate the wallet and create a new one (see [Terminate and recreate](#terminate-and-recreate-escape-hatch)).
+3. **Force-enable traceability** — If you want traceability going forward but don't need historical tracking (see [Force-enable traceability](#force-enable-traceability)).
+
+### 4. Run the backfill
+
+Once all wallets pass validation (or have been handled), run the backfill task:
+
+```bash
+bundle exec rails wallets:backfill_remaining_amount
+```
+
+As with the validation task, you can scope the backfill to a specific organization or limit the batch size:
+
+```bash
+# Backfill wallets for a specific organization
+bundle exec rails wallets:backfill_remaining_amount organization_id=ORG_ID
+
+# Backfill a limited batch of wallets
+bundle exec rails wallets:backfill_remaining_amount limit=100
+
+# Combine both options
+bundle exec rails wallets:backfill_remaining_amount organization_id=ORG_ID limit=100
+```
+
+This task:
+
+- Computes and populates `remaining_amount_cents` for all inbound transactions.
+- Creates `wallet_transaction_consumptions` records linking inbound and outbound transactions.
+- Sets `traceable = true` on each successfully migrated wallet.
+
+<Note>
+The backfill is **idempotent** — it is safe to run multiple times. It acquires customer-level advisory locks and processes each customer's wallets atomically, so it can be safely run while the application is serving traffic.
+</Note>
+
+Monitor the task's progress and verify completion by checking that all active wallets have `traceable = true`.
+
+# Troubleshooting: Wallets that cannot be migrated
+
+The validation task may flag wallets with data inconsistencies caused by historical bugs. Below are the known issue types and recommended resolutions.
+
+| Issue | Cause | Resolution |
+|---|---|---|
+| **Negative running balance** | Race condition bug: concurrent invoice generation could consume credits before an inbound transaction was settled, resulting in out-of-order transactions. | Investigate the problematic period manually. If unrecoverable, terminate the wallet and create a new one. |
+| **Balance drift** (simulated balance does not match actual balance) | Rounding errors from dual credit/amount storage with lossy conversion between the two. | If drift is less than 1 cent: fix by rounding the historical transaction amount. If larger: investigate manually or terminate and recreate. |
+| **Decimal `amount_cents`** | Historical bug storing non-integer cent values in transaction records. | Fix the transaction amounts before migration by rounding to the nearest cent. |
+| **Wallet with negative balance** | Bug allowing over-consumption due to missing locking. | Cannot be automatically reconciled. Terminate the wallet and create a new one. |
+
+## Terminate and recreate escape hatch
+
+Non-traceable terminated wallets are **ignored** by the migration. If a wallet cannot be fixed, it is always safe to:
+
+1. **Terminate** the problematic wallet.
+2. **Create a new wallet** for the customer.
+3. **Top up** the new wallet with the correct balance.
+4. The new wallet will automatically be created as **traceable** — all future transactions will have full consumption tracking from the start.
+
+## Force-enable traceability
+
+For wallets where historical data is unrecoverable but you want traceability **going forward**:
+
+1. Mark all existing inbound transactions with `remaining_amount_cents = 0`.
+2. Set `wallet.traceable = true`.
+
+<Warning>
+Historical transactions will **not** have consumption tracking. Only new transactions created after this point will be fully traceable.
+</Warning>
+
+# Timeline
+
+We recommend performing this migration as soon as possible after the release of vX.Y.Z. Wallets that are not migrated will continue to function, but will not benefit from the new traceability features until the backfill is completed.
+
+# Get Involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
