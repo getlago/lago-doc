@@ -1,0 +1,81 @@
+---
+title: "Reports"
+description: "Lago provides a unified analytics layer for billing, revenue, and product usage data. It enables finance and operations teams to compute, monitor, and reconcile revenue metrics with accuracy and confidence."
+---
+
+## Overview
+Revenue dashboards are available directly in the Lago application and are the default landing experience after login, ensuring immediate visibility into key financial indicators. The same datasets are accessible through the Lago API, allowing teams to integrate revenue analytics into external BI tools, internal dashboards, or financial workflows.
+
+The analytics layer is designed to be production ready and extensible, supporting standard reporting needs while allowing customization for advanced use cases.
+
+<Frame caption="Analytics dashboards in Lago">
+  <img src="/guide/analytics/images/analytics-dashboard.png" />
+</Frame>
+
+
+## Architecture and composability
+
+Lago's analytics interface is built on [Apache Superset](https://superset.apache.org/), an open source data visualization and dashboarding platform. This foundation enables:
+
+- Fully composable dashboards  
+- A wide range of visualization types  
+- Reusable charts and reporting components  
+- Flexible metric definitions and breakdowns  
+
+Lago ships with prebuilt dashboards covering core finance and usage reporting. Teams can extend these dashboards or create new ones to address custom reporting requirements, such as board reporting, product performance analysis, or customer level revenue analysis.
+
+
+## Finance reports
+
+Lago includes standard financial reporting views required by modern subscription and usage based businesses. These reports include, but are not limited to:
+
+- Revenue streams  
+- Monthly Recurring Revenue (MRR)  
+- Revenue breakdown by customer, subscription, or product  
+- Time based revenue evolution  
+
+These reports are designed to align with billing data and reflect finalized invoice and subscription states according to Lago's revenue logic.
+
+## Usage and credits reports
+
+In addition to financial metrics, Lago provides detailed usage analytics, including:
+
+- Credit consumption over time  
+- Usage distribution across customers or subscriptions  
+- Breakdown of metered events by product or feature  
+
+This enables product and finance teams to analyze monetization efficiency, credit burn patterns, and usage to revenue alignment.
+
+
+## Filters and dimensions
+
+All dashboards support flexible filtering, time aggregation, and multidimensional analysis.
+
+Users can apply filters across relevant business attributes and time ranges to focus on specific subsets of data. Metrics can be aggregated at different time intervals to support both high level trend analysis and granular operational review.
+
+Reports can also be broken down across multiple dimensions, enabling comparative analysis and deeper insight into performance drivers. This exploration model allows teams to investigate data directly within Lago without requiring external processing.
+
+
+## Data export
+
+All charts and datasets can be exported in standard formats:
+
+- JSON  
+- CSV  
+- Excel  
+
+Exports respect the active filters and breakdowns applied in the dashboard, ensuring consistency between the UI view and the extracted data. This supports reconciliation workflows, offline analysis, and data sharing with stakeholders.
+
+
+## Data refresh strategy
+
+To ensure fast and consistent performance across both the UI and API, Lago uses a strategic caching layer for revenue analytics.
+
+Revenue and analytics datasets are refreshed daily around 12:00 AM UTC.
+
+As a result:
+
+- Dashboards and API endpoints may not reflect same day billing changes immediately.  
+- There may be a short delay between transactional events and their appearance in analytics views.  
+
+This refresh model balances performance and data consistency, making Lago suitable for operational monitoring, financial reporting, and executive dashboards.
