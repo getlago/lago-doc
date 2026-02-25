@@ -1,0 +1,179 @@
+---
+title: "Migration to vX.Y.Z"
+---
+
+Dear Lago Community,
+
+We're writing to inform you about important changes in Lago vX.Y.Z that introduce **wallet traceability** — a feature that links outbound wallet transactions to their source inbound transactions, providing a full audit trail of credit consumption.
+
+# What are the changes?
+
+## Wallet Traceability
+
+This version introduces a traceability system for wallets that tracks exactly which inbound (top-up) transactions fund each outbound (consumption) transaction. The key schema changes are:
+
+- **New `wallet_transaction_consumptions` table**: A join table linking inbound and outbound wallet transactions, recording how credits flow from top-ups to consumption.
+- **New `remaining_amount_cents` column on `wallet_transactions`**: Tracks how much of each inbound transaction's balance remains available.
+- **New `traceable` boolean flag on `wallets`**: Indicates whether a wallet has been successfully migrated to the traceability system.
+- **New `prepaid_granted_credit_amount_cents` / `prepaid_purchased_credit_amount_cents` columns on `invoices`**: Breaks down invoice credit usage into granted vs. purchased credits.
+- **New consumption/funding API endpoints**: Query which inbound transactions funded a given outbound transaction, and vice versa.
+
+## Why are we doing this?
+
+1. **Credit source visibility**: Customers could not previously distinguish when free (granted) vs. purchased credits were being consumed.
+2. **Full audit trail**: Every outbound transaction now records exactly which inbound transactions funded it and in what amounts.
+3. **Invoice breakdown**: Invoices now show a breakdown of granted vs. purchased credit usage, enabling more accurate accounting and reporting.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you're using a version below `v1.20.0`, please first follow the migration steps for [v1.20.0](/guide/migration/migration-to-v1.20.0), then for [v1.25.0](/guide/migration/migration-to-v1.25.0), then for [v1.28.1](/guide/migration/migration-to-v1.28.1), then for [v1.29.0](/guide/migration/migration-to-v1.29.0), then for [v1.31.0](/guide/migration/migration-to-v1.31.0), then for [v1.32.0](/guide/migration/migration-to-v1.32.0).
+Only after completing those should you proceed to vX.Y.Z.
+</Warning>
+
+## Migration Steps
+
+### 1. Install Lago vX.Y.Z
+
+Install the new version. Schema migrations (new tables and columns) will run automatically on startup.
+
+### 2. Validate wallets (dry-run)
+
+Open a shell on your API server and run the migration task in dry-run mode (the default):
+
+```bash
+bundle exec rails migrations:wallet_traceability
+```
+
+You can scope the validation to a specific organization or limit the number of wallets processed:
+
+```bash
+# Validate wallets for a specific organization
+organization_id=ORG_ID bundle exec rails migrations:wallet_traceability
+
+# Validate a limited batch of wallets
+limit=100 bundle exec rails migrations:wallet_traceability
+
+# Combine options
+organization_id=ORG_ID limit=100 bundle exec rails migrations:wallet_traceability
+```
+
+The available environment variables are:
+
+| Variable | Default | Description |
+|---|---|---|
+| `dry_run` | `true` | Set to `false` to run the backfill. Any other value (or unset) runs in dry-run mode. |
+| `organization_id` | _(all)_ | Scope to a single organization. |
+| `limit` | _(all)_ | Best-effort maximum number of wallets to process. In backfill mode, all wallets belonging to a discovered customer are processed atomically, so the actual count may slightly exceed this value. |
+| `batch_size` | `1000` | Number of records per batch. |
+| `output_limit` | `50` | Maximum number of problematic wallets to display in dry-run output. |
+| `thread_count` | `0` | Number of threads for parallel processing. `0` runs sequentially. Ensure your database connection pool size is at least `thread_count + 1`. |
+| `include_terminated` | `false` | Set to `true` to include terminated wallets in the migration. By default, only active wallets are processed. |
+| `output_file` | _(none)_ | File path for CSV export of problematic wallets (dry-run) or errors (backfill). Useful for reviewing all issues without truncation. |
+
+The dry-run performs a validation of all your wallets **without modifying any data**. It will output:
+
+- A progress bar showing validation progress.
+- The number of wallets that **can be migrated** automatically.
+- The number of **problematic** wallets with details about each issue.
+- A **migration readiness** percentage.
+- A **CSV file** with all problematic wallets (when `output_file` is set).
+
+To export the full list of problematic wallets to a CSV file for review:
+
+```bash
+output_file=/tmp/problematic_wallets.csv bundle exec rails migrations:wallet_traceability
+```
+
+<Note>
+If all wallets pass validation, you can skip directly to Step 4.
+</Note>
+
+### 3. Fix or handle problematic wallets
+
+Review the output from Step 2. For each problematic wallet, choose one of the following approaches based on the issue type (see the [Troubleshooting](#troubleshooting-wallets-that-cannot-be-migrated) section below for details):
+
+1. **Fix the underlying data** — Correct the transaction records so the wallet passes validation, then re-run Step 2 to confirm.
+2. **Terminate and recreate** — If the data is unrecoverable, terminate the wallet and create a new one (see [Terminate and recreate](#terminate-and-recreate-escape-hatch)).
+
+
+### 4. Run the backfill
+
+Once all wallets pass validation (or have been handled), run the same task with `dry_run=false`:
+
+```bash
+dry_run=false bundle exec rails migrations:wallet_traceability
+```
+
+As with the dry-run, you can scope the backfill:
+
+```bash
+# Backfill wallets for a specific organization
+dry_run=false organization_id=ORG_ID bundle exec rails migrations:wallet_traceability
+
+# Backfill with a limited batch
+dry_run=false limit=100 bundle exec rails migrations:wallet_traceability
+
+# Backfill with multithreading (ensure your DB pool size >= thread_count + 1)
+dry_run=false thread_count=4 bundle exec rails migrations:wallet_traceability
+```
+
+This task:
+
+- Displays a progress bar showing backfill progress.
+- Computes and populates `remaining_amount_cents` for all inbound transactions.
+- Creates `wallet_transaction_consumptions` records linking inbound and outbound transactions.
+- Sets `traceable = true` on each successfully migrated wallet.
+
+<Warning>
+If a wallet has data inconsistencies (e.g., outbound transactions that cannot be fully consumed by available inbound transactions), the backfill will **roll back** all wallets for that customer and record the error, then **continue processing other customers**. All failures are reported in the summary output. Failed customers' wallets will remain non-traceable and can be retried after fixing the underlying data. Always run the dry-run validation (Step 2) first to identify and fix issues before backfilling.
+</Warning>
+
+<Note>
+The backfill is **idempotent** — it is safe to run multiple times. It acquires customer-level advisory locks and processes each customer's wallets atomically, so it can be safely run while the application is serving traffic.
+</Note>
+
+Monitor the task's progress bar and verify completion by checking that all active wallets have `traceable = true`.
+
+# Troubleshooting: Wallets that cannot be migrated
+
+The validation task may flag wallets with data inconsistencies caused by historical bugs. Below are the known issue types and recommended resolutions.
+
+| Issue | Validation message | Cause | Resolution |
+|---|---|---|---|
+| **Negative wallet balance** | `Negative wallet balance: -500 cents` | Bug allowing over-consumption due to missing locking. | Cannot be automatically reconciled. Terminate the wallet and create a new one. |
+| **Negative transaction amount** | `Negative amount_cents on inbound TX_ID: -100` | Corrupted transaction data. | Investigate and fix the transaction amount, or terminate and recreate. |
+| **Decimal amount_cents** | `Decimal amount_cents on inbound TX_ID: 12.39999 (expected integer)` | Historical bug storing non-integer cent values. | Round the transaction amount to the nearest cent before running the backfill. |
+| **Insufficient inbound** | `Outbound TX_ID: insufficient inbound to consume 5000 cents (available: 1000 cents, shortfall: 4000 cents)` | Race condition or historical negative balance bug causing out-of-order transactions. | Investigate the problematic period. If unrecoverable, terminate and recreate. |
+| **Missing transaction history** | `Outbound TX_ID: no inbound transactions available — missing transaction history` | Deleted or missing inbound transaction records. | Investigate the missing data. Terminate and recreate if unrecoverable. |
+| **Balance drift (small)** | `Balance drift < 1 unit: 0.5 cents (...) — likely rounding` | Rounding errors from dual credit/amount storage. | Fix by rounding the historical transaction amount. |
+| **Balance drift (large)** | `Balance drift >= 1 unit: 500 cents (...)` | Dual storage inconsistency between credit balance and cent balance. | Investigate manually. Terminate and recreate if unrecoverable. |
+
+## Terminate and recreate escape hatch
+
+Terminated wallets are **ignored** by default. Set `include_terminated=true` to include them. If a wallet cannot be fixed, it is always safe to:
+
+1. **Terminate** the problematic wallet.
+2. **Create a new wallet** for the customer.
+3. **Top up** the new wallet with the correct balance.
+4. The new wallet will automatically be created as **traceable** — all future transactions will have full consumption tracking from the start.
+
+<Note>
+Wallets created after installing vX.Y.Z are automatically traceable — they do not need to be backfilled. The migration task only applies to wallets that existed before the upgrade.
+</Note>
+
+# Timeline
+
+We recommend performing this migration as soon as possible after the release of vX.Y.Z. Wallets that are not migrated will continue to function, but will not benefit from the new traceability features until the backfill is completed.
+
+# Get Involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
