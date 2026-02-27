@@ -1,0 +1,84 @@
+---
+title: "Migration to v1.43.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about important changes in Lago v1.43.0 that will enforce data consistency on charges and fixed charges.
+
+# What are the changes?
+
+## Adding NOT NULL constraint on `code` for charges and fixed charges
+
+The `code` column on `charges` and `fixed_charges` tables will now be required (NOT NULL constraint).
+Previously, this column was nullable and only populated on newly created records. Starting from v1.43.0, the database will enforce that every charge and fixed charge has a `code` value.
+
+The backfill tasks (available since v1.42.0) will:
+- Populate `charges.code` using the associated billable metric's code
+- Populate `fixed_charges.code` using the associated add-on's code
+- When duplicates exist within the same plan, a suffix (`_2`, `_3`, etc.) is appended to ensure uniqueness
+
+# Why are we doing this?
+
+These changes are made to ensure data integrity and enable the ability to independently update a charge or a fixed charge via the API. The `code` serves as a unique identifier within a plan, which is required by the new dedicated endpoints for managing charges and fixed charges.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you're using a version below `v1.20.0`, please first follow the migration steps for [v1.20.0](/guide/migration/migration-to-v1.20.0), then for [v1.25.0](/guide/migration/migration-to-v1.25.0), then for [v1.28.1](/guide/migration/migration-to-v1.28.1), then for [v1.29.0](/guide/migration/migration-to-v1.29.0), then for [v1.31.0](/guide/migration/migration-to-v1.31.0), then for [v1.32.0](/guide/migration/migration-to-v1.32.0).
+Only after completing those should you proceed to v1.43.0.
+</Warning>
+
+## Migration Steps
+
+1. Install Lago v1.42.0
+2. Open a shell (bash) on your API server
+3. Run the upgrade task:
+
+```bash
+bundle exec rails upgrade:perform_required_jobs
+```
+
+  The task will:
+  - Backfill `code` on all charges that have a NULL value
+  - Backfill `code` on all fixed charges that have a NULL value
+  - Process records in batches of 1,000
+
+  <Note>
+  All resources are processed in background jobs. The task will monitor progress and confirm when all records have been updated.
+  </Note>
+
+4. Verify that all records have been backfilled:
+
+```bash
+bundle exec rails upgrade:verify
+```
+
+  You should see output confirming that no records remain to be filled:
+
+  ```bash
+  ##################################
+  Starting upgrade verification
+
+  #### Checking for resource to fill ####
+  "- Checking Charge: 🔎"
+  "  -> Nothing to do ✅"
+  "- Checking FixedCharge: 🔎"
+  "  -> Nothing to do ✅"
+
+  #### All good, ready to Upgrade! ✅ ####
+  ```
+
+5. Install Lago v1.43.0
+
+# Get Involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
