@@ -30,9 +30,43 @@ This systematic approach simplifies the management and recognition of these auto
     <img src="/integrations/images/lago-eu-taxes-decision-tree.jpg" />
 </Frame>
 
-Lago's initial step in the automated tax application involves verifying if a customer has a `tax_identification_number`.
-This check occurs whenever a customer's profile is created or updated, ensuring that the most current tax-related information 
-is used in subsequent processes.
+Before applying standard B2B/B2C rules, Lago checks the customer's **postal code** to detect EU special territories — regions that are outside EU VAT territory or have reduced rates despite belonging to an EU member state. If a match is found, the territory-specific rate is applied and VIES validation is skipped.
+
+If no special territory is detected, Lago's next step involves verifying if a customer has a `tax_identification_number`. This check occurs whenever a customer's profile is created or updated, ensuring that the most current tax-related information is used in subsequent processes.
+
+## Special territory detection
+
+When a customer has a `zipcode` set, Lago matches it against known special territory postal code patterns. If matched, the standard country rate is overridden with the territory's exception rate.
+
+<Warning>
+  Make sure to set the **zipcode** on your customer profile. Without a postal code, Lago falls back to the standard country rate and special territory detection is skipped.
+</Warning>
+
+The following 17 territories are supported across 7 EU countries:
+
+| Country | Territory | Tax Code | Postal Code Pattern | Rate |
+|---|---|---|---|---|
+| Spain | Canary Islands | `lago_eu_es_exception_canary_islands` | 35xxx, 38xxx | 0% |
+| Spain | Ceuta | `lago_eu_es_exception_ceuta` | 51xxx | 0% |
+| Spain | Melilla | `lago_eu_es_exception_melilla` | 52xxx | 0% |
+| France | Guadeloupe | `lago_eu_fr_exception_guadeloupe` | 971xx | 8.5% (B2B only) |
+| France | Martinique | `lago_eu_fr_exception_martinique` | 972xx | 8.5% (B2B only) |
+| France | Guyane | `lago_eu_fr_exception_guyane` | 973xx | 0% (B2B only) |
+| France | Réunion | `lago_eu_fr_exception_reunion` | 974xx | 8.5% (B2B only) |
+| France | Mayotte | `lago_eu_fr_exception_mayotte` | 976xx | 0% (B2B only) |
+| Germany | Büsingen am Hochrhein | `lago_eu_de_exception_busingen_am_hochrhein` | 78266 | 0% |
+| Germany | Heligoland | `lago_eu_de_exception_heligoland` | 27498 | 0% |
+| Italy | Livigno | `lago_eu_it_exception_livigno` | 23041 | 0% |
+| Italy | Campione d'Italia | `lago_eu_it_exception_campione_d_italia` | 22061 | 0% |
+| Portugal | Azores | `lago_eu_pt_exception_azores` | 95xx | 18% |
+| Portugal | Madeira | `lago_eu_pt_exception_madeira` | 9xxx | 22% |
+| Austria | Jungholz | `lago_eu_at_exception_jungholz` | 6691, 6992 | 19% |
+| Austria | Mittelberg | `lago_eu_at_exception_mittelberg` | 6991, 6993 | 19% |
+| Greece | Mount Athos | `lago_eu_gr_exception_mount_athos` | 63086 | 0% |
+
+<Info>
+  **France DOM-TOM exception:** For French overseas territories (Guadeloupe, Martinique, Guyane, Réunion, Mayotte), the exception rate only applies to **B2B customers** (those with a `tax_identification_number`). B2C customers in these territories are charged the standard French rate of 20%, in line with French tax law (CGI Articles 294–296).
+</Info>
 
 ### B2B tax decision process
 When a `tax_identification_number` is identified on a customer profile, Lago conducts a real-time verification 
