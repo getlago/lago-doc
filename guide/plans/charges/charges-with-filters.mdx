@@ -128,3 +128,21 @@ When a billable metric has filters defined, set a default price on the charge le
 <Tip>
   If the default price is not set, Lago will automatically define it as 0 based on the charge model.
 </Tip>
+
+## Editing filter pricing mid-period[](#editing-filter-pricing-mid-period "Direct link to heading")
+
+When you update a charge's filter configuration or pricing, for example by adding new filter
+combinations, changing per-filter rates, or removing the default price, Lago applies the
+updated pricing rules to **all usage in the current open billing period**. Fees are not
+locked at event ingestion time. They are evaluated against the active charge configuration
+at the time of calculation.
+
+This means that events received earlier in the period are repriced under the new
+configuration, not the one that was active when they were ingested.
+
+<br />
+<Tip>
+  Once an invoice is finalized, amounts are permanently locked. Charge configuration
+  changes only affect the current open billing period. To preserve existing pricing
+  on already-received usage, finalize the invoice before updating the charge.
+</Tip>
