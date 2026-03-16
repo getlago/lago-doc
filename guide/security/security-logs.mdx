@@ -1,0 +1,118 @@
+---
+title: "Security logs"
+description: "Security logs track critical actions related to team management, authentication, API keys, and other security-sensitive operations within your organization."
+---
+
+## Overview
+Security logs provide a detailed record of security-sensitive actions performed within your organization. They help you answer questions like: *Who invited this user? When was this API key rotated? Who modified this webhook endpoint?*
+
+## Permissions
+- Only **Admin** users can view security logs.
+- Account Managers and Finance/Analyst roles **cannot** view security logs.
+- For **Custom Roles**, a dedicated **security logs** permission can be granted.
+
+## How to access security logs
+<Tabs>
+  <Tab title="Dashboard">
+    To view security logs:
+    1. Navigate to the **Team & Security** section;
+    2. Find the **Security Logs** tab; and
+    3. View paginated security logs directly in this section.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Security logs
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v1/security_logs" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Security log details
+Each security log includes the following properties:
+
+- **Log ID**: A unique identifier for the log entry;
+- **User**: The organization member who performed the action (linked to their email);
+- **Log type**: The category of the event (e.g., `user`, `role`, `api_key`);
+- **Log event**: The specific event that was triggered (e.g., `user.invited`, `api_key.rotated`);
+- **Logged at**: The timestamp of the event; and
+- **Resources**: Contextual data related to the event (e.g., role assigned, webhook events, export type).
+
+## Tracked events
+Below is the exhaustive list of security events tracked by Lago.
+
+### Users
+
+| Event key | Message |
+| --- | --- |
+| `user.signed_up` | \{\{email\}\} joined |
+| `user.new_device_logged_in` | \{\{email\}\} successfully logged in using a new device |
+| `user.deleted` | \{\{email\}\} deleted |
+| `user.invited` | \{\{emailInvitee\}\} was invited by \{\{emailInvitor\}\} |
+| `user.role_edited` | \{\{email\}\}'s role was edited to \{\{role.name\}\} by \{\{email\}\} |
+| `user.password_reset_requested` | \{\{email\}\} requested to change password |
+| `user.password_edited` | \{\{email\}\} password edited |
+
+<Info>New device logins capture additional context such as device ID, IP address, browser, and operating system.</Info>
+
+### Roles & permissions
+
+| Event key | Message |
+| --- | --- |
+| `role.created` | \{\{email\}\} added a new role \{\{role_code\}\} |
+| `role.updated` | \{\{email\}\} updated the role \{\{role_code\}\} |
+| `role.deleted` | \{\{email\}\} deleted the role \{\{role_code\}\} |
+
+### API keys
+
+| Event key | Message |
+| --- | --- |
+| `api_key.created` | An API key \{\{apiKeyName\}\} ending with \{\{***1337\}\} was created |
+| `api_key.updated` | The API key \{\{apiKeyName\}\} ending with \{\{***1337\}\} was updated |
+| `api_key.deleted` | The API key \{\{apiKeyName\}\} ending with \{\{***1337\}\} was deleted |
+| `api_key.rotated` | The API key \{\{apiKeyName\}\} ending with \{\{***1337\}\} was rotated |
+
+### Webhook endpoints
+
+| Event key | Message |
+| --- | --- |
+| `webhook_endpoint.created` | A new webhook endpoint \{\{url\}\} was created |
+| `webhook_endpoint.updated` | A webhook endpoint \{\{url\}\} was updated |
+| `webhook_endpoint.deleted` | A webhook endpoint \{\{url\}\} was deleted |
+
+### Data exports
+
+| Event key | Message |
+| --- | --- |
+| `export.created` | \{\{email\}\} exported data |
+
+### Integrations
+
+| Event key | Message |
+| --- | --- |
+| `integration.created` | \{\{email\}\} created a new \{\{integration.name\}\} integration |
+| `integration.updated` | \{\{email\}\} updated the \{\{integration.name\}\} integration |
+| `integration.deleted` | \{\{email\}\} deleted the \{\{integration.name\}\} integration |
+
+### Billing entities
+
+| Event key | Message |
+| --- | --- |
+| `billing_entity.created` | \{\{email\}\} created a new billing entity \{\{billingEntity.name\}\} |
+| `billing_entity.updated` | \{\{email\}\} updated the billing entity \{\{billingEntity.name\}\} |
+
+## Filtering security logs
+You can filter security logs using the following criteria, either through the UI or via the API:
+
+- **Log date**: Filter by `from` and `to` dates;
+- **User**: Filter by the user who performed the action (multi-select);
+- **Log type**: Filter by category — one or more of `user`, `role`, `api_key`, `webhook_endpoint`, `export`, `integration`, `billing_entity` (multi-select); and
+- **Log event**: Filter by specific event key, such as `billing_entity.created` or `webhook_endpoint.deleted` (multi-select).
+
+## Exporting security logs
+Security logs can only be exported via the API endpoint (`/api/v1/security_logs`). There is no CSV export or log streaming option available at this time.
