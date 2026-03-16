@@ -33,3 +33,4 @@ ln -s ../lago-openapi/openapi.yaml
 +    "openapi": "openapi.yaml",
     "mdx": {
 ```
+
