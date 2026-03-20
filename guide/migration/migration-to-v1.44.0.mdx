@@ -1,0 +1,82 @@
+---
+title: "Migration to v1.44.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about important changes in Lago v1.44.0 that will optimize daily usage computation by tracking subscription activity.
+
+# What are the changes?
+
+## Adding `last_received_event_on` on subscriptions
+
+A new `last_received_event_on` column is added to the `subscriptions` table. This field tracks the last date an event was received for each subscription, allowing Lago to skip idle subscriptions during daily usage computation — significantly reducing unnecessary processing.
+
+The backfill task will:
+- Populate `last_received_event_on` for all active subscriptions where it is currently NULL
+- Determine the last event date using your configured event store (PostgreSQL or ClickHouse)
+- Process subscriptions per organization in background jobs
+
+## Fix for v1.43.0 upgrade script
+
+The `upgrade:perform_required_jobs` task has been fixed to correctly track job completion status. In v1.43.0, the script could appear to hang during the "Checking status" step — this is now resolved and the task will properly complete once all background jobs finish.
+
+# Why are we doing this?
+
+The daily usage computation previously processed all active subscriptions, including those that hadn't received any events recently. By tracking the last received event date, Lago can now skip idle subscriptions entirely, improving performance and reducing load.
+
+# What should self-hosted users do?
+
+<Warning>
+If you're using a version below `v1.20.0`, please first follow the migration steps for [v1.20.0](/guide/migration/migration-to-v1.20.0), then for [v1.25.0](/guide/migration/migration-to-v1.25.0), then for [v1.28.1](/guide/migration/migration-to-v1.28.1), then for [v1.29.0](/guide/migration/migration-to-v1.29.0), then for [v1.31.0](/guide/migration/migration-to-v1.31.0), then for [v1.32.0](/guide/migration/migration-to-v1.32.0), then for [v1.43.0](/guide/migration/migration-to-v1.43.0).
+Only after completing those should you proceed to v1.44.0.
+</Warning>
+
+## Migration Steps
+
+1. Install Lago v1.44.0
+2. Open a shell (bash) on your API server
+3. Run the upgrade task:
+
+```bash
+bundle exec rails upgrade:perform_required_jobs
+```
+
+  The task will:
+  - Backfill `last_received_event_on` on all active subscriptions where it is NULL
+  - Enqueue `BackfillLastReceivedEventOnJob` per organization
+  - Monitor progress and confirm when all records have been updated
+
+  You should see output similar to:
+
+  ```
+  ##################################
+  Starting required jobs
+
+  #### Checking for resource to fill ####
+  "- Checking Subscription#last_received_event_on: 🔎"
+  "  -> 5 organizations to process 🧮"
+
+  #### Enqueue BackfillLastReceivedEventOnJob per organization ####
+  "- Enqueuing BackfillLastReceivedEventOnJob for org ..."
+  ...
+
+  #### Checking status ####
+  "- Checking BackfillLastReceivedEventOnJob: 🔎"
+  "  -> Done ✅"
+
+  #### All good, ready to Upgrade! ✅ ####
+  ```
+
+  <Note>
+  All resources are processed in background jobs. The task will monitor progress and confirm when all records have been updated.
+  If you already ran this task on v1.43.0 and it appeared to hang, the jobs were still enqueued and processed. Running it again on v1.44.0 will now correctly show completion.
+  </Note>
+
+# Get Involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
