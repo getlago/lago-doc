@@ -52,6 +52,12 @@ bundle exec rails upgrade:perform_required_jobs
   All resources are processed in background jobs. The task will monitor progress and confirm when all records have been updated.
   </Note>
 
+  <Warning>
+  **Known issue:** After all jobs are enqueued, the script may appear to hang on the "Checking status" step, continuously showing remaining records without ever reaching zero.
+  This is a known bug where the count includes NULL values. Once you see that all jobs have been enqueued (i.e., the `Enqueue ... per organization` section is complete), you can safely stop the script with `Ctrl+C` and proceed to the next step.
+  This issue is fixed in v1.44.0.
+  </Warning>
+
 4. Install Lago v1.43.0
 
 # Get Involved
