@@ -189,7 +189,8 @@ You can also use your own database or Redis server. To do so, remove the `db`
 and `redis` configurations from the `docker-compose.yml` file and update the
 environment variables accordingly.
 
-### SSL Support[](#ssl-support "Direct link to heading")
+<a id="ssl-support"></a> { /* Old anchor kept avoid breaking existing links */ }
+### Enabling SSL on the Frontend[](#enabling-ssl-on-the-frontend "Direct link to heading")
 
 Lago Front application can be configured to support SSL certificates. You have
 two options to achieve this:
@@ -263,6 +264,34 @@ volumes:
 ```shell
 docker-compose up front
 ```
+
+### Enabling SSL on PostgreSQL[](#enabling-ssl-on-postgresql "Direct link to heading")
+
+If your PostgreSQL server requires SSL connections (e.g., using a PEM certificate for `verify-full` mode),
+you can configure the connection using either [**libpq environment variables**](https://www.postgresql.org/docs/current/libpq-envars.html)
+or the **`DATABASE_URL`** parameters.
+
+#### Using libpq environment variables
+
+Set any of the libpq SSL environment variables:
+
+```shell
+# .env
+PGSSLMODE=verify-full
+PGSSLROOTCERT=/app/config/rds-ca.pem
+```
+
+For an exhaustive list of environment variables, refer to the [libpq environment variables documentation](https://www.postgresql.org/docs/current/libpq-envars.html):
+
+#### Using DATABASE_URL
+
+Alternatively, you can append any of the libpq SSL parameters directly to the `DATABASE_URL`:
+
+```shell
+DATABASE_URL=postgresql://lago:changeme@db:5432/lago?sslmode=verify-full&sslrootcert=/app/config/rds-ca.pem
+```
+
+For an exhaustive list of SSL parameters, refer to the [libpq documentation](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNECT-SSLMODE).
 
 ### Storage[](#storage "Direct link to heading")
 
