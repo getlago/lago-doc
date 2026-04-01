@@ -1,0 +1,52 @@
+---
+title: "Traceability"
+description: "Track how credits flow between inbound and outbound wallet transactions."
+---
+
+Wallet traceability lets you follow the credit flow between inbound (top-up) and outbound (usage deduction) transactions. For a given inbound transaction, you can see which outbound transactions consumed its credits — and for a given outbound transaction, you can see which inbound transactions funded it.
+
+## Track how credits were consumed
+
+For an **inbound** wallet transaction, you can see all outbound transactions that consumed credits from it.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Go to a specific customer;
+    2. Open the **"Wallets"** tab and click on a specific wallet;
+    3. Click on an inbound wallet transaction;
+    4. Go to the **"Consumptions"** tab; and
+    5. See all outbound wallet transactions linked to this top-up and the amount consumed by each.
+  </Tab>
+  <Tab title="API">
+    ```bash List consumptions for a wallet transaction
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v1/wallet_transactions/:lago_id/consumptions" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+  </Tab>
+</Tabs>
+
+## Track how credits were funded
+
+For an **outbound** wallet transaction, you can see all inbound transactions that funded it.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Go to a specific customer;
+    2. Open the **"Wallets"** tab and click on a specific wallet;
+    3. Click on an outbound wallet transaction;
+    4. Go to the **"Fundings"** tab; and
+    5. See all inbound wallet transactions that funded this deduction and the amount each provided.
+  </Tab>
+  <Tab title="API">
+    ```bash List fundings for a wallet transaction
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v1/wallet_transactions/:lago_id/fundings" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+  </Tab>
+</Tabs>
