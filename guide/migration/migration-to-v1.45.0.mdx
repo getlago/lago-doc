@@ -176,6 +176,191 @@ Terminated wallets are **ignored** by default. Set `INCLUDE_TERMINATED=true` to 
 Wallets created after installing v1.45.0 are automatically traceable — they do not need to be backfilled. The migration task only applies to wallets that existed before the upgrade.
 </Note>
 
+# Diagnostic queries
+
+After completing the migration, you can use the following queries to verify the integrity of your wallet data. These queries help identify wallets with data inconsistencies that may have been caused by historical bugs (e.g., race conditions, missing locks, or rounding errors). Running them is optional but recommended — they can surface issues that the migration task itself does not automatically fix, such as balance drift or negative values.
+
+<AccordionGroup>
+  <Accordion title="Balance vs transaction discrepancy">
+    Detects wallets where the stored balance does not match the sum of settled inbound and outbound transactions. This can happen when a transaction was recorded but the wallet balance was not updated correctly (e.g., due to a crash or missing lock).
+
+    ```sql
+    WITH tx_summary AS (
+      SELECT
+        wt.wallet_id,
+        SUM(CASE WHEN wt.transaction_type = 0 THEN wt.credit_amount ELSE 0 END) AS inbound_credits,
+        SUM(CASE WHEN wt.transaction_type = 1 THEN wt.credit_amount ELSE 0 END) AS outbound_credits,
+        SUM(CASE WHEN wt.transaction_type = 0 THEN ROUND(wt.amount * 100) ELSE 0 END) AS inbound_cents,
+        SUM(CASE WHEN wt.transaction_type = 1 THEN ROUND(wt.amount * 100) ELSE 0 END) AS outbound_cents,
+        COUNT(*) AS tx_count
+      FROM wallet_transactions wt
+      WHERE wt.status = 1
+      GROUP BY wt.wallet_id
+    )
+    SELECT
+      w.id AS wallet_id,
+      w.customer_id,
+      w.organization_id,
+      CASE w.status WHEN 0 THEN 'active' WHEN 1 THEN 'terminated' END AS wallet_status,
+      w.balance_currency,
+      w.rate_amount,
+      w.balance_cents,
+      w.credits_balance,
+      COALESCE(t.inbound_credits, 0) AS total_inbound_credits,
+      COALESCE(t.outbound_credits, 0) AS total_outbound_credits,
+      COALESCE(t.inbound_credits, 0) - COALESCE(t.outbound_credits, 0) AS expected_credits_balance,
+      (COALESCE(t.inbound_cents, 0) - COALESCE(t.outbound_cents, 0))::bigint AS expected_balance_cents,
+      COALESCE(t.tx_count, 0) AS transaction_count
+    FROM wallets w
+    LEFT JOIN tx_summary t ON t.wallet_id = w.id
+    WHERE w.traceable = TRUE
+      AND (
+        w.credits_balance != COALESCE(t.inbound_credits, 0) - COALESCE(t.outbound_credits, 0)
+        OR w.balance_cents != (COALESCE(t.inbound_cents, 0) - COALESCE(t.outbound_cents, 0))::bigint
+      )
+    ORDER BY w.created_at DESC;
+    ```
+  </Accordion>
+
+  <Accordion title="Overconsumption (consumed more than credited)">
+    Detects wallets where the total consumption amount exceeds the total inbound (top-up) amount. This should never happen — you cannot consume more credits than were credited.
+
+    ```sql
+    WITH inbound_totals AS (
+      SELECT
+        wt.wallet_id,
+        SUM(ROUND(wt.amount * 100)) AS total_cents
+      FROM wallet_transactions wt
+      WHERE wt.transaction_type = 0 AND wt.status = 1
+      GROUP BY wt.wallet_id
+    ),
+    consumption_by_inbound AS (
+      SELECT
+        wt.wallet_id,
+        SUM(wtc.consumed_amount_cents) AS total_consumed_cents
+      FROM wallet_transaction_consumptions wtc
+      JOIN wallet_transactions wt ON wt.id = wtc.inbound_wallet_transaction_id
+      GROUP BY wt.wallet_id
+    )
+    SELECT
+      w.id AS wallet_id,
+      w.customer_id,
+      w.organization_id,
+      CASE w.status WHEN 0 THEN 'active' WHEN 1 THEN 'terminated' END AS wallet_status,
+      w.balance_currency,
+      COALESCE(i.total_cents, 0) AS total_inbound_cents,
+      COALESCE(c.total_consumed_cents, 0) AS total_consumed_by_inbound
+    FROM wallets w
+    JOIN consumption_by_inbound c ON c.wallet_id = w.id
+    LEFT JOIN inbound_totals i ON i.wallet_id = w.id
+    WHERE w.traceable = TRUE
+      AND c.total_consumed_cents > COALESCE(i.total_cents, 0)
+    ORDER BY w.created_at DESC;
+    ```
+  </Accordion>
+
+  <Accordion title="Underconsumption (consumed less than debited)">
+    Detects wallets where the total consumption amount is less than the total outbound (debit) amount. Every outbound transaction should be fully accounted for by consumption records.
+
+    ```sql
+    WITH outbound_totals AS (
+      SELECT
+        wt.wallet_id,
+        SUM(ROUND(wt.amount * 100)) AS total_cents
+      FROM wallet_transactions wt
+      WHERE wt.transaction_type = 1 AND wt.status = 1
+      GROUP BY wt.wallet_id
+    ),
+    consumption_by_outbound AS (
+      SELECT
+        wt.wallet_id,
+        SUM(wtc.consumed_amount_cents) AS total_consumed_cents
+      FROM wallet_transaction_consumptions wtc
+      JOIN wallet_transactions wt ON wt.id = wtc.outbound_wallet_transaction_id
+      GROUP BY wt.wallet_id
+    )
+    SELECT
+      w.id AS wallet_id,
+      w.customer_id,
+      w.organization_id,
+      CASE w.status WHEN 0 THEN 'active' WHEN 1 THEN 'terminated' END AS wallet_status,
+      w.balance_currency,
+      COALESCE(o.total_cents, 0) AS total_outbound_cents,
+      COALESCE(c.total_consumed_cents, 0) AS total_consumed_by_outbound
+    FROM wallets w
+    JOIN outbound_totals o ON o.wallet_id = w.id
+    LEFT JOIN consumption_by_outbound c ON c.wallet_id = w.id
+    WHERE w.traceable = TRUE
+      AND COALESCE(c.total_consumed_cents, 0) < o.total_cents
+    ORDER BY w.created_at DESC;
+    ```
+  </Accordion>
+
+  <Accordion title="Negative values">
+    Detects wallets with any negative value — whether on the wallet itself (balance, credits) or in the aggregated transaction and consumption totals. Negative values indicate data corruption from historical bugs.
+
+    ```sql
+    WITH tx_summary AS (
+      SELECT
+        wt.wallet_id,
+        SUM(CASE WHEN wt.transaction_type = 0 THEN wt.credit_amount ELSE 0 END) AS inbound_credits,
+        SUM(CASE WHEN wt.transaction_type = 1 THEN wt.credit_amount ELSE 0 END) AS outbound_credits,
+        SUM(CASE WHEN wt.transaction_type = 0 THEN ROUND(wt.amount * 100) ELSE 0 END) AS inbound_cents,
+        SUM(CASE WHEN wt.transaction_type = 1 THEN ROUND(wt.amount * 100) ELSE 0 END) AS outbound_cents
+      FROM wallet_transactions wt
+      WHERE wt.status = 1
+      GROUP BY wt.wallet_id
+    ),
+    cons_inbound AS (
+      SELECT wt.wallet_id, SUM(wtc.consumed_amount_cents) AS total_consumed_cents
+      FROM wallet_transaction_consumptions wtc
+      JOIN wallet_transactions wt ON wt.id = wtc.inbound_wallet_transaction_id
+      GROUP BY wt.wallet_id
+    ),
+    cons_outbound AS (
+      SELECT wt.wallet_id, SUM(wtc.consumed_amount_cents) AS total_consumed_cents
+      FROM wallet_transaction_consumptions wtc
+      JOIN wallet_transactions wt ON wt.id = wtc.outbound_wallet_transaction_id
+      GROUP BY wt.wallet_id
+    )
+    SELECT
+      w.id AS wallet_id,
+      w.customer_id,
+      w.organization_id,
+      CASE w.status WHEN 0 THEN 'active' WHEN 1 THEN 'terminated' END AS wallet_status,
+      w.balance_currency,
+      w.balance_cents,
+      w.credits_balance,
+      w.consumed_credits,
+      COALESCE(t.inbound_credits, 0) AS total_inbound_credits,
+      COALESCE(t.outbound_credits, 0) AS total_outbound_credits,
+      COALESCE(t.inbound_cents, 0) AS total_inbound_cents,
+      COALESCE(t.outbound_cents, 0) AS total_outbound_cents,
+      COALESCE(ci.total_consumed_cents, 0) AS total_consumed_by_inbound,
+      COALESCE(co.total_consumed_cents, 0) AS total_consumed_by_outbound
+    FROM wallets w
+    LEFT JOIN tx_summary t ON t.wallet_id = w.id
+    LEFT JOIN cons_inbound ci ON ci.wallet_id = w.id
+    LEFT JOIN cons_outbound co ON co.wallet_id = w.id
+    WHERE w.traceable = TRUE
+      AND (
+        w.balance_cents < 0
+        OR w.credits_balance < 0
+        OR w.consumed_credits < 0
+        OR COALESCE(t.inbound_credits, 0) < 0
+        OR COALESCE(t.outbound_credits, 0) < 0
+        OR COALESCE(t.inbound_credits, 0) - COALESCE(t.outbound_credits, 0) < 0
+        OR COALESCE(t.inbound_cents, 0) < 0
+        OR COALESCE(t.outbound_cents, 0) < 0
+        OR COALESCE(t.inbound_cents, 0) - COALESCE(t.outbound_cents, 0) < 0
+        OR COALESCE(ci.total_consumed_cents, 0) < 0
+        OR COALESCE(co.total_consumed_cents, 0) < 0
+      )
+    ORDER BY w.created_at DESC;
+    ```
+  </Accordion>
+</AccordionGroup>
+
 # Timeline
 
 We recommend performing this migration as soon as possible after the release of v1.45.0. Wallets that are not migrated will continue to function, but will not benefit from the new traceability features until the backfill is completed.
