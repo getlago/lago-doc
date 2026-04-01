@@ -49,31 +49,32 @@ Open a shell on your API server and run the migration task in dry-run mode (the 
 bundle exec rails migrations:wallet_traceability
 ```
 
-You can scope the validation to a specific organization or limit the number of wallets processed:
+You can scope the validation to a specific organization or limit the number of customers processed:
 
 ```bash
 # Validate wallets for a specific organization
-organization_id=ORG_ID bundle exec rails migrations:wallet_traceability
+ORGANIZATION_ID=ORG_ID bundle exec rails migrations:wallet_traceability
 
-# Validate a limited batch of wallets
-limit=100 bundle exec rails migrations:wallet_traceability
+# Validate wallets for a limited number of customers
+LIMIT=100 bundle exec rails migrations:wallet_traceability
 
 # Combine options
-organization_id=ORG_ID limit=100 bundle exec rails migrations:wallet_traceability
+ORGANIZATION_ID=ORG_ID LIMIT=100 bundle exec rails migrations:wallet_traceability
 ```
 
 The available environment variables are:
 
 | Variable | Default | Description |
 |---|---|---|
-| `dry_run` | `true` | Set to `false` to run the backfill. Any other value (or unset) runs in dry-run mode. |
-| `organization_id` | _(all)_ | Scope to a single organization. |
-| `limit` | _(all)_ | Best-effort maximum number of wallets to process. In backfill mode, all wallets belonging to a discovered customer are processed atomically, so the actual count may slightly exceed this value. |
-| `batch_size` | `1000` | Number of records per batch. |
-| `output_limit` | `50` | Maximum number of problematic wallets to display in dry-run output. |
-| `thread_count` | `0` | Number of threads for parallel processing. `0` runs sequentially. Ensure your database connection pool size is at least `thread_count + 1`. |
-| `include_terminated` | `false` | Set to `true` to include terminated wallets in the migration. By default, only active wallets are processed. |
-| `output_file` | _(none)_ | File path for CSV export of problematic wallets (dry-run) or errors (backfill). Useful for reviewing all issues without truncation. |
+| `DRY_RUN` | `true` | Set to `false` to run the backfill. Any other value (or unset) runs in dry-run mode. |
+| `ORGANIZATION_ID` | _(all)_ | Scope to a single organization by its ID. |
+| `LIMIT` | _(all)_ | Maximum number of **customers** to process. The task iterates over distinct customers — all wallets belonging to a customer are always processed atomically as a group. When set, the task prints a **next cursor** value you can use on the following run to resume where you left off (see `CURSOR`). |
+| `CURSOR` | _(none)_ | Resume processing from a specific customer ID. Only customers whose ID is strictly greater than this value will be processed. Use the "Next cursor" value printed by a previous `LIMIT`-ed run to paginate through large datasets. |
+| `BATCH_SIZE` | `1000` | Number of records fetched per database batch. Automatically capped to `LIMIT` when both are set. |
+| `OUTPUT_LIMIT` | `50` | Maximum number of problematic wallets to display in dry-run output. |
+| `THREAD_COUNT` | `0` | Number of threads for parallel processing. `0` runs sequentially. Ensure your database connection pool size is at least `THREAD_COUNT + 1`. Due to Ruby's Global VM Lock (GVL), multi-threading primarily helps when the bottleneck is database I/O wait time. If the migration is CPU-bound, additional threads may not significantly improve performance. |
+| `INCLUDE_TERMINATED` | `false` | Set to `true` to include terminated wallets in the migration. By default, only active wallets are processed. |
+| `OUTPUT_FILE` | _(none)_ | File path for CSV export of problematic wallets (dry-run) or errors (backfill). Useful for reviewing all issues without truncation. |
 
 The dry-run performs a validation of all your wallets **without modifying any data**. It will output:
 
@@ -81,12 +82,12 @@ The dry-run performs a validation of all your wallets **without modifying any da
 - The number of wallets that **can be migrated** automatically.
 - The number of **problematic** wallets with details about each issue.
 - A **migration readiness** percentage.
-- A **CSV file** with all problematic wallets (when `output_file` is set).
+- A **CSV file** with all problematic wallets (when `OUTPUT_FILE` is set).
 
 To export the full list of problematic wallets to a CSV file for review:
 
 ```bash
-output_file=/tmp/problematic_wallets.csv bundle exec rails migrations:wallet_traceability
+OUTPUT_FILE=/tmp/problematic_wallets.csv bundle exec rails migrations:wallet_traceability
 ```
 
 <Note>
@@ -103,23 +104,26 @@ Review the output from Step 2. For each problematic wallet, choose one of the fo
 
 ### 4. Run the backfill
 
-Once all wallets pass validation (or have been handled), run the same task with `dry_run=false`:
+Once all wallets pass validation (or have been handled), run the same task with `DRY_RUN=false`:
 
 ```bash
-dry_run=false bundle exec rails migrations:wallet_traceability
+DRY_RUN=false bundle exec rails migrations:wallet_traceability
 ```
 
 As with the dry-run, you can scope the backfill:
 
 ```bash
 # Backfill wallets for a specific organization
-dry_run=false organization_id=ORG_ID bundle exec rails migrations:wallet_traceability
+DRY_RUN=false ORGANIZATION_ID=ORG_ID bundle exec rails migrations:wallet_traceability
 
-# Backfill with a limited batch
-dry_run=false limit=100 bundle exec rails migrations:wallet_traceability
+# Backfill for the next 100 customers
+DRY_RUN=false LIMIT=100 bundle exec rails migrations:wallet_traceability
 
-# Backfill with multithreading (ensure your DB pool size >= thread_count + 1)
-dry_run=false thread_count=4 bundle exec rails migrations:wallet_traceability
+# Resume from a previous run using the printed cursor
+DRY_RUN=false LIMIT=100 CURSOR=<previous_cursor> bundle exec rails migrations:wallet_traceability
+
+# Backfill with multithreading (ensure your DB pool size >= THREAD_COUNT + 1)
+DRY_RUN=false THREAD_COUNT=4 bundle exec rails migrations:wallet_traceability
 ```
 
 This task:
@@ -155,7 +159,7 @@ The validation task may flag wallets with data inconsistencies caused by histori
 
 ## Terminate and recreate escape hatch
 
-Terminated wallets are **ignored** by default. Set `include_terminated=true` to include them. If a wallet cannot be fixed, it is always safe to:
+Terminated wallets are **ignored** by default. Set `INCLUDE_TERMINATED=true` to include them. If a wallet cannot be fixed, it is always safe to:
 
 1. **Terminate** the problematic wallet.
 2. **Create a new wallet** for the customer.
