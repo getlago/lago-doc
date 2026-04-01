@@ -148,24 +148,30 @@ These issues can be fixed by updating the data directly in the database, then re
 
 | Issue | Validation message | Cause | Resolution |
 |---|---|---|---|
-| **Decimal amount_cents** | `Decimal amount_cents on inbound TX_ID: 12.39999 (expected integer)` | Historical bug storing values rounded to 2 decimals instead of integers. | Update the transaction amount in the database to round to 2 decimals. |
+| **Decimal amount_cents** | `Decimal amount_cents on inbound TX_ID: 12.9999 (expected integer)` | Historical bug storing values non-rounded decimals instead of integers. | Update the transaction amount in the database to rounded integers. |
 | **Balance drift (small)** | `Balance drift < 1 unit: 0.5 cents (...) — likely rounding` | Historical rounding bug. | Update the wallet balance in the database to match the sum of its transactions. |
-| **Balance drift (large)** | `Balance drift >= 1 unit: 500 cents (...)` | Historical rounding bug. | Update the wallet balance in the database to match the sum of its transactions. Investigate the root cause if the drift is significant. |
+| **Balance drift (large)** | `Balance drift >= 1 unit: 500 cents (...)` | Historical rounding bug. | This issue might be caused by a significant number of outbound transactions impacted by the historical rounding bug and therefore causing a bigger drift. Update the wallet balance in the database to match the sum of its transactions. |
+
+<Note>
+When fixing wallet balances, you may also need to update related attributes such as `credits_balance` and `credits_ongoing_balance` to keep the wallet consistent. If this level of manual correction is not acceptable, it is preferable to terminate the wallet and recreate it instead (see [Terminate and recreate](#terminate-and-recreate-escape-hatch)).
+</Note>
 
 ### Non-reconcilable issues
 
-These issues cannot be automatically reconciled. The wallet must be terminated and recreated (see [Terminate and recreate](#terminate-and-recreate-escape-hatch)).
+These issues cannot be automatically reconciled due to historical data corruption. The wallet must be terminated and recreated (see [Terminate and recreate](#terminate-and-recreate-escape-hatch)).
 
-| Issue | Validation message | Cause |
-|---|---|---|
-| **Negative wallet balance** | `Negative wallet balance: -500 cents` | Bug allowing over-consumption due to missing validation. |
-| **Negative transaction amount** | `Negative amount_cents on inbound TX_ID: -100` | Corrupted transaction data. |
-| **Insufficient inbound** | `Outbound TX_ID: insufficient inbound to consume 5000 cents (available: 1000 cents, shortfall: 4000 cents)` | Bug allowing over-consumption due to missing validation. |
-| **Missing transaction history** | `Outbound TX_ID: no inbound transactions available — missing transaction history` | Deleted or missing inbound transaction records. |
+| Issue | Validation message |
+|---|---|
+| **Negative wallet balance** | `Negative wallet balance: -500 cents` |
+| **Negative transaction amount** | `Negative amount_cents on inbound TX_ID: -100` |
+| **Insufficient inbound** | `Outbound TX_ID: insufficient inbound to consume 5000 cents (available: 1000 cents, shortfall: 4000 cents)` |
+| **Missing transaction history** | `Outbound TX_ID: no inbound transactions available — missing transaction history` |
 
 ## Terminate and recreate escape hatch
 
-Terminated wallets are **ignored** by default. Set `INCLUDE_TERMINATED=true` to include them. If a wallet cannot be fixed, it is always safe to:
+Terminated wallets are **ignored** by the migration task and all traceability operations. It is safe to leave non-traceable wallets in a terminated state — active wallets will still fully benefit from traceability.
+
+If a wallet cannot be reconciled due to data issues, the recommended approach is:
 
 1. **Terminate** the problematic wallet.
 2. **Create a new wallet** for the customer.
@@ -175,6 +181,12 @@ Terminated wallets are **ignored** by default. Set `INCLUDE_TERMINATED=true` to 
 <Note>
 Wallets created after installing v1.45.0 are automatically traceable — they do not need to be backfilled. The migration task only applies to wallets that existed before the upgrade.
 </Note>
+
+<Warning>
+If the customer has a **grace period** configured, any draft invoice will automatically recompute prepaid credit amounts upon finalization — no special handling is needed.
+
+For customers **without a grace period**, any in-flight invoice generated between the termination of the old wallet and the creation of the new one may not correctly reflect prepaid credit usage. We recommend enabling a grace period on affected customers before performing the terminate-and-recreate procedure to avoid this issue.
+</Warning>
 
 # Timeline
 
