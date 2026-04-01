@@ -10,19 +10,14 @@ We're writing to inform you about important changes in Lago v1.45.0 that introdu
 
 ## Wallet Traceability
 
-This version introduces a traceability system for wallets that tracks exactly which inbound (top-up) transactions fund each outbound (consumption) transaction. The key schema changes are:
+This version introduces **wallet traceability** — a system that tracks exactly which inbound (top-up) transactions fund each outbound (consumption) transaction. This enables:
 
-- **New `wallet_transaction_consumptions` table**: A join table linking inbound and outbound wallet transactions, recording how credits flow from top-ups to consumption.
-- **New `remaining_amount_cents` column on `wallet_transactions`**: Tracks how much of each inbound transaction's balance remains available.
-- **New `traceable` boolean flag on `wallets`**: Indicates whether a wallet has been successfully migrated to the traceability system.
-- **New `prepaid_granted_credit_amount_cents` / `prepaid_purchased_credit_amount_cents` columns on `invoices`**: Breaks down invoice credit usage into granted vs. purchased credits.
-- **New consumption/funding API endpoints**: Query which inbound transactions funded a given outbound transaction, and vice versa.
+- **Credit source visibility**: Distinguishing when free (granted) vs. purchased credits are being consumed.
+- **Full audit trail**: Every outbound transaction records exactly which inbound transactions funded it and in what amounts.
+- **Invoice breakdown**: Invoices now show a breakdown of granted vs. purchased credit usage, enabling more accurate accounting and reporting.
+- **New API endpoints**: Query which inbound transactions funded a given outbound transaction, and vice versa.
 
-## Why are we doing this?
-
-1. **Credit source visibility**: Customers could not previously distinguish when free (granted) vs. purchased credits were being consumed.
-2. **Full audit trail**: Every outbound transaction now records exactly which inbound transactions funded it and in what amounts.
-3. **Invoice breakdown**: Invoices now show a breakdown of granted vs. purchased credit usage, enabling more accurate accounting and reporting.
+Wallets created after upgrading to v1.45.0 are automatically traceable. However, **existing wallets require a one-time backfill** to compute the consumption history from their past transactions. This backfill is performed via a rake task described below.
 
 # What should self-hosted users do?
 
@@ -31,7 +26,7 @@ Cloud users do not need to follow these instructions as the migration will be pe
 </Note>
 
 <Warning>
-If you're using a version below `v1.20.0`, please first follow the migration steps for [v1.20.0](/guide/migration/migration-to-v1.20.0), then for [v1.25.0](/guide/migration/migration-to-v1.25.0), then for [v1.28.1](/guide/migration/migration-to-v1.28.1), then for [v1.29.0](/guide/migration/migration-to-v1.29.0), then for [v1.31.0](/guide/migration/migration-to-v1.31.0), then for [v1.32.0](/guide/migration/migration-to-v1.32.0).
+If you're using a version below `v1.44.0`, please first follow the migration steps for [v1.44.0](/guide/migration/migration-to-v1.44.0).
 Only after completing those should you proceed to v1.45.0.
 </Warning>
 
@@ -147,15 +142,26 @@ Monitor the task's progress bar and verify completion by checking that all activ
 
 The validation task may flag wallets with data inconsistencies caused by historical bugs. Below are the known issue types and recommended resolutions.
 
+### Reconcilable issues
+
+These issues can be fixed by updating the data directly in the database, then re-running the validation.
+
 | Issue | Validation message | Cause | Resolution |
 |---|---|---|---|
-| **Negative wallet balance** | `Negative wallet balance: -500 cents` | Bug allowing over-consumption due to missing locking. | Cannot be automatically reconciled. Terminate the wallet and create a new one. |
-| **Negative transaction amount** | `Negative amount_cents on inbound TX_ID: -100` | Corrupted transaction data. | Investigate and fix the transaction amount, or terminate and recreate. |
-| **Decimal amount_cents** | `Decimal amount_cents on inbound TX_ID: 12.39999 (expected integer)` | Historical bug storing non-integer cent values. | Round the transaction amount to the nearest cent before running the backfill. |
-| **Insufficient inbound** | `Outbound TX_ID: insufficient inbound to consume 5000 cents (available: 1000 cents, shortfall: 4000 cents)` | Race condition or historical negative balance bug causing out-of-order transactions. | Investigate the problematic period. If unrecoverable, terminate and recreate. |
-| **Missing transaction history** | `Outbound TX_ID: no inbound transactions available — missing transaction history` | Deleted or missing inbound transaction records. | Investigate the missing data. Terminate and recreate if unrecoverable. |
-| **Balance drift (small)** | `Balance drift < 1 unit: 0.5 cents (...) — likely rounding` | Rounding errors from dual credit/amount storage. | Fix by rounding the historical transaction amount. |
-| **Balance drift (large)** | `Balance drift >= 1 unit: 500 cents (...)` | Dual storage inconsistency between credit balance and cent balance. | Investigate manually. Terminate and recreate if unrecoverable. |
+| **Decimal amount_cents** | `Decimal amount_cents on inbound TX_ID: 12.39999 (expected integer)` | Historical bug storing values rounded to 2 decimals instead of integers. | Update the transaction amount in the database to round to 2 decimals. |
+| **Balance drift (small)** | `Balance drift < 1 unit: 0.5 cents (...) — likely rounding` | Historical rounding bug. | Update the wallet balance in the database to match the sum of its transactions. |
+| **Balance drift (large)** | `Balance drift >= 1 unit: 500 cents (...)` | Historical rounding bug. | Update the wallet balance in the database to match the sum of its transactions. Investigate the root cause if the drift is significant. |
+
+### Non-reconcilable issues
+
+These issues cannot be automatically reconciled. The wallet must be terminated and recreated (see [Terminate and recreate](#terminate-and-recreate-escape-hatch)).
+
+| Issue | Validation message | Cause |
+|---|---|---|
+| **Negative wallet balance** | `Negative wallet balance: -500 cents` | Bug allowing over-consumption due to missing validation. |
+| **Negative transaction amount** | `Negative amount_cents on inbound TX_ID: -100` | Corrupted transaction data. |
+| **Insufficient inbound** | `Outbound TX_ID: insufficient inbound to consume 5000 cents (available: 1000 cents, shortfall: 4000 cents)` | Bug allowing over-consumption due to missing validation. |
+| **Missing transaction history** | `Outbound TX_ID: no inbound transactions available — missing transaction history` | Deleted or missing inbound transaction records. |
 
 ## Terminate and recreate escape hatch
 
