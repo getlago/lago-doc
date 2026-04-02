@@ -19,6 +19,10 @@ This version introduces **wallet traceability** — a system that tracks exactly
 
 Wallets created after upgrading to v1.45.0 are automatically traceable. However, **existing wallets require a one-time backfill** to compute the consumption history from their past transactions. This backfill is performed via a rake task described below.
 
+<Warning>
+Non-traceable wallets will continue to function for a few releases, but **a future version will require all active wallets to be traceable**. This migration is mandatory — we strongly recommend completing it as soon as possible.
+</Warning>
+
 # What should self-hosted users do?
 
 <Note>
@@ -64,12 +68,12 @@ The available environment variables are:
 | `DRY_RUN` | `true` | Set to `false` to run the backfill. Any other value (or unset) runs in dry-run mode. |
 | `ORGANIZATION_ID` | _(all)_ | Scope to a single organization by its ID. |
 | `LIMIT` | _(all)_ | Maximum number of **customers** to process. The task iterates over distinct customers — all wallets belonging to a customer are always processed atomically as a group. When set, the task prints a **next cursor** value (see `CURSOR`). |
-| `CURSOR` | _(first customer)_ | Start processing from a specific customer ID (inclusive). Must be a valid UUID. When omitted, the task defaults to the first customer ID in scope. When `LIMIT` is set, the task prints a **next cursor** value that can be passed as `CURSOR` on the following run to continue where the previous one left off. |
+| `CURSOR` | _(first customer)_ | Start processing from a specific customer ID (inclusive). Must be a valid UUID. When omitted, the task defaults to the first customer ID in scope. When used without `LIMIT`, all remaining customers from that cursor onward are processed. When combined with `LIMIT`, only the next N customers are processed and the task prints a **next cursor** value for the following run. |
 | `BATCH_SIZE` | `1000` | Number of records fetched per database batch. Automatically capped to `LIMIT` when both are set. |
 | `ERROR_DISPLAY_LIMIT` | `50` | Maximum number of problematic wallets (dry-run) or errors (backfill) to display in the console output. |
 | `THREAD_COUNT` | `0` | Number of threads for parallel processing. `0` runs sequentially. Ensure your database connection pool size is at least `THREAD_COUNT + 1`. Due to Ruby's Global VM Lock (GVL), multi-threading primarily helps when the bottleneck is database I/O wait time. If the migration is CPU-bound, additional threads may not significantly improve performance. |
 | `INCLUDE_TERMINATED` | `false` | Set to `true` to include terminated wallets in the migration. By default, only active wallets are processed. |
-| `ERROR_LOG_FILE` | _(tmp dir)_ | File path for the CSV error log. A timestamped CSV file is automatically created in the system's temporary directory (e.g., `/tmp/wallet_migration_errors_20260402120000.csv`). Set this variable to override the default path. The file contains problematic wallets (dry-run) or errors (backfill). |
+| `ERROR_LOG_FILE` | _(tmp dir)_ | File path for the CSV error log. A file is created at startup in the system's temporary directory (e.g., `/tmp/wallet_migration_errors_20260402120000.csv`), but only populated with data when errors are found. On a clean run the file will remain empty. Set this variable to override the default path. |
 
 The dry-run performs a validation of all your wallets **without modifying any data**. It will output:
 
@@ -118,9 +122,6 @@ DRY_RUN=false ORGANIZATION_ID=ORG_ID bundle exec rails migrations:wallet_traceab
 # Backfill for the next 100 customers
 DRY_RUN=false LIMIT=100 bundle exec rails migrations:wallet_traceability
 
-# Resume from a previous run using the printed cursor
-DRY_RUN=false LIMIT=100 CURSOR=<previous_cursor> bundle exec rails migrations:wallet_traceability
-
 # Backfill with multithreading (ensure your DB pool size >= THREAD_COUNT + 1)
 DRY_RUN=false THREAD_COUNT=4 bundle exec rails migrations:wallet_traceability
 ```
@@ -137,7 +138,7 @@ If a wallet has data inconsistencies (e.g., outbound transactions that cannot be
 </Warning>
 
 <Note>
-The backfill is **idempotent** — it is safe to run multiple times. It acquires customer-level advisory locks and processes each customer's wallets atomically, so it can be safely run while the application is serving traffic.
+The backfill is safe to run multiple times. It acquires customer-level advisory locks and processes each customer's wallets atomically, so it can be safely run while the application is serving traffic.
 </Note>
 
 Monitor the task's progress bar and verify completion by checking that all active wallets have `traceable = true`.
@@ -150,28 +151,45 @@ There are two ways to parallelize the migration:
 
 **Multi-threading (`THREAD_COUNT`)** runs multiple threads within a single process. Due to Ruby's Global VM Lock (GVL), this primarily helps when the bottleneck is database I/O wait time and may not significantly improve performance for CPU-bound workloads.
 
-**Multiple processes with `CURSOR` + `LIMIT`** is the recommended approach for large datasets. By splitting the customer space into non-overlapping windows, you can run several independent processes in parallel — each handling a different slice. This sidesteps the GVL entirely and scales linearly with the number of processes.
+**Multiple processes with `CURSOR` + `LIMIT`** is the recommended approach for large datasets. By splitting the customer
+space into non-overlapping windows, you can run several independent processes in parallel — each handling a different
+slice. This sidesteps the GVL entirely and scales linearly with the number of processes.
 
-To set this up, first run a dry-run with `LIMIT` to discover the cursor boundaries:
+To set this up, you simple launch the first process to discover the next cursor, then launch additional processes with the provided cursor to split the workload:
 
 ```bash
-# Process 1: first 10,000 customers
-DRY_RUN=false LIMIT=10000 bundle exec rails migrations:wallet_traceability
+# Process 1: first 50,000 customers
+LIMIT=50000 bundle exec rails migrations:wallet_traceability
 # Output: Next cursor: <cursor_A>
+# The next cursor is displayed before the run starts, so you can immediately launch the next process in parallel.
 
-# Process 2: next 10,000 customers (can run in parallel with Process 1)
-DRY_RUN=false LIMIT=10000 CURSOR=<cursor_A> bundle exec rails migrations:wallet_traceability
+# Process 2: next 50,000 customers (can run in parallel with Process 1 after it prints the next cursor)
+LIMIT=50000 CURSOR=<cursor_A> bundle exec rails migrations:wallet_traceability
 # Output: Next cursor: <cursor_B>
 
-# Process 3: next 10,000 customers (can run in parallel)
-DRY_RUN=false LIMIT=10000 CURSOR=<cursor_B> bundle exec rails migrations:wallet_traceability
+# Process 3: next 50,000 customers (can run in parallel)
+LIMIT=50000 CURSOR=<cursor_B> bundle exec rails migrations:wallet_traceability
 # ...and so on
 ```
 
-Since the task only processes non-traceable wallets and acquires customer-level advisory locks, it is safe to re-run a cursor window — already-migrated customers will be skipped automatically.
+The same goes for the backfill:
+
+```bash
+# Process 1
+DRY_RUN=false LIMIT=50000 bundle exec rails migrations:wallet_traceability
+# Output: Next cursor: <cursor_A>
+
+# Process 2
+DRY_RUN=false LIMIT=50000 CURSOR=<cursor_A> bundle exec rails migrations:wallet_traceability
+# Output: Next cursor: <cursor_B>
+
+# Process 3
+DRY_RUN=false LIMIT=50000 CURSOR=<cursor_B> bundle exec rails migrations:wallet_traceability
+# ...and so on
+```
 
 <Note>
-You can discover all cursor boundaries upfront by running successive dry-runs with `LIMIT`, collecting each "Next cursor" value, and then launching all processes in parallel.
+Re-running the same `CURSOR` + `LIMIT` combination is safe but not recommended, as it will not produce the same result. If you need to re-run, start from the beginning without a `CURSOR` and continue with the cursors printed by each run.
 </Note>
 
 # Troubleshooting: Wallets that cannot be migrated
@@ -226,7 +244,7 @@ For customers **without a grace period**, any in-flight invoice generated betwee
 
 # Timeline
 
-We recommend performing this migration as soon as possible after the release of v1.45.0. Wallets that are not migrated will continue to function, but will not benefit from the new traceability features until the backfill is completed.
+We recommend performing this migration as soon as possible after the release of v1.45.0. Non-traceable wallets will continue to function for a few releases, but **support for non-traceable wallets will be removed in a future version**. All active wallets will be required to be traceable, making this migration mandatory.
 
 # Get Involved
 
