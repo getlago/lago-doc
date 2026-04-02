@@ -63,8 +63,8 @@ The available environment variables are:
 |---|---|---|
 | `DRY_RUN` | `true` | Set to `false` to run the backfill. Any other value (or unset) runs in dry-run mode. |
 | `ORGANIZATION_ID` | _(all)_ | Scope to a single organization by its ID. |
-| `LIMIT` | _(all)_ | Maximum number of **customers** to process. The task iterates over distinct customers — all wallets belonging to a customer are always processed atomically as a group. When set, the task prints a **next cursor** value you can use on the following run to resume where you left off (see `CURSOR`). |
-| `CURSOR` | _(none)_ | Resume processing from a specific customer ID. Only customers whose ID is strictly greater than this value will be processed. Use the "Next cursor" value printed by a previous `LIMIT`-ed run to paginate through large datasets. |
+| `LIMIT` | _(all)_ | Maximum number of **customers** to process. The task iterates over distinct customers — all wallets belonging to a customer are always processed atomically as a group. When set, the task prints a **next cursor** value (see `CURSOR`). |
+| `CURSOR` | _(first customer)_ | Start processing from a specific customer ID (inclusive). Must be a valid UUID. When omitted, the task defaults to the first customer ID in scope. When `LIMIT` is set, the task prints a **next cursor** value that can be passed as `CURSOR` on the following run to continue where the previous one left off. |
 | `BATCH_SIZE` | `1000` | Number of records fetched per database batch. Automatically capped to `LIMIT` when both are set. |
 | `OUTPUT_LIMIT` | `50` | Maximum number of problematic wallets to display in dry-run output. |
 | `THREAD_COUNT` | `0` | Number of threads for parallel processing. `0` runs sequentially. Ensure your database connection pool size is at least `THREAD_COUNT + 1`. Due to Ruby's Global VM Lock (GVL), multi-threading primarily helps when the bottleneck is database I/O wait time. If the migration is CPU-bound, additional threads may not significantly improve performance. |
@@ -137,6 +137,38 @@ The backfill is **idempotent** — it is safe to run multiple times. It acquires
 </Note>
 
 Monitor the task's progress bar and verify completion by checking that all active wallets have `traceable = true`.
+
+### Scaling the migration with parallel processes
+
+For most installations, a single process is fast enough — parallelization is only worth considering if you have hundreds of thousands of customers with wallets to migrate. We recommend starting with a smaller subset (e.g., `LIMIT=1000`) to get a feel for how long the migration takes, then extrapolating from there.
+
+There are two ways to parallelize the migration:
+
+**Multi-threading (`THREAD_COUNT`)** runs multiple threads within a single process. Due to Ruby's Global VM Lock (GVL), this primarily helps when the bottleneck is database I/O wait time and may not significantly improve performance for CPU-bound workloads.
+
+**Multiple processes with `CURSOR` + `LIMIT`** is the recommended approach for large datasets. By splitting the customer space into non-overlapping windows, you can run several independent processes in parallel — each handling a different slice. This sidesteps the GVL entirely and scales linearly with the number of processes.
+
+To set this up, first run a dry-run with `LIMIT` to discover the cursor boundaries:
+
+```bash
+# Process 1: first 10,000 customers
+DRY_RUN=false LIMIT=10000 bundle exec rails migrations:wallet_traceability
+# Output: Next cursor: <cursor_A>
+
+# Process 2: next 10,000 customers (can run in parallel with Process 1)
+DRY_RUN=false LIMIT=10000 CURSOR=<cursor_A> bundle exec rails migrations:wallet_traceability
+# Output: Next cursor: <cursor_B>
+
+# Process 3: next 10,000 customers (can run in parallel)
+DRY_RUN=false LIMIT=10000 CURSOR=<cursor_B> bundle exec rails migrations:wallet_traceability
+# ...and so on
+```
+
+Since the task only processes non-traceable wallets and acquires customer-level advisory locks, it is safe to re-run a cursor window — already-migrated customers will be skipped automatically.
+
+<Note>
+You can discover all cursor boundaries upfront by running successive dry-runs with `LIMIT`, collecting each "Next cursor" value, and then launching all processes in parallel.
+</Note>
 
 # Troubleshooting: Wallets that cannot be migrated
 
