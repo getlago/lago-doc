@@ -66,10 +66,10 @@ The available environment variables are:
 | `LIMIT` | _(all)_ | Maximum number of **customers** to process. The task iterates over distinct customers — all wallets belonging to a customer are always processed atomically as a group. When set, the task prints a **next cursor** value (see `CURSOR`). |
 | `CURSOR` | _(first customer)_ | Start processing from a specific customer ID (inclusive). Must be a valid UUID. When omitted, the task defaults to the first customer ID in scope. When `LIMIT` is set, the task prints a **next cursor** value that can be passed as `CURSOR` on the following run to continue where the previous one left off. |
 | `BATCH_SIZE` | `1000` | Number of records fetched per database batch. Automatically capped to `LIMIT` when both are set. |
-| `OUTPUT_LIMIT` | `50` | Maximum number of problematic wallets to display in dry-run output. |
+| `ERROR_DISPLAY_LIMIT` | `50` | Maximum number of problematic wallets (dry-run) or errors (backfill) to display in the console output. |
 | `THREAD_COUNT` | `0` | Number of threads for parallel processing. `0` runs sequentially. Ensure your database connection pool size is at least `THREAD_COUNT + 1`. Due to Ruby's Global VM Lock (GVL), multi-threading primarily helps when the bottleneck is database I/O wait time. If the migration is CPU-bound, additional threads may not significantly improve performance. |
 | `INCLUDE_TERMINATED` | `false` | Set to `true` to include terminated wallets in the migration. By default, only active wallets are processed. |
-| `OUTPUT_FILE` | _(none)_ | File path for CSV export of problematic wallets (dry-run) or errors (backfill). Useful for reviewing all issues without truncation. |
+| `ERROR_LOG_FILE` | _(tmp dir)_ | File path for the CSV error log. A timestamped CSV file is automatically created in the system's temporary directory (e.g., `/tmp/wallet_migration_errors_20260402120000.csv`). Set this variable to override the default path. The file contains problematic wallets (dry-run) or errors (backfill). |
 
 The dry-run performs a validation of all your wallets **without modifying any data**. It will output:
 
@@ -77,12 +77,12 @@ The dry-run performs a validation of all your wallets **without modifying any da
 - The number of wallets that **can be migrated** automatically.
 - The number of **problematic** wallets with details about each issue.
 - A **migration readiness** percentage.
-- A **CSV file** with all problematic wallets (when `OUTPUT_FILE` is set).
+- A **CSV error log** with all problematic wallets (written automatically to the tmp directory, see `ERROR_LOG_FILE`).
 
-To export the full list of problematic wallets to a CSV file for review:
+To override the default error log path:
 
 ```bash
-OUTPUT_FILE=/tmp/problematic_wallets.csv bundle exec rails migrations:wallet_traceability
+ERROR_LOG_FILE=/tmp/problematic_wallets.csv bundle exec rails migrations:wallet_traceability
 ```
 
 <Note>
