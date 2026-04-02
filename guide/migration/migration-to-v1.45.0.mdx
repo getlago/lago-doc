@@ -89,6 +89,10 @@ ERROR_LOG_FILE=/tmp/problematic_wallets.csv bundle exec rails migrations:wallet_
 If all wallets pass validation, you can skip directly to Step 4.
 </Note>
 
+<Note>
+It is safe to run the backfill directly (Step 4) without running the dry-run first — the backfill also validates each wallet before migrating it and will roll back any customer with problematic wallets. The main purpose of the dry-run is to separate validation from migration, giving you the opportunity to review and fix problematic wallets upfront rather than discovering them during the backfill.
+</Note>
+
 ### 3. Fix or handle problematic wallets
 
 Review the output from Step 2. For each problematic wallet, choose one of the following approaches based on the issue type (see the [Troubleshooting](#troubleshooting-wallets-that-cannot-be-migrated) section below for details):
