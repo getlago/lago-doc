@@ -1,209 +1,628 @@
 ---
-title: "Ingesting usage"
-description: "This guide explains how Lago ingests usage-based events coming from your application."
+title: "Ingest usage"
+description: "Design, send, and manage usage events that Lago turns into accurate, auditable invoices."
 ---
 
-## Define a billable metric[](#define-a-billable-metric "Direct link to heading")
+Lago turns usage into invoices. You send events describing what your customers consumed (API calls, compute hours, transactions, tokens), and Lago matches each event to the right subscription and pricing plan, deduplicates it, and aggregates everything into accurate, auditable invoices.
 
-**Usage events are designed to target very specific
-[billable metrics](/guide/billable-metrics/create-billable-metrics) created from the UI**. If you don't understand the
-concept of billable metrics, we recommend reading it first.
+This page is your complete integration guide: how to **design** your events for billing, **send** them through any delivery method, and **handle** edge cases like retries and late arrivals.
 
-First things first, you need to define a billable metric from the UI to send
-usage measurement events:
+```mermaid
+flowchart LR
+    A["Your Application"] -->|"REST API / Kafka / Kinesis / S3"| B["Lago Ingestion"]
+    B --> C["Deduplicate (transaction_id)"]
+    C --> D["Match to Subscription & Plan"]
+    D --> E["Aggregate by Billable Metric"]
+    E --> F["Invoice"]
+```
 
-1. In the Lago app, go to the **"Billable metrics"** section;
-2. Click **"Add a billable metric"**;
-3. Add metric information, including:
-   - `name`
-   - `code` (used to send events via API)
-   - `description` (optional)
-4. Define whether or not this metric is `recurring`; and
-5. Choose an aggregation type to define how usage should be calculated.
+## Designing your events
 
-Billable metrics represent the features of your product. Events should automatically be sent to Lago by your application
-based on your customers' actions.
+<Frame caption="Event structure">
+      <img src="/guide/events/images/events-structure.png" />
+</Frame>
 
-## Send usage measurements to Lago[](#send-usage-measurements-to-lago "Direct link to heading")
+A well-designed event captures what happened, who it happened for, and the dimensions you need for pricing. Getting this right upfront saves you from reworking your integration later.
 
-To send usage events to Lago, you need to use the **Lago API**. A measurement
-event is JSON with the following fields:
+The guiding question: **what do you charge your customers for?** That's your event.
+
+### Event schema
 
 ```json
 {
-  "transaction_id": "__TRANSACTION_ID__", // (Required) Unique identifier of the event
-  "external_subscription_id": "__SUBSCRIPTION_ID__", // (Required) Unique identifier of your customer's subscription
-  "code": "__EVENT_CODE__", // (Required) The billable metric's code
-  "timestamp": 1650893379, // (Optional) UNIX timestamp of the event
-  "precise_total_amount_cents": "140", // (Optional) Precise amount cents of the event used for dynamic charge model
+  "transaction_id": "txn_20240314_cust8832_inference_00142",
+  "external_subscription_id": "sub_8832",
+  "code": "ai_inference",
+  "timestamp": 1710421740,
   "properties": {
-    "custom_field": 12, // (Optional) Custom variables defined as properties
-    "operation_type": "add" or "remove" // (Optional) Required only for recurring metric based on the unique count aggregation
+    "model": "gpt-4",
+    "tokens_in": 820,
+    "tokens_out": 1500,
+    "region": "us-east-1"
   }
 }
 ```
 
 <AccordionGroup>
-  <Accordion title="1. The transaction_id">
-    The `transaction_id` is very useful to ensure the uniqueness of the events
-    received. It is mandatory to define on your own a unique `transaction_id` for
-    each event you send to Lago.
-
-    This identifier is used to deduplicate events ingested, making sure we don't
-    ingest twice the same event (otherwise, this could create billing errors for
-    your customers).
-
-    - If a `transaction_id` is new to Lago, the event is ingested;
-    - If a `transaction_id` has already been received by Lago, it's ignored and API will return a `422: "Unprocessable Entity"`
-
-    <Warning>
-      If your Lago's organization is configured to use the new Clickhouse-based event pipeline (designed for high-volume processing), the idempotency logic is handled differently.
-
-      Event uniqueness is maintained with both `transaction_id` and `timestamp` fields:
-
-      - If `transaction_id` and `timestamp` are new to Lago, the event is ingested;
-      - If `transaction_id` and `timestamp` have already been received by Lago, the event will replace the previous one
-
-    </Warning>
+  <Accordion title="transaction_id (required)">
+    A unique ID you generate. Lago uses it for **deduplication**: if the same event arrives twice, only the first is billed.
 
     <Tip>
-      **Good practice:**
-      Send the id of the transaction coming from your backend.
-      If you do not have an existing id for a transaction, you can create a unique one
-      by concatenating the `code` of the Billable metric and the `timestamp` of the
-      event \*(example: `api_searches_2022-04-01T03:49:23Z`).
+      **Good practice:** Don't use random UUIDs. Embed the customer, event type, and timestamp so you can trace a billed amount back to its source event without guessing:
+      ```
+      {type}_{date}_{customer}_{category}_{sequence}
+
+      # Examples
+      inf_20240314_cust42_gpt4_00831
+      compute_20240314_org7_a100_useast_001
+      pay_20240314_acct3391_card_00092
+      ```
     </Tip>
 
+    <Warning>
+      If your Lago organization uses the ClickHouse-based event pipeline (designed for high-volume processing), event uniqueness is maintained with **both** `transaction_id` and `timestamp` fields:
+      - If both are new to Lago, the event is ingested
+      - If both have already been received, the new event **replaces** the previous one
+    </Warning>
   </Accordion>
-  <Accordion title="2. The external_subscription_id">
-    This attribute allows Lago to assign the event to the right subscription (and therefore to the right customer).
-    The `external subscription_id` is required, as it ensures accurate billing.
+
+  <Accordion title="external_subscription_id (required)">
+    Ties the event to a customer subscription. This is how Lago knows which pricing plan to apply. The `external_subscription_id` must match an active subscription in Lago.
   </Accordion>
-  <Accordion title="3. The event code">
-    The event `code` represents the unique code of the Billable metric you want to
-    start ingest measurements on. This code is required for all events received in
-    Lago. For instance, you can start ingesting events for Billable metrics with
-    codes `api_seaches` _(for api products example)_, `storage` _(cloud companies
-    example)_, `atm_withdrawals` _(fintech example)_, or anything you need to define
-    as a paying feature.
+
+  <Accordion title="code (required)">
+    Maps to a [billable metric](/guide/billable-metrics/create-billable-metrics) you've defined in Lago (e.g., `ai_inference`, `api_calls`, `storage_gb`). Treat the `code` as a stable API contract between your application and your billing configuration.
   </Accordion>
-  <Accordion title="4. The event timestamp">
-    The event timestamp is the date when the billing event occurs in your
-    application and sent to Lago. This event must be a
-    **[UNIX Timestamp](https://www.unixtimestamp.com/).** For instance, you could
-    define `1650893379` for _Mon Apr 25 2022 13:29:39 GMT+0000_ or `1651682217`for
-    _Wed May 04 2022 16:36:57 GMT+0000_.
 
-    You can ingest usage event in seconds or milliseconds. (more information about the timestamp [here](#event-timestamp))
+  <Accordion title="timestamp (required)">
+    When the event happened, as a **Unix timestamp**. Lago uses this to assign the event to the correct billing period.
 
-    **This `timestamp` is not mandatory to send the event**. If you do not specify a
-    timestamp on your own, Lago automatically defines the reception date of the
-    event as the event timestamp.
+    We typically log events using **timestamps in seconds**, such as `1741219251`. When higher precision is required, you can use **millisecond accuracy** in the format `1741219251.590`, where the dot acts as the decimal separator.
 
+    <Info>
+      If you do not specify a timestamp, Lago automatically uses the reception date of the event.
+    </Info>
   </Accordion>
-    <Accordion title="5. The event precise amount cent">
-    The event’s precise amount in cents refers to the amount sent to Lago when using a dynamic charge model.
-    This value must be specified in cents.
 
-    **The precise_total_amount_cents is not mandatory when sending the event.** If you do not specify an amount, Lago will automatically set it to 0, and the event will not be included in the charge aggregation.
+  <Accordion title="properties (optional)">
+    Key-value pairs carrying the data your pricing needs: token counts, regions, instance types, anything you price on. Properties can be `strings`, `integers`, `floats`, `uuids`, or `timestamps`.
 
+    Lago ignores properties that don't match a billable metric, so **include dimensions you might price on in the future** — extra fields cost nothing but give you pricing flexibility later.
+
+    <Info>
+      For `UNIQUE COUNT` aggregation on a `recurring` metric, the `operation_type` property is required. Send `add` to add a value or `remove` to remove one.
+    </Info>
   </Accordion>
-  <Accordion title="6. The event properties">
-    Event properties are useful to send more context in usage events. Moreover, they
-    are also very useful when you need to aggregate a Billable metrics for `SUM`,
-    `MAX` and `UNIQUE COUNT`. Event properties can be `strings`, `integers`,
-    `floats`, `uuids` or `timestamps`.
 
-    In case of an aggregation type `UNIQUE COUNT` for a metric that is `recurring`
-    , the `operation_type` is required.
-    By sending `add`, you will add a value. By sending `remove`, you will remove a value.
+  <Accordion title="precise_total_amount_cents (optional)">
+    Skip Lago's aggregation and set the dollar amount directly. This value must be a **string** to avoid floating-point rounding issues.
 
+    If not specified, Lago sets it to 0 and the event is not included in charge aggregation for dynamic charge models.
   </Accordion>
 </AccordionGroup>
 
-<Warning>
-  If you were using the `external_customer_id` to send usage measurement, note
-  that this field is deprecated and is no longer supported or maintained. Please
-  use the `external_subscription_id` instead.
-</Warning>
+---
 
-## Idempotency and retries[](#idempotency-and-retries "Direct link to heading")
+## Use cases in detail
 
-By using a unique `transaction_id`, you can send events to Lago as much as you want
-without worrying about sending twice the same event. Duplicates will be ignored
-by our system. This ensures that your customers' usage is counted once. In case
-of duplicates, we guarantee that only one of the events will be ingested, and
-the other ones are ignored.
+<Tabs>
+  <Tab title="AI / LLM">
+    **Billing model:** Per-token pricing, rates vary by model and sometimes by input vs. output tokens.
 
-In case you are not sure if an event has been ingested, we recommend you to send
-it multiple times (or to replay it). Once again, with the uniqueness of the
-`transaction_id`, your customers won't be badly affected.
+    **Event design:** One event per inference request. Properties carry `model`, `tokens_in`, `tokens_out`, and any other dimensions you price on.
 
-<Warning>
-  If your Lago's organization is configured to use the new Clickhouse-based event pipeline (designed for high-volume processing), the idempotency logic is handled differently.
+    ```json
+    {
+      "transaction_id": "inf_20240314150900_cust42_gpt4_00831",
+      "external_subscription_id": "sub_42",
+      "code": "llm_tokens",
+      "timestamp": 1710421740,
+      "properties": {
+        "model": "gpt-4",
+        "tokens_in": 820,
+        "tokens_out": 1500,
+        "latency_ms": 1230,
+        "stream": true
+      }
+    }
+    ```
 
-  Event uniqueness is maintained with both `transaction_id` and `timestamp` fields:
+    **Billable metric setup:** Create a metric `llm_tokens` with aggregation type `SUM` and a custom expression like `properties.tokens_in + properties.tokens_out`. Use `model` as a charge filter to apply different per-token rates for GPT-4, GPT-3.5, Claude, etc.
 
-  - If `transaction_id` and `timestamp` are new to Lago, the event is ingested;
-  - If `transaction_id` and `timestamp` have already been received by Lago, the event will replace the previous one
+    <Tip>
+      Include `latency_ms` and `stream` in properties even if you don't price on them today. Lago ignores unused properties, but having the data means you can add latency-based tiers or streaming surcharges later without re-instrumenting.
+    </Tip>
 
-</Warning>
+    **Volume consideration:** A busy AI platform might generate thousands of inference events per second. At low volume, send every event via REST API. At high volume, stream through Kafka or pre-aggregate to one event per customer per model per hour.
+  </Tab>
 
-## Event timestamp
-We typically **log usage-based events using timestamps in seconds**, such as `1741219251`, which represents the number of seconds since January 1, 1970 (the Unix epoch).
+  <Tab title="Cloud / GPU">
+    **Billing model:** Per compute-hour pricing, rates vary by instance type, region, and on-demand vs. spot.
 
-However, when higher precision is required, **you can also use a timestamp with millisecond accuracy** in the format `1741219251.590`. Here, the dot acts as the decimal separator, clearly distinguishing the whole seconds from the fractional milliseconds (590 ms in the previous example).
+    **Event design:** One event per compute session (or per billing interval within a long-running session). Properties carry the full instance specification.
 
-This format minimizes ambiguity and ensures consistency when sending usage-based events.
+    ```json
+    {
+      "transaction_id": "compute_20240314_org7_a100_useast_0001",
+      "external_subscription_id": "sub_org7",
+      "code": "compute_hours",
+      "timestamp": 1710421740,
+      "properties": {
+        "instance_type": "gpu-a100-80gb",
+        "region": "us-east-1",
+        "hours": 1.0,
+        "spot": false,
+        "gpu_count": 8,
+        "vcpus": 96,
+        "memory_gb": 1024
+      }
+    }
+    ```
 
-## User action trigger or periodic trigger[](#user-action-trigger-or-periodic-trigger "Direct link to heading")
+    **Billable metric setup:** Metric `compute_hours` with `SUM` aggregation on the `hours` property. Use charge filters on `instance_type` and `region` to apply dimension-specific rates. With Lago's "most specific match wins" filter algorithm, you can set a default rate and override for specific instance types without creating hundreds of separate metrics.
 
-With Lago, you can define when you need to trigger events based on the actions
-your customers make in your application. There are 2 ways of tracking billing
-events with Lago.
+    <Info>
+      A Nasdaq-listed GPU cloud provider runs this exact pattern in production, processing **10M events/month** across **400+ machine instance types**, all billed on a single `compute_hours` metric. They pre-aggregate to one event per customer per instance type per day.
+    </Info>
 
-### User action trigger[](#user-action-trigger "Direct link to heading")
+    <Tip>
+      **Handling long-running sessions:** For VMs that run for days or weeks, emit a heartbeat event every hour rather than a single event at termination. This way, if a session crashes, you've already captured usage up to the last heartbeat.
+    </Tip>
+  </Tab>
 
-Anytime a user performs an action in your product, this sends an event to Lago.
-This can be useful for companies tracking usage with a lot of granularity. As we
-do the math for you, you can send events whenever you need and don't compute
-hard calculations on your own.
+  <Tab title="Fintech">
+    **Billing model:** Per-transaction pricing, potentially with volume tiers, and rates that vary by payment method and geography.
 
-For instance, think of a _fintech company_ tracking user action. Each time a
-customer withdraw money at an ATM, you send an event to Lago. We aggregate the
-usage of a billable period based on what you defined in a Billable metric called
-`atm_withdrawals`.
+    **Event design:** One event per transaction processed. Properties carry the transaction details your pricing needs.
 
-### Periodic trigger[](#periodic-trigger "Direct link to heading")
+    ```json
+    {
+      "transaction_id": "pay_20240314_acct3391_card_00092",
+      "external_subscription_id": "sub_3391",
+      "code": "transactions",
+      "timestamp": 1710421740,
+      "properties": {
+        "amount_cents": 15000,
+        "currency": "USD",
+        "payment_method": "card",
+        "card_brand": "visa",
+        "country": "US",
+        "is_3ds": true
+      }
+    }
+    ```
 
-Some companies, such as infrastructure or cloud ones, often use periodic
-triggers to calculate consumption. Think of the example of a thermometer to
-measure fever. We would probably track the temperature once per hour (at a
-periodic time). This is the same for cloud companies selling computation. You
-could send an event to Lago each single minute measuring the CPU consumption of
-a customer.
+    **Billable metric setup:** For per-transaction flat fees, use `COUNT` aggregation on the `transactions` metric with charge filters on `payment_method` (different rates for card vs. ACH vs. wire). For percentage-based fees, use a custom expression like `properties.amount_cents * 0.029` or set up pricing tiers in your charge configuration.
 
-## Batching events
+    <Info>
+      A major global payments company runs Lago self-hosted, processing **thousands of transactions per second**. They started on Postgres (validated at 10K events/sec) and later migrated to ClickHouse + Kafka for higher throughput — same event format, same pricing config, zero billing logic changes.
+    </Info>
 
-In Lago, event batching allows for the efficient ingestion of multiple events through a single API call.
-This capability enhances data throughput and reduces the number of API requests needed for event management.
+    **Currency handling:** Include `currency` in properties and use charge filters or custom expressions to handle multi-currency pricing. For FX, you can either convert at the event level (include `amount_usd_cents` as a derived property) or let Lago handle it through metric expressions.
+  </Tab>
 
-- **Batching multiple events:** Users can aggregate multiple events into a single batch. This consolidation enables the ingestion of numerous events simultaneously, significantly optimizing the data transmission process.
-- **API call limitation:** Lago supports batching of up to 100 events per API call. This feature is designed to balance between high-volume data handling and system performance.
-- **Validation process:** If any event within the batch does not meet the structural requirements, the entire batch will be rejected. This ensures data integrity and consistency. Users are advised to verify the structure of each event before batching to prevent rejections.
+  <Tab title="API Platform">
+    **Billing model:** Per-request pricing with tiers (free tier, then pay-per-use), rates may vary by endpoint category or response size.
 
-## Designed for flexibility[](#designed-for-flexibility "Direct link to heading")
+    **Event design:** One event per API request. Properties carry the endpoint, status, and any dimensions relevant to pricing.
 
-Lago is designed to ingest a high number of events. By defining aggregation
-rules, you can define any billing use cases your company might want to track.
-Whether you need to send **[user action triggered](#user-action-trigger)**
-events or **[periodic triggered](#periodic-trigger)** events, Lago does the math
-on your own so you don't have to query heavy databases before charging your
-customers.
+    ```json
+    {
+      "transaction_id": "api_20240314_app221_search_00004871",
+      "external_subscription_id": "sub_app221",
+      "code": "api_requests",
+      "timestamp": 1710421740,
+      "properties": {
+        "endpoint": "/v2/search",
+        "category": "premium",
+        "method": "POST",
+        "response_bytes": 4096,
+        "status_code": 200,
+        "api_version": "2024-03"
+      }
+    }
+    ```
 
-## Next steps[](#next-steps "Direct link to heading")
+    **Billable metric setup:** For tiered pricing (first 10K requests free, then $0.001/request), use `COUNT` aggregation. For pricing by category, use charge filters on `category` (e.g., "standard" vs. "premium"). For pricing by response size, use `SUM` aggregation on `response_bytes`.
 
-Once you defined your Billable metrics (with their aggregation rules), and
-started ingesting events to track usage, you are able to define how much your
-customers will pay for it. This has to be specified in
-**[Plans](/guide/plans/overview)**.
+    <Tip>
+      **Should you bill failed requests?** If you want to exclude 4xx/5xx responses, add a billable metric filter that only counts events where `status_code` is in the 200 range. Include `status_code` in every event either way — it's useful for analytics even if you don't price on it.
+    </Tip>
+
+    **Volume consideration:** API platforms often have the highest event frequency. A platform serving 100M API calls/day generates ~1,150 events/sec. The REST API handles this easily. Above 10K requests/sec, consider Kafka or client-side pre-aggregation (one event per app per endpoint per hour).
+  </Tab>
+
+  <Tab title="Storage / CDN">
+    **Billing model:** Per-GB pricing for storage or bandwidth, measured periodically or on transfer.
+
+    **Event design:** For storage, emit a periodic measurement event (e.g., daily snapshot of GB stored). For bandwidth/transfer, emit one event per transfer or per time window.
+
+    ```json
+    {
+      "transaction_id": "storage_20240314_org55_snapshot",
+      "external_subscription_id": "sub_org55",
+      "code": "storage_gb",
+      "timestamp": 1710460800,
+      "properties": {
+        "gb_stored": 2450.7,
+        "tier": "hot",
+        "region": "eu-west-1",
+        "object_count": 1847293
+      }
+    }
+    ```
+
+    **Billable metric setup:** For storage, use `MAX` or `LAST` aggregation on `gb_stored` to bill on peak or end-of-period usage. For bandwidth, use `SUM` on `gb_transferred`.
+
+    <Tip>
+      **Snapshot events vs. delta events:** For storage billing, periodic snapshots (one event per day with total GB stored) are simpler and more reliable than tracking every write/delete. This is also a natural pre-aggregation pattern — one event per day per customer instead of thousands.
+    </Tip>
+  </Tab>
+
+  <Tab title="Marketplace">
+    **Billing model:** Platform takes a percentage of each transaction (e.g., 2.9% + $0.30), or a flat take rate.
+
+    **Event design:** One event per marketplace transaction, with the GMV amount.
+
+    ```json
+    {
+      "transaction_id": "mkt_20240314_seller8821_order_00293",
+      "external_subscription_id": "sub_seller8821",
+      "code": "marketplace_gmv",
+      "timestamp": 1710421740,
+      "properties": {
+        "order_amount_cents": 8500,
+        "currency": "USD",
+        "category": "electronics",
+        "buyer_country": "US"
+      }
+    }
+    ```
+
+    **Billable metric setup:** Use a custom expression to calculate the platform fee: e.g., `properties.order_amount_cents * 0.029 + 30` for a 2.9% + $0.30 model. Alternatively, use `precise_total_amount_cents` to compute the fee in your application and pass the exact amount to Lago.
+
+    <Info>
+      **Why `precise_total_amount_cents`?** When fee calculations involve complex business rules (tiered take rates, negotiated seller rates, promotional discounts), it's often cleaner to compute the fee in your backend and pass the result to Lago rather than encoding all that logic in metric expressions.
+    </Info>
+  </Tab>
+</Tabs>
+
+---
+
+## Event design best practices
+
+<CardGroup cols={2}>
+  <Card title="Send more data than you need today">
+    Properties are flexible: include dimensions you might price on in the future. Lago ignores properties that don't match a billable metric, so extra fields cost nothing but give you pricing flexibility later.
+  </Card>
+  <Card title="Make transaction_id meaningful">
+    Don't use random UUIDs. Embed the customer, event type, and timestamp so you can trace a billed amount back to its source event without guessing.
+  </Card>
+  <Card title="One event per billable action">
+    If a customer makes 3 API calls, send 3 events, not 1 event with a count of 3. This gives you maximum flexibility. The exception is pre-aggregation at very high volumes.
+  </Card>
+  <Card title="Use timestamp accurately">
+    Lago assigns events to billing periods based on `timestamp`, not arrival time. Late-arriving events are placed in the correct historical period. This matters for reconciliation and billing accuracy.
+  </Card>
+  <Card title="Treat code as a contract">
+    The `code` ties your event to a [billable metric](/guide/billable-metrics/create-billable-metrics). If you rename a metric, you need to update the `code` in your events. Treat it as a stable API contract.
+  </Card>
+  <Card title="Test with a single event first">
+    Send one event via the REST API and verify it appears in `GET /events/{transaction_id}` before scaling to batch or streaming delivery.
+  </Card>
+</CardGroup>
+
+---
+
+## Delivery methods
+
+Lago accepts events through multiple channels. All methods use the same event schema and produce identical billing results.
+
+```mermaid
+flowchart TD
+    A{"What's your event volume?"} -->|"< 1K events/sec"| B["REST API (single)"]
+    A -->|"1K - 10K events/sec"| C["REST API (batch)"]
+    A -->|"&gt; 10K events/sec"| D{"Infrastructure?"}
+    D -->|"AWS-native"| E["Amazon Kinesis"]
+    D -->|"Kafka / Redpanda already deployed"| F["Kafka / Redpanda"]
+    D -->|"No streaming infra"| G{"Real-time needed?"}
+    G -->|"Yes"| F
+    G -->|"No, batch is fine"| H["Amazon S3"]
+    A -->|"Historical backfill"| H
+```
+
+| Method | When to use |
+| --- | --- |
+| **REST API** | Most integrations. Simplest setup. Start here. |
+| **REST API (batch)** | Same as REST but batches up to 100 events per request for higher throughput. |
+| **Kafka / Redpanda** | Real-time, high-volume production pipelines. |
+| **Amazon Kinesis** | AWS-native streaming architectures. |
+| **Amazon S3** | Historical backfills, migrations, periodic batch loads. |
+
+<Tip>
+  **Start with the REST API.** You can migrate to streaming later without changing your event schema, billable metrics, or pricing configuration. Many customers start on REST and switch to Kafka only when they outgrow it.
+</Tip>
+
+For the full list of available ingestion sources, see [Metering ingestion sources](/guide/events/metering-source).
+
+### REST API
+
+<Info>
+  Replace `__LAGO_API_URL__` with `api.getlago.com` for Lago Cloud, or your own instance URL for self-hosted deployments.
+</Info>
+
+<Tabs>
+  <Tab title="Single event">
+    ```bash
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl -X POST "$LAGO_URL/api/v1/events" \
+      -H "Authorization: Bearer $API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "event": {
+          "transaction_id": "txn_20240314_cust42_api_00001",
+          "external_subscription_id": "sub_42",
+          "code": "api_calls",
+          "timestamp": 1710421740,
+          "properties": {"tokens": 1500}
+        }
+      }'
+    ```
+  </Tab>
+  <Tab title="Batch (up to 100)">
+    ```bash
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl -X POST "$LAGO_URL/api/v1/events/batch" \
+      -H "Authorization: Bearer $API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "events": [
+          {
+            "transaction_id": "txn_001",
+            "external_subscription_id": "sub_42",
+            "code": "api_calls",
+            "timestamp": 1710421740,
+            "properties": {"tokens": 1500}
+          },
+          {
+            "transaction_id": "txn_002",
+            "external_subscription_id": "sub_42",
+            "code": "api_calls",
+            "timestamp": 1710421741,
+            "properties": {"tokens": 2200}
+          }
+        ]
+      }'
+    ```
+
+    <Warning>
+      If any event within the batch does not meet the structural requirements, the entire batch will be rejected. Verify the structure of each event before batching.
+    </Warning>
+  </Tab>
+</Tabs>
+
+### Client libraries
+
+<CodeGroup>
+```python Python
+from lago_python_client import Client
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+client.events.create({
+    "transaction_id": "txn_20240314_cust42_api_00001",
+    "external_subscription_id": "sub_42",
+    "code": "api_calls",
+    "timestamp": 1710421740,
+    "properties": {"tokens": 1500}
+})
+```
+
+```javascript Node.js
+import { Client } from 'lago-javascript-client';
+const client = new Client('__YOUR_API_KEY__');
+
+await client.events.create({
+  transaction_id: 'txn_20240314_cust42_api_00001',
+  external_subscription_id: 'sub_42',
+  code: 'api_calls',
+  timestamp: 1710421740,
+  properties: { tokens: 1500 }
+});
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.events.create({
+  transaction_id: 'txn_20240314_cust42_api_00001',
+  external_subscription_id: 'sub_42',
+  code: 'api_calls',
+  timestamp: 1710421740,
+  properties: { tokens: 1500 }
+})
+```
+
+```go Go
+import "github.com/getlago/lago-go-client"
+
+client := lago.New().SetApiKey("__YOUR_API_KEY__")
+event := lago.EventInput{
+    TransactionID:          "txn_20240314_cust42_api_00001",
+    ExternalSubscriptionID: "sub_42",
+    Code:                   "api_calls",
+    Timestamp:              1710421740,
+    Properties: map[string]interface{}{"tokens": 1500},
+}
+client.Event().Create(ctx, &event)
+```
+</CodeGroup>
+
+### Kafka / Redpanda configuration
+
+Kafka ingestion requires the **ClickHouse event store** (see Architecture section above).
+
+<AccordionGroup>
+  <Accordion title="Lago Cloud">
+    Lago Cloud includes a managed Kafka endpoint. Contact the team for your connection details (broker address, credentials, topic name). No infrastructure to deploy.
+  </Accordion>
+  <Accordion title="Reader / producer tuning">
+    Lago can directly consume events from your Kafka topic (which will require opening access to your Kafka broker / topic). Alternatively, you can send your events to a dedicated topic on our infrastructure (AWS VPC Peering or PrivateLink).
+
+    In this second case, these settings have the biggest impact on throughput:
+
+    | Setting | Recommended | Why |
+    | --- | --- | --- |
+    | `linger.ms` | 20-100ms | Batches messages for fewer, larger network calls |
+    | `batch.num.messages` | 500-5000 | Larger batches = higher throughput |
+    | `compression.type` | `lz4` | 60-80% bandwidth reduction at 1M events/sec |
+    | `enable.idempotence` | `true` | Exactly-once delivery to broker |
+    | Message key | `external_subscription_id` | Preserves per-customer ordering |
+
+    <Info>
+      **Partition count:** Aim for partition count >= number of event processor instances. More partitions = more consumer parallelism.
+    </Info>
+
+    <Warning>
+      **Consumer lag monitoring:** This is your #1 operational metric. Alert when lag exceeds your latency budget (e.g., > 100K messages).
+    </Warning>
+  </Accordion>
+  <Accordion title="Redpanda on Kubernetes (self-hosted)">
+    Minimal production deployment:
+
+    ```yaml
+    apiVersion: cluster.redpanda.com/v1alpha1
+    kind: Redpanda
+    metadata:
+      name: redpanda
+    spec:
+      chartRef: {}
+      clusterSpec:
+        statefulset:
+          replicas: 3
+        auth:
+          sasl:
+            enabled: true
+            users:
+              - name: lago
+                password: <your-password>
+        resources:
+          memory: { container: { max: 4Gi } }
+          cpu: { cores: 2 }
+        storage:
+          persistentVolume: { size: 100Gi }
+    ```
+
+    See [Redpanda Operator docs](https://docs.redpanda.com/current/deploy/deployment-option/self-hosted/kubernetes/) for TLS, rack awareness, and tiered storage.
+
+    <Note>
+      ClickHouse on Kubernetes documentation is coming soon.
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+### Amazon Kinesis configuration
+
+<Accordion title="Kinesis setup">
+  We can read events directly from your Kinesis stream. We'll need:
+
+  - Kinesis Stream ARN
+  - Credentials:
+    - Role ARN to assume, or
+    - IAM Access Keys
+</Accordion>
+
+### Amazon S3 configuration
+
+<AccordionGroup>
+  <Accordion title="File format">
+    Newline-delimited JSON (`.jsonl` or `.jsonl.gz`). Target 100MB-1GB per compressed file.
+
+    <Info>
+      **Idempotent:** Re-running an import after failure is always safe (dedup by `transaction_id`).
+    </Info>
+  </Accordion>
+  <Accordion title="S3 setup">
+    We generally provide an S3 bucket on our infrastructure where you can deliver your files, along with credentials to upload new files.
+
+    If you prefer to provide your own S3 bucket, an SQS queue is required to capture new file uploads (configurable on the S3 bucket properties/notifications). We would need:
+
+    - S3 bucket
+    - S3 Region
+    - SQS URL
+    - Credentials:
+      - Role ARN to assume, or
+      - IAM Access Keys
+  </Accordion>
+</AccordionGroup>
+
+
+## Idempotency and deduplication
+
+Lago guarantees **exactly-once processing** through the `transaction_id`:
+
+- Same `transaction_id` + `external_subscription_id` arrives twice → only the first is billed.
+- Works **across delivery methods**: a REST event won't be billed again if the same ID arrives via Kafka.
+- Retries are always safe. REST timeout? Resend. Kafka consumer restart? Reprocess. S3 import interrupted? Re-trigger.
+
+Design your IDs to be **deterministic** (derived from source data), not random. This makes retries automatic and debugging straightforward.
+
+
+## Handling edge cases
+
+<AccordionGroup>
+  <Accordion title="Late-arriving events">
+    Events that arrive after a billing period has closed are assigned to the correct historical period based on `timestamp`. If the invoice has already been finalized, the event will be included in the next billing cycle as a retroactive adjustment.
+  </Accordion>
+
+  <Accordion title="Correcting events">
+    To amend a previously sent event, send a new event with the same `transaction_id` and updated properties. The new event replaces the original.
+  </Accordion>
+
+  <Accordion title="Events before subscription start">
+    Events with a `timestamp` before the subscription's `started_at` date are ignored. Validate your timestamps if you're backfilling historical data.
+  </Accordion>
+
+  <Accordion title="Events for terminated subscriptions">
+    Events for subscriptions that have been terminated are ignored. This is a safety mechanism — you don't need to stop your event pipeline the instant a subscription ends.
+  </Accordion>
+</AccordionGroup>
+
+
+## Verifying your integration
+
+**Test with a single event first.** Send one event via the REST API, then retrieve it with `GET /events/{transaction_id}` to confirm Lago received and parsed it correctly.
+
+**Reconciliation pattern:** Compare your source-of-truth event count against Lago. Use `GET /events` filtered by `external_subscription_id`, `timestamp_from`, and `timestamp_to`, then compare against your internal logs. Any delta means dropped events or events that failed validation.
+
+**What to watch on your side:**
+- **REST API response codes:** `200` = accepted, `422` = validation error (bad schema, unknown subscription), `429` = rate limited (retry safely), `5xx` = server-side error (investigate before retrying)
+- **At invoice time:** compare line item quantities against your own event counts per subscription per billing period. If they diverge, check for late arrivals outside the billing window.
+
+
+## Rate limits
+
+Lago enforces rate limits on the REST API per organization to protect platform stability. Default limits are shown below — these can be adjusted to match your needs. Contact the Lago team if you need higher throughput.
+
+| Endpoint category | Default limit |
+| --- | --- |
+| **Event ingestion** (`POST /events`, `POST /events/batch`) | 500 requests/sec |
+| **Current usage** | 200 requests/sec |
+| **All other endpoints** | 50 requests/sec |
+
+**When rate limited:** You receive a `429 Too Many Requests` response. Every response includes headers to help you manage your rate:
+- `x-ratelimit-limit` — max requests per window
+- `x-ratelimit-remaining` — remaining requests
+- `x-ratelimit-reset` — seconds until the window resets
+
+Retries on `429` are always safe thanks to `transaction_id` deduplication. Back off until `x-ratelimit-reset` reaches zero.
+
+<Info>
+  Kafka, Kinesis, and S3 connectors are not subject to REST API rate limits. Their throughput is bounded by your broker or infrastructure capacity.
+</Info>
+
