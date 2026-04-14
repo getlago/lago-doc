@@ -127,25 +127,6 @@ Kafka ingestion requires the **ClickHouse event store** (see Architecture sectio
   <Accordion title="Lago Cloud">
     Lago Cloud includes a managed Kafka endpoint. Contact the team for your connection details (broker address, credentials, topic name). No infrastructure to deploy.
   </Accordion>
-  <Accordion title="Self-hosted setup">
-    Configure the Lago API to connect to your Kafka/Redpanda cluster:
-
-    ```bash
-    # Enable ClickHouse event store (required)
-    LAGO_CLICKHOUSE_ENABLED=true
-
-    # Kafka / Redpanda connection
-    LAGO_KAFKA_BOOTSTRAP_SERVERS=redpanda.internal:9094
-    LAGO_KAFKA_SECURITY_PROTOCOL=SASL_SSL
-    LAGO_KAFKA_SASL_MECHANISM=SCRAM-SHA-256
-    LAGO_KAFKA_USERNAME=lago
-    LAGO_KAFKA_PASSWORD=<your-password>
-
-    # Topic names (defaults shown)
-    LAGO_KAFKA_RAW_EVENTS_TOPIC=events-raw
-    LAGO_KAFKA_ENRICHED_EVENTS_TOPIC=events-enriched
-    ```
-  </Accordion>
   <Accordion title="Reader / producer tuning">
     Lago can directly consume events from your Kafka topic (which will require opening access to your Kafka broker / topic). Alternatively, you can send your events to a dedicated topic on our infrastructure (AWS VPC Peering or PrivateLink).
 
