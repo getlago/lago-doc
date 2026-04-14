@@ -507,25 +507,8 @@ Upload **newline-delimited JSON (NDJSON)** files — one event per line, same sc
 {"transaction_id":"txn_002","external_subscription_id":"sub_42","code":"api_calls","timestamp":1710421800,"properties":{"tokens":2200}}
 ```
 
-Trigger an import via API:
-
-```bash
-LAGO_URL="https://api.getlago.com"
-API_KEY="__YOUR_API_KEY__"
-
-curl -X POST "$LAGO_URL/api/v1/events/bulk_import" \
-  -H "Authorization: Bearer $API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "s3",
-    "bucket": "your-bucket",
-    "prefix": "imports/2024-03-14/",
-    "format": "jsonl"
-  }'
-```
-
 <Info>
-  S3 imports are **idempotent**: re-running after a failure is always safe. Timestamps can be historical — Lago assigns events to the correct billing period retroactively.
+  S3 imports are **idempotent**: re-importing a file after failure is always safe (dedup by `transaction_id`). Timestamps can be historical — Lago assigns events to the correct billing period retroactively.
 </Info>
 
 

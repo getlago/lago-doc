@@ -1,5 +1,5 @@
 ---
-title: "Usage performances"
+title: "Performance & Optimization"
 description: "Lago's event processing architecture, production benchmarks, throughput by connector, and optimization strategies for engineering teams."
 ---
 
@@ -104,7 +104,7 @@ Numbers from Lago's internal load tests and customer deployments:
 | **REST API (batch)** | ~10,000 events/sec | < 500ms | Minimal | Moderate volume, no Kafka needed |
 | **Kafka / Redpanda** | **1-3M events/sec** | < 1 sec p99 | Medium | High-volume real-time pipelines |
 | **Amazon Kinesis** | **100K+ events/sec** | < 1 sec p99 | Medium | AWS-native architectures |
-| **Amazon S3** | Batch, depends on size | Same as above | Low | Historical backfills, migrations |
+| **Amazon S3** | Batch, depends on file size | Depends on file size | Low | Historical backfills, migrations |
 
 <Tip>
   **REST batch can take you further than you think.** 10 parallel connections x 100 events per batch x 10 batches/sec = 10,000 events/sec with zero infrastructure beyond the Lago API. Many production deployments never need Kafka.
@@ -147,7 +147,7 @@ Kafka ingestion requires the **ClickHouse event store** (see Architecture sectio
     ```
   </Accordion>
   <Accordion title="Reader / producer tuning">
-    Lago can directly consume events from your Kafka topic (which will require opening access to your Kafka broker / topic). Alternatively, you can send your events to a dedicated topic on our infrastructure (AWS VPC Peering or Private link).
+    Lago can directly consume events from your Kafka topic (which will require opening access to your Kafka broker / topic). Alternatively, you can send your events to a dedicated topic on our infrastructure (AWS VPC Peering or PrivateLink).
 
     In this second case, these settings have the biggest impact on throughput:
 
@@ -204,7 +204,7 @@ Kafka ingestion requires the **ClickHouse event store** (see Architecture sectio
 ### Amazon Kinesis configuration
 
 <Accordion title="Kinesis setup">
-  We can read directly events from your Kinesis stream. We'll need:
+  We can read events directly from your Kinesis stream. We'll need:
 
   - Kinesis Stream ARN
   - Credentials:
@@ -223,11 +223,11 @@ Kafka ingestion requires the **ClickHouse event store** (see Architecture sectio
     </Info>
   </Accordion>
   <Accordion title="S3 setup">
-    We generally provide an S3 Bucket on our infrastructure where you can deliver your files, along with credentials to upload new files.
+    We generally provide an S3 bucket on our infrastructure where you can deliver your files, along with credentials to upload new files.
 
-    If you prefer to provide your own S3 Bucket, an SQS Queue is required to capture new file uploads (configurable on the S3 Bucket properties/notifications). We would need:
+    If you prefer to provide your own S3 bucket, an SQS queue is required to capture new file uploads (configurable on the S3 bucket properties/notifications). We would need:
 
-    - S3 Bucket
+    - S3 bucket
     - S3 Region
     - SQS URL
     - Credentials:
