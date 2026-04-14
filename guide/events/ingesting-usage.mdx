@@ -307,8 +307,8 @@ The guiding question: **what do you charge your customers for?** That's your eve
   <Card title="Treat code as a contract">
     The `code` ties your event to a [billable metric](/guide/billable-metrics/create-billable-metrics). If you rename a metric, you need to update the `code` in your events. Treat it as a stable API contract.
   </Card>
-  <Card title="Validate before you send at volume">
-    Use the [event validation endpoint](#validate-before-you-send) to confirm the billable metric exists, the subscription is active, and required properties are present — without actually ingesting the event.
+  <Card title="Test with a single event first">
+    Send one event via the REST API and verify it appears in `GET /events/{transaction_id}` before scaling to batch or streaming delivery.
   </Card>
 </CardGroup>
 
@@ -544,26 +544,36 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
 </AccordionGroup>
 
 
-## Validate before you send
+## Verifying your integration
 
-Test your event format before sending at volume:
+**Test with a single event first.** Send one event via the REST API, then retrieve it with `GET /events/{transaction_id}` to confirm Lago received and parsed it correctly.
 
-```bash
-LAGO_URL="https://api.getlago.com"
-API_KEY="__YOUR_API_KEY__"
+**Reconciliation pattern:** Compare your source-of-truth event count against Lago. Use `GET /events` filtered by `external_subscription_id`, `timestamp_from`, and `timestamp_to`, then compare against your internal logs. Any delta means dropped events or events that failed validation.
 
-curl -X POST "$LAGO_URL/api/v1/events/validate" \
-  -H "Authorization: Bearer $API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "event": {
-      "transaction_id": "test_001",
-      "external_subscription_id": "sub_42",
-      "code": "api_calls",
-      "timestamp": 1710421740,
-      "properties": {"tokens": 1500}
-    }
-  }'
-```
+**What to watch on your side:**
+- **REST API response codes:** `200` = accepted, `422` = validation error (bad schema, unknown subscription), `429` = rate limited (retry safely), `5xx` = server-side error (investigate before retrying)
+- **Kafka:** monitor your producer's `delivery.report` callback — failed deliveries mean events never reached the broker
+- **At invoice time:** compare line item quantities against your own event counts per subscription per billing period. If they diverge, check for late arrivals outside the billing window.
 
-This confirms the billable metric exists, the subscription is active, and required properties are present — without actually ingesting the event.
+
+## Rate limits
+
+Lago enforces rate limits on the REST API per organization to protect platform stability. Default limits are shown below — these can be adjusted to match your needs. Contact the Lago team if you need higher throughput.
+
+| Endpoint category | Default limit |
+| --- | --- |
+| **Event ingestion** (`POST /events`, `POST /events/batch`) | 500 requests/sec |
+| **Current usage** | 200 requests/sec |
+| **All other endpoints** | 50 requests/sec |
+
+**When rate limited:** You receive a `429 Too Many Requests` response. Every response includes headers to help you manage your rate:
+- `x-ratelimit-limit` — max requests per window
+- `x-ratelimit-remaining` — remaining requests
+- `x-ratelimit-reset` — seconds until the window resets
+
+Retries on `429` are always safe thanks to `transaction_id` deduplication. Back off until `x-ratelimit-reset` reaches zero.
+
+<Info>
+  Kafka, Kinesis, and S3 connectors are not subject to REST API rate limits. Their throughput is bounded by your broker or infrastructure capacity.
+</Info>
+

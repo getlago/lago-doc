@@ -354,3 +354,24 @@ This works best with `SUM` or `COUNT` aggregations where no charge filters are a
 | **Ingestion rate** (events/sec) | Baseline throughput | > 50% deviation from baseline |
 | **Enrichment latency** | Time from raw to enriched event | p99 > 2 seconds |
 | **Validation failures** | Events rejected for schema errors (only applicable to REST API) | Any sustained increase |
+
+## Data retention
+
+**Lago Cloud:** 90 days. Data is retained for 90 days after subscription termination.
+
+**Self-hosted:** You control retention directly through your ClickHouse and database configuration.
+
+## Air-gapped / private network deployments
+
+**Self-hosted Lago** runs entirely inside your infrastructure — the application, database, and streaming layer all live in your environment. No data leaves your network, regardless of which connector you use.
+
+**Lago Cloud** requires network connectivity to Lago's managed infrastructure. What's available depends on your setup:
+
+| Connector | Public internet | Private connectivity |
+| --- | --- | --- |
+| **REST API** | Yes | No |
+| **Kafka / Redpanda** | Yes | Yes — via VPC peering between your environment and Lago's |
+| **Amazon Kinesis** | Yes | No |
+| **Amazon S3** | Yes | No |
+
+For organizations that cannot send events over the public internet, Lago Cloud with **Kafka/Redpanda over VPC peering** keeps your events on a private network link. Contact the Lago team to set this up.
