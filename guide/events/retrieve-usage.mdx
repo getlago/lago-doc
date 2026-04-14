@@ -1,6 +1,45 @@
 ---
-title: "Retrieving usage"
-description: "Learn how to retrieve usage data for both current and past billing periods."
+title: "Retrieve usage"
+description: "Monitor ingested events, debug warnings, and retrieve current, projected, or past usage data for your customers."
+---
+
+## Events list
+
+You can monitor every event flowing into Lago from the UI. This is your primary tool for verifying that your integration is working and debugging any issues.
+
+<Steps>
+  <Step title="Open the events list">
+    Go to the **Developers** section in the sidebar, then click the **Events** tab.
+  </Step>
+  <Step title="Browse ingested events">
+    The UI shows the latest 20 events by default. Scroll down to load more.
+  </Step>
+  <Step title="Inspect a specific event">
+    Click any event to see its details:
+    - **Time:** timestamp of the received event
+    - **Customer ID:** the ID of your customer
+    - **Billable metric code:** code of the billable metric linked to the event
+    - **Billable metric name:** name of the billable metric linked to the event
+    - **Transaction ID:** unique `transaction_id` used as the idempotency key
+    - **IP Address:** IP address of the event sender
+    - **Client API:** Lago Client API used to send the event
+    - **Event payload:** the full JSON arguments sent in the request
+  </Step>
+</Steps>
+
+<Tip>If an event is not shown in the UI, it has **not** been ingested.</Tip>
+
+<Frame caption="Accessing the events list">
+  <img src="/guide/events/images/events-debugger-6bcbcf7e46f1bd4bb8a9b6e6964bba69.png" />
+</Frame>
+
+### Possible warnings
+
+Some events can be ingested but trigger unexpected behavior. Lago displays two possible warnings in the UI:
+
+1. The event `code` is **not related to an existing billable metric**
+2. The billable metric's **property used for the aggregation is not sent** through this event
+
 ---
 
 ## Retrieve current usage
@@ -94,7 +133,7 @@ description: "Learn how to retrieve usage data for both current and past billing
   </Tab>
   <Tab title="API">
     <CodeGroup>
-    ```bash Retrieve current usage
+    ```bash Retrieve past usage
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
     EXTERNAL_CUSTOMER_ID="__EXTERNAL_CUSTOMER_ID__"
