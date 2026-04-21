@@ -1,5 +1,5 @@
 ---
-title: "Traceability"
+title: "Traceability & credit consumptions"
 description: "Track how credits flow between inbound and outbound wallet transactions."
 ---
 
@@ -50,3 +50,44 @@ For an **outbound** wallet transaction, you can see all inbound transactions tha
     ```
   </Tab>
 </Tabs>
+
+
+## Route events to a specific wallet
+
+### Overview
+
+Events can target a specific wallet. When calculating usage or applying credits for such events, credits are drawn from the targeted wallet rather than following the standard wallet selection logic.
+
+If a `target_wallet_code` refers to a wallet that does not exist, **no credits will be applied** for that event.
+
+### Requirements
+
+To use wallet-targeted events, two things must be configured:
+
+1. Update the charge to set: `accepts_target_wallets: true`
+2. Include `target_wallet_code` in the event payload
+
+```json
+{
+  "event": {
+    "transaction_id": "...",
+    "external_subscription_id": "...",
+    "code": "...",
+    "target_wallet_code": "my_wallet_code",
+    "properties": { }
+  }
+}
+```
+
+### Behavior
+
+| Charge `accepts_target_wallets` | Event `target_wallet_code` | Result |
+|---|---|---|
+| `true` | Valid wallet code | Credits are drawn from the targeted wallet |
+| `true` | Invalid / non-existent wallet code | No credits are applied |
+| `true` | Not provided | Standard wallet selection logic is applied |
+| `false` | Any value | Standard wallet selection logic is applied (target is ignored) |
+
+
+- A charge with `accepts_target_wallets: true` does **not** require every event to carry a `target_wallet_code`. Events without a target fall back to the standard logic.
+- Ensure the `target_wallet_code` matches an existing wallet's code on the customer, otherwise the event produces no credit application.
