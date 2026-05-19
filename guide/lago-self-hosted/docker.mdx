@@ -155,6 +155,9 @@ application. You can override them to customise your setup.
 | `LAGO_RAILS_STDOUT`                   | true                                           | Set to true to activate logs on containers                                                                                                                       |
 | `LAGO_DISABLE_WALLET_REFRESH`         |                                                | Disable automatic refresh of wallet ongoing balance                                                                                                              |
 | `LAGO_DISABLE_PDF_GENERATION`         | false                                          | Disable automatic PDF generation for invoices, credit notes, and receipts. As a result, the corresponding download endpoints will be unavailable                 |
+| `LAGO_DATABASE_STATEMENT_TIMEOUT`     |                                                | Any single query exceeding the time limit (in milliseconds) is cancelled. Maps to `statement_timeout` in postgres |
+| `LAGO_DATABASE_IDLE_TX_TIMEOUT`       |                                                | A transaction left idle past the time limit (in milliseconds) is terminated. Maps to `idle_in_transaction_session_timeout` in postgres   |
+| `LAGO_DATABASE_LOCK_TIMEOUT`          |                                                | A statement waiting on a lock past the limit (in milliseconds) fails fast instead of blocking. Maps to `lock_timeout` in postgres |
 | `GOOGLE_AUTH_CLIENT_ID`               |                                                | Client ID for Google auth Single Sign On                                                                                                                         |
 | `GOOGLE_AUTH_CLIENT_SECRET`           |                                                | Client Secret for Google auth Single Sign On                                                                                                                     |
 
@@ -172,6 +175,96 @@ improve the security of your Lago instance:
   `cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` command.
 
 </Warning>
+
+### Configuring the database[](#configuring-the-database "Direct link to heading")
+
+Lago connects to PostgreSQL through a standard Rails connection. In production, the connection string is the single source of truth; the `POSTGRES_*` variables in the table above only apply when you use the bundled `db` service from `docker-compose.yml`.
+
+#### Connection
+
+| Variable                                                                                  | Default            | Purpose                                                                                                                                                                                       |
+|-------------------------------------------------------------------------------------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DATABASE_URL`                                                                            | —                  | Full Postgres URL used by the API, workers and clock containers (`postgresql://user:password@host:port/database`). **Required in production** and overrides any `POSTGRES_*` variable.        |
+| `POSTGRES_HOST` / `POSTGRES_PORT` / `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | see env-var table  | Used by `docker-compose.yml` to provision the bundled Postgres container and to build a `DATABASE_URL` for the API. Ignored when you bring your own database and set `DATABASE_URL` directly. |
+| `POSTGRES_SCHEMA`                                                                         | `public`           | Postgres schema Lago reads and writes to (`schema_search_path`).                                                                                                                              |
+
+<Info>
+  If both `DATABASE_URL` and individual `POSTGRES_*` variables are set, `DATABASE_URL` wins. We recommend defining `DATABASE_URL` explicitly in any non-docker-compose deployment so the connection string is unambiguous and easy to rotate.
+</Info>
+
+#### Connection pool
+
+| Variable                       | Default | Purpose                                                                                                                       |
+|--------------------------------|---------|-------------------------------------------------------------------------------------------------------------------------------|
+| `DATABASE_POOL`                | `10`    | Maximum number of connections each API, worker and clock instance opens to Postgres.                                          |
+| `DATABASE_PREPARED_STATEMENTS` | `true`  | Toggles Postgres prepared statements. Set to `false` when fronting Postgres with a transaction-mode pooler such as PgBouncer. |
+
+Total connections to Postgres ≈ `DATABASE_POOL × (api replicas + worker replicas + clock replicas)`. Keep this comfortably below your Postgres `max_connections`.
+
+#### Statement-level safeguards
+
+These three opt-in variables are applied to every Rails connection (API, workers, clock, events) via the shared `default` block in Lago's `database.yml`. They are unset by default — Postgres runs with no per-statement cap.
+
+| Variable                          | Maps to                               | Effect when set                                                                     |
+|-----------------------------------|---------------------------------------|-------------------------------------------------------------------------------------|
+| `LAGO_DATABASE_STATEMENT_TIMEOUT` | `statement_timeout`                   | Any single query exceeding the value (in ms) is cancelled with `PG::QueryCanceled`. |
+| `LAGO_DATABASE_IDLE_TX_TIMEOUT`   | `idle_in_transaction_session_timeout` | A transaction left idle past the value (in ms) is terminated, releasing its locks.  |
+| `LAGO_DATABASE_LOCK_TIMEOUT`      | `lock_timeout`                        | A statement waiting on a lock past the value (in ms) fails fast instead of blocking. |
+
+Setting a variable to `0` explicitly disables that specific cap (same as leaving it unset).
+
+<Warning>
+  These timeouts apply to **every** process that boots the Rails app — including Sidekiq workers, the clock container, and Rake tasks such as migrations. Long-running background jobs and schema migrations can be killed if you set aggressive limits globally. Apply tight caps to the web tier and leave them unset (or much higher) on workers, clock and migration entrypoints.
+</Warning>
+
+Recommended starting values:
+
+| Process             | `LAGO_DATABASE_STATEMENT_TIMEOUT` | `LAGO_DATABASE_IDLE_TX_TIMEOUT` | `LAGO_DATABASE_LOCK_TIMEOUT` |
+|---------------------|-----------------------------------|---------------------------------|------------------------------|
+| API (Puma)          | `30000` (30 s)                    | `60000` (1 min)                 | `5000` (5 s)                 |
+| Sidekiq workers     | unset                             | unset                           | unset                        |
+| Clock / Karafka     | unset                             | unset                           | unset                        |
+| Rake / migrations   | unset                             | unset                           | unset                        |
+
+Tune per environment and watch for `PG::QueryCanceled` in your error tracker after rollout.
+
+#### Enabling SSL[](#enabling-ssl "Direct link to heading")
+
+If your PostgreSQL server requires SSL connections (e.g., using a PEM certificate for `verify-full` mode),
+you can configure the connection using either [**libpq environment variables**](https://www.postgresql.org/docs/current/libpq-envars.html)
+or the **`DATABASE_URL`** parameters.
+
+##### Using libpq environment variables
+
+Set any of the libpq SSL environment variables:
+
+```shell
+# .env
+PGSSLMODE=verify-full
+PGSSLROOTCERT=/app/config/rds-ca.pem
+```
+
+For an exhaustive list of environment variables, refer to the [libpq environment variables documentation](https://www.postgresql.org/docs/current/libpq-envars.html).
+
+##### Using DATABASE_URL
+
+Alternatively, you can append any of the libpq SSL parameters directly to the `DATABASE_URL`:
+
+```shell
+DATABASE_URL=postgresql://lago:changeme@db:5432/lago?sslmode=verify-full&sslrootcert=/app/config/rds-ca.pem
+```
+
+For an exhaustive list of SSL parameters, refer to the [libpq documentation](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNECT-SSLMODE).
+
+#### Best practices
+
+- **Bring your own Postgres in production.** The bundled `db` service in `docker-compose.yml` is intended for local trials. For production, run a managed or dedicated Postgres instance and point Lago at it via `DATABASE_URL`.
+- **Use `DATABASE_URL` as the single source of truth.** It is the only variable read by the API in production; `POSTGRES_*` are ignored when you do not use the bundled container.
+- **Size the pool to your concurrency.** A good rule of thumb is `DATABASE_POOL` ≥ Puma threads per process and ≥ Sidekiq concurrency per worker. Total connections must stay under Postgres `max_connections`.
+- **Disable prepared statements behind a transaction pooler.** Set `DATABASE_PREPARED_STATEMENTS=false` when running PgBouncer (or similar) in transaction mode.
+- **Apply timeouts at the web tier first.** Roll out `LAGO_DATABASE_STATEMENT_TIMEOUT` on the API only, monitor cancellations for 24–48 h, then extend to other tiers with more generous values if needed.
+- **Encrypt connections.** Configure SSL with `verify-full` against a known CA — see [Enabling SSL](#enabling-ssl) above.
+- **Keep Postgres healthy.** Once Lago is connected, follow the [Database maintenance](/guide/lago-self-hosted/database-maintenance) guide for autovacuum, autoanalyze and slow-query monitoring.
 
 ### Components[](#components "Direct link to heading")
 
@@ -266,34 +359,6 @@ volumes:
 ```shell
 docker-compose up front
 ```
-
-### Enabling SSL on PostgreSQL[](#enabling-ssl-on-postgresql "Direct link to heading")
-
-If your PostgreSQL server requires SSL connections (e.g., using a PEM certificate for `verify-full` mode),
-you can configure the connection using either [**libpq environment variables**](https://www.postgresql.org/docs/current/libpq-envars.html)
-or the **`DATABASE_URL`** parameters.
-
-#### Using libpq environment variables
-
-Set any of the libpq SSL environment variables:
-
-```shell
-# .env
-PGSSLMODE=verify-full
-PGSSLROOTCERT=/app/config/rds-ca.pem
-```
-
-For an exhaustive list of environment variables, refer to the [libpq environment variables documentation](https://www.postgresql.org/docs/current/libpq-envars.html).
-
-#### Using DATABASE_URL
-
-Alternatively, you can append any of the libpq SSL parameters directly to the `DATABASE_URL`:
-
-```shell
-DATABASE_URL=postgresql://lago:changeme@db:5432/lago?sslmode=verify-full&sslrootcert=/app/config/rds-ca.pem
-```
-
-For an exhaustive list of SSL parameters, refer to the [libpq documentation](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNECT-SSLMODE).
 
 ### Storage[](#storage "Direct link to heading")
 
