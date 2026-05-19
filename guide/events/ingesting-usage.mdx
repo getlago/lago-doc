@@ -337,6 +337,7 @@ flowchart TD
 | --- | --- |
 | **REST API** | Most integrations. Simplest setup. Start here. |
 | **REST API (batch)** | Same as REST but batches up to 100 events per request for higher throughput. |
+| **Agent SDK** | LLM token billing. Wraps your provider client (Bedrock, Mistral, etc.) and emits token events automatically. |
 | **Kafka / Redpanda** | Real-time, high-volume production pipelines. |
 | **Amazon Kinesis** | AWS-native streaming architectures. |
 | **Amazon S3** | Historical backfills, migrations, periodic batch loads. |
@@ -464,6 +465,46 @@ event := lago.EventInput{
 client.Event().Create(ctx, &event)
 ```
 </CodeGroup>
+
+### Agent SDK
+
+For applications that bill on LLM tokens, the [Agent SDK](/guide/ai-agents/agent-sdk) is the lowest-effort path to ingestion. You wrap your existing provider client and keep calling it the same way. The SDK extracts token usage from each response, normalizes it across providers, and ships events to Lago in the background.
+
+- **Providers:** AWS Bedrock (`Converse` and `InvokeModel`, sync and stream), Mistral, OpenAI, Anthropic, Google Gemini, and potentially more.
+- **Languages:** [Python](https://github.com/getlago/lago-agent-sdk-python) and [JavaScript / TypeScript](https://github.com/getlago/lago-agent-sdk-js)).
+
+<CodeGroup>
+  ```python Python
+  import boto3
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(api_key="__YOUR_API_KEY__", default_subscription_id="sub_42")
+  client = sdk.wrap(boto3.client("bedrock-runtime", region_name="eu-west-1"))
+
+  client.converse(
+      modelId="eu.amazon.nova-lite-v1:0",
+      messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+  )
+  ```
+
+  ```typescript TypeScript
+  import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
+  import { LagoSDK } from "@getlago/agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    defaultSubscriptionId: "sub_42",
+  });
+  const client = sdk.wrap(new BedrockRuntimeClient({ region: "eu-west-1" }));
+
+  await client.send(new ConverseCommand({
+    modelId: "eu.amazon.nova-lite-v1:0",
+    messages: [{ role: "user", content: [{ text: "Hello" }] }],
+  }));
+  ```
+</CodeGroup>
+
+The SDK emits one event per non-zero token dimension (input, output, cached input, cache creation, tool calls, etc.) and maps each to a default Lago metric code. See the [Agent SDK guide](/guide/ai-agents/agent-sdk) for the full list of dimensions, configuration options, and multi-tenant subscription routing.
 
 ### Kafka / Redpanda configuration
 
