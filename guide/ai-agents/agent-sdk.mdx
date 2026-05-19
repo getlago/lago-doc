@@ -1,0 +1,399 @@
+---
+title: "Lago Agent SDK"
+description: "Bill LLM token usage directly from your application. Wrap your provider client, ship events to Lago, no middleware to maintain."
+---
+
+Pricing AI features requires per-token billing. Historically that meant building middleware to extract usage from every provider, normalize it across response shapes, batch events to a billing system, and survive outages. That work isn't your product.
+
+The **Lago Agent SDK** removes that layer. You wrap your existing LLM client and keep calling it the same way: same arguments, same return shape, same exceptions. The SDK extracts normalized token usage from each response and streams events to Lago in the background.
+
+Available in two flavors, both open source:
+
+- **Python**: [`lago-agent-sdk`](https://github.com/getlago/lago-agent-sdk-python) on PyPI.
+- **JavaScript / TypeScript**: [`@getlago/agent-sdk`](https://github.com/getlago/lago-agent-sdk-js) on npm.
+
+## How it works
+
+```text
+                  ┌────────────────┐
+your code ──────▶ │ wrapped client │ ──────▶ provider (Bedrock / Mistral / …)
+                  └────────┬───────┘
+                           │ (extract usage)
+                           ▼
+                  ┌────────────────┐
+                  │  Lago events   │ ──────▶ api.getlago.com
+                  └────────────────┘
+```
+
+- Wraps your existing LLM client in place. Your application code does not change.
+- Extracts usage from each response into a normalized shape (`CanonicalUsage`).
+- Buffers events in memory and flushes them in batches to Lago's `/events/batch` endpoint.
+- Survives provider and Lago outages with exponential backoff and a bounded buffer.
+- p99 wrap overhead under 5 ms. Your LLM call is never blocked on Lago.
+- Never breaks your LLM call. Instrumentation errors are caught, logged, and optionally forwarded to your observability stack.
+
+## Supported providers
+
+| Provider              | Access                                          |
+|-----------------------|-------------------------------------------------|
+| AWS Bedrock           | `Converse` (sync + stream)                      |
+| AWS Bedrock           | `InvokeModel` (sync + stream), 7 model families |
+| Mistral               | native SDK (`chat.complete` + `chat.stream`)    |
+| OpenAI                | native SDK                                      |
+| Anthropic             | native SDK                                      |
+| Google Gemini         | native SDK                                      |
+| Vercel AI SDK         | `wrapLanguageModel` middleware (JavaScript)     |
+| LiteLLM               | callback bridge (Python)                        |
+
+## Quickstart
+
+<Steps>
+  <Step title="Install the SDK">
+    <CodeGroup>
+      ```bash pip
+      pip install lago-agent-sdk
+
+      # Optional extras for your provider:
+      pip install 'lago-agent-sdk[bedrock]'   # adds boto3
+      pip install 'lago-agent-sdk[mistral]'   # adds mistralai
+      ```
+
+      ```bash npm
+      npm install @getlago/agent-sdk
+
+      # Plus the provider SDK(s) you use:
+      npm install @aws-sdk/client-bedrock-runtime
+      npm install @mistralai/mistralai
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Initialize and wrap your LLM client">
+    Pass your Lago API key and a default `external_subscription_id`, then wrap your provider client. The returned object is a drop-in replacement.
+
+    <CodeGroup>
+      ```python Python
+      import boto3
+      from lago_agent_sdk import LagoSDK
+
+      sdk = LagoSDK(
+          api_key="<YOUR_LAGO_API_KEY>",
+          default_subscription_id="sub_acme",
+      )
+      client = sdk.wrap(boto3.client("bedrock-runtime", region_name="eu-west-1"))
+      ```
+
+      ```typescript TypeScript
+      import { BedrockRuntimeClient } from "@aws-sdk/client-bedrock-runtime";
+      import { LagoSDK } from "@getlago/agent-sdk";
+
+      const sdk = new LagoSDK({
+        apiKey: process.env.LAGO_API_KEY!,
+        defaultSubscriptionId: "sub_acme",
+      });
+      const client = sdk.wrap(new BedrockRuntimeClient({ region: "eu-west-1" }));
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Make LLM calls normally">
+    The wrapped client preserves the original signature, return shape, and exceptions. No call-site changes required.
+
+    <CodeGroup>
+      ```python Python
+      resp = client.converse(
+          modelId="eu.amazon.nova-lite-v1:0",
+          messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+      )
+      ```
+
+      ```typescript TypeScript
+      import { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
+
+      await client.send(new ConverseCommand({
+        modelId: "eu.amazon.nova-lite-v1:0",
+        messages: [{ role: "user", content: [{ text: "Hello" }] }],
+      }));
+      ```
+    </CodeGroup>
+
+    <Tip>
+      Streaming calls work the same way. `client.converse_stream(...)` in Python and `ConverseStreamCommand` in TypeScript both flow through the SDK and emit a single event per completed response.
+    </Tip>
+  </Step>
+
+  <Step title="Flush events on shutdown">
+    Events flush automatically in the background. Call `flush()` explicitly at process exit (FastAPI shutdown hook, Express server close, AWS Lambda extension, etc.) so in-flight events are not lost.
+
+    <CodeGroup>
+      ```python Python
+      sdk.flush()
+      ```
+
+      ```typescript TypeScript
+      await sdk.flush();
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Register billable metrics in Lago">
+    Before events count toward charges, register matching billable metrics in your Lago tenant. The SDK ships with default metric codes (see [Captured token dimensions](#captured-token-dimensions) below). Register each one as a `sum_agg` metric.
+
+    Follow [Create a billable metric](/api-reference/billable-metrics/create) to set them up, then attach charges to them in your plan. For a full example, see the [per-token pricing template](/templates/per-token/openai).
+  </Step>
+</Steps>
+
+## Mistral quickstart
+
+The same `wrap()` call works with the native Mistral SDK:
+
+<CodeGroup>
+  ```python Python
+  from mistralai.client import Mistral
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(api_key="...", default_subscription_id="sub_acme")
+  client = sdk.wrap(Mistral(api_key="..."))
+
+  resp = client.chat.complete(
+      model="mistral-small-latest",
+      messages=[{"role": "user", "content": "Hello"}],
+  )
+  sdk.flush()
+  ```
+
+  ```typescript TypeScript
+  import { Mistral } from "@mistralai/mistralai";
+  import { LagoSDK } from "@getlago/agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    defaultSubscriptionId: "sub_acme",
+  });
+  const client = sdk.wrap(new Mistral({ apiKey: process.env.MISTRAL_API_KEY! }));
+
+  await client.chat.complete({
+    model: "mistral-small-latest",
+    messages: [{ role: "user", content: "Hello" }],
+  });
+  await sdk.flush();
+  ```
+</CodeGroup>
+
+## Captured token dimensions
+
+The SDK normalizes every provider response into a 10-field `CanonicalUsage` object and emits one event per non-zero field. The default metric codes match Lago's conventions. Override them in the config if your tenant already uses different names.
+
+| Canonical field    | Default Lago metric code      | What it represents                          |
+|--------------------|-------------------------------|---------------------------------------------|
+| `input`            | `llm_input_tokens`            | Prompt tokens sent to the model             |
+| `output`           | `llm_output_tokens`           | Completion tokens generated                 |
+| `cache_read`       | `llm_cached_input_tokens`     | Prompt tokens served from cache             |
+| `cache_write`      | `llm_cache_creation_tokens`   | Prompt tokens written to cache              |
+| `cache_write_5m`   | `llm_cache_write_5m_tokens`   | Cache write with 5-minute TTL               |
+| `cache_write_1h`   | `llm_cache_write_1h_tokens`   | Cache write with 1-hour TTL                 |
+| `reasoning`        | `llm_reasoning_tokens`        | Reasoning / thinking tokens (when surfaced) |
+| `tool_calls`       | `llm_tool_calls`              | Number of tool / function invocations       |
+| `image_input`      | `llm_image_input_tokens`      | Image input tokens                          |
+| `audio_input`      | `llm_audio_input_tokens`      | Audio input tokens                          |
+
+### Provider coverage
+
+Which fields each adapter populates:
+
+| Field                                | Bedrock                              | Mistral native           |
+|--------------------------------------|--------------------------------------|--------------------------|
+| `input`                              | ✓                                    | ✓                        |
+| `output`                             | ✓                                    | ✓                        |
+| `cache_read`                         | ✓ (Anthropic on Bedrock)             | ✓ (when cache hits)      |
+| `cache_write`                        | ✓ (Anthropic on Bedrock)             | ✗                        |
+| `cache_write_5m` / `cache_write_1h`  | ✓ (Anthropic InvokeModel)            | ✗                        |
+| `reasoning`                          | folded into `output`                 | folded into `output`     |
+| `tool_calls`                         | ✓                                    | ✓                        |
+| `image_input` / `audio_input`        | ✗                                    | ✗                        |
+
+<Note>
+  Reasoning, image, and audio fields are populated by the native OpenAI, Anthropic, and Gemini adapters.
+</Note>
+
+## Multi-tenant: pick a subscription per call
+
+Lago needs to know which customer to bill for each LLM call. The SDK resolves the `external_subscription_id` in this priority order:
+
+1. **Per-call override**: highest precedence, attached to the individual request.
+2. **Context-bound**: set once per request handler. Propagates safely across async boundaries.
+3. **Default at init**: fallback if nothing else is set.
+
+<CodeGroup>
+  ```python Python
+  # 1. Per-call override (highest precedence)
+  client.converse(
+      modelId="eu.amazon.nova-lite-v1:0",
+      messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+      extra_lago={
+          "subscription": "sub_acme",
+          "dimensions": {"feature": "summarize", "user_id": "u_42"},
+      },
+  )
+
+  # 2. Context-bound. Propagates across asyncio tasks via contextvars.
+  sdk.set_subscription("sub_acme")
+  # all calls in this thread/asyncio task → sub_acme
+
+  # 3. Default at init (fallback)
+  sdk = LagoSDK(api_key="...", default_subscription_id="sub_default")
+  ```
+
+  ```typescript TypeScript
+  // 1. Per-call override. Attach __lago to the command.
+  const cmd = new ConverseCommand({
+    modelId: "eu.amazon.nova-lite-v1:0",
+    messages: [{ role: "user", content: [{ text: "Hello" }] }],
+  });
+  (cmd as any).__lago = {
+    subscription: "sub_acme",
+    dimensions: { feature: "summarize", user_id: "u_42" },
+  };
+  await client.send(cmd);
+
+  // 2. Context-bound. AsyncLocalStorage, safe across awaits.
+  await sdk.withSubscription("sub_acme", async () => {
+    await client.send(/* … */);
+  });
+  // or at the top of a request handler:
+  sdk.setSubscription("sub_acme");
+
+  // 3. Default at init (fallback)
+  new LagoSDK({ apiKey: "...", defaultSubscriptionId: "sub_default" });
+  ```
+</CodeGroup>
+
+<Tip>
+  Any `dimensions` you pass go through to the event as `properties`. Useful for filter-based charges (model, feature, region, etc.). See [Charges with filters](/guide/plans/charges/charges-with-filters).
+</Tip>
+
+<Warning>
+  If subscription resolution returns nothing (no per-call override, no context, no default), the event is dropped and an `ERROR` is logged. Make sure at least one of the three levels is set before your first call.
+</Warning>
+
+## Configuration reference
+
+Both SDKs expose the same configuration surface with idiomatic naming.
+
+| Python (`LagoConfig`)      | TypeScript (`LagoConfig`)  | Default                               | Purpose                                                                 |
+|----------------------------|----------------------------|---------------------------------------|-------------------------------------------------------------------------|
+| `api_key`                  | `apiKey`                   | *(required)*                          | Your Lago API key.                                                      |
+| `api_url`                  | `apiUrl`                   | `https://api.getlago.com/api/v1`      | Override for the EU region or self-hosted instances.                    |
+| `default_subscription_id`  | `defaultSubscriptionId`    | `None` / `null`                       | Fallback `external_subscription_id` when none is set per call or context. |
+| `metric_codes`             | `metricCodes`              | `DEFAULT_METRIC_CODES`                | Map canonical field to your billable metric `code`.                     |
+| `flush_interval_seconds`   | `flushIntervalMs`          | `1.0` / `1000`                        | How often the background worker flushes the buffer.                     |
+| `max_batch_size`           | `maxBatchSize`             | `100`                                 | Max events per request to `/events/batch`.                              |
+| `max_buffer_size`          | `maxBufferSize`            | `10_000`                              | In-memory cap. Oldest events drop with a warning when exceeded.         |
+| `request_timeout_seconds`  | `requestTimeoutMs`         | `10.0` / `10_000`                     | HTTP timeout per batch request.                                         |
+| `max_retry_seconds`        | `maxRetryMs`               | `60.0` / `60_000`                     | Upper bound on exponential backoff between retries.                     |
+| `on_error`                 | `onError`                  | `None` / `undefined`                  | Callback for instrumentation failures. Wire it to Sentry, Datadog, etc. |
+
+### Custom metric codes
+
+If your Lago tenant already uses different metric codes, override them at init time:
+
+<CodeGroup>
+  ```python Python
+  from lago_agent_sdk import LagoConfig, LagoSDK
+
+  sdk = LagoSDK(
+      api_key="...",
+      config=LagoConfig(
+          api_key="...",
+          metric_codes={
+              "input": "ai_input_tokens",
+              "output": "ai_output_tokens",
+          },
+      ),
+  )
+  ```
+
+  ```typescript TypeScript
+  import { LagoSDK } from "@getlago/agent-sdk";
+
+  new LagoSDK({
+    apiKey: "...",
+    config: {
+      metricCodes: {
+        input: "ai_input_tokens",
+        output: "ai_output_tokens",
+      },
+    },
+  });
+  ```
+</CodeGroup>
+
+## Error handling
+
+<Info>
+  The SDK **never breaks your LLM call**. If instrumentation fails (adapter bug, Lago unreachable, network error), the SDK catches the error, logs a warning, and your call returns normally.
+</Info>
+
+Forward instrumentation errors to your observability stack with the `on_error` / `onError` hook:
+
+<CodeGroup>
+  ```python Python
+  import sentry_sdk
+  from lago_agent_sdk import LagoConfig, LagoSDK
+
+  def on_error(exc: Exception, where: str) -> None:
+      sentry_sdk.capture_exception(exc, tags={"sdk_phase": where})
+
+  sdk = LagoSDK(
+      api_key="...",
+      config=LagoConfig(api_key="...", on_error=on_error),
+  )
+  ```
+
+  ```typescript TypeScript
+  import * as Sentry from "@sentry/node";
+  import { LagoSDK } from "@getlago/agent-sdk";
+
+  new LagoSDK({
+    apiKey: "...",
+    config: {
+      onError: (err, where) =>
+        Sentry.captureException(err, { tags: { sdk_phase: where } }),
+    },
+  });
+  ```
+</CodeGroup>
+
+### Exception hierarchy
+
+Both SDKs export the same error classes for callers that want to handle SDK errors explicitly:
+
+- `LagoSDKError`: base class for every SDK-raised error.
+- `LagoApiError`: non-2xx response from Lago.
+- `LagoConfigError`: invalid configuration at init time.
+- `UnknownClientError`: `wrap()` was called on a client the SDK does not recognize.
+
+## Verify the integration
+
+<Steps>
+  <Step title="Make a wrapped LLM call">
+    Run one end-to-end request through the wrapped client, then call `flush()` explicitly to push the event immediately.
+  </Step>
+  <Step title="Check the event in Lago">
+    In the Lago dashboard, open **Developers → Events** and confirm an event appears with the expected metric `code` and `properties`.
+  </Step>
+  <Step title="Confirm usage on the customer">
+    Open the customer's usage view and confirm the metric counter increased.
+  </Step>
+  <Step title="If nothing arrives">
+    Check the `on_error` / `onError` callback first. Instrumentation failures are silent by design. The most common causes are an unregistered metric code, a missing `external_subscription_id`, or an API key without write access.
+  </Step>
+</Steps>
+
+## Resources
+
+- Python SDK: [GitHub](https://github.com/getlago/lago-agent-sdk-python) · [PyPI](https://pypi.org/project/lago-agent-sdk/) · [CHANGELOG](https://github.com/getlago/lago-agent-sdk-python/blob/main/CHANGELOG.md)
+- JavaScript SDK: [GitHub](https://github.com/getlago/lago-agent-sdk-js) · [npm](https://www.npmjs.com/package/@getlago/agent-sdk) · [CHANGELOG](https://github.com/getlago/lago-agent-sdk-js/blob/main/CHANGELOG.md)
+- Per-token pricing example: [Template](/templates/per-token/openai)
+- Billable metric API: [Create a billable metric](/api-reference/billable-metrics/create)
+- Charges with filters: [Guide](/guide/plans/charges/charges-with-filters)
