@@ -91,9 +91,10 @@ The guiding question: **what do you charge your customers for?** That's your eve
 
     Lago ignores properties that don't match a billable metric, so **include dimensions you might price on in the future** — extra fields cost nothing but give you pricing flexibility later.
 
-    <Info>
-      For `UNIQUE COUNT` aggregation on a `recurring` metric, the `operation_type` property is required. Send `add` to add a value or `remove` to remove one.
-    </Info>
+    Events sent to a `UNIQUE COUNT` billable metric accept an `operation_type` property to control whether the unique value is added to or removed from the count:
+    - `add`: Adds the unique value. **Optional**: Lago adds by default if `operation_type` is omitted.
+    - `remove`: Removes the unique value from the count. **Required** whenever you want to explicitly remove a unit.
+
   </Accordion>
 
   <Accordion title="precise_total_amount_cents (optional)">
