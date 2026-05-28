@@ -295,6 +295,151 @@ For an exhaustive list of SSL parameters, refer to the [libpq documentation](htt
 - **Encrypt connections.** Configure SSL with `verify-full` against a known CA. See [Enabling SSL](#enabling-ssl) above.
 - **Keep Postgres healthy.** Once Lago is connected, follow the [Database maintenance](/guide/lago-self-hosted/database-maintenance) guide for autovacuum, autoanalyze and slow-query monitoring.
 
+### Configuring Redis[](#configuring-redis "Direct link to heading")
+
+Lago uses Redis for two independent purposes:
+
+- **Job queue** — Sidekiq stores background-job state in Redis. The API enqueues jobs that workers and the clock process pick up.
+- **Application cache** — short-lived computed values (wallet balances, etc.) that the application reads back from `Rails.cache`.
+
+You can run a single Redis instance for both (the bundled Docker Compose does this) or point each at a different cluster. Each role has its own set of environment variables so they can be configured independently.
+
+#### Sidekiq Redis (job queue)
+
+##### `REDIS_URL`
+
+Lago's Sidekiq workers connect to Redis through the `REDIS_URL` environment variable:
+
+```sh
+REDIS_URL=redis://{host}:{port}/{database}
+```
+
+##### When using the Docker Compose
+
+The bundled `docker-compose.yml` ships a `redis` service. `REDIS_URL=redis://redis:6379` already points at it, so you do not need to override the variable in this setup.
+
+##### Password
+
+If your Redis requires authentication, set the password through a dedicated variable rather than embedding it in the URL:
+
+```sh
+REDIS_PASSWORD=your-redis-password
+```
+
+Keeping the password out of `REDIS_URL` makes it easier to manage secrets separately from non-sensitive connection details.
+
+#### Cache Redis (application cache)
+
+##### `LAGO_REDIS_CACHE_URL`
+
+Lago's API and workers reach the Rails cache through `LAGO_REDIS_CACHE_URL`:
+
+```sh
+LAGO_REDIS_CACHE_URL=redis://{host}:{port}/{database}
+```
+
+You can point this at the same Redis instance as `REDIS_URL`, or at a separate cluster if you want to isolate cache traffic from queue traffic.
+
+##### When using the Docker Compose
+
+The bundled `redis` service is reused for the cache in the default Docker Compose setup. `LAGO_REDIS_CACHE_URL=redis://redis:6379` is pre-configured.
+
+##### Password
+
+Set the cache Redis password through a dedicated variable:
+
+```sh
+LAGO_REDIS_CACHE_PASSWORD=your-cache-redis-password
+```
+
+##### Selecting a database number
+
+When the cache shares a Redis instance with Sidekiq, use a different Redis database number to keep cache keys isolated from queue data:
+
+```sh
+LAGO_REDIS_CACHE_DB=3
+```
+
+Sidekiq uses database `0` by default. The bundled Docker Compose sets the cache to database `3`.
+
+#### Managed Redis services[](#managed-redis-services "Direct link to heading")
+
+Lago works with managed Redis providers (Amazon ElastiCache, Google Cloud Memorystore, Upstash, Redis Enterprise Cloud, etc.) without any extra configuration. These services handle replication, automatic failover, backups, and monitoring on your behalf — you do not need to deploy Sentinel.
+
+Point Lago at the provider's primary endpoint via the standard URL variable. Failover is transparent: when the provider promotes a replica, the endpoint stays the same, and the next reconnect lands on the new master.
+
+##### Amazon ElastiCache
+
+For ElastiCache for Redis in "Cluster Mode Disabled" with replicas, point Lago at the **primary endpoint** (not an individual node endpoint — the primary endpoint follows the active master across failovers):
+
+```sh
+# Sidekiq Redis
+REDIS_URL=rediss://<primary-endpoint>:6379
+REDIS_PASSWORD=<auth-token>
+
+# Cache Redis (can be the same cluster on a different database, or a separate cluster)
+LAGO_REDIS_CACHE_URL=rediss://<primary-endpoint>:6379
+LAGO_REDIS_CACHE_PASSWORD=<auth-token>
+```
+
+The `rediss://` scheme enables in-transit encryption — recommended on ElastiCache and required if you have **Encryption in transit** enabled on the cluster. The password variables carry the AUTH token if AUTH is enabled.
+
+##### Other providers
+
+Google Cloud Memorystore, Upstash, Redis Enterprise Cloud, and similar managed services follow the same pattern: a single endpoint URL and an optional password. Use `rediss://` (or whatever TLS scheme the provider exposes) where supported.
+
+<Info>
+  When using a managed service, **do not** set `LAGO_REDIS_*_SENTINELS`. The Sentinel variables activate self-hosted Sentinel discovery, which managed providers do not expose. Pick one HA mechanism per Redis role — managed service *or* Sentinel, not both.
+</Info>
+
+#### High availability with Sentinel[](#high-availability-with-sentinel "Direct link to heading")
+
+For production deployments that need to survive a Redis master failure, Lago can route both the Sidekiq queue and the cache through [Redis Sentinel](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/). Sentinel is Redis's built-in monitoring layer: a small cluster of Sentinel processes watches the Redis nodes, agrees by quorum when the master is unreachable, and promotes one of the existing replicas. Lago reconnects to the new master automatically — no restart or operator action required.
+
+You can enable Sentinel for the Sidekiq queue, the cache, or both. Each consumer reads its own variables, so mixing modes is supported (for example, Sidekiq through Sentinel and the cache through a static URL).
+
+##### Sidekiq Sentinel configuration
+
+| Variable | Purpose |
+| -------- | ------- |
+| `LAGO_REDIS_SIDEKIQ_SENTINELS` | Comma-separated list of Sentinel addresses (`host:port,host:port,...`). Setting this activates Sentinel mode for Sidekiq. |
+| `LAGO_REDIS_SIDEKIQ_MASTER_NAME` | The `master_name` declared on the Sentinels. Optional — defaults to `master`. Set this only if your Sentinel cluster uses a different name. |
+
+`REDIS_PASSWORD` continues to authenticate against the underlying data nodes when Sentinel is enabled. You don't need to set `REDIS_URL` when Sentinel mode is active — the master address is discovered dynamically from the Sentinels.
+
+##### Cache Sentinel configuration
+
+| Variable | Purpose |
+| -------- | ------- |
+| `LAGO_REDIS_CACHE_SENTINELS` | Comma-separated list of Sentinel addresses (`host:port,host:port,...`). Setting this activates Sentinel mode for the cache. |
+| `LAGO_REDIS_CACHE_MASTER_NAME` | The `master_name` declared on the Sentinels. Optional — defaults to `master`. |
+
+`LAGO_REDIS_CACHE_PASSWORD` continues to authenticate against the underlying data nodes when Sentinel is enabled. The cache activates automatically when **either** `LAGO_REDIS_CACHE_URL` or `LAGO_REDIS_CACHE_SENTINELS` is set, so a Sentinel-only deployment with no static URL is supported.
+
+##### Verifying the active master
+
+You can ask any Sentinel for the current master address at any time:
+
+```sh
+redis-cli -h <sentinel-host> -p 26379 SENTINEL get-master-addr-by-name <master_name>
+# 1) "10.0.1.42"
+# 2) "6379"
+```
+
+Use `master` as the master name if you haven't overridden `LAGO_REDIS_SIDEKIQ_MASTER_NAME` or `LAGO_REDIS_CACHE_MASTER_NAME`.
+
+<Warning>
+  When running Sentinel behind a Kubernetes Service, point Lago at the individual Sentinel addresses, not at a Service that fronts the Redis data pods. Sentinel needs to track the actual node identities to detect master failure and promote a replica.
+</Warning>
+
+#### Best practices
+
+- **Bring your own Redis in production.** The bundled `redis` service in `docker-compose.yml` is intended for local trials. For production, run a managed or dedicated Redis (or a Redis cluster fronted by Sentinel) and point Lago at it.
+- **Use separate variables for credentials.** Keep `REDIS_PASSWORD` and `LAGO_REDIS_CACHE_PASSWORD` out of the `*_URL` variables so connection details and secrets can be managed independently.
+- **Enable Sentinel for HA.** A single Redis master is a single point of failure. For production loads with availability requirements, use Sentinel (or a managed Redis service that provides equivalent automatic failover).
+- **Separate cache and queue when in doubt.** Running the cache and Sidekiq on different Redis instances prevents one workload's bursts (heavy queue activity, large cache writes) from impacting the other. Begin with a shared instance and split only if you observe contention.
+- **Encrypt connections.** Use the `rediss://` scheme in `REDIS_URL` / `LAGO_REDIS_CACHE_URL` to enable TLS to your Redis nodes.
+
 ### Components[](#components "Direct link to heading")
 
 Lago uses the following containers:
