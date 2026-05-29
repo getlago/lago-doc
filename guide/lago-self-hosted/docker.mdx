@@ -400,6 +400,8 @@ When using a dedicated Redis setup that you manage yourself, you can achieve hig
 
 You can enable Sentinel for the Sidekiq queue, the cache, or both. Each consumer reads its own variables, so mixing modes is supported (for example, Sidekiq through Sentinel and the cache through a static URL).
 
+If you'd like to use Redis Sentinel, we recommend that you properly read through its documentation and define monitoring and alerting on Sentinel events. Furthermore we suggest to the test failover (e.g., by simulating consecutive master failures) thoroughly and regularly during low-traffic/maintenance periods or on a staging environment to make sure your setup works as expected.
+
 <Warning>
   Redis also provides high availability through Redis Cluster, but Sidekiq doesn't support it. Sentinel is the only recommended HA solution for self-hosted Lago deployments using dedicated Redis.
 </Warning>
@@ -431,9 +433,9 @@ If `LAGO_REDIS_CACHE_URL` is also set, Lago only reuses its connection options, 
 
 #### Best practices
 
-- **Bring your own Redis in production.** The bundled `redis` service in `docker-compose.yml` is intended for local trials. For production, run a managed or dedicated Redis (or a Redis cluster fronted by Sentinel) and point Lago at it.
+- **Bring your own Redis in production.** The bundled `redis` service in `docker-compose.yml` is intended for local trials. For production, run a managed or dedicated Redis (or multiple Redis instance fronted by Sentinel) and point Lago at it.
 - **Use separate Redis instances for the cache and the queue in production.** This prevents a surge in one workload (e.g., heavy Sidekiq activity) from impacting the other (e.g., API cache performance). It also allows you to properly configure each Redis instance according to its needs (memory, eviction policy, etc.).
-- **Enable Sentinel or managed instances for HA.** A single Redis master is a single point of failure. For production loads with availability requirements, use Sentinel (or a managed Redis service that provides equivalent automatic failover).
+- **Use managed instances or Redis Sentinel for HA.** A single Redis master is a single point of failure. For production loads with availability requirements, use Sentinel or a managed Redis service that provides equivalent automatic failover.
 - **Encrypt connections.** Use the `rediss://` scheme in `REDIS_URL` / `LAGO_REDIS_CACHE_URL` to enable TLS to your Redis nodes.
 
 <a id="ssl-support"></a> { /* Old anchor kept to avoid breaking existing links */ }
