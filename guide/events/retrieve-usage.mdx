@@ -147,6 +147,57 @@ Some events can be ingested but trigger unexpected behavior. Lago displays two p
   </Tab>
 </Tabs>
 
+## Usage breakdown with presentation group keys
+
+When a charge defines [presentation group keys](/guide/plans/charges/grouping#presentation-group-keys), the **current, projected, and past** usage responses include a units-only breakdown of each charge's usage across those keys. This is purely for visibility; it never affects the amounts.
+
+Where the breakdown appears depends on whether the charge also has pricing group keys:
+
+- **No pricing group keys**: the breakdown sits at the charge level, in a `presentation_breakdown` array:
+
+  ```json
+  {
+    "charges_usage": [
+      {
+        "units": "100.0",
+        "amount_cents": 7000,
+        "presentation_breakdown": [
+          { "presentation_by": { "department": "eng" },   "units": "60.0", "display_in_invoice": true },
+          { "presentation_by": { "department": "sales" }, "units": "40.0", "display_in_invoice": true }
+        ]
+      }
+    ]
+  }
+  ```
+
+- **With pricing group keys**: the breakdown is nested inside each `grouped_usage` entry, as `presentation_breakdowns`:
+
+  ```json
+  {
+    "charges_usage": [
+      {
+        "units": "100.0",
+        "amount_cents": 7000,
+        "grouped_usage": [
+          {
+            "grouped_by": { "region": "eu" },
+            "units": "100.0",
+            "amount_cents": 7000,
+            "presentation_breakdowns": [
+              { "presentation_by": { "department": "eng" },   "units": "60.0", "display_in_invoice": true },
+              { "presentation_by": { "department": "sales" }, "units": "40.0", "display_in_invoice": true }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+  ```
+
+<Tip>
+  Pass the optional `breakdown_by` query parameter to limit the response to a subset of the configured presentation keys. For example, `breakdown_by[]=region` collapses a `region · city` breakdown down to region only.
+</Tip>
+
 ---
 
 ## Retrieve usage analytics
