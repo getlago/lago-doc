@@ -1,50 +1,130 @@
 ---
 title: "Group keys"
+description: "Group usage by event properties: either to price each group separately, or to break it down on invoices and usage for visibility only."
 ---
+
+A charge can group usage by the properties carried on your events. Lago offers two kinds of group keys, answering two different questions:
+
+- **Pricing group keys** answer *"how much should each group cost?"* Each group becomes its own fee with its own price.
+- **Presentation group keys** answer *"how is this fee broken down?"* The fee stays whole and priced once; Lago just shows how its units split across the groups, for visibility only.
+
+You can use either on its own, or combine them on the same charge.
+
+| | Pricing group keys | Presentation group keys |
+|---|---|---|
+| Affects pricing and amounts | Yes | No |
+| Per-group breakdown shown as | Separate fees (line items) | Units-only sub-breakdown inside one fee |
+| Keys per charge | Multiple | Up to 2 |
+| Aggregation types | All | All |
 
 ## Pricing group keys
 
-AI and infrastructure platforms often tailor pricing based on variables such as geography, hosting provider, or service tier. Lago's Pricing Group Keys offer a streamlined way to support this kind of dynamic pricing without duplicating product definitions.
+AI and infrastructure platforms often tailor pricing by geography, hosting provider, model type, or service tier. Pricing group keys let you reflect those real-world cost variations on a single charge, instead of duplicating products. Each group is metered and **priced independently**, and appears as its own fee on the invoice.
 
-With pricing group keys, you can group usage events to a single product based on configurable dimensions—like cloud provider, model type, deployment region, or instance class. This allows you to reflect real-world cost variations while keeping your product catalog clean and manageable.
+You don't predefine the values. Define the key on the charge, send events that carry it, and Lago routes each event to the right pricing group at runtime. Pricing group keys work with every charge model, and you can set more than one per charge.
 
-When setting up a charge, you define the relevant keys. You don't need to predefine every possible value. Instead, Lago intelligently routes each usage event to the correct pricing group based on the attributes provided at runtime.
+<Tabs>
+  <Tab title="Dashboard">
+    On the charge, add a key in the **Pricing group key** field (e.g. `region`, `cloud`, `instance_type`), then send events that include that property.
 
+    <Frame caption="Define a pricing group key">
+      <img src="/guide/plans/images/pricing-group-key.png"/>
+    </Frame>
+  </Tab>
+  <Tab title="API">
+    Pricing group keys live inside the charge `properties`:
 
-### Define pricing group keys
-To define a pricing group key, you need to:
-1. Go to the plan where you want to configure dynamic pricing;
-2. Select the charge you want to apply the pricing group key to;
-3. In the charge settings, enter a key in the Pricing Group Key field (e.g., region, cloud, instance_type);
-4. Send usage events that include this key in the properties object, using any value without predefining them; and
-5. Lago will automatically group usage into the correct pricing bucket based on the key's value.
-
-<Note>
-Pricing group keys are available for all charge models. You can define multiple pricing group keys for a single charge.
-</Note>
-
-### Example of pricing group keys
-Let's define a pricing group key called `regions` for a charge used to calculate Storage costs for your customers.
-
-<Frame caption="Define a pricing group key">
-    <img src="/guide/plans/images/pricing-group-key.png"/>
-</Frame>
-
-By sending usage events with a `regions` property, you can include any number of region values. Lago will automatically group and aggregate usage based on the values provided in your events.
-```json
-{
-  "event": {
-    "transaction_id": "{{$randomUUID}}",
-    "external_subscription_id": "8546dce0-d9e6-4544-ac8a-fbc77340cd9f",
-    "code": "storage",
+    ```json
     "properties": {
-      "gb": 20,
-      "regions": "us-east-1"
+      "amount": "1",
+      "pricing_group_keys": ["region"]
     }
-  }
-}
+    ```
+
+    Events then carry the key like any other property:
+
+    ```json
+    { "event": { "code": "storage", "properties": { "gb": 20, "region": "us-east-1" } } }
+    ```
+  </Tab>
+</Tabs>
+
+**Example.** A Storage charge priced at `$1` per GB (`sum` of `gb`) with `pricing_group_keys: ["region"]`, receiving 10 GB in EU and 15 GB in US, produces **two separate fees**, each with its own units *and* amount:
+
+```text
+Storage
+  region = EU    10 units    $10.00
+  region = US    15 units    $15.00
+  ─────────────────────────────────
+  Total                      $25.00
 ```
 
-<Frame caption="Calculate usage with pricing group values">
-    <img src="/guide/plans/images/pricing-group-usage.png"/>
-</Frame>
+## Presentation group keys
+
+Sometimes you don't want to charge differently for a dimension; you just want to **see** it. Finance teams need to attribute a line item back to a region, team, or project. Customers want to know *where* their usage came from before they pay for it. None of that should change the price.
+
+Presentation group keys give you exactly that: a breakdown of a fee's units across one or two event properties, shown on the invoice and in usage responses, **without affecting pricing, aggregation, or the number of fees**. Group by, for display only. Doing the same thing with pricing keys would split one fee into many, re-price non-linear charge models (graduated, volume, package) per group, and bloat both the invoice and your usage queries.
+
+### How it works
+
+Lago computes the fee exactly as it does today (pricing untouched), then runs one extra aggregation to split that fee's units across the presentation keys and attaches the result as a units-only breakdown.
+
+Take the **same** Storage charge and events as the pricing example above (`$1` per GB, EU = 10 GB, US = 15 GB), but with `region` as a *presentation* key instead of a pricing one:
+
+```text
+Storage              25 units    $25.00
+  └ region = EU      10 units
+  └ region = US      15 units
+```
+
+One fee, priced once at `$25.00`. The same region split that pricing keys turned into two billable fees stays here as a units-only breakdown inside a single fee.
+
+<Note>
+Good to know:
+- **Up to 2 keys** per charge.
+- **A key can be both** a pricing and a presentation key on the same charge; Lago de-duplicates them.
+- **All aggregation types work.** For additive aggregations (`count`, `sum`, `weighted sum`) the group units add up to the fee total. For non-additive ones (`max`, `latest`, `count unique`) they may not: each group is computed independently, so read the breakdown as *what happened in each group*, not *how the total splits*.
+- **Groups can show negative units** when their events net out negative (credits, reversals).
+- **Events missing the property** fall under a `null` group.
+</Note>
+
+### How to use it
+
+<Tabs>
+  <Tab title="Dashboard">
+    On the charge, open the **Presentation group keys** panel below the pricing model, add up to two keys (e.g. `department`, `project`), and choose per key whether it should show on the invoice. Then send events that carry those properties.
+  </Tab>
+  <Tab title="API">
+    Presentation group keys live inside the charge `properties`, as objects with a `value` and optional `options`:
+
+    ```json
+    "properties": {
+      "amount": "1",
+      "presentation_group_keys": [
+        { "value": "department" },
+        { "value": "project", "options": { "display_in_invoice": true } }
+      ]
+    }
+    ```
+
+    Set `display_in_invoice` to `false` to keep a key's breakdown out of the invoice PDF while still returning it through the API. The breakdown also appears live in [current, projected, and past usage](/guide/events/retrieve-usage#usage-breakdown-with-presentation-group-keys).
+  </Tab>
+</Tabs>
+
+### Combining pricing and presentation group keys
+
+The two compose cleanly: pricing keys decide how many fees there are and what they cost, presentation keys break down each of those fees. The hierarchy is always **charge → pricing-group fee → presentation breakdown**.
+
+A Storage charge at `$1`/unit with `pricing_group_keys: ["instance_id"]` and `presentation_group_keys: [{ "value": "region" }]` gives **one fee per instance**, each with its own region breakdown:
+
+```text
+Storage
+  Instance A             25 units    $25.00
+    └ region = EU        10 units
+    └ region = US        15 units
+  Instance B              7 units     $7.00
+    └ region = EU         4 units
+    └ region = US         3 units
+```
+
+The amounts come entirely from the pricing keys; the region split is layered on for visibility. With two presentation keys, the breakdown is by the combination of values (e.g. `region · city`).
