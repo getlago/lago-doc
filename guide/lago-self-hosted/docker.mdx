@@ -103,58 +103,65 @@ Docker images are always updated to the last stable version in the
 Lago uses the following environment variables to configure the components of the
 application. You can override them to customise your setup.
 
-| Variable                              | Default value                                  | Description                                                                                                                                                      |
-|---------------------------------------|------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `POSTGRES_HOST`                       | db                                             | (_With Docker compose_) Host name of the postgres server                                                                                                         |
-| `POSTGRES_DB`                         | lago                                           | (_With Docker compose_) Name of the postgres database                                                                                                            |
-| `POSTGRES_USER`                       | lago                                           | (_With Docker compose_) Database user for postgres connection                                                                                                    |
-| `POSTGRES_PASSWORD`                   | changeme                                       | (_With Docker compose_) Database password for postgres connection                                                                                                |
-| `POSTGRES_PORT`                       | 5432                                           | (_With Docker compose_) Port the postgres database listens to                                                                                                    |
-| `POSTGRES_SCHEMA`                     | public                                         | Name of the postgres schema                                                                                                                                      |
-| `DATABASE_URL`                        |                                                | (_Without docker compose_) Full url to the postgres server                                                                                                       |
-| `DATABASE_POOL`                       | 10                                             | Max number of connection opened to the postgres database per api, worker and clock instances                                                                     |
-| `DATABASE_PREPARED_STATEMENTS`        | true                                           | Enable or disable prepared statements in the postgres database                                                                                                   |
-| `REDIS_HOST`                          | redis                                          | Host name of the redis server                                                                                                                                    |
-| `REDIS_PORT`                          | 6379                                           | Port the redis database listens to                                                                                                                               |
-| `REDIS_PASSWORD`                      |                                                | Password of the redis server                                                                                                                                     |
-| `LAGO_REDIS_CACHE_HOST`               | redis                                          | Host name of the redis cache server                                                                                                                              |
-| `LAGO_REDIS_CACHE_PORT`               | 6379                                           | Port the redis cache server listens to                                                                                                                           |
-| `LAGO_REDIS_CACHE_PASSWORD`           |                                                | Password of the redis cache server                                                                                                                               |
-| `LAGO_REDIS_CACHE_POOL_SIZE`          | 5                                              | Max number of connections in the redis cache connection pool                                                                                                     |
-| `LAGO_MEMCACHE_SERVERS`               |                                                | Comma-separated list of memcache servers                                                                                                                          |
-| `LAGO_FRONT_URL`                      | [http://localhost](http://localhost)           | URL of the Lago front-end application.Used for CORS configuration                                                                                                |
-| `FRONT_PORT`                          | 80                                             | Port the front-end application listens to                                                                                                                        |
-| `LAGO_API_URL`                        | [http://localhost:3000](http://localhost:3000) | URL of the Lago back-end application                                                                                                                             |
-| `API_URL`                             | [http://localhost:3000](http://localhost:3000) | URL of the Lago back-end application defined for the front image                                                                                                 |
-| `API_PORT`                            | 3000                                           | Port the back-end application listens to                                                                                                                         |
-| `SECRET_KEY_BASE`                     | your-secret-key-base-hex-64                    | Secret key used for session encryption                                                                                                                           |
-| `SENTRY_DSN`                          |                                                | Sentry DSN key for error and performance tracking on Lago back-end                                                                                               |
-| `SENTRY_DSN_FRONT`                    |                                                | Sentry DSN key for error and performance tracking on Lago front-end                                                                                              |
-| `LAGO_RSA_PRIVATE_KEY`                |                                                | Private key used for webhook signatures                                                                                                                          |
-| `LAGO_SIDEKIQ_WEB`                    |                                                | Activate the Sidekiq web UI, disabled by default                                                                                                                 |
-| `LAGO_ENCRYPTION_PRIMARY_KEY`         | your-encryption-primary-key                    | Encryption primary key used to secure sensitive values stored in the database                                                                                    |
-| `LAGO_ENCRYPTION_DETERMINISTIC_KEY`   | your-encryption-deterministic-key              | Encryption deterministic key used to secure sensitive values stored in the database                                                                              |
-| `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` | your-encryption-derivation-salt                | Encryption key salt used to secure sensitive values stored in the database                                                                                       |
-| `LAGO_WEBHOOK_ATTEMPTS`               | 3                                              | Number of failed attempt before stopping to deliver a webhook                                                                                                    |
-| `LAGO_USE_AWS_S3`                     | false                                          | Use AWS S3 for files storage                                                                                                                                     |
-| `LAGO_AWS_S3_ACCESS_KEY_ID`           | azerty123456                                   | AWS Access Key id that has access to S3                                                                                                                          |
-| `LAGO_AWS_S3_SECRET_ACCESS_KEY`       | azerty123456                                   | AWS Secret Access Key that has access to S3                                                                                                                      |
-| `LAGO_AWS_S3_REGION`                  | us-east-1                                      | AWS S3 Region                                                                                                                                                    |
-| `LAGO_AWS_S3_BUCKET`                  | bucket                                         | AWS S3 Bucket name                                                                                                                                               |
-| `LAGO_AWS_S3_ENDPOINT`                |                                                | S3 compatible storage endpoint. Should be set only if you are using another storage provider than AWS S3                                                         |
-| `LAGO_USE_GCS`                        | false                                          | Use Google Cloud Service Cloud Storage for file storage, ⚠️ If you want to use GCS, you have to pass the credentials json key file to the api and worker service |
-| `LAGO_GCS_PROJECT`                    |                                                | GCS Project name                                                                                                                                                 |
-| `LAGO_GCS_BUCKET`                     |                                                | GCS Bucket Name                                                                                                                                                  |
-| `LAGO_GCS_CREDENTIALS`                |                                                | GCS Credentials JSON file path                                                                                                                                   |
-| `LAGO_GCS_IAM`                        | false                                          | GCS IAM Authentication                                                                                                                                           |
-| `LAGO_GCS_GSA_EMAIL`                  |                                                | GCS GSA Email                                                                                                                                                    |
-| `LAGO_PDF_URL`                        | [http://pdf:3000](http://pdf:3000)             | PDF Service URL on your infrastructure                                                                                                                           |
-| `LAGO_DISABLE_SIGNUP`                 |                                                | Disable Sign up when running Lago in self-hosted                                                                                                                 |
-| `LAGO_RAILS_STDOUT`                   | true                                           | Set to true to activate logs on containers                                                                                                                       |
-| `LAGO_DISABLE_WALLET_REFRESH`         |                                                | Disable automatic refresh of wallet ongoing balance                                                                                                              |
-| `LAGO_DISABLE_PDF_GENERATION`         | false                                          | Disable automatic PDF generation for invoices, credit notes, and receipts. As a result, the corresponding download endpoints will be unavailable                 |
-| `GOOGLE_AUTH_CLIENT_ID`               |                                                | Client ID for Google auth Single Sign On                                                                                                                         |
-| `GOOGLE_AUTH_CLIENT_SECRET`           |                                                | Client Secret for Google auth Single Sign On                                                                                                                     |
+| Variable                              | Default value                                  | Description                                                                                                                                                                                                                                                        |
+| ------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `API_PORT`                            | 3000                                           | Port the back-end application listens to                                                                                                                                                                                                                           |
+| `API_URL`                             | [http://localhost:3000](http://localhost:3000) | URL of the Lago back-end application defined for the front image                                                                                                                                                                                                   |
+| `DATABASE_POOL`                       | 10                                             | Max number of connection opened to the postgres database per api, worker and clock instances                                                                                                                                                                       |
+| `DATABASE_PREPARED_STATEMENTS`        | true                                           | Enable or disable prepared statements in the postgres database                                                                                                                                                                                                     |
+| `DATABASE_URL`                        |                                                | (_Without docker compose_) Full url to the postgres server                                                                                                                                                                                                         |
+| `FRONT_PORT`                          | 80                                             | Port the front-end application listens to                                                                                                                                                                                                                          |
+| `GOOGLE_AUTH_CLIENT_ID`               |                                                | Client ID for Google auth Single Sign On                                                                                                                                                                                                                           |
+| `GOOGLE_AUTH_CLIENT_SECRET`           |                                                | Client Secret for Google auth Single Sign On                                                                                                                                                                                                                       |
+| `LAGO_API_URL`                        | [http://localhost:3000](http://localhost:3000) | URL of the Lago back-end application                                                                                                                                                                                                                               |
+| `LAGO_AWS_S3_ACCESS_KEY_ID`           | azerty123456                                   | AWS Access Key id that has access to S3                                                                                                                                                                                                                            |
+| `LAGO_AWS_S3_BUCKET`                  | bucket                                         | AWS S3 Bucket name                                                                                                                                                                                                                                                 |
+| `LAGO_AWS_S3_ENDPOINT`                |                                                | S3 compatible storage endpoint. Should be set only if you are using another storage provider than AWS S3                                                                                                                                                           |
+| `LAGO_AWS_S3_REGION`                  | us-east-1                                      | AWS S3 Region                                                                                                                                                                                                                                                      |
+| `LAGO_AWS_S3_SECRET_ACCESS_KEY`       | azerty123456                                   | AWS Secret Access Key that has access to S3                                                                                                                                                                                                                        |
+| `LAGO_DATABASE_IDLE_TX_TIMEOUT`       |                                                | A transaction left idle past the time limit (in milliseconds) is terminated. Maps to `idle_in_transaction_session_timeout` in postgres                                                                                                                             |
+| `LAGO_DATABASE_LOCK_TIMEOUT`          |                                                | A statement waiting on a lock past the limit (in milliseconds) fails fast instead of blocking. Maps to `lock_timeout` in postgres                                                                                                                                  |
+| `LAGO_DATABASE_STATEMENT_TIMEOUT`     |                                                | Any single query exceeding the time limit (in milliseconds) is cancelled. Maps to `statement_timeout` in postgres                                                                                                                                                  |
+| `LAGO_DISABLE_PDF_GENERATION`         | false                                          | Disable automatic PDF generation for invoices, credit notes, and receipts. As a result, the corresponding download endpoints will be unavailable                                                                                                                   |
+| `LAGO_DISABLE_SIGNUP`                 |                                                | Disable Sign up when running Lago in self-hosted                                                                                                                                                                                                                   |
+| `LAGO_DISABLE_WALLET_REFRESH`         |                                                | Disable automatic refresh of wallet ongoing balance                                                                                                                                                                                                                |
+| `LAGO_ENCRYPTION_DETERMINISTIC_KEY`   | your-encryption-deterministic-key              | Encryption deterministic key used to secure sensitive values stored in the database                                                                                                                                                                                |
+| `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` | your-encryption-derivation-salt                | Encryption key salt used to secure sensitive values stored in the database                                                                                                                                                                                         |
+| `LAGO_ENCRYPTION_PRIMARY_KEY`         | your-encryption-primary-key                    | Encryption primary key used to secure sensitive values stored in the database                                                                                                                                                                                      |
+| `LAGO_FRONT_URL`                      | [http://localhost](http://localhost)           | URL of the Lago front-end application.Used for CORS configuration                                                                                                                                                                                                  |
+| `LAGO_GCS_BUCKET`                     |                                                | GCS Bucket Name                                                                                                                                                                                                                                                    |
+| `LAGO_GCS_CREDENTIALS`                |                                                | GCS Credentials JSON file path                                                                                                                                                                                                                                     |
+| `LAGO_GCS_GSA_EMAIL`                  |                                                | GCS GSA Email                                                                                                                                                                                                                                                      |
+| `LAGO_GCS_IAM`                        | false                                          | GCS IAM Authentication                                                                                                                                                                                                                                             |
+| `LAGO_GCS_PROJECT`                    |                                                | GCS Project name                                                                                                                                                                                                                                                   |
+| `LAGO_MEMCACHE_SERVERS`               |                                                | Comma-separated list of memcache servers                                                                                                                                                                                                                           |
+| `LAGO_PDF_URL`                        | [http://pdf:3000](http://pdf:3000)             | PDF Service URL on your infrastructure                                                                                                                                                                                                                             |
+| `LAGO_RAILS_STDOUT`                   | true                                           | Set to true to activate logs on containers                                                                                                                                                                                                                         |
+| `LAGO_REDIS_CACHE_HOST`               | redis                                          | Host name of the redis cache server. See [Configuring Redis](#configuring-redis).                                                                                                                                                                                  |
+| `LAGO_REDIS_CACHE_MASTER_NAME`        | master                                         | Name of the Redis Sentinel master instance. Only used when `LAGO_REDIS_CACHE_SENTINELS` is set. See [Configuring Redis](#configuring-redis).                                                                                                                       |
+| `LAGO_REDIS_CACHE_PASSWORD`           |                                                | Password of the redis cache server. See [Configuring Redis](#configuring-redis).                                                                                                                                                                                   |
+| `LAGO_REDIS_CACHE_POOL_SIZE`          | 5                                              | Max number of connections in the redis cache connection pool. See [Configuring Redis](#configuring-redis).                                                                                                                                                         |
+| `LAGO_REDIS_CACHE_PORT`               | 6379                                           | Port the redis cache server listens to. See [Configuring Redis](#configuring-redis).                                                                                                                                                                               |
+| `LAGO_REDIS_CACHE_SENTINELS`          |                                                | Comma-separated list of [Redis **Sentinel**](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/) addresses for Sidekiq high availability (e.g., `sentinel-1:26379,sentinel-2:26379,sentinel-3:26379`). Only applies to Sidekiq, not the cache |
+| `LAGO_REDIS_SIDEKIQ_MASTER_NAME`      | master                                         | Name of the Redis Sentinel master instance. Only used when `LAGO_REDIS_SIDEKIQ_SENTINELS` is set. See [Configuring Redis](#configuring-redis).                                                                                                                     |
+| `LAGO_REDIS_SIDEKIQ_SENTINELS`        |                                                | Comma-separated list of [Redis Sentinel](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/) addresses for Sidekiq high availability (e.g., `sentinel-1:26379,sentinel-2:26379,sentinel-3:26379`). Only applies to Sidekiq, not the cache     |
+| `LAGO_RSA_PRIVATE_KEY`                |                                                | Private key used for webhook signatures                                                                                                                                                                                                                            |
+| `LAGO_SIDEKIQ_WEB`                    |                                                | Activate the Sidekiq web UI, disabled by default                                                                                                                                                                                                                   |
+| `LAGO_USE_AWS_S3`                     | false                                          | Use AWS S3 for files storage                                                                                                                                                                                                                                       |
+| `LAGO_USE_GCS`                        | false                                          | Use Google Cloud Service Cloud Storage for file storage, ⚠️ If you want to use GCS, you have to pass the credentials json key file to the api and worker service                                                                                                    |
+| `LAGO_WEBHOOK_ATTEMPTS`               | 3                                              | Number of failed attempt before stopping to deliver a webhook                                                                                                                                                                                                      |
+| `POSTGRES_DB`                         | lago                                           | (_With Docker compose_) Name of the postgres database                                                                                                                                                                                                              |
+| `POSTGRES_HOST`                       | db                                             | (_With Docker compose_) Host name of the postgres server                                                                                                                                                                                                           |
+| `POSTGRES_PASSWORD`                   | changeme                                       | (_With Docker compose_) Database password for postgres connection                                                                                                                                                                                                  |
+| `POSTGRES_PORT`                       | 5432                                           | (_With Docker compose_) Port the postgres database listens to                                                                                                                                                                                                      |
+| `POSTGRES_SCHEMA`                     | public                                         | Name of the postgres schema                                                                                                                                                                                                                                        |
+| `POSTGRES_USER`                       | lago                                           | (_With Docker compose_) Database user for postgres connection                                                                                                                                                                                                      |
+| `REDIS_HOST`                          | redis                                          | Host name of the redis server                                                                                                                                                                                                                                      |
+| `REDIS_PASSWORD`                      |                                                | Password of the redis server                                                                                                                                                                                                                                       |
+| `REDIS_PORT`                          | 6379                                           | Port the redis database listens to                                                                                                                                                                                                                                 |
+| `SECRET_KEY_BASE`                     | your-secret-key-base-hex-64                    | Secret key used for session encryption                                                                                                                                                                                                                             |
+| `SENTRY_DSN_FRONT`                    |                                                | Sentry DSN key for error and performance tracking on Lago front-end                                                                                                                                                                                                |
+| `SENTRY_DSN`                          |                                                | Sentry DSN key for error and performance tracking on Lago back-end                                                                                                                                                                                                 |
 
 <Warning>
 We recommend that you change `POSTGRES_PASSWORD`, `SECRET_KEY_BASE`,
@@ -168,7 +175,6 @@ improve the security of your Lago instance:
 - `LAGO_ENCRYPTION_PRIMARY_KEY`, `LAGO_ENCRYPTION_DETERMINISTIC_KEY` and
   `LAGO_ENCRYPTION_KEY_DERIVATION_SALT` can all be generated using the
   `cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` command.
-
 </Warning>
 
 ### Components[](#components "Direct link to heading")
@@ -176,7 +182,7 @@ improve the security of your Lago instance:
 Lago uses the following containers:
 
 | Container    | Role                                                                  |
-|--------------|-----------------------------------------------------------------------|
+| ------------ | --------------------------------------------------------------------- |
 | `front`      | Front-end application                                                 |
 | `api`        | API back-end application                                              |
 | `api_worker` | Asynchronous worker for the API application                           |
@@ -185,11 +191,255 @@ Lago uses the following containers:
 | `redis`      | Redis database engine used as a queuing system for asynchronous tasks |
 | `pdf`        | PDF generation powered by Gotenberg                                   |
 
-You can also use your own database or Redis server. To do so, remove the `db`
+You can also use your own Postgres or Redis server. To do so, remove the `db`
 and `redis` configurations from the `docker-compose.yml` file and update the
 environment variables accordingly.
 
-### SSL Support[](#ssl-support "Direct link to heading")
+### Configuring the database[](#configuring-the-database "Direct link to heading")
+
+#### Connection
+
+##### `DATABASE_URL`
+
+Lago connects to PostgreSQL through a standard Rails `DATABASE_URL` environment variable:
+
+```sh
+DATABASE_URL=postgresql://{user}:{password}@{host}:{port}/{database}?{variable}={value}
+```
+
+The available variables are listed in the sections below.
+
+##### When using the Docker Compose
+
+When using the Docker Compose, the `POSTGRES_*` variables are used to build the `DATABASE_URL` for the Lago applications as follows:
+
+```sh
+DATABASE_URL=postgresql://${POSTGRES_USER:-lago}:${POSTGRES_PASSWORD:-changeme}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-lago}?search_path=${POSTGRES_SCHEMA:-public}
+```
+
+Therefore, you do not need to set `DATABASE_URL` explicitly in this setup.
+
+Although it is possible to use the Docker Compose with an external Postgres instance, the bundled `docker-compose.yml` also ships a `db` service which is configured using the `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_PORT` variables. When using the bundled `db` service, we suggest to change the default `POSTGRES_PASSWORD` value.
+
+<Warning>
+  Note that it is still possible to override `DATABASE_URL` when using the Docker Compose. The caveat is that the bundled `db` service will be configured using the `POSTGRES_*` variables, possibly causing conflicts. So we recommend using the `POSTGRES_*` over `DATABASE_URL` when using the bundled `db` service.
+</Warning>
+
+#### Schema
+
+By default, Lago uses the `public` schema in Postgres. Lago allows you to isolate Lago's tables in a dedicated schema if you share your database with other applications. You can change that by setting the `POSTGRES_SCHEMA` environment variable:
+
+```sh
+POSTGRES_SCHEMA=lago
+```
+
+It is also possible to set the schema in the `DATABASE_URL` directly using the `search_path` variable:
+
+```sh
+DATABASE_URL="postgresql://user:password@host:port/database?schema_search_path=lago"
+```
+
+<Info>
+  Unlike the other `POSTGRES_*` variables, `POSTGRES_SCHEMA` applies in all setups.
+</Info>
+
+#### Connection pool
+
+| Variable                       | Default | Purpose                                                                                                                               |
+| ------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_POOL`                | `10`    | Maximum number of connections each API, worker or clock instance opens to Postgres.                                                   |
+| `DATABASE_PREPARED_STATEMENTS` | `true`  | Enables Postgres prepared statements. You might not want that in some scenarios (e.g. a connection pooler that doesn't support them). |
+
+Total connections to Postgres ≈ `DATABASE_POOL × (api/worker/etc.)`. Keep this comfortably below your Postgres `max_connections`.
+
+#### Statement-level safeguards
+
+These three opt-in variables are applied to every Lago Rails connection (API, workers, clock, Rake tasks). They are unset by default, which means Postgres queries runs with no timeout unless explicitly set.
+
+| Environment Variable              | `DATABASE_URL` variable               | Effect when set                                                                      |
+| --------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------ |
+| `LAGO_DATABASE_STATEMENT_TIMEOUT` | `statement_timeout`                   | Any single query exceeding the value (in ms) is cancelled with `PG::QueryCanceled`.  |
+| `LAGO_DATABASE_IDLE_TX_TIMEOUT`   | `idle_in_transaction_session_timeout` | A transaction left idle past the value (in ms) is terminated, releasing its locks.   |
+| `LAGO_DATABASE_LOCK_TIMEOUT`      | `lock_timeout`                        | A statement waiting on a lock past the value (in ms) fails fast instead of blocking. |
+
+Setting a variable to `0` explicitly disables that specific cap (same as leaving it unset).
+
+You can also set these timeouts via `DATABASE_URL`:
+
+```sh
+DATABASE_URL="postgresql://user:password@host:port/database?statement_timeout=15000&idle_in_transaction_session_timeout=60000&lock_timeout=5000"
+```
+
+<Warning>
+  These timeouts apply to **every** process that boots the Rails app, including Sidekiq workers, the clock container, and Rake tasks such as migrations. Long-running background jobs and schema migrations can be killed if you set aggressive limits globally. Apply tight caps to the web tier and set them higher on workers, clock and migration entrypoints.
+</Warning>
+
+We recommend to set the timeouts lower than your HTTP-layer timeout so Postgres cancels the query before the client gives up.
+
+#### Enabling SSL[](#enabling-ssl "Direct link to heading")
+
+If your PostgreSQL server requires SSL connections (e.g., using a PEM certificate for `verify-full` mode),
+you can configure the connection using either [**libpq environment variables**](https://www.postgresql.org/docs/current/libpq-envars.html)
+or the **`DATABASE_URL`** parameters.
+
+##### Using libpq environment variables
+
+Set any of the libpq SSL environment variables:
+
+```shell
+# .env
+PGSSLMODE=verify-full
+PGSSLROOTCERT=/app/config/rds-ca.pem
+```
+
+For an exhaustive list of environment variables, refer to the [libpq environment variables documentation](https://www.postgresql.org/docs/current/libpq-envars.html).
+
+##### Using DATABASE_URL
+
+Alternatively, you can append any of the libpq SSL parameters directly to the `DATABASE_URL`:
+
+```shell
+DATABASE_URL=postgresql://lago:changeme@db:5432/lago?sslmode=verify-full&sslrootcert=/app/config/rds-ca.pem
+```
+
+For an exhaustive list of SSL parameters, refer to the [libpq documentation](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNECT-SSLMODE).
+
+#### Best practices
+
+- **Bring your own Postgres in production.** The bundled `db` service in `docker-compose.yml` is intended for local trials. For production, run a managed or dedicated Postgres instance and point Lago at it via `DATABASE_URL`.
+- **Use `DATABASE_URL` as the single source of truth outside of docker-compose.** It is the only variable Lago reads in production; `POSTGRES_*` only apply when the bundled `db` service is in use.
+- **Size the pool to your concurrency.** A good rule of thumb is `DATABASE_POOL` ≥ Puma threads per process and ≥ Sidekiq concurrency per worker. Total connections must stay under Postgres `max_connections`.
+- **Disable prepared statements only when needed.** Prepared statements are tied to a single Postgres connection. Transaction-mode poolers (e.g. PgBouncer) reuse backend connections between transactions, so a statement prepared on one may not exist on the next. Set `DATABASE_PREPARED_STATEMENTS=false` if your pooler doesn't preserve them across reuses.
+- **Apply timeouts at the web tier first.** Roll out `LAGO_DATABASE_STATEMENT_TIMEOUT` on the API only, monitor cancellations for 24–48 h, then extend to other tiers with more generous values if needed.
+- **Encrypt connections.** Configure SSL with `verify-full` against a known CA. See [Enabling SSL](#enabling-ssl) above.
+- **Keep Postgres healthy.** Once Lago is connected, follow the [Database maintenance](/guide/lago-self-hosted/database-maintenance) guide for autovacuum, autoanalyze and slow-query monitoring.
+
+### Configuring Redis[](#configuring-redis "Direct link to heading")
+
+Lago uses Redis for two independent purposes:
+
+- **Job queue** - Sidekiq stores background-job state in Redis. The API enqueues jobs that workers and the clock process pick up.
+- **Application cache** - Lago uses Redis as a cache-store for compute-heavy values (current usage, etc.).
+
+You can run a single Redis instance for both (the bundled Docker Compose does this) but for a production-ready environment, it is recommended to separate them. Each role has its own set of environment variables so they can be configured independently.
+
+#### Sidekiq Redis (job queue)
+
+##### `REDIS_URL`
+
+Lago's Sidekiq workers connect to Redis through the `REDIS_URL` environment variable:
+
+```sh
+REDIS_URL=redis://{host}:{port}/{database}
+```
+
+When using the Docker Compose, the bundled `docker-compose.yml` ships a `redis` service. `REDIS_URL=redis://redis:6379` already points at it, so you do not need to override the variable in this setup.
+
+#### Cache Redis (application cache)
+
+##### `LAGO_REDIS_CACHE_URL`
+
+Lago's API and workers reach the Rails cache through `LAGO_REDIS_CACHE_URL`:
+
+```sh
+LAGO_REDIS_CACHE_URL=redis://{host}:{port}/{database}
+```
+
+When using the Docker Compose, the bundled `redis` service is reused for the cache in the default Docker Compose setup. `LAGO_REDIS_CACHE_URL=redis://redis:6379` is pre-configured.
+
+#### Authentication
+
+It is possible to configure Redis with password-only or ACL-based authentication. In such case, you can configure Lago to authenticate with Redis.
+
+##### Sidekiq Redis (job queue)
+
+If you use password-only authentication, you can set `REDIS_PASSWORD` or include the password in `REDIS_URL`:
+
+```sh
+REDIS_URL=redis://:{password}@{host}:{port}/{database}
+```
+
+When using ACL-based authentication, you must include the username and password in `REDIS_URL`:
+
+```sh
+REDIS_URL=redis://{user}:{password}@{host}:{port}/{database}
+```
+
+##### Cache Redis (application cache)
+
+If you use password-only authentication, you can set `LAGO_REDIS_CACHE_PASSWORD` or include the password in `LAGO_REDIS_CACHE_URL`:
+
+```sh
+LAGO_REDIS_CACHE_URL=redis://:{password}@{host}:{port}/{database}
+```
+
+When using ACL-based authentication, you must include the username and password in `LAGO_REDIS_CACHE_URL`:
+
+```sh
+LAGO_REDIS_CACHE_URL=redis://{user}:{password}@{host}:{port}/{database}
+```
+
+#### Enabling SSL on Redis
+
+If your Redis server requires SSL connections, you can enable it by using the `rediss://` scheme in your Redis URLs:
+
+```sh
+REDIS_URL=rediss://{host}:{port}/{database}
+LAGO_REDIS_CACHE_URL=rediss://{host}:{port}/{database}
+```
+
+#### Managed Redis services[](#managed-redis-services "Direct link to heading")
+
+We recommened using Lago with managed Redis providers, such as Amazon ElastiCache. These services handle replication, automatic failover, backups, and monitoring on your behalf, providing a highly available Redis setup with minimal operational overhead.
+
+Point Lago at the provider's primary endpoint via the standard URL variable. Failover is transparent: when the provider promotes a replica, the endpoint stays the same, and the next reconnect lands on the new master.
+
+#### High availability with Redis Sentinel[](#high-availability-with-sentinel "Direct link to heading")
+
+When using a dedicated Redis setup that you manage yourself, you can achieve high availability with [Redis Sentinel](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/). Sentinel is Redis's built-in monitoring and failover mechanism: a small cluster of Sentinel processes watches the Redis nodes, agrees by quorum when the master is unreachable, and promotes one of the existing replicas. Lago connects to the Sentinels instead of directly to a Redis node, and automatically reconnects to the new master if a failover occurs - no restart or operator action required.
+
+You can enable Sentinel for the Sidekiq queue, the cache, or both. Each consumer reads its own variables, so mixing modes is supported (for example, Sidekiq through Sentinel and the cache through a static URL).
+
+If you'd like to use Redis Sentinel, we recommend that you properly read through its documentation and define monitoring and alerting on Sentinel events. Furthermore we suggest to the test failover (e.g., by simulating consecutive master failures) thoroughly and regularly during low-traffic/maintenance periods or on a staging environment to make sure your setup works as expected.
+
+<Warning>
+  Redis also provides high availability through Redis Cluster, but Sidekiq doesn't support it. Sentinel is the only recommended HA solution for self-hosted Lago deployments using dedicated Redis.
+</Warning>
+
+
+##### Sidekiq Sentinel configuration
+
+| Variable                         | Purpose                                                                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LAGO_REDIS_SIDEKIQ_SENTINELS`   | Comma-separated list of Sentinel addresses (`host:port,host:port,...`). Setting this activates Sentinel mode for Sidekiq.                   |
+| `LAGO_REDIS_SIDEKIQ_MASTER_NAME` | The `master_name` declared on the Sentinels. Optional - defaults to `master`. Set this only if your Sentinel cluster uses a different name. |
+
+`REDIS_PASSWORD` continues to authenticate against the underlying Redis nodes when Sentinel is enabled.
+You do not need to set `REDIS_URL` when Sentinel mode is enabled. Lago discovers the current Redis master dynamically from `LAGO_REDIS_SIDEKIQ_SENTINELS`.
+
+If `REDIS_URL` is also set, Lago only reuses its connection options, such as the scheme (`redis://` or `rediss://`), password, and database number. The host and port from `REDIS_URL` are ignored because Sentinel provides the active master address.
+
+##### Cache Sentinel configuration
+
+| Variable                       | Purpose                                                                                                                     |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `LAGO_REDIS_CACHE_SENTINELS`   | Comma-separated list of Sentinel addresses (`host:port,host:port,...`). Setting this activates Sentinel mode for the cache. |
+| `LAGO_REDIS_CACHE_MASTER_NAME` | The `master_name` declared on the Sentinels. Optional - defaults to `master`.                                               |
+
+`REDIS_PASSWORD` continues to authenticate against the underlying Redis nodes when Sentinel is enabled.
+You do not need to set `LAGO_REDIS_CACHE_URL` when Sentinel mode is enabled. Lago discovers the current Redis master dynamically from `LAGO_REDIS_CACHE_SENTINELS`.
+
+If `LAGO_REDIS_CACHE_URL` is also set, Lago only reuses its connection options, such as the scheme (`redis://` or `rediss://`), password, and database number. The host and port from `LAGO_REDIS_CACHE_URL` are ignored because Sentinel provides the active master address.
+
+#### Best practices
+
+- **Bring your own Redis in production.** The bundled `redis` service in `docker-compose.yml` is intended for local trials. For production, run a managed or dedicated Redis (or multiple Redis instance fronted by Sentinel) and point Lago at it.
+- **Use separate Redis instances for the cache and the queue in production.** This prevents a surge in one workload (e.g., heavy Sidekiq activity) from impacting the other (e.g., API cache performance). It also allows you to properly configure each Redis instance according to its needs (memory, eviction policy, etc.).
+- **Use managed instances or Redis Sentinel for HA.** A single Redis master is a single point of failure. For production loads with availability requirements, use Sentinel or a managed Redis service that provides equivalent automatic failover.
+- **Encrypt connections.** Use the `rediss://` scheme in `REDIS_URL` / `LAGO_REDIS_CACHE_URL` to enable TLS to your Redis nodes.
+
+<a id="ssl-support"></a> { /* Old anchor kept to avoid breaking existing links */ }
+### Enabling SSL on the Frontend[](#enabling-ssl-on-the-frontend "Direct link to heading")
 
 Lago Front application can be configured to support SSL certificates. You have
 two options to achieve this:
@@ -284,8 +534,8 @@ We currently support :
 
 You have to set these variables to use AWS S3.
 
-| Name                          | Description                             |
-| ----------------------------- | --------------------------------------- |
+| Name                            | Description                             |
+| ------------------------------- | --------------------------------------- |
 | `LAGO_USE_AWS_S3`               | Set to "true" if you want to use AWS S3 |
 | `LAGO_AWS_S3_ACCESS_KEY_ID`     | AWS S3 Credentials Access Key Id        |
 | `LAGO_AWS_S3_SECRET_ACCESS_KEY` | AWS S3 Credentials Secret Access Key    |
@@ -296,8 +546,8 @@ You have to set these variables to use AWS S3.
 
 You have to set these variables to use AWS S3 Compatible Endpoints.
 
-| Name                          | Description                                                  |
-| ----------------------------- | ------------------------------------------------------------ |
+| Name                            | Description                                                  |
+| ------------------------------- | ------------------------------------------------------------ |
 | `LAGO_USE_AWS_S3`               | Set to "true" if you want to use AWS S3 Compatible Endpoints |
 | `LAGO_AWS_S3_ENDPOINT`          | AWS S3 Compatible Endpoint                                   |
 | `LAGO_AWS_S3_ACCESS_KEY_ID`     | AWS S3 Credentials Access Key Id                             |
@@ -309,8 +559,8 @@ You have to set these variables to use AWS S3 Compatible Endpoints.
 
 You have to set those variables to use GCS Cloud Storage.
 
-| Name             | Description                                        |
-| ---------------- | -------------------------------------------------- |
+| Name                   | Description                                        |
+| ---------------------- | -------------------------------------------------- |
 | `LAGO_USE_GCS`         | Set to "true" if you want to use GCS Cloud Storage |
 | `LAGO_GCS_PROJECT`     | GCS Project name                                   |
 | `LAGO_GCS_BUCKET`      | GCS Bucket name                                    |
@@ -340,19 +590,19 @@ In order to use the email feature, you need to configure some environment variab
   In addition to this configuration, defining an organization email in Settings > Organization is mandatory; without it, emails will not be sent.
 </Warning>
 
-|Name|Description|
-|--|--|
-| `LAGO_FROM_EMAIL` | Required to send emails (i.e: [noreply@getlago.com](mailto:noreply@getlago.com)) |
-| `LAGO_SMTP_ADDRESS` | Address of the SMTP server |
-| `LAGO_SMTP_PORT` | Port of the SMTP Server |
-| `LAGO_SMTP_USERNAME` | Username of the SMTP Server |
-| `LAGO_SMTP_PASSWORD` | Password of the SMTP Server |
+| Name                 | Description                                                                      |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `LAGO_FROM_EMAIL`    | Required to send emails (i.e: [noreply@getlago.com](mailto:noreply@getlago.com)) |
+| `LAGO_SMTP_ADDRESS`  | Address of the SMTP server                                                       |
+| `LAGO_SMTP_PORT`     | Port of the SMTP Server                                                          |
+| `LAGO_SMTP_USERNAME` | Username of the SMTP Server                                                      |
+| `LAGO_SMTP_PASSWORD` | Password of the SMTP Server                                                      |
 
 #### Single Sign On using Google authentication[](#single-sign-on-using-google-authentication)
 
 In order to enable Google authentication for single sign on, you have to set those variables.
 
-|Name|Description|
-|--|--|
+| Name                        | Description                                  |
+| --------------------------- | -------------------------------------------- |
 | `GOOGLE_AUTH_CLIENT_ID`     | Client ID for Google auth Single Sign On     |
 | `GOOGLE_AUTH_CLIENT_SECRET` | Client Secret for Google auth Single Sign On |

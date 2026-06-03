@@ -4,6 +4,95 @@ description: "New updates and improvements to Lago."
 rss: "true"
 ---
 
+<Update label="May 2026">
+
+  ## Free credits for recurring target top-ups
+
+  <Frame>
+    ![](/changelog/images/20260529-free-target-topup.png)
+  </Frame>
+
+  Recurring **target** top-ups can now refill a wallet with **free credits** instead of paid ones. A target top-up tops the balance back up to a fixed amount on every interval, so this is exactly what you need when customers are granted a set allowance of free credits each period.
+
+  Want every customer to start each month with **$5 of free credits**? Set a monthly target top-up of `5` with free credits, and Lago tops the balance back up to that amount at the start of every month. No manual grants, no paid charge.
+
+  - **Free or paid, your choice**: mark the recurring target top-up as free credits so refills never bill the customer.
+  - **Self-correcting balance**: whatever the customer has left, Lago only adds the difference needed to reach the target.
+  - **Set it once**: define the target and interval when creating or editing the wallet, in the dashboard or via the API.
+
+  Built for teams that hand out a recurring free allowance and want the balance to reset to that number on its own.
+
+  [Learn more](/guide/wallet-and-prepaid-credits/wallet-top-up-and-void#target-recurring-top-up)
+
+
+  ## Lago Agent SDK: Bill LLM tokens without middleware
+  <Frame>
+    ![](/changelog/images/20260519-ai-sdk.png)
+  </Frame>
+
+  You're launching an AI feature inside your SaaS, or your product runs entirely on top of LLMs. Either way, your costs scale with tokens, and your pricing should too. The hard part has never been the model. It's the plumbing between the model and the invoice: extracting usage from every provider, normalizing response shapes, batching events, surviving retries, and keeping it all alive in production.
+
+  The **Lago Agent SDK** removes that layer. Wrap your existing LLM client in a single line and keep calling it exactly as before. Same arguments, same return shape, same exceptions. The SDK extracts token usage from every response, normalizes it across providers, and streams events to Lago in the background.
+
+  **Wrap once. Bill forever.**
+
+  - **One-line drop-in**: `sdk.wrap(client)` returns a client that behaves identically. No call-site changes, no refactor.
+  - **10 token dimensions captured by default**: input, output, cached input, cache writes (5m and 1h TTL), reasoning, tool calls, image, audio. Each one maps to a billable metric you already control.
+  - **Multi-tenant by design**: route every call to the right `external_subscription_id` via per-call override, request-scoped context (contextvars in Python, AsyncLocalStorage in Node), or a default at init.
+  - **Production-grade reliability**: in-memory buffering, exponential backoff, bounded queue. p99 wrap overhead under 5 ms. Your LLM call is never blocked on Lago.
+  - **Never breaks your LLM call**: instrumentation errors are caught, logged, and optionally forwarded to Sentry, Datadog, or any other observability stack.
+
+  Available in [**Python** ](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript** ](https://github.com/getlago/lago-agent-sdk-js). Both fully open source.
+
+  Built for AI or SaaS teams that want to ship usage-based billing the same week they ship their new AI product on top of LLMs.
+
+  [Learn more](/guide/ai-agents/agent-sdk)
+
+
+  ## Invoice consolidation: Choose what gets bundled into a single invoice
+  <Frame>
+    ![](/changelog/images/20260518-consolidate-multiple-subscriptions.png)
+  </Frame>
+
+  Some customers want one tidy invoice covering all their subscriptions. Others need each subscription billed separately, to track a contract independently, bill a different cost center, or simplify internal reporting. Now you can decide, subscription by subscription.
+
+  By default, Lago automatically consolidates subscriptions into a single invoice when they share the same billing day **and** the same payment method — fewer invoices for your customers, easier reconciliation for your finance team.
+
+  - **Opt out per subscription**: set `consolidate_invoices` to `false` to keep a subscription on its own invoice, even when others bill on the same day
+  - **Mix and match**: combine consolidated and standalone subscriptions for the same customer
+  - **Editable anytime**: change the setting from the dashboard or via the API whenever the contract or billing arrangement evolves
+
+  Available in the dashboard and via API, on the subscription endpoint.
+
+  Built for teams managing customers with multiple plans, contracts, or cost centers, where invoice structure matters as much as the totals.
+
+  [Learn more](/guide/subscriptions/assign-plan#invoice-consolidation)
+
+</Update>
+
+<Update label="April 2026">
+
+  ## Wallet traceability — Follow every credit from top-up to deduction
+  <Frame>
+    ![](/changelog/images/20260401-wallet-transaction-traceability.png)
+  </Frame>
+
+  When a customer’s wallet balance drops, you should be able to explain exactly why. Now you can.
+  **Wallet traceability** gives you full visibility into how credits flow — linking every top-up to the transactions it funded, and every deduction back to its source.
+
+  - **Consumptions**: for any inbound transaction, see which outbound transactions consumed its credits and how much
+  - **Fundings**: for any outbound transaction, see which inbound transactions funded it and their respective contributions
+  
+  Available in the dashboard and via API, you can inspect credit flows directly from a wallet transaction or query them programmatically through new endpoints.
+
+  Built for teams managing prepaid credit systems at scale — where transparency and auditability are critical.
+
+  To OSS users: this feature requires a migration. Please follow [this guide](/guide/migration/migration-to-v1.45.0) to enable it.
+
+  [Learn more](/guide/wallet-and-prepaid-credits/traceability)
+
+</Update>
+
 <Update label="March 2026">
 
   ## Credit alerts — Never let a customer run out of credits by surprise

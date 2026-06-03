@@ -1,6 +1,45 @@
 ---
-title: "Retrieving usage"
-description: "Learn how to retrieve usage data for both current and past billing periods."
+title: "Retrieve usage"
+description: "Monitor ingested events, debug warnings, and retrieve current, projected, or past usage data for your customers."
+---
+
+## Events list
+
+You can monitor every event flowing into Lago from the UI. This is your primary tool for verifying that your integration is working and debugging any issues.
+
+<Steps>
+  <Step title="Open the events list">
+    Go to the **Developers** section in the sidebar, then click the **Events** tab.
+  </Step>
+  <Step title="Browse ingested events">
+    The UI shows the latest 20 events by default. Scroll down to load more.
+  </Step>
+  <Step title="Inspect a specific event">
+    Click any event to see its details:
+    - **Time:** timestamp of the received event
+    - **Customer ID:** the ID of your customer
+    - **Billable metric code:** code of the billable metric linked to the event
+    - **Billable metric name:** name of the billable metric linked to the event
+    - **Transaction ID:** unique `transaction_id` used as the idempotency key
+    - **IP Address:** IP address of the event sender
+    - **Client API:** Lago Client API used to send the event
+    - **Event payload:** the full JSON arguments sent in the request
+  </Step>
+</Steps>
+
+<Tip>If an event is not shown in the UI, it has **not** been ingested.</Tip>
+
+<Frame caption="Accessing the events list">
+  <img src="/guide/events/images/events-debugger-6bcbcf7e46f1bd4bb8a9b6e6964bba69.png" />
+</Frame>
+
+### Possible warnings
+
+Some events can be ingested but trigger unexpected behavior. Lago displays two possible warnings in the UI:
+
+1. The event `code` is **not related to an existing billable metric**
+2. The billable metric's **property used for the aggregation is not sent** through this event
+
 ---
 
 ## Retrieve current usage
@@ -94,7 +133,7 @@ description: "Learn how to retrieve usage data for both current and past billing
   </Tab>
   <Tab title="API">
     <CodeGroup>
-    ```bash Retrieve current usage
+    ```bash Retrieve past usage
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
     EXTERNAL_CUSTOMER_ID="__EXTERNAL_CUSTOMER_ID__"
@@ -107,3 +146,64 @@ description: "Learn how to retrieve usage data for both current and past billing
     </CodeGroup>
   </Tab>
 </Tabs>
+
+---
+
+## Retrieve usage analytics
+
+The current, projected, and past usage endpoints above are scoped to a **single subscription**. When you need to look at usage **across customers, plans, or metrics**, or to break consumption down over a **time window**, use the [usage analytics endpoint](../../api-reference/customer-usage/usages) (`GET /analytics/usage`).
+
+This endpoint aggregates the units consumed and the amounts billed, and lets you slice that data with a set of filters. It is the right tool when you want to answer questions like *"how many units did this metric generate per day last month?"* or *"why was this invoice billed the way it was?"*.
+
+<Info>Usage analytics is part of Lago's [analytics layer](../../guide/analytics/reports) and is a premium feature. The same data also powers the analytics dashboards in the UI.</Info>
+
+### Filters
+
+All filters are optional and can be combined. When several filters are set, they are applied together (logical `AND`), progressively narrowing the result set.
+
+| Filter | Type | Description |
+| --- | --- | --- |
+| `time_granularity` | `daily` \| `weekly` \| `monthly` | Splits the result into time buckets at the chosen resolution. See [The date window](#the-date-window) below. |
+| `from_date` | date (`YYYY-MM-DD`) | Start of the period the analytics are computed for. |
+| `to_date` | date (`YYYY-MM-DD`) | End of the period the analytics are computed for. |
+| `currency` | ISO 4217 (e.g. `USD`) | Returns amounts converted to this currency, so usage billed in different currencies can be compared on a single scale. |
+| `external_customer_id` | string | Restricts the analytics to a single customer. |
+| `external_subscription_id` | string | Restricts the analytics to a single subscription. |
+| `plan_code` | string | Restricts the analytics to subscriptions on a given plan. |
+| `billable_metric_code` | string | Restricts the analytics to a single usage-based billable metric. |
+| `is_billable_metric_recurring` | boolean | Keeps only recurring (`true`) or non-recurring (`false`) metrics. |
+| `customer_type` | `individual` \| `company` | Filters by the type of customer. |
+| `customer_country` | ISO 3166-1 alpha-2 (e.g. `US`) | Filters by the customer's billing country. |
+
+Each row of the response carries the period boundaries (`start_of_period_dt`, `end_of_period_dt`), the `billable_metric_code`, the `units` consumed, and the billed `amount_cents` in `amount_currency`.
+
+### The date window
+
+The combination of `from_date`, `to_date`, and `time_granularity` is what makes this endpoint useful for **reconciliation**.
+
+- **`from_date` / `to_date`** define the window the analytics cover. Set them to the start and end of a billing period to look at exactly what a given invoice was computed from.
+- **`time_granularity`** controls how that window is sliced. With `daily`, you get **one row per day per metric**, so you can see the units that accrued each day and the corresponding amount, rather than a single aggregated total.
+
+This daily breakdown is the key to **finding back why a customer was invoiced a given number of units and a given amount**. When an invoice total looks unexpected, query `/analytics/usage` over that invoice's billing period with `time_granularity=daily`, filtered on the relevant `external_subscription_id` and `billable_metric_code`. The day-by-day series shows exactly when consumption spiked, lets you tie each day's units to the amount they generated, and makes it possible to trace the invoiced total back to the underlying daily usage.
+
+<Tip>
+For an invoice you want to explain, set `from_date` and `to_date` to that invoice's billing period boundaries and use `time_granularity=daily`. Summing the daily `units` and `amount_cents` returned reconciles back to the invoiced totals.
+</Tip>
+
+<CodeGroup>
+```bash Retrieve daily usage for reconciliation
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+EXTERNAL_SUBSCRIPTION_ID="__EXTERNAL_SUBSCRIPTION_ID__"
+BILLABLE_METRIC_CODE="__BILLABLE_METRIC_CODE__"
+
+curl --location --request GET "$LAGO_URL/api/v1/analytics/usage?\
+external_subscription_id=$EXTERNAL_SUBSCRIPTION_ID&\
+billable_metric_code=$BILLABLE_METRIC_CODE&\
+time_granularity=daily&\
+from_date=2023-11-01&\
+to_date=2023-11-30" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json'
+```
+</CodeGroup>
