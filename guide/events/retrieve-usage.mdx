@@ -153,7 +153,7 @@ When a charge defines [presentation group keys](/guide/plans/charges/grouping#pr
 
 Where the breakdown appears depends on whether the charge also has pricing group keys:
 
-- **No pricing group keys**: the breakdown sits at the charge level, in a `presentation_breakdown` array:
+- **No pricing group keys**: the breakdown sits at the charge level, in a `presentation_breakdowns` array:
 
   ```json
   {
@@ -161,9 +161,9 @@ Where the breakdown appears depends on whether the charge also has pricing group
       {
         "units": "100.0",
         "amount_cents": 7000,
-        "presentation_breakdown": [
-          { "presentation_by": { "department": "eng" },   "units": "60.0", "display_in_invoice": true },
-          { "presentation_by": { "department": "sales" }, "units": "40.0", "display_in_invoice": true }
+        "presentation_breakdowns": [
+          { "presentation_by": { "department": "eng" },   "units": "60.0" },
+          { "presentation_by": { "department": "sales" }, "units": "40.0" }
         ]
       }
     ]
@@ -184,8 +184,8 @@ Where the breakdown appears depends on whether the charge also has pricing group
             "units": "100.0",
             "amount_cents": 7000,
             "presentation_breakdowns": [
-              { "presentation_by": { "department": "eng" },   "units": "60.0", "display_in_invoice": true },
-              { "presentation_by": { "department": "sales" }, "units": "40.0", "display_in_invoice": true }
+              { "presentation_by": { "department": "eng" },   "units": "60.0" },
+              { "presentation_by": { "department": "sales" }, "units": "40.0" }
             ]
           }
         ]
@@ -195,7 +195,7 @@ Where the breakdown appears depends on whether the charge also has pricing group
   ```
 
 <Tip>
-  Pass the optional `breakdown_by` query parameter to limit the response to a subset of the configured presentation keys. For example, `breakdown_by[]=region` collapses a `region · city` breakdown down to region only.
+  Pass the optional `filter_by_presentation` query parameter to limit the response to a subset of the configured presentation keys. For example, `filter_by_presentation=["region"]` collapses a `region · city` breakdown down to region only. The parameter name follows the same `filter_by` convention as the current usage endpoint.
 </Tip>
 
 ---
