@@ -78,3 +78,23 @@ Lago calculates the `COUNT_DISTINCT(events.properties.property_name)` for the tw
 ```
 
 In that case, with this aggregation type, Lago only counts the unique values of the `request_id` property in the event payloads, **resulting in a billable value of 1 unit.**
+
+## Adding or removing unique values
+Events sent to a `UNIQUE COUNT` billable metric accept an `operation_type` property to control whether the unique value is added to or removed from the count:
+
+- `add`: Adds the unique value. **Optional**: Lago adds by default if `operation_type` is omitted.
+- `remove`: Removes the unique value from the count. **Required** whenever you want to explicitly remove a unit.
+
+```json
+//Event removing a previously counted unique value
+{
+    "transaction_id": "transaction_3",
+    "external_customer_id": "1",
+    "timestamp": "2022-03-18T00:00:00Z",
+    "code": "api_requests",
+    "properties": {
+        "request_id": "id_1",
+        "operation_type": "remove"
+    }
+}
+```
