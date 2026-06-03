@@ -193,14 +193,27 @@ It is possible to subscribe a customer to multiple plans using different billing
 
 We recommend that you give each subscription a name when assigning multiple plans to a customer. The subscription names will make it easier to differentiate each plan and will also be displayed on the invoices.
 
-When multiple subscriptions are linked to a customer, Lago will automatically consolidate invoices when possible.
+## Invoice consolidation
+When a customer is subscribed to multiple plans, Lago can either group all subscription charges into a **single consolidated invoice** or issue a **separate invoice for each subscription**.
 
-|                  | Month 1 | Month 2 | Month 3 | Month 4 | (...) | Month 13 |
-| ---------------- | ------- | ------- | ------- | ------- | ----- | -------- |
-| Plan A (monthly) | $40     | $40     | $40     | $40     | (...) | $40      |
-| Plan B (monthly) | $60     | $60     | $60     | $60     | (...) | $60      |
-| Plan C (yearly)  | $500    | -       | -       | -       | (...) | $500     |
-| Total invoice    | $600    | $100    | $100    | $100    | (...) | $600     |
+By default, Lago automatically consolidates subscriptions into a single invoice when they meet both of these conditions:
+- They are billed on the same day; and
+- They share the same payment method.
+
+This reduces the number of invoices your customers receive and simplifies payment reconciliation. In the example below, a customer is subscribed to three plans — two billed monthly and one billed yearly — and Lago groups all charges that fall on the same billing date into a single invoice:
+
+|                   | Month 1  | Month 2  | Month 3  | Month 4  | (...) | Month 13 |
+| ----------------- | -------- | -------- | -------- | -------- | ----- | -------- |
+| Plan A (monthly)  | $40      | $40      | $40      | $40      | (...) | $40      |
+| Plan B (monthly)  | $60      | $60      | $60      | $60      | (...) | $60      |
+| Plan C (yearly)   | $500     | -        | -        | -        | (...) | $500     |
+| **Total invoice** | **$600** | **$100** | **$100** | **$100** | (...) | **$600** |
+
+If you'd prefer to keep a specific subscription on its own invoice — for example, to bill a different cost center, track a contract independently, or simplify internal reporting — you can disable consolidation for that subscription. To do so, set the `consolidate_invoices` field to `false` on the subscription, either from the dashboard or via the API. Lago will then issue a standalone invoice for that subscription, even when other subscriptions for the same customer are billed on the same day.
+
+<Info>
+The `consolidate_invoices` setting applies at the **subscription level**, so you can mix consolidated and standalone subscriptions for the same customer. You can update this setting at any time.
+</Info>
 
 ## Overriding a plan
 

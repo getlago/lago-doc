@@ -67,35 +67,38 @@ The guiding question: **what do you charge your customers for?** That's your eve
   </Accordion>
 
   <Accordion title="external_subscription_id (required)">
-    Ties the event to a customer subscription. This is how Lago knows which pricing plan to apply. The `external_subscription_id` must match an active subscription in Lago.
+    Ties the event to a customer subscription. This is how Lago knows which pricing plan to apply.
+    If the `external_subscription_id` does not match an active subscription in Lago, the event is ingested but not post-processed.
   </Accordion>
 
   <Accordion title="code (required)">
     Maps to a [billable metric](/guide/billable-metrics/create-billable-metrics) you've defined in Lago (e.g., `ai_inference`, `api_calls`, `storage_gb`). Treat the `code` as a stable API contract between your application and your billing configuration.
+    If the `code` does not match a billable metric in Lago, the event is ingested but not post-processed.
   </Accordion>
 
-  <Accordion title="timestamp (required)">
+  <Accordion title="timestamp (optional)">
     When the event happened, as a **Unix timestamp**. Lago uses this to assign the event to the correct billing period.
 
     We typically log events using **timestamps in seconds**, such as `1741219251`. When higher precision is required, you can use **millisecond accuracy** in the format `1741219251.590`, where the dot acts as the decimal separator.
 
     <Info>
-      If you do not specify a timestamp, Lago automatically uses the reception date of the event.
+      If you do not specify a timestamp, Lago automatically uses the reception time of the event.
     </Info>
   </Accordion>
 
   <Accordion title="properties (optional)">
-    Key-value pairs carrying the data your pricing needs: token counts, regions, instance types, anything you price on. Properties can be `strings`, `integers`, `floats`, `uuids`, or `timestamps`.
+    Key-value pairs carrying the data your pricing needs: token counts, regions, instance types, anything you price on. Properties can be any JSON supported datatype including `strings`, `integers`, `floats`, `uuids`, or `timestamps`.
 
     Lago ignores properties that don't match a billable metric, so **include dimensions you might price on in the future** — extra fields cost nothing but give you pricing flexibility later.
 
-    <Info>
-      For `UNIQUE COUNT` aggregation on a `recurring` metric, the `operation_type` property is required. Send `add` to add a value or `remove` to remove one.
-    </Info>
+    Events sent to a `UNIQUE COUNT` billable metric accept an `operation_type` property to control whether the unique value is added to or removed from the count:
+    - `add`: Adds the unique value. **Optional**: Lago adds by default if `operation_type` is omitted.
+    - `remove`: Removes the unique value from the count. **Required** whenever you want to explicitly remove a unit.
+
   </Accordion>
 
   <Accordion title="precise_total_amount_cents (optional)">
-    Skip Lago's aggregation and set the dollar amount directly. This value must be a **string** to avoid floating-point rounding issues.
+    Skip Lago's aggregation and set the monetary amount directly. This value must be a **string** to avoid floating-point rounding issues.
 
     If not specified, Lago sets it to 0 and the event is not included in charge aggregation for dynamic charge models.
   </Accordion>
@@ -335,6 +338,7 @@ flowchart TD
 | --- | --- |
 | **REST API** | Most integrations. Simplest setup. Start here. |
 | **REST API (batch)** | Same as REST but batches up to 100 events per request for higher throughput. |
+| **Agent SDK** | LLM token billing. Wraps your provider client (Bedrock, Mistral, etc.) and emits token events automatically. |
 | **Kafka / Redpanda** | Real-time, high-volume production pipelines. |
 | **Amazon Kinesis** | AWS-native streaming architectures. |
 | **Amazon S3** | Historical backfills, migrations, periodic batch loads. |
@@ -348,13 +352,13 @@ For the full list of available ingestion sources, see [Metering ingestion source
 ### REST API
 
 <Info>
-  Replace `__LAGO_API_URL__` with `api.getlago.com` for Lago Cloud, or your own instance URL for self-hosted deployments.
+  Replace `__LAGO_API_URL__` with `api.getlago.com` or `api.eu.getlago.com` for Lago Cloud, or your own instance URL for self-hosted deployments.
 </Info>
 
 <Tabs>
   <Tab title="Single event">
     ```bash
-    LAGO_URL="https://api.getlago.com"
+    LAGO_URL="https://__LAGO_API_URL__"
     API_KEY="__YOUR_API_KEY__"
 
     curl -X POST "$LAGO_URL/api/v1/events" \
@@ -373,7 +377,7 @@ For the full list of available ingestion sources, see [Metering ingestion source
   </Tab>
   <Tab title="Batch (up to 100)">
     ```bash
-    LAGO_URL="https://api.getlago.com"
+    LAGO_URL="https://__LAGO_API_URL__"
     API_KEY="__YOUR_API_KEY__"
 
     curl -X POST "$LAGO_URL/api/v1/events/batch" \
@@ -462,6 +466,46 @@ event := lago.EventInput{
 client.Event().Create(ctx, &event)
 ```
 </CodeGroup>
+
+### Agent SDK
+
+For applications that bill on LLM tokens, the [Agent SDK](/guide/ai-agents/agent-sdk) is the lowest-effort path to ingestion. You wrap your existing provider client and keep calling it the same way. The SDK extracts token usage from each response, normalizes it across providers, and ships events to Lago in the background.
+
+- **Providers:** AWS Bedrock (`Converse` and `InvokeModel`, sync and stream), Mistral, OpenAI, Anthropic, Google Gemini, and potentially more.
+- **Languages:** [Python](https://github.com/getlago/lago-agent-sdk-python) and [JavaScript / TypeScript](https://github.com/getlago/lago-agent-sdk-js)).
+
+<CodeGroup>
+  ```python Python
+  import boto3
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(api_key="__YOUR_API_KEY__", default_subscription_id="sub_42")
+  client = sdk.wrap(boto3.client("bedrock-runtime", region_name="eu-west-1"))
+
+  client.converse(
+      modelId="eu.amazon.nova-lite-v1:0",
+      messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+  )
+  ```
+
+  ```typescript TypeScript
+  import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
+  import { LagoSDK } from "@getlago/agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    defaultSubscriptionId: "sub_42",
+  });
+  const client = sdk.wrap(new BedrockRuntimeClient({ region: "eu-west-1" }));
+
+  await client.send(new ConverseCommand({
+    modelId: "eu.amazon.nova-lite-v1:0",
+    messages: [{ role: "user", content: [{ text: "Hello" }] }],
+  }));
+  ```
+</CodeGroup>
+
+The SDK emits one event per non-zero token dimension (input, output, cached input, cache creation, tool calls, etc.) and maps each to a default Lago metric code. See the [Agent SDK guide](/guide/ai-agents/agent-sdk) for the full list of dimensions, configuration options, and multi-tenant subscription routing.
 
 ### Kafka / Redpanda configuration
 
@@ -577,19 +621,21 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
 
 <AccordionGroup>
   <Accordion title="Late-arriving events">
-    Events that arrive after a billing period has closed are assigned to the correct historical period based on `timestamp`. If the invoice has already been finalized, the event will be included in the next billing cycle as a retroactive adjustment.
+    Events that arrive after a billing period has closed are assigned to the correct historical period based on `timestamp`. If the invoice has already been finalized, the event will not be included in the billing cycle. However if they match a recurring billable metric, they will impact the next billing cycle.
   </Accordion>
 
   <Accordion title="Correcting events">
-    To amend a previously sent event, send a new event with the same `transaction_id` and updated properties. The new event replaces the original.
+    - With Postgres: duplicates are rejected with 422 (no replacement). Use a new `transaction_id` to correct.
+    - With ClickHouse: to amend a previously sent event, send a new event with the same `transaction_id` and `timestamp` with the updated properties. The new event will replaces the original.
   </Accordion>
 
   <Accordion title="Events before subscription start">
-    Events with a `timestamp` before the subscription's `started_at` date are ignored. Validate your timestamps if you're backfilling historical data.
+    Events with a `timestamp` before the subscription's `started_at` date are ingested, but ignored during post-processing and aggregation. Validate your timestamps if you're backfilling historical data.
   </Accordion>
 
   <Accordion title="Events for terminated subscriptions">
-    Events for subscriptions that have been terminated are ignored. This is a safety mechanism — you don't need to stop your event pipeline the instant a subscription ends.
+    Events for subscriptions that have been terminated are ingested, but ignored during post-processing. This is a safety mechanism — you don't need to stop your event pipeline the instant a subscription ends.
+    You can still send usage events with timestamp before the subscription `terminated_at` if you want to amend a draft invoice.
   </Accordion>
 </AccordionGroup>
 
@@ -625,4 +671,3 @@ Retries on `429` are always safe thanks to `transaction_id` deduplication. Back 
 <Info>
   Kafka, Kinesis, and S3 connectors are not subject to REST API rate limits. Their throughput is bounded by your broker or infrastructure capacity.
 </Info>
-
