@@ -1,9 +1,167 @@
 ---
-title: "Filters"
-description: "When setting up your pricing, you may want to filters events according to their property. To do so, you can create filters for your billable metric."
+title: "Filters and dimensions"
+description: "Slice a single billable metric along one or more attributes (region, model, tier…) and price each slice independently on your plans."
 ---
 
-## Create filters[](#create-filters "Direct link to heading")
+Filters are **dimensions** of your metering. They let you slice a single billable metric along one or more attributes and price each slice independently on your plans. One metric, many ways to cut it. No duplicated metrics, no schema changes.
+
+A filter is a `key` plus a list of allowed `values` attached to a billable metric. When you send an event, the values live inside `properties`, and Lago matches them against the filter definition to route usage to the right charge on the plan.
+
+## Why filters matter
+
+You won't nail your pricing model on version one. As your product evolves, so will the way you measure usage. Lago's metering engine and rate engine are **decorrelated**, which means you can evolve your dimensions and your pricing independently, without forcing a rewrite of either:
+
+- **Metering**: What you collect and how you slice it (the filter definition on the billable metric).
+- **Rating**: How each slice is priced (the charge on the plan).
+
+Most billing systems couple the two. Change how you measure, and you change how you charge. Lago keeps them separate, so your product team can add a new dimension (e.g. a new region) without waiting on pricing, and your finance team can add a new rate without waiting on engineering. The two teams iterate independently.
+
+<Tip>
+  This is different from retroactive pricing (backdating a rate on existing usage) and different from replacing events. Filters are about adding new ways to slice an existing metric, then pricing the new slices independently.
+</Tip>
+
+## Use cases
+
+You've been ingesting events and billing customers. Now you need to evolve the measurement:
+
+- **New region launch.** You meter compute hours. Now you want to price `US` and `EU` separately.
+- **New model added.** You meter tokens. Now you want to split by `model` and charge accordingly.
+- **New tier of service.** You meter API calls. Now you want to separate `real-time` from `batch`.
+
+These are dimension additions on an existing metric, not new metrics. Lago handles them natively.
+
+<AccordionGroup>
+  <Accordion title="Regional pricing">
+    You meter compute hours and launch in Europe. EU infrastructure costs more to run, so you want to charge EU customers differently without creating a second metric.
+
+    ```json
+    "filters": [
+      {
+        "key": "region",
+        "values": ["us-east-1", "us-east-2", "eu-west-1", "eu-central-1"]
+      }
+    ]
+    ```
+
+    On the plan, add two charges on the same `compute` metric — one for the US regions, one for the EU regions — each at its own rate.
+  </Accordion>
+
+  <Accordion title="Per-model pricing (AI / LLM platforms)">
+    You meter tokens. Different models have very different costs, so `gpt-4` should not be priced the same as `llama` or `mixtral`.
+
+    ```json
+    "filters": [
+      {
+        "key": "model",
+        "values": ["llama", "mixtral", "gpt-4", "claude-sonnet"]
+      }
+    ]
+    ```
+
+    Each model becomes its own charge on the plan, with its own per-token rate.
+  </Accordion>
+
+  <Accordion title="Tier of service">
+    You meter API calls. Real-time requests are more expensive to serve than batched ones.
+
+    ```json
+    "filters": [
+      {
+        "key": "tier",
+        "values": ["realtime", "batch"]
+      }
+    ]
+    ```
+  </Accordion>
+
+  <Accordion title="Combined dimensions (matrix pricing)">
+    Filters can be combined. A `gpt-4` call in Europe is not priced the same as a `llama` call in the US.
+
+    ```json
+    "filters": [
+      {
+        "key": "region",
+        "values": ["us-east-1", "eu-west-1"]
+      },
+      {
+        "key": "model",
+        "values": ["llama", "gpt-4"]
+      }
+    ]
+    ```
+
+    Each event specifies both `region` and `model`. On the plan, you can create a charge per combination — one metric, four prices, no duplicated events.
+  </Accordion>
+</AccordionGroup>
+
+## How it works
+
+1. **Add a new filter key or value to the existing metric.** The metric itself doesn't get a new version. You are extending its dimensions.
+2. **Events already in Lago pick up the new dimension**, as long as they haven't been invoiced yet.
+3. **Add a new charge on the plan for the new filter value.** This is a separate step in the rate engine, independent from the metric change.
+4. **Invoice as usual.** New dimensions appear on the next invoice. Already-invoiced periods are not touched.
+
+The separation between steps 1–2 (metering) and step 3 (rating) is the point. You can add dimensions without committing to a new price. You can add prices without changing what you measure.
+
+### Worked example
+
+<Steps>
+  <Step title="Day 1">
+    You define a metric `compute_hours` with a filter on `region`. Values: `us-east-1`.
+  </Step>
+  <Step title="Day 15">
+    You send 10,000 events. They accumulate with `region: us-east-1`.
+  </Step>
+  <Step title="Day 20">
+    You launch in Europe. You add `eu-west-1` as a filter value on the same metric. No new metric version. No schema change.
+  </Step>
+  <Step title="Day 21">
+    You add a new charge on the plan for `region: eu-west-1` at a different rate.
+  </Step>
+  <Step title="Day 22">
+    Customers using EU infrastructure send events with `region: eu-west-1`. They accumulate against the new charge. Invoices for the current billing period include both.
+  </Step>
+</Steps>
+
+If you had invoiced on Day 18, the US events from that period would be locked. Any events from Day 15–17 that haven't been invoiced yet still pick up the new logic.
+
+## What can and cannot change retroactively
+
+The hard constraints are the **metric code** and the **aggregation type**. They must exist in your organization at the time events are ingested. Everything else is flexible.
+
+| Change | Pre-invoice events | Already-invoiced events |
+| --- | --- | --- |
+| New filter value on an existing metric | ✅ | ❌ |
+| New filter key on an existing metric | ✅ | ❌ |
+| Add an existing metric as a new charge on a plan | ✅ (past events with matching code are picked up) | ❌ |
+| New billable metric with a new code | ❌ (past events were ingested under a different code) | ❌ |
+| Price change on an existing charge | ✅ (see retroactive pricing) | Contact CS |
+
+<Warning>
+  The single most important design decision: create the billable metric codes you might ever need at the org level on day 1, even if you don't plan to charge on them yet. Once a code exists and events are flowing, the entire rating layer is flexible retroactively (for pre-invoice events). The constraint is the metric code, not the charge.
+</Warning>
+
+### Dimension evolution vs retroactive pricing
+
+These solve different problems:
+
+|  | Dimension evolution | Retroactive pricing |
+| --- | --- | --- |
+| What changes | What you measure (new filters, group keys) | What you charge for existing measurements |
+| Self-serve | ✅ via UI or API | Pre-invoice: self-serve. Invoiced: contact CS. |
+| Affects invoiced periods | ❌ | Requires CS for corrections |
+
+## Design guidance
+
+When defining a billable metric at the start of a project:
+
+- **Use a broad name** that will absorb future dimensions (`compute_events` rather than `compute_us_events`).
+- **Include dimensions you might price on** even if you're not pricing on them yet. Send `region` as a property even if you only have one region today — you can add the filter key and charges later, but only if the events already carry the property.
+- **You can always add filters and group keys later**, but you cannot retroactively apply a different metric code to past events.
+
+Get the metric code right on day one. Evolve everything else later.
+
+## Create filters
 
 Your company provides DevOps services and you want to charge your customers for compute capacity by the hour.
 
@@ -47,7 +205,31 @@ On the configuration page of your billable metric, you can define two filters: `
                 },
                 {
                   "key": "region",
-                  "values": ["europe", "africa", "asia", "north_america"]
+                  "values": ["us-east-1", "us-east-2", "eu-west-1", "ap-southeast-1"]
+                }
+              ]
+            }
+          }'
+        ```
+
+        ```bash Billable metric with model dimension {14-19}
+        LAGO_URL="https://api.getlago.com"
+        API_KEY="__YOUR_API_KEY__"
+
+        curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+          --header "Authorization: Bearer $API_KEY" \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+            "billable_metric": {
+              "name": "Tokens",
+              "code": "tokens",
+              "aggregation_type": "sum_agg",
+              "field_name": "tokens",
+              "recurring": false,
+              "filters": [
+                {
+                  "key": "model",
+                  "values": ["llama", "mixtral", "gpt-4", "claude-sonnet"]
                 }
               ]
             }
@@ -76,7 +258,27 @@ curl --location --request POST "$LAGO_URL/api/v1/events" \
       "properties": {
         "hours": 0.07,
         "provider": "aws",
-        "region": "europe"
+        "region": "us-east-1"
+      }
+    }
+  }'
+```
+
+And an event for the `tokens` metric with a `model` dimension:
+
+```json Event with a model dimension
+curl --location --request POST "$LAGO_URL/api/v1/events" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "event": {
+      "transaction_id": "event_002",
+      "external_customer_id": "customer_1234",
+      "code": "tokens",
+      "timestamp": 1668461043,
+      "properties": {
+        "tokens": 1250,
+        "model": "gpt-4"
       }
     }
   }'
@@ -91,9 +293,9 @@ curl --location --request POST "$LAGO_URL/api/v1/events" \
 You can also create billable metrics with dimensions
 [via the API](/api-reference/billable-metrics/create).
 
-## Edit filters
+## Edit filters[](#edit-filters "Direct link to heading")
 
-You can edit billable metric filters associated with existing subscriptions. It’s important to note that making changes to these metric filters can have an impact on all plans where this billable metric is defined as a charge. Here’s an example to illustrate the impact of editing a billable metric:
+You can edit billable metric filters associated with existing subscriptions. It's important to note that making changes to these metric filters can have an impact on all plans where this billable metric is defined as a charge. Here's an example to illustrate the impact of editing a billable metric:
 
 ```json
 From Payload A:

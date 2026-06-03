@@ -176,6 +176,76 @@ The checkout URL provided by Lago is designed to handle multiple payment options
   </Accordion>
 </AccordionGroup>
 
+### Digital wallets
+Apple Pay and Google Pay are wallets surfaced by Stripe Checkout on top of the `card` payment method. They do not require a separate value in `provider_payment_methods`. Enabling `card` in Lago is sufficient. They appear automatically on the Lago-generated checkout URL and on one-off invoice payment links when the customer is on a compatible device.
+
+<AccordionGroup>
+  <Accordion title="Apple Pay" icon="apple">
+    Apple Pay is offered to customers on supported Apple devices (Safari on macOS, iOS) when `card` is included in `provider_payment_methods` and Apple Pay is activated in your Stripe Dashboard. Stripe handles domain verification and wallet display.
+
+    No additional value is needed in `provider_payment_methods`, the payload is identical to the Card payment method.
+
+    <Warning>
+      Apple Pay must be activated in your [Stripe Dashboard](https://dashboard.stripe.com/settings/payment_methods). On unsupported devices, customers see the standard card form as a fallback.
+    </Warning>
+
+    ```bash
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "address_line1": "5230 Penfield Ave",
+          "billing_configuration": {
+            "invoice_grace_period": 3,
+            "payment_provider": "stripe",
+            "provider_customer_id": "cus_12345",
+            "sync": true,
+            "sync_with_provider": true,
+            "provider_payment_methods": ["card"]
+          }
+        }
+      }'
+    ```
+  </Accordion>
+  <Accordion title="Google Pay" icon="google">
+    Google Pay is offered to customers on supported devices (Chrome, Android) when `card` is included in `provider_payment_methods` and Google Pay is activated in your Stripe Dashboard. Stripe handles wallet display and tokenization.
+
+    No additional value is needed in `provider_payment_methods` — the payload is identical to the Card payment method.
+
+    <Warning>
+      Google Pay must be activated in your [Stripe Dashboard](https://dashboard.stripe.com/settings/payment_methods). On unsupported devices, customers see the standard card form as a fallback.
+    </Warning>
+
+    ```bash
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+          "address_line1": "5230 Penfield Ave",
+          "billing_configuration": {
+            "invoice_grace_period": 3,
+            "payment_provider": "stripe",
+            "provider_customer_id": "cus_12345",
+            "sync": true,
+            "sync_with_provider": true,
+            "provider_payment_methods": ["card"]
+          }
+        }
+      }'
+    ```
+  </Accordion>
+</AccordionGroup>
+
 ### Localized payment methods
 <AccordionGroup>
   <Accordion title="SEPA debits (EU only)" icon="money-bill-transfer">
