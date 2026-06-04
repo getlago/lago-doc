@@ -1,0 +1,142 @@
+---
+title: "Activation rules"
+description: "Hold a subscription in the incomplete state until its activation rules are satisfied. Activation rules are configured per subscription and will expand over time."
+---
+
+Activation rules let you gate when a subscription becomes active. Instead of activating as soon as a plan is assigned, the subscription is held until its rules are satisfied. Rules are opt-in and configured per subscription through the `activation_rules` array, where each rule has a `type`. The set of rule types is designed to grow over time, and each available type is documented in its own section below.
+
+While a subscription is `incomplete`, no invoice is issued and no usage is billed, so access is not granted and no Accounts Receivable (AR) is recorded before its rules are satisfied. Without any activation rule, a subscription becomes active as soon as a plan is assigned and the first invoice is issued immediately. A rule with an unrecognized `type` is rejected.
+
+## How activation rules work
+
+| Mode | How it behaves |
+| ---- | -------------- |
+| **No activation rules** (default) | The subscription is `active` at once and the first invoice is finalized, exactly like a subscription without any gating. |
+| **One or more activation rules** | The subscription starts as `incomplete` and becomes `active` only once every rule is satisfied. If a rule cannot be satisfied, the subscription is `canceled` with a reason. |
+
+A subscription created with activation rules moves through these statuses:
+- `incomplete`: waiting for its rules to be satisfied. No invoice, no billed usage, no access.
+- `active`: every rule is satisfied. From here the subscription behaves like any other active subscription.
+- `canceled`: a rule could not be satisfied. The subscription never activated, and it carries a reason explaining why.
+
+A rule that does not apply to a given subscription resolves as **not applicable** and does not block activation. Each rule's section describes the conditions under which it applies.
+
+## Payment Activation
+
+The `payment` rule activates a subscription only once its first payment succeeds. It keeps the subscription `incomplete` until then. Adding it to `activation_rules` turns on payment gating; leaving `activation_rules` empty keeps the default immediate activation.
+
+### Enable the payment rule
+
+<Tabs>
+  <Tab title="Dashboard">
+    When you assign a plan (or edit, upgrade, or downgrade a subscription):
+    1. In the activation section of the form, choose **"Activate on successful payment"**;
+    2. Set a **timeout** in hours (how long Lago waits for the payment before cancelling the subscription, see [Timeout](#timeout)); and
+    3. Confirm.
+
+    <Info>
+    This option is disabled when the customer has only a manual payment method or no payment provider connected. The payment rule needs a payment method Lago can charge.
+    </Info>
+  </Tab>
+  <Tab title="API">
+    Add an `activation_rules` array to the subscription on `POST /subscriptions`, with a single rule of type `payment`.
+
+    <CodeGroup>
+    ```bash Create a subscription with the payment rule
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
+      "subscription": {
+        "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "plan_code": "premium",
+        "external_id": "my_sub_12345789",
+        "activation_rules": [
+          {
+            "type": "payment",
+            "timeout_hours": 48
+          }
+        ]
+      }
+    }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+### Best suited for synchronous card payments
+
+The payment rule works best with **synchronous card payments**, where the charge is approved or declined within seconds, so the subscription activates or cancels right away.
+
+It is riskier with **asynchronous payment methods**, where the result only comes back later, sometimes much later:
+- **Card 3DS authentication:** minutes, but only once the customer completes the challenge;
+- **SEPA / ACH direct debit:** 3 to 7 business days; and
+- **Bank transfer:** whenever the funds actually arrive.
+
+With these methods the subscription can sit `incomplete` for hours or days, and you can't predict how long. During that time the customer has no access and no invoice exists. If the payment never resolves, the subscription only cancels once the timeout is reached. If you do use the payment rule with an async method, set `timeout_hours` to match (see [Timeout](#timeout)).
+
+### Payment lifecycle
+
+With the payment rule set, the subscription follows this flow:
+
+1. **On creation**, the subscription is `incomplete`. No invoice is issued yet: nothing appears in your invoice list and nothing is recorded as AR. No usage is billed yet.
+2. **Payment succeeds** → the subscription becomes `active` and the invoice is generated and finalized: it gets a real number and is recorded as AR, exactly like a normal invoice.
+3. **Payment fails** → the subscription becomes `canceled` (reason: `payment_failed`). No invoice is generated, the customer is not charged, and no AR is recorded.
+4. **Timeout reached** with no confirmed payment → the subscription becomes `canceled` (reason: `timeout`). No invoice is generated.
+
+A canceled subscription is final: it never activated, so there is nothing to resume. **To try again, recreate the subscription with a valid payment method.**
+
+### Timeout
+
+The timeout field sets how long a subscription can stay `incomplete` while waiting for its first payment. If the payment isn't confirmed in time, the subscription is canceled with reason `timeout`.
+
+Set `timeout_hours` to `0` to disable the timeout entirely: the subscription waits indefinitely for the payment to resolve.
+
+<Warning>
+Match the timeout to your payment method. A timeout that is shorter than the payment can realistically take will cancel subscriptions that would have been paid:
+- **Card (3DS):** 1 to 24 hours
+- **SEPA / ACH direct debit:** 168 hours or more (7+ days)
+- **Bank transfer:** 720 hours or more (30+ days)
+</Warning>
+
+### Requirements
+
+- **A payment method is required.** Customers with only a manual payment method, or with no payment provider connected, can't use the payment rule. The request is rejected.
+- **Only the first invoice is gated.** The rule applies to the first invoice created when a subscription is created, upgraded, or downgraded. Renewals, usage-based charges, one-off invoices, and progressive billing invoices are **never** gated: they always use normal billing and [dunning](/guide/dunning/automatic-dunning). A failed renewal never cancels a subscription.
+
+### When the payment rule applies
+
+The payment rule only applies when there is something to pay upfront. Otherwise it resolves as not applicable and the subscription activates immediately, even with the rule set.
+
+| Situation | Result |
+| --------- | ------ |
+| Plan with a pay-in-advance fee, not in trial | **Gated**: incomplete until the first payment succeeds |
+| Plan with pay-in-advance fixed charges | **Gated**: the first invoice covers those charges |
+| Plan paid in arrears, nothing due upfront | Activates immediately (nothing to collect yet) |
+| In a trial with nothing due upfront | Activates immediately |
+| Start date in the past (backdated) | Activates immediately (rules are ignored) |
+| First invoice totals zero (e.g. a 100% coupon) | Activates immediately, invoice finalized normally |
+
+## Editing activation rules
+
+Activation rules can be set or changed while a subscription is `pending` (future-dated). Once a subscription is `active`, `incomplete`, `terminated`, or `canceled`, its rules are read-only.
+
+When you update a subscription, the `activation_rules` field is replace-all:
+- Omitting it (or sending `null`) leaves the existing rules unchanged; and
+- Sending an empty array (`[]`) removes all rules.
+
+## While a subscription is incomplete
+
+- **Manual actions are locked.** You can't edit, upgrade, downgrade, or terminate an `incomplete` subscription. Only the rule outcome moves it out of that state.
+- **Usage is not billed.** Usage events are stored but not billed while the subscription is `incomplete`, and they are not back-billed once it activates.
+
+## Upgrades and downgrades
+
+Activation rules can also gate a plan change. The customer stays on their current plan until the change's rules are satisfied: an upgrade applies as soon as it is satisfied, and a downgrade is gated at the end of the current period. If a rule is not satisfied, the customer stays on their current plan. See [Upgrades and downgrades](/guide/subscriptions/upgrades-downgrades) for how plan changes work.
+
+## Webhooks
+
+A gated subscription emits `subscription.incomplete` when it is created and `subscription.canceled` if it is canceled before activating. When it activates, the usual `subscription.started` and `invoice.created` webhooks fire. See [Subscriptions and fees](/api-reference/webhooks/messages#subscriptions-and-fees) in the webhook messages reference for payloads and details.
