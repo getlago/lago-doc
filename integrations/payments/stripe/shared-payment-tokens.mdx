@@ -1,0 +1,93 @@
+---
+title: "Shared Payment Tokens"
+description:
+  "Collect invoice payments for agent-initiated purchases using Stripe's Shared
+  Payment Token."
+---
+
+A Shared Payment Token is a way to get paid when an AI agent buys on a customer's behalf. There is no checkout page and no card for the customer to enter. Stripe issues a scoped token, the agent grants it to you, and Lago collects against it automatically when the invoice is generated.
+
+<Info>
+  Shared Payment Token is in **public preview**. To use it you need two things
+  enabled: the `default_shared_payment_token` feature on your Stripe account
+  (ask your Stripe account representative), and the `stripe_shared_payment_token`
+  flag on your Lago organization ([contact us](mailto:hello@getlago.com) to
+  enable it).
+</Info>
+
+## When to use it
+
+Use a Shared Payment Token for autonomous purchasing flows, where an agent transacts for the customer and the customer never visits a checkout page. The agent already holds permission to pay, within limits the token defines. You just need a way to charge against that permission. For regular card or bank flows, keep using the standard [Stripe payment methods](/integrations/payments/stripe/payments#supported-payment-methods).
+
+## How it works
+
+1. The agent obtains a Shared Payment Token from Stripe. The token is scoped: a currency, a maximum amount, and an expiry date.
+2. The token is attached **directly to the Stripe customer**, on `invoice_settings.default_shared_payment_token`. This happens in Stripe, not in Lago.
+3. When Lago collects a payment, it already retrieves the Stripe customer to check the default payment method. It reads the token from the same call. No extra API request is made.
+4. Stripe processes the payment intent against the token and creates a regular payment method behind the scenes.
+
+## The token is a fallback
+
+Lago uses the Shared Payment Token **only when the customer has no other payment method**. That means:
+
+- no default payment method on `invoice_settings`,
+- no `default_source`, and
+- no saved payment method in the customer's list.
+
+<Warning>
+  If the customer already has a card, a mandate, or any other payment method on
+  file, Lago uses that and ignores the token. The token never overrides an
+  existing payment method.
+</Warning>
+
+## What this preview covers
+
+Lago collects automatically on generated invoices using the token stored on the Stripe customer. The token lives in Stripe, so you set, replace, or remove it there, not through Lago's API or the customer portal. There is no per-payment token parameter in this preview: every invoice for the customer uses the same stored token, as a fallback.
+
+## Setup
+
+1. Ask your Stripe account representative to enable `default_shared_payment_token` on your Stripe account.
+2. [Contact us](mailto:hello@getlago.com) to enable the `stripe_shared_payment_token` flag on your Lago organization.
+3. Connect Stripe in Lago if you have not already ([integration setup](/integrations/payments/stripe/payments#integration-setup)).
+4. Attach the token to the Stripe customer:
+
+```bash
+curl --location --request POST "https://api.stripe.com/v1/customers/cus_123" \
+  --header "Authorization: Bearer $STRIPE_SECRET_KEY" \
+  --data-urlencode "invoice_settings[default_shared_payment_token]=spt_123"
+```
+
+5. That is it. The next invoice with an amount greater than zero is collected against the token automatically.
+
+## Receipts and reconciliation
+
+Behind the scenes Stripe still produces a regular payment method (`pm_...`). Payment status, the card `last4`, and payment receipts behave exactly like a normal card payment. Nothing changes in how you reconcile.
+
+## Token lifecycle
+
+Stripe enforces the token's limits: currency, maximum amount, and expiry. Lago does not validate the token in advance. It reads it at collection time and lets Stripe decide.
+
+A few cases to know:
+
+- **Token expires or hits its limit.** Stripe rejects the payment. It follows Lago's normal [failed-payment handling](/integrations/payments/stripe/payments#failed-payments). Attach a new token to the Stripe customer to resume collection.
+- **Token is revoked.** Same outcome: the next payment fails. Lago does not clear the stored token for you, so replace it in Stripe.
+- **A payment method gets added later.** Lago uses that method on the next invoice and stops using the token, because the token is a fallback.
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="What if the customer also has a card on file?" icon="credit-card">
+    Lago uses the card. The token applies only when the customer has no other payment method in Stripe. To collect with the token, make sure no default payment method, default source, or saved payment method is set on the customer.
+  </Accordion>
+  <Accordion title="What happens when the token expires or hits its limit?" icon="clock">
+    Stripe rejects the payment and Lago treats it as a failed payment, with the usual `invoice.payment_failure` webhook and dunning. Attach a new token to the Stripe customer to keep collecting.
+  </Accordion>
+  <Accordion title="Does Lago check the token before using it?" icon="magnifying-glass">
+    No. Lago reads the token at collection time. A missing token means Lago looks for another payment method. An invalid, expired, or exhausted token fails the payment intent.
+  </Accordion>
+  <Accordion title="Do receipts or reconciliation change?" icon="receipt">
+    No. Stripe still creates a real payment method behind the scenes, so payment status, the card `last4`, and payment receipts are identical to a normal card charge.
+  </Accordion>
+</AccordionGroup>
+
+For the full specification, see Stripe's [Shared Payment Tokens documentation](https://docs.stripe.com/agentic-commerce/concepts/shared-payment-tokens).
