@@ -3,15 +3,15 @@ title: "Activation rules"
 description: "Hold a subscription in the incomplete state until its activation rules are satisfied. Activation rules are configured per subscription and will expand over time."
 ---
 
-Activation rules let you gate when a subscription becomes active. Instead of activating as soon as a plan is assigned, the subscription is held until its rules are satisfied. Rules are opt-in and configured per subscription through the `activation_rules` array, where each rule has a `type`. The set of rule types is designed to grow over time, and each available type is documented in its own section below.
+Activation rules let you gate when a subscription becomes active. Instead of activating when its start date is reached, the subscription is held until its rules are satisfied. Rules are opt-in and configured per subscription through the `activation_rules` array, where each rule has a `type`. The set of rule types is designed to grow over time, and each available type is documented in its own section below.
 
-While a subscription is `incomplete`, no invoice is issued and no usage is billed, so access is not granted and no Accounts Receivable (AR) is recorded before its rules are satisfied. Without any activation rule, a subscription becomes active as soon as a plan is assigned and the first invoice is issued immediately. A rule with an unrecognized `type` is rejected.
+While a subscription is `incomplete`, no invoice is issued and no usage is billed, so access is not granted and no Accounts Receivable (AR) is recorded before its rules are satisfied. Without any activation rule, a subscription becomes active when its start date is reached. If there is a pay-in-advance fee (subscription or fixed charges), the first invoice is issued at the same time. With nothing due upfront, the subscription activates without an invoice. A rule with an unrecognized `type` is rejected.
 
 ## How activation rules work
 
 | Mode | How it behaves |
 | ---- | -------------- |
-| **No activation rules** (default) | The subscription is `active` at once and the first invoice is finalized, exactly like a subscription without any gating. |
+| **No activation rules** (default) | The subscription becomes `active` when its start date is reached, and the first invoice (if there is anything due upfront) is finalized, exactly like a subscription without any gating. |
 | **One or more activation rules** | The subscription starts as `incomplete` and becomes `active` only once every rule is satisfied. If a rule cannot be satisfied, the subscription is `canceled` with a reason. |
 
 A subscription created with activation rules moves through these statuses:
@@ -94,6 +94,8 @@ A canceled subscription is final: it never activated, so there is nothing to res
 The timeout field sets how long a subscription can stay `incomplete` while waiting for its first payment. If the payment isn't confirmed in time, the subscription is canceled with reason `timeout`.
 
 Set `timeout_hours` to `0` to disable the timeout entirely: the subscription waits indefinitely for the payment to resolve.
+
+When the timeout is reached and the subscription expires, Lago attempts to cancel the pending payment intent. This is best effort: some payment intents can't be canceled, so the payment may still succeed later as a late payment.
 
 <Warning>
 Match the timeout to your payment method. A timeout that is shorter than the payment can realistically take will cancel subscriptions that would have been paid:
