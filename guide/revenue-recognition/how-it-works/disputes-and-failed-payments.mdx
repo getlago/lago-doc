@@ -1,0 +1,39 @@
+---
+title: "Disputes and failed payments"
+description: "How Lago handles chargebacks, overdue invoices, and bad debt."
+---
+
+Not every invoice gets paid cleanly. A payment can fail, an invoice can go overdue, or a customer can dispute a charge and claw the money back. Lago treats each of these differently, and only some of them touch revenue.
+
+## Failed payments
+
+A payment that fails or is declined does nothing to revenue. The service was still delivered, so the revenue stays recognized, and the invoice stays as an outstanding receivable. Lago books an accounting entry only when a payment **succeeds**. A failed attempt is just an attempt.
+
+## Overdue invoices and bad debt
+
+When an invoice passes its due date unpaid, Lago books it as a potential **bad debt**. This doesn't remove the recognized revenue. It records, separately, that the receivable may not be collected, using the unpaid, pre-tax amount.
+
+A customer was invoiced \$1,000 plus \$200 tax for January service and never pays. The invoice goes overdue on February 15.
+
+| Date | Event | Recognized revenue impact | Explanation |
+|------|-------|---------------------------|-------------|
+| January | Service recognized daily | \$1,000 earned | Revenue earned as service is delivered. |
+| Feb 15 | Invoice overdue | None | A bad-debt provision is booked for the unpaid pre-tax amount. Revenue is unchanged. |
+| Later | Customer pays | None | The provision is reversed (bad-debt recovery). Cash arrives. Revenue is still unchanged. |
+
+The bad-debt provision is based on the net (pre-tax) unpaid amount, because the tax is owed to the authority regardless of whether the customer pays.
+
+## Disputes lost (chargebacks)
+
+A lost dispute is different: the money is actually pulled back out of your account by the payment processor. Because cash has left, Lago reverses both the revenue and the tax for that invoice, against cash, on the day the dispute is lost. This shows up as contra-revenue in the period the dispute is lost.
+
+| Date | Event | Recognized revenue impact | Explanation |
+|------|-------|---------------------------|-------------|
+| January | Service recognized and paid | \$1,000 earned | Normal recognition and payment. |
+| March 3 | Dispute lost | −\$1,000.00 in March | Revenue and tax reversed against cash, in the period the chargeback hits. |
+
+## What this means for your reports
+
+- Failed payments don't appear in revenue at all.
+- Overdue invoices move to a bad-debt allowance in the [Statements](/guide/revenue-recognition/reports/statements) without changing recognized revenue.
+- A lost dispute reduces recognized revenue in the period it's lost, visible in the [Recognized Revenue report](/guide/revenue-recognition/reports/recognized-revenue) and itemized in the [Journal Entry Details](/guide/revenue-recognition/reports/journal-entry-details).

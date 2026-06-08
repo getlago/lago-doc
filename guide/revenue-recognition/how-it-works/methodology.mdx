@@ -1,0 +1,97 @@
+---
+title: "Methodology"
+description: "How Lago decides what revenue to recognize, and when."
+---
+
+Revenue recognition rests on one principle: you earn revenue when you deliver the service, not when you invoice it or collect payment. Everything else follows from that.
+
+This is the principle codified in **ASC 606** (US GAAP) and **IFRS 15** (IFRS): recognize revenue as you satisfy your obligation to the customer. Lago's daily, service-period-based recognition is how that principle plays out for subscriptions and usage-based billing, so your reported revenue holds up under both standards.
+
+## ASC 606 and IFRS 15 in plain language
+
+ASC 606 and IFRS 15 are the same idea written by two standards bodies. They describe a five-step model for turning a customer contract into reported revenue:
+
+1. **Identify the contract.** The agreement with your customer. In Lago, this is the subscription or plan they're on.
+2. **Identify the performance obligations.** What you promised to deliver: a month of access, a number of API calls, a seat.
+3. **Determine the transaction price.** What the customer agreed to pay. This is the invoice amount, before tax.
+4. **Allocate the price to each obligation.** Split the price across what you promised. For a subscription, that's spreading the fee across the service period.
+5. **Recognize revenue as you satisfy each obligation.** Earn the revenue as you deliver, day by day for time-based service, at consumption for usage.
+
+The whole model comes down to one rule: **revenue is earned when you deliver, not when you bill or get paid.** Steps 1 to 4 are the bookkeeping your plans and invoices already encode. Step 5 is what Lago automates, so you don't apply the standard by hand.
+
+## Why Lago's output matches the standards
+
+The compliance isn't a label. It falls out of how Lago recognizes revenue. Each mechanic maps to something the standards require:
+
+| What the standard asks for | What Lago does |
+|----------------------------|----------------|
+| Recognize revenue as the obligation is satisfied, not when billed or paid | Recognition is driven by the **service period**, not the invoice or payment date. Daily for time-based service, at consumption for usage. |
+| Allocate the transaction price across the obligation | The fee is spread evenly across the days of service, and the final day absorbs rounding so the parts always sum back to the invoice amount. |
+| Carry advance billings as a **contract liability** | Amounts billed before delivery sit in **deferred revenue** until earned. |
+| Carry delivered-but-unbilled work as a **contract asset** | Service delivered ahead of invoicing sits in **unbilled revenue**, then becomes a receivable once invoiced. |
+| Exclude amounts collected on behalf of third parties | Tax is recorded as a liability, never as revenue. Recognized revenue is always pre-tax. |
+| Keep an auditable, traceable record | Every billing event becomes a balanced double-entry journal (debits equal credits), and recognized plus deferred revenue always reconciles to what you invoiced. |
+| Account for changes in the period they occur | Credit notes, disputes, and true-up fees are recognized at the point in time the event happens, not by rewriting earlier periods. |
+
+The terms **deferred revenue** and **unbilled revenue** are Lago's names for what the standards call a contract liability and a contract asset. Same accounting, plainer labels.
+
+## The recognition model
+
+Lago recognizes revenue in one of three shapes, depending on what kind of charge it is.
+
+| Recognition shape | Applies to | What Lago does |
+|-------------------|------------|----------------|
+| **Daily, spread over the service period** | Subscriptions, one-off fees with a service window, recurring usage such as seats | Splits the amount evenly across the days of service and recognizes a slice each day |
+| **At consumption** | Metered usage | Recognizes the charge on the day the usage actually happens |
+| **At a point in time** | Taxes, payments, credit notes, disputes, minimum-commitment fees | Recognizes the full effect on the day the event occurs |
+
+Most revenue you care about, subscriptions, is the first shape: spread daily across the service period.
+
+<Info>
+Lago applies this logic automatically based on your billing data. The recognition method and the daily allocation are decided by Lago. You don't configure allocation rules or accounting treatment.
+</Info>
+
+## Daily recognition as the base unit
+
+Lago recognizes revenue **daily**. Monthly, quarterly, and annual figures are simply the daily amounts added up for the days that fall inside the period. Working at the daily level is what lets a single annual invoice report correctly across twelve different months.
+
+The formula for time-based charges is:
+
+> **Daily recognized revenue = invoice amount ÷ number of days in the service period.**
+
+The final day of the service period absorbs any rounding remainder, so the daily amounts always add back up to the exact invoice amount.
+
+### A worked example
+
+A customer is invoiced \$1,200 on January 1 for a subscription running January 1 to December 31. The service period is 365 days, so Lago recognizes \$1,200 ÷ 365 ≈ \$3.29 per day. January has 31 days.
+
+| Date or period | Billing event | Invoice amount | Service period | Daily recognized revenue | Recognized revenue in January | Deferred revenue at Jan 31 | Explanation |
+|----------------|---------------|----------------|----------------|--------------------------|-------------------------------|----------------------------|-------------|
+| January 1 | Annual subscription invoiced | \$1,200.00 | Jan 1 – Dec 31 | \$3.29 | \$101.92 | \$1,098.08 | 31 days of service recognized in January. The rest stays deferred until earned. |
+
+At the end of January you've earned \$101.92 of the \$1,200. The remaining \$1,098.08 is deferred revenue: invoiced, but not yet earned. It will be recognized day by day through December.
+
+## Service period, not invoice date
+
+The window Lago spreads revenue across is the **service period**, the dates the service covers. The invoice date and the payment date don't move recognition.
+
+- Bill in **advance** and the amount sits in **deferred revenue** until each day is earned.
+- Bill in **arrears** and revenue is recognized as the period elapses into **unbilled revenue**, which becomes a receivable once you invoice.
+
+Either way, the recognized revenue for a given month is the same. Only the balance-sheet account differs.
+
+## Revenue is always pre-tax
+
+Recognized revenue never includes tax. Tax is a liability you owe the tax authority, not revenue you earned. Lago records it separately. See [Taxes](/guide/revenue-recognition/how-it-works/taxes).
+
+## What this means for your reports
+
+Every billing event becomes one or more balanced journal entries, and those roll up into the recognized and deferred revenue you see in the [reports](/guide/revenue-recognition/reports/recognized-revenue). Recognized revenue plus deferred revenue always reconciles back to what you invoiced.
+
+<Warning>
+Once an accounting month is closed, Lago doesn't rewrite it. A billing event that arrives late and belongs to a closed month is handled through a manual adjustment in a later period rather than by changing history. Revenue for periods before you enabled the feature is not reconstructed day by day.
+</Warning>
+
+<Card title="See it end to end" icon="route" href="/guide/revenue-recognition/examples/full-lifecycle">
+  Follow one customer through a full reporting period.
+</Card>
