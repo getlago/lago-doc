@@ -6,6 +6,24 @@ rss: "true"
 
 <Update label="June 2026">
 
+  ## Agent SDK: bill the dollar cost of LLM calls, with your margin built in
+
+  <Frame>
+    ![](/changelog/images/20260615-llm-markup.png)
+  </Frame>
+
+  The Lago Agent SDK already turns LLM token usage into billing events. It can now do the pricing for you. Switch on **price mode** and the SDK looks up the price of every model you call, computes the dollar cost, **applies your markup**, and sends Lago one cost event per call. Your LLM costs are centralized in one place, and you decide what to resell them for.
+
+  - **Real cost per call**: the SDK sends the dollar amount, after your markup, ready to bill on a dynamic charge.
+  - **Prices fetched for you**: live from OpenRouter and the AWS Bedrock public price lists. No API keys, no price file to maintain, refreshed automatically in the background.
+  - **Your margin, your call**: set a markup to resell LLM access at a profit. `1.2` bills your cost plus 20%.
+  - **Never under-bill**: if a price is not available, the SDK falls back to sending token counts and alerts you. It never silently drops usage.
+  - **Opt-in**: the default stays token mode, so nothing changes until you turn it on.
+
+  Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
+
+  [Learn more](/guide/ai-agents/agent-sdk#bill-in-tokens-or-in-dollars)
+
   ## Stripe Shared Payment Token: Lago auto-charges invoices through agent payments
 
   When an AI agent buys on a customer's behalf, there is no card to type into a checkout page. Stripe issues a **Shared Payment Token** instead: a scoped credential the agent grants to you, with built-in usage limits, expiry, and deactivation. Lago now reads that token and charges your invoices against it automatically when they are generated. If the token is valid and within its limits, Stripe resolves it to a real payment method and the charge goes through. No extra step in your billing flow.
