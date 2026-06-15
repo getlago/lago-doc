@@ -404,7 +404,7 @@ For the full list of available ingestion sources, see [Metering ingestion source
     ```
 
     <Warning>
-      If any event within the batch does not meet the structural requirements, the entire batch will be rejected. Verify the structure of each event before batching.
+      **Batches are atomic.** If a single event is invalid, Lago rejects the entire batch with a `422` and persists nothing. The valid events in the same request are dropped too. "Invalid" covers a bad schema, an unknown subscription, or a duplicate `transaction_id` (`value_already_exist`). The response reports failures by the event's **index in the array you sent**, not by `transaction_id`. Keep your array order so you can trace an index back to its source event. Validate and de-duplicate before batching.
     </Warning>
   </Tab>
 </Tabs>
@@ -626,7 +626,7 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
 
   <Accordion title="Correcting events">
     - With Postgres: duplicates are rejected with 422 (no replacement). Use a new `transaction_id` to correct.
-    - With ClickHouse: to amend a previously sent event, send a new event with the same `transaction_id` and `timestamp` with the updated properties. The new event will replaces the original.
+    - With ClickHouse: to amend a previously sent event, send a new event with the same `transaction_id` and `timestamp` with the updated properties. The new event replaces the original.
   </Accordion>
 
   <Accordion title="Events before subscription start">
