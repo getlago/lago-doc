@@ -7,6 +7,8 @@ Pricing AI features requires per-token billing. Historically that meant building
 
 The **Lago Agent SDK** removes that layer. You wrap your existing LLM client and keep calling it the same way: same arguments, same return shape, same exceptions. The SDK extracts normalized token usage from each response and streams events to Lago in the background.
 
+It can also price each call for you. The SDK fetches live LLM prices, turns every call into a dollar cost, and lets you add a margin on top. Your LLM costs land in one place, and you decide what to resell them for.
+
 Available in two flavors, both open source:
 
 - **Python**: [`lago-agent-sdk`](https://github.com/getlago/lago-agent-sdk-python) on PyPI.
@@ -178,6 +180,55 @@ The same `wrap()` call works with the native Mistral SDK:
   ```
 </CodeGroup>
 
+## Bill in tokens or in dollars
+
+The SDK can bill two ways. By default it sends **token counts**, and you turn those into money with your Lago plans. Switch to **price mode** and the SDK sends the **dollar cost** of each call instead. It looks up the price of the model, multiplies by the tokens used, applies your markup, and emits one cost event.
+
+**Where prices come from.** The SDK reads public price lists that Lago maintains. OpenRouter for native OpenAI, Anthropic, Mistral, and Gemini clients. The AWS Bedrock public price list for Bedrock. No API keys, no price file for you to maintain. Prices refresh in the background about once an hour, so your LLM call is never slowed down waiting on a price.
+
+**Add your margin.** Set a `markup` to resell LLM access at a profit. `1.2` means the customer pays your cost plus 20%. Your cost, plus your margin, is what gets billed.
+
+<CodeGroup>
+  ```python Python
+  from lago_agent_sdk import LagoConfig, LagoSDK
+
+  sdk = LagoSDK(
+      api_key="...",
+      config=LagoConfig(
+          api_key="...",
+          default_subscription_id="sub_acme",
+          pricing_mode="price",   # "tokens" (default) | "price"
+          markup=1.2,             # optional. 1.2 = +20%
+      ),
+  )
+  client = sdk.wrap(anthropic_client)
+  ```
+
+  ```typescript TypeScript
+  import { LagoSDK } from "@getlago/agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: "...",
+    defaultSubscriptionId: "sub_acme",
+    config: {
+      pricingMode: "price", // "tokens" (default) | "price"
+      markup: 1.2,          // optional. 1.2 = +20%
+    },
+  });
+  const client = sdk.wrap(anthropicClient);
+  ```
+</CodeGroup>
+
+You can also flip a single call to price mode and set a one-off markup: Python `extra_lago={"mode": "price", "markup": 1.5}`, TypeScript `lago: { mode: "price", markup: 1.5 }` (for Bedrock, attach it as the command's `__lago`).
+
+<Note>
+  **Lago setup.** In price mode the SDK emits one event per call with the metric code `llm_cost`. Register a `sum` billable metric named `llm_cost` and attach a **dynamic** charge to it. Lago adds up the per-call cost into a single fee. The event also carries a full breakdown in its properties: the USD value, the cost before markup, the markup applied, and the price source.
+</Note>
+
+<Warning>
+  **Never under-bill.** If a price is not available yet (the price list has not warmed up on the very first call, or the model is missing from the source), the SDK falls back to sending normal token-count events and fires `on_error` / `onError` so you can see it. It never silently drops the usage.
+</Warning>
+
 ## Captured token dimensions
 
 The SDK normalizes every provider response into a 10-field `CanonicalUsage` object and emits one event per non-zero field. The default metric codes match Lago's conventions. Override them in the config if your tenant already uses different names.
@@ -284,6 +335,11 @@ Both SDKs expose the same configuration surface with idiomatic naming.
 | `api_url`                  | `apiUrl`                   | `https://api.getlago.com/api/v1`      | Override for the EU region or self-hosted instances.                    |
 | `default_subscription_id`  | `defaultSubscriptionId`    | `None` / `null`                       | Fallback `external_subscription_id` when none is set per call or context. |
 | `metric_codes`             | `metricCodes`              | `DEFAULT_METRIC_CODES`                | Map canonical field to your billable metric `code`.                     |
+| `pricing_mode`             | `pricingMode`              | `"tokens"`                            | `"tokens"` sends token counts. `"price"` sends the computed dollar cost. |
+| `markup`                   | `markup`                   | `1.0`                                 | Cost multiplier applied in price mode. `1.2` adds a 20% margin.         |
+| `cost_metric_code`         | `costMetricCode`           | `llm_cost`                            | Billable metric `code` for the per-call cost event in price mode.       |
+| `pricing_ttl_seconds`      | `pricingTtlMs`             | `3600` / `3_600_000`                  | How long fetched prices are cached before a background refresh.         |
+| `bedrock_default_region`   | `bedrockDefaultRegion`     | `None` / `null`                       | Region used to look up Bedrock prices when the call does not carry one. |
 | `flush_interval_seconds`   | `flushIntervalMs`          | `1.0` / `1000`                        | How often the background worker flushes the buffer.                     |
 | `max_batch_size`           | `maxBatchSize`             | `100`                                 | Max events per request to `/events/batch`.                              |
 | `max_buffer_size`          | `maxBufferSize`            | `10_000`                              | In-memory cap. Oldest events drop with a warning when exceeded.         |
