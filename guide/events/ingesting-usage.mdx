@@ -653,20 +653,7 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
 
 ## Rate limits
 
-Lago enforces rate limits on the REST API per organization to protect platform stability. Default limits are shown below — these can be adjusted to match your needs. Contact the Lago team if you need higher throughput.
-
-| Endpoint category | Default limit |
-| --- | --- |
-| **Event ingestion** (`POST /events`, `POST /events/batch`) | 500 requests/sec |
-| **Current usage** | 200 requests/sec |
-| **All other endpoints** | 50 requests/sec |
-
-**When rate limited:** You receive a `429 Too Many Requests` response. Every response includes headers to help you manage your rate:
-- `x-ratelimit-limit` — max requests per window
-- `x-ratelimit-remaining` — remaining requests
-- `x-ratelimit-reset` — seconds until the window resets
-
-Retries on `429` are always safe thanks to `transaction_id` deduplication. Back off until `x-ratelimit-reset` reaches zero.
+Lago enforces per-organization rate limits on the REST API, with the highest limits on event ingestion. If you exceed them you receive a `429 Too Many Requests` response with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Retrying after a `429` is safe thanks to `transaction_id` deduplication. See [Rate limits](/api-reference/rate-limits) for the full limits and retry guidance.
 
 <Info>
   Kafka, Kinesis, and S3 connectors are not subject to REST API rate limits. Their throughput is bounded by your broker or infrastructure capacity.
