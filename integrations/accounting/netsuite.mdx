@@ -10,7 +10,9 @@ description:
 This integration is available upon request only. Please **[contact us](mailto:hello@getlago.com)** to get access to this premium integration.
 </Info>
 
-Lago's native NetSuite integration runs as a **Lago bundle** you install into your NetSuite account. A bundle (or SuiteBundle) is a packaged set of customizations you install in one step. The Lago bundle installs everything the integration needs, and you configure it from a single **Lago Configuration** record inside NetSuite. There is no script to paste and no mapping to maintain in Lago.
+Lago handles usage-based billing: it meters usage, applies plans and coupons, and produces invoices. NetSuite is where your finance team does accounting. This integration keeps the two in sync automatically, so invoices, credit notes, and payments created in Lago appear in NetSuite as real, tax-accurate transactions with no manual re-entry.
+
+It runs as a **Lago bundle** you install into your NetSuite account. A bundle (or SuiteBundle) is a packaged set of customizations you install in one step. You then configure everything from a single **Lago Configuration** record inside NetSuite. There is no script to paste and no mapping to maintain in Lago.
 
 <Info>
 Lago maintains this integration internally using SuiteCloud Development Framework (SDF). You don't interact with SDF: everything you need ships in the bundle.
@@ -18,12 +20,22 @@ Lago maintains this integration internally using SuiteCloud Development Framewor
 
 ## How it works
 
-Two directions of traffic, both authenticated:
+```mermaid
+flowchart LR
+    LAGO["Lago<br/>(billing)"]
+    NS["NetSuite<br/>(accounting)"]
 
-- **Lago → NetSuite.** Lago calls the bundle's [RESTlet](https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4618456517.html) (a server-side script that exposes a secure URL) to create and update invoices, credit memos, customers, and payments in real time.
-- **NetSuite → Lago.** Bundle scripts call the Lago API to pull your Lago objects (plans, coupons, taxes, add-ons, billable metrics, billing entities) into NetSuite for mapping, and to push payments recorded in NetSuite back to Lago.
+    LAGO -->|"Invoices, credit notes,<br/>customers, payments"| NS
+    LAGO -->|"Catalog: plans, taxes, coupons,<br/>add-ons, metrics, billing entities"| NS
+```
 
-You configure both from the Lago Configuration record: the Lago endpoint and API key drive the NetSuite → Lago calls, and the mappings on that record tell the RESTlet how to turn Lago data into NetSuite records.
+Data flows from Lago into NetSuite along three paths:
+
+- **Documents.** When Lago finalizes an invoice or issues a credit note, it calls the bundle's [RESTlet](https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4618456517.html) (a server-side script that exposes a secure URL) to create a NetSuite Invoice or Credit Memo in real time.
+- **Payments.** When a payment is recorded in Lago, it's pushed to the RESTlet and created as a NetSuite Customer Payment, applied to the matching invoice so it shows as paid.
+- **Catalog.** One click on the configuration record pulls your Lago catalog (plans, taxes, coupons, add-ons, billable metrics, billing entities) into NetSuite as reference objects, so you build mappings from dropdowns instead of copying IDs.
+
+**Authentication.** NetSuite calls Lago using an API key stored as a NetSuite secret, so the key never appears in scripts, logs, or records. Lago calls the RESTlet using NetSuite's standard token-based authentication, scoped to the restricted **Lago Integration Role** the bundle installs.
 
 ## Setup
 
@@ -34,16 +46,16 @@ Complete every step in this section before syncing any data.
 Go to **Customization > SuiteBundler > Search & Install Bundles**, locate the Lago bundle, and install it. The install adds:
 
 - **Lago | Service** RESTlet (`customscript_lago_service` / deployment `customdeploy_lago_service`): the endpoint Lago calls to create and update records. Its deployment generates the **custom RESTlet endpoint URL**;
-- **Lago | Fetch Objects** MapReduce (`customscript_lago_fetch_objects`) and **Lago | Trigger Fetch** Suitelet (`customscript_lago_trigger_fetch`): pull your Lago objects into NetSuite;
+- **Lago | Fetch Objects** MapReduce (`customscript_lago_fetch_objects`) and **Lago | Trigger Fetch** Suitelet (`customscript_lago_trigger_fetch`): pull your Lago catalog into NetSuite;
 - **Lago | Configuration** user event script (`customscript_lago_configuration_ue`): adds the configuration buttons and seeds standard field mappings;
-- **Lago | Payment Sync** user event script (`customscript_lago_payment_sync`): pushes NetSuite customer payments back to Lago;
-- The **Lago Configuration** and mapping custom records, plus the synced **Lago Object** record;
+- An **async processing queue** (MapReduce + processing records): applies credit memos and retries work when webhooks arrive out of order;
+- The **Lago Configuration** record, the mapping records (item, tax, subsidiary, currency, invoice header/line, charge-grouping rules), and the synced **Lago Object** record;
 - A web-services-only **Lago Integration Role** with the permissions the integration uses; and
 - Custom fields that link records back to Lago: **Lago ID** on customers and transactions, **Lago Line ID** on transaction lines, and the service-period columns described in [revenue recognition](#building-revenue-recognition-rules-in-netsuite-from-lago-line-items).
 
 <Steps>
   <Step title="Step 1: Enable the required SuiteCloud features">
-    Go to **Setup > Company > Enable Features > SuiteCloud** and enable **Server SuiteScript**, **Custom Records**, and **REST Web Services**. Your account also needs the standard **Accounting** and **Subsidiaries** features, which most accounts already have.
+    Go to **Setup > Company > Enable Features > SuiteCloud** and enable **Server SuiteScript**, **Custom Records**, **REST Web Services**, and **Token-Based Authentication**. Your account also needs the standard **Accounting** and **Subsidiaries** features, which most accounts already have.
   </Step>
   <Step title="Step 2: Install the bundle">
     From **Customization > SuiteBundler > Search & Install Bundles**, install the Lago bundle. This adds the scripts, records, role, and custom fields listed above.
@@ -56,30 +68,29 @@ Go to **Customization > SuiteBundler > Search & Install Bundles**, locate the La
 {/* TODO screenshot: Lago bundle install / Released Lago Service deployment with endpoint URL */}
 
 <Info>
-The Lago → NetSuite connection (the RESTlet endpoint and the credentials Lago uses to call it) is established with your Lago contact during onboarding. The steps below configure everything on the NetSuite side.
+The credentials Lago uses to call the RESTlet (token-based authentication under the Lago Integration Role) are configured with your Lago contact during onboarding. The steps below configure everything on the NetSuite side.
 </Info>
 
 ### Add your Lago API key
 
-The bundle scripts call the Lago API using a key stored as a NetSuite **script secret**, so the key is encrypted at rest and never appears in script logs.
+The bundle scripts call the Lago API using a key stored as a NetSuite **secret**, so the key is encrypted at rest and never appears in script logs.
 
-1. In NetSuite, go to **Setup > Company > API Secrets** and create a new secret;
+1. In NetSuite, go to your secrets management page (**Setup > Company > API Secrets**) and create a new secret;
 2. Paste your Lago API key as the value;
 3. Restrict the secret to your account domain and to the Lago scripts; and
 4. Save. The scripts reference it by its ID, `custsecret_lago_api_key`.
 
-{/* TODO screenshot: NetSuite API secret for the Lago API key */}
+{/* TODO screenshot: NetSuite secret for the Lago API key */}
 
 ### Create the Lago Configuration record
 
 The Lago Configuration record is the hub for the whole integration. Create one active record and fill in the connection details:
 
 - **Active**: mark this record as the active configuration;
-- **Lago Endpoint Url**: your Lago API base URL (defaults to `https://api.getlago.com/api/v1`; use your self-hosted URL if applicable);
-- **Lago Region** and **Organization ID**: select your region and enter your Lago organization ID; and
-- **Sync Payments**: enable this to push NetSuite customer payments back to Lago.
+- **Lago Endpoint Url**: your Lago API base URL (defaults to `https://api.getlago.com/api/v1`; use your region or self-hosted URL if applicable);
+- **Lago Region** and **Organization ID**: select your region and enter your Lago organization ID.
 
-The record also holds **default objects** that act as fallbacks when no specific mapping matches: Default Item, Default Tax Nexus / Type / Code, Default Coupon, Default Credit Note, Default Subscription Fee, Default Plans Minimum Commitment, and Default Prepaid Credits. Set the ones relevant to your billing.
+The record also holds **default objects** that act as a safety net when no specific mapping matches: Default Item, Default Tax Nexus / Type / Code, Default Coupon, Default Credit Note, Default Subscription Fee, Default Plans Minimum Commitment, and Default Prepaid Credits. Nothing fails just because a mapping is missing. The invoice is created using the defaults.
 
 <Info>
 When you create the record, the bundle seeds the **standard invoice field mappings** (header and line) automatically. You can re-run this at any time with the **Populate Standard Fields** button on the record.
@@ -87,20 +98,11 @@ When you create the record, the bundle seeds the **standard invoice field mappin
 
 {/* TODO screenshot: Lago Configuration record with connection fields and defaults */}
 
-### Fetch your Lago objects
+### Fetch your Lago catalog
 
-Before you can map anything, pull your Lago objects into NetSuite. On the Lago Configuration record, click **Fetch Objects from Lago**. The bundle calls the Lago API and stores each object as a **Lago Object** record (`customrecord_lago_object`) you can select in the mapping tabs.
+Before you can map anything, pull your Lago catalog into NetSuite. On the Lago Configuration record, click **Fetch Objects from Lago**. The bundle calls the Lago API and stores each object as a **Lago Object** record (`customrecord_lago_object`) you can select in the mapping tabs.
 
-It fetches:
-
-- Plans;
-- Coupons;
-- Taxes;
-- Add-ons;
-- Billable metrics; and
-- Billing entities.
-
-Re-run the fetch whenever you add objects in Lago so the new ones are available to map.
+It fetches plans, coupons, taxes, add-ons, billable metrics, and billing entities. Re-run the fetch whenever you add objects in Lago so the new ones are available to map.
 
 {/* TODO screenshot: Fetch Objects from Lago button and resulting Lago Object records */}
 
@@ -108,14 +110,14 @@ Re-run the fetch whenever you add objects in Lago so the new ones are available 
 
 Mappings live on the subtabs of the Lago Configuration record. Each can be scoped to a **Billing Entity** so different Lago billing entities map differently, or left generic to apply across all of them.
 
-- **Item Mapping**: map each Lago Object (plan, add-on, billable metric, and so on) to a **NetSuite Item**. Lago fees that don't match a specific item fall back to the configuration's Default Item;
-- **Tax Mapping**: map each Lago Tax to a NetSuite **Tax Nexus**, **Tax Type**, and **Tax Code**. This is how Lago's tax amounts are applied to NetSuite transactions. Unmatched taxes fall back to the configuration's default nexus, type, and code;
+- **Item Mapping**: map each Lago object (plan, add-on, billable metric, and so on) to a **NetSuite Item**;
+- **Tax Mapping**: map each Lago tax to a NetSuite **Tax Nexus**, **Tax Type**, and **Tax Code**. This is how Lago's tax amounts are applied to NetSuite transactions;
 - **Subsidiary Mapping**: map each Lago **Billing Entity** to a NetSuite **Subsidiary**;
 - **Currency Mapping**: map each Lago **Currency** to a NetSuite **Currency**; and
 - **Invoice Mapping**: the header and line field mappings the bundle seeds for you. Most accounts leave these as-is; adjust them only for advanced field-level customization.
 
 <Info>
-**Tax resolution order.** For each invoice, the integration matches a tax mapping by Lago tax **and** billing entity first, then by Lago tax alone, then by billing entity alone, and finally falls back to the configuration defaults. **Item resolution** is similar: a billing-entity-specific item mapping wins over a generic one, which wins over the Default Item.
+**Tax resolution order.** For each invoice, the integration matches a tax mapping by Lago tax **and** billing entity first, then by Lago tax alone, then by billing entity alone, and finally falls back to the configuration defaults. **Item resolution** is similar: a billing-entity-specific item mapping wins over a generic one, then a type-based default (subscription fee, minimum commitment, and so on), then the Default Item.
 </Info>
 
 {/* TODO screenshot: Lago Configuration mapping subtabs (Item, Tax, Subsidiary, Currency) */}
@@ -141,17 +143,12 @@ Customer creation from Lago to NetSuite happens in real-time with only a few sec
 
 ### Invoices synchronization
 
-If a Lago customer is linked to a NetSuite customer, Lago syncs invoices to NetSuite Invoices in real-time through the RESTlet.
+When Lago finalizes an invoice for a linked customer, it syncs to a NetSuite Invoice in real time. The NetSuite invoice gets:
 
-It's important to note the following:
-
-- Each fee issued by Lago is synced as a line item on a NetSuite invoice;
-- The Lago fee `units` are synced to NetSuite as `quantity`;
-- The Lago fee `precise_unit_amount` is synced to NetSuite as `rate`;
-- Taxes are applied from your **Tax Mapping**, since NetSuite does not support tax details at the line item level; and
-- Any discounts on an invoice (coupon, credit note, or prepaid credits) are synced as negative line items, mapped through the configuration's default objects.
-
-If the invoice is created successfully, the Lago invoice view shows a direct link to the NetSuite invoice.
+- **One line per Lago fee**, on the mapped item, with the Lago fee `units` as `quantity` and `precise_unit_amount` as `rate`;
+- **Coupons, credit notes, and prepaid (wallet) credits** as negative lines, so the NetSuite total matches what the customer owes;
+- **Taxes** from your Tax Mapping, reconciled against Lago's totals to the cent (NetSuite does not support tax details at the line item level, so the integration adjusts rounding so the totals never drift); and
+- **Links back to Lago**: the Lago invoice view shows a direct link to the NetSuite invoice, and the NetSuite invoice stores its Lago ID and a URL back to Lago.
 
 <Info>
 Invoice creation from Lago to NetSuite happens in real-time with only a few seconds of delay.
@@ -161,22 +158,40 @@ Invoice creation from Lago to NetSuite happens in real-time with only a few seco
   <img src="/integrations/images/sync-invoices-netsuite.png" />
 </Frame>
 
+#### Optional: grouped charge lines
+
+If your invoices carry many small usage lines (for example, one per metric or model), you can enable **charge grouping** to combine all usage-charge lines into a single invoice line on an item you choose, with a description listing what was included. Grouping rules let you restrict when this happens, for example only for certain customers or invoice types.
+
 ### Credit Notes synchronization
 
-If a Lago customer is linked to a NetSuite customer, Lago syncs credit notes to NetSuite Credit Memos in real-time.
-
-- Each fee refunded by Lago is synced as a line item on a NetSuite Credit Memo;
-- Taxes are applied from your Tax Mapping, as with invoices; and
-- Any discounts on a credit note are synced as line items on the NetSuite Credit Memo.
+When a credit note is issued in Lago for a linked customer, it syncs to a NetSuite Credit Memo in real time, following the same line and tax logic as invoices. When the credit note offsets an existing invoice, the credit memo is **automatically applied to the original invoice**.
 
 The Lago credit note view shows a direct link to the corresponding NetSuite Credit Memo once it's created.
 
 ### Payments synchronization
 
-Payments sync in both directions when **Sync Payments** is enabled on the Lago Configuration record:
+When a payment is recorded in Lago for a linked invoice, it's pushed to NetSuite as a **Customer Payment** and applied to the matching invoice, so the invoice shows as paid (full or partial) on both sides.
 
-- **Lago → NetSuite.** When a Lago invoice is tied to a NetSuite invoice, Lago updates the NetSuite invoice's payment status in real time; and
-- **NetSuite → Lago.** When you record a Customer Payment in NetSuite, the **Lago | Payment Sync** script pushes the applied amount back to Lago.
+<Info>
+Reporting NetSuite-side payments back to Lago (the NetSuite → Lago direction) is in development and not yet a supported flow. A **Sync Payments** toggle for it exists on the configuration record.
+</Info>
+
+### Reliability and reconciliation
+
+The integration is built to run unattended:
+
+- **No duplicates.** Every record carries its Lago ID. If the same invoice, credit note, or customer is sent twice, the integration detects it and refuses to create a second copy.
+- **Totals match.** Tax amounts are reconciled against Lago's totals, including rounding, so the NetSuite invoice never drifts by a penny.
+- **Out-of-order events sort themselves out.** If a credit note arrives before the invoice it applies to (or vice versa), the integration queues the work and retries until both sides exist, with no manual fixing.
+- **Audit trail.** The original Lago data for each invoice is stored in the NetSuite File Cabinet, so you can always see exactly what was received.
+
+```mermaid
+flowchart TD
+    A[Invoice created in NetSuite<br/>references a Lago credit note] --> B{Credit memo<br/>exists in NetSuite?}
+    B -->|Yes| C[Apply credit memo to invoice]
+    B -->|No| D[Queue and retry on the next run]
+    D --> B
+```
 
 ### Integration logs
 
@@ -240,18 +255,23 @@ sequenceDiagram
 ## Changelog vs. previous version
 NOT FOR PUBLICATION — reviewer diff aid only. Remove before merge.
 
-Source of truth: getlago/lago-netsuite-sdf (CLAUDE.md + actual SDF code), per Raffi.
+Source of truth: getlago/lago-netsuite-sdf — docs/OVERVIEW.md, docs/ARCHITECTURE.md, CLAUDE.md, and the SDF code.
 
-- Replaced the entire legacy setup model. Removed: the manual ramda.min.js + pasted-script + hand-deploy flow; the manual Tax Nexus/Type/Code creation walkthrough; the Define Taxable Items section; the Remove Locations section; the Lago-side item/currency mapping UI; and the TBA/OAuth "Connect Lago to NetSuite" auth flow (create integration, create token, Lago-side auth fields).
-- New model is config-record-driven inside NetSuite: install bundle -> add Lago API key as the custsecret_lago_api_key script secret -> create the Lago Configuration record (endpoint/region/org id/sync payments + default objects) -> Fetch Objects from Lago -> configure mappings on the config subtabs (Item, Tax, Subsidiary, Currency, Invoice).
-- Documented actual bundle output from the SDF objects: scripts Lago | Service (customscript_lago_service / customdeploy_lago_service), Lago | Fetch Objects (customscript_lago_fetch_objects), Lago | Trigger Fetch (customscript_lago_trigger_fetch), Lago | Configuration (customscript_lago_configuration_ue), Lago | Payment Sync (customscript_lago_payment_sync); the Lago Configuration + mapping records; the Lago Integration Role; and the Lago ID / Lago Line ID / service-period custom fields. NOTE: CLAUDE.md lists the RESTlet IDs with a _rl suffix; the SDF object XML uses no suffix (customscript_lago_service). I used the XML (authoritative for what deploys).
-- Documented the two-way flow: Lago -> NetSuite via the RESTlet (invoices, credit memos, customers, payments); NetSuite -> Lago via Fetch Objects and Payment Sync (Bearer custsecret_lago_api_key).
-- Added tax-resolution and item-resolution priority notes (from CLAUDE.md / Lago_Helpers).
-- Payments section now documents both directions, gated on the Sync Payments toggle.
-- Kept the PREMIUM ADD-ON callout, the rev rec section (service-period columns -> rev rec rule), and the integration-logs webhook. Kept only the two still-valid Lago-side screenshots (sync-customers, sync-invoices); all other legacy NetSuite/Lago screenshots dropped; new NetSuite-config steps use TODO screenshot placeholders. No bundle source/ID/location stated anywhere.
+Update (this revision), incorporating OVERVIEW.md + ARCHITECTURE.md:
+- Reframed "How it works" as three Lago -> NetSuite data flows (documents, payments, catalog) with a big-picture mermaid, and added the authentication paragraph (NetSuite -> Lago via the API-key secret; Lago -> NetSuite via token-based auth under the Lago Integration Role). This resolves the prior open item about inbound auth.
+- CORRECTED payments: the supported flow is Lago -> NetSuite (payment recorded in Lago -> NetSuite Customer Payment applied to the invoice). The NetSuite -> Lago direction (Lago_Payment_Sync, gated by the Sync Payments toggle) is still in development per ARCHITECTURE.md; now labeled as such. The previous revision wrongly presented payments as a supported two-way sync.
+- Enriched Invoices: one line per fee, negative discount lines (coupons/credit notes/prepaid), taxes reconciled to the cent, links back to Lago.
+- Added "Optional: grouped charge lines" (charge grouping + grouping rules record).
+- Credit Notes: noted automatic application to the original invoice when the credit note is an offset.
+- Added "Reliability and reconciliation" (no duplicates, totals match, out-of-order retry queue, File Cabinet audit trail) with a small retry-queue mermaid.
+- Install list now mentions the async processing queue and the charge-grouping-rules record. Added Token-Based Authentication to the required features (inbound auth).
+
+Earlier revision (bundle-install rewrite) already:
+- Replaced the legacy ramda.min.js + pasted-script + hand-deploy flow, the manual Tax Nexus/Type/Code creation, taxable items, Location removal, the Lago-side mapping UI, and the TBA/OAuth walkthrough with the config-record-in-NetSuite model.
+- Documented bundle output (scripts, records, role, custom fields) and the API-key secret.
+- Kept the PREMIUM ADD-ON callout, the rev rec section, and the integration-logs webhook. Kept only the sync-customers and sync-invoices screenshots; new steps use TODO placeholders. No bundle source/ID/location anywhere.
 
 OPEN ITEMS for reviewer:
-- Confirm the "Setup > Company > API Secrets" menu path for creating the script secret.
-- Confirm the Lago Region option values and whether a non-default endpoint (EU/self-hosted) needs calling out.
-- Inbound auth (how Lago authenticates into the RESTlet) is described only as "established with your Lago contact during onboarding," since the TBA flow was dropped per instruction. Confirm this is the intended customer-facing treatment.
+- Script ID: CLAUDE.md lists the RESTlet as customscript_lago_service_rl; the SDF object XML uses customscript_lago_service (no suffix). Doc follows the XML (authoritative for what deploys). Confirm which is live.
+- Confirm the "Setup > Company > API Secrets" menu path for the NetSuite secret (OVERVIEW/ARCHITECTURE call it a "NetSuite secret" / "customer secret" but don't give the menu path).
 */}
