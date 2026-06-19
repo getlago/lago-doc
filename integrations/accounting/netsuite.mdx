@@ -206,12 +206,18 @@ Lago feeds that engine directly. You don't build manual schedules. You let NetSu
 
 ### How Lago line items carry the service period
 
-Every Lago fee syncs as one NetSuite invoice line item. For each line, the bundle populates two date columns with the fee's service period:
+Every Lago fee syncs as one NetSuite invoice line item, and the fee's service period reaches that line through the **invoice line mapping** on the Lago Configuration. A line mapping connects a source field on the Lago fee (the **from** value) to a column on the NetSuite invoice line (the **to** value), so you decide which Lago dates land in which NetSuite columns.
 
-- `custcol_service_period_date_from`: the service period start date; and
-- `custcol_service_period_date_to`: the service period end date.
+For revenue recognition, you map the fee's service-period start and end dates onto two date columns on the invoice line, for example:
 
-These two dates are the input NetSuite needs to spread revenue over time. On the NetSuite item, set the revenue recognition rule's **Rev Rec Start Date Source** to `custcol_service_period_date_from` and its **Rev Rec End Date Source** to `custcol_service_period_date_to`. NetSuite then schedules recognition across exactly the period Lago billed, with no manual entry.
+- a start-date column (for example `custcol_service_period_date_from`); and
+- an end-date column (for example `custcol_service_period_date_to`).
+
+<Info>
+These columns are **not shipped by the bundle**, and the names above are only examples. You create the date columns in your own NetSuite account (or reuse columns you already have), then map the Lago service-period dates onto them in the [Invoice Mapping](#configure-the-mappings) (line) subtab. These mappings are also not part of the seeded standard line mappings, so add them yourself if your invoices need a service period. The only line custom field the bundle installs is **Lago Line ID** (`custcol_lago_line_id`).
+</Info>
+
+Whichever columns you use, they are the input NetSuite needs to spread revenue over time. On the NetSuite item, set the revenue recognition rule's **Rev Rec Start Date Source** to your service-period start column and its **Rev Rec End Date Source** to your service-period end column. NetSuite then schedules recognition across exactly the period Lago billed, with no manual entry.
 
 ### Ratable vs. point-in-time
 
