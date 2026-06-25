@@ -4,14 +4,14 @@ description: "Learn how to contribute new E-Invoicing formats and jurisdictions 
 ---
 
 ## Current state in Lago
-Lago currently supports two types of E-Invoicing formats: Cross Industry Invoices (CII) and Universal Business Language (UBL). Both implementations follow the French E-Invoicing structure.
+Lago currently supports two types of E-Invoicing formats: Cross Industry Invoices (CII) and Universal Business Language (UBL). Both implementations follow the French and German E-Invoicing structure.
 
 Some EU countries may use different naming conventions, but they generally rely on the same underlying CII or UBL data structures, with country specific additions or removals.
 
 This contribution guide is intended for developers who want to extend Lago's E-Invoicing capabilities to support additional jurisdictions or customize existing formats, especially for Peppol network compliance.
 
 
-## CII - Cross Industry Invoices (Factur-X)
+## CII - Cross Industry Invoices
 Cross Industry Invoices represent the hybrid format combining a PDF/A-3 file with an embedded XML file. The XML structure follows the CII standard, which is widely used in Europe, including France's Factur-X implementation.
 Lago supports e-invoicing for the following record types:
 - `invoice`
@@ -22,28 +22,28 @@ Each record type has a dedicated `Builder` class responsible for generating the 
 
 Builder classes are located at:
 ```bash
-app/serializers/e_invoices/<invoices|credit_notes|payments>/<factur_x|ubl>/builder.rb
+app/serializers/e_invoices/<invoices|credit_notes|payments>/<cii|ubl>/builder.rb
 ```
 
-The Factur-X (CII) implementation lives in the Lago API project under:
+CII implementation lives in the Lago API project under:
 ```bash
-app/serializers/e_invoices/factur_x
+app/serializers/e_invoices/cii
 ```
 
 ### Classes and XML Tags
 | Class | XML Tag | Description | Parameters / Notes |
 |------|--------|-------------|--------------------|
-| `FacturX::CrossIndustryInvoice` | `rsm:CrossIndustryInvoice` | Root element for the invoice and its direct children | Requires a Ruby block |
-| `FacturX::Header` | `rsm:ExchangedDocument` | Header information for the document | `type_code`: document type<br/>`notes`: optional additional information |
-| `FacturX::LineItem` | `ram:IncludedSupplyChainTradeLineItem` | Represents a single invoice line item | `data`: `FacturX::LineItem::Data` containing item details |
-| `FacturX::TradeAgreement` | `ram:ApplicableHeaderTradeAgreement` | Commercial agreement details | `options`: optional `FacturX::TradeAgreement::Options`<br/>`tax_registration`: controls tax registration rendering, default `true` |
-| `FacturX::TradeDelivery` | `ram:ApplicableHeaderTradeDelivery` | Delivery information for goods or services | `delivery_date`: date goods or services were delivered |
-| `FacturX::TradeSettlement` | `ram:ApplicableHeaderTradeSettlement` | Settlement and payment context | Requires a Ruby block |
-| `FacturX::TradeSettlementPayment` | `ram:SpecifiedTradeSettlementPaymentMeans` | Payment means used for settlement | No specific parameters |
-| `FacturX::ApplicableTradeTax` | `ram:ApplicableTradeTax` | Tax information applied to the invoice | Multiple tax related parameters |
-| `FacturX::TradeAllowanceCharge` | `ram:SpecifiedTradeAllowanceCharge` | Allowances or charges applied to the invoice | Multiple allowance and charge parameters |
-| `FacturX::PaymentTerms` | `ram:SpecifiedTradePaymentTerms` | Defines payment terms | No specific parameters |
-| `FacturX::MonetarySummation` | `ram:SpecifiedTradeSettlementHeaderMonetarySummation` | Monetary totals and summaries | `amounts`: `FacturX::MonetarySummation::Amounts` with rendered values |
+| `Cii::CrossIndustryInvoice` | `rsm:CrossIndustryInvoice` | Root element for the invoice and its direct children | Requires a Ruby block |
+| `Cii::Header` | `rsm:ExchangedDocument` | Header information for the document | `type_code`: document type<br/>`notes`: optional additional information |
+| `Cii::LineItem` | `ram:IncludedSupplyChainTradeLineItem` | Represents a single invoice line item | `data`: `Cii::LineItem::Data` containing item details |
+| `Cii::TradeAgreement` | `ram:ApplicableHeaderTradeAgreement` | Commercial agreement details | `options`: optional `Cii::TradeAgreement::Options`<br/>`tax_registration`: controls tax registration rendering, default `true` |
+| `Cii::TradeDelivery` | `ram:ApplicableHeaderTradeDelivery` | Delivery information for goods or services | `delivery_date`: date goods or services were delivered |
+| `Cii::TradeSettlement` | `ram:ApplicableHeaderTradeSettlement` | Settlement and payment context | Requires a Ruby block |
+| `Cii::TradeSettlementPayment` | `ram:SpecifiedTradeSettlementPaymentMeans` | Payment means used for settlement | No specific parameters |
+| `Cii::ApplicableTradeTax` | `ram:ApplicableTradeTax` | Tax information applied to the invoice | Multiple tax related parameters |
+| `Cii::TradeAllowanceCharge` | `ram:SpecifiedTradeAllowanceCharge` | Allowances or charges applied to the invoice | Multiple allowance and charge parameters |
+| `Cii::PaymentTerms` | `ram:SpecifiedTradePaymentTerms` | Defines payment terms | No specific parameters |
+| `Cii::MonetarySummation` | `ram:SpecifiedTradeSettlementHeaderMonetarySummation` | Monetary totals and summaries | `amounts`: `Cii::MonetarySummation::Amounts` with rendered values |
 
 ## UBL - Universal Business Language
 Universal Business Language (UBL) is another widely adopted E-Invoicing standard, particularly in the Peppol network. UBL invoices are XML-only documents that follow a specific schema defined by OASIS.
@@ -60,7 +60,7 @@ This guide outlines the steps to contribute a new E-Invoicing format for Germany
 
 Germany supports two e-invoicing formats:
 <Columns cols={2}>
-  <Card title="ZUGFeRD 2.3.3 (EN 16931) Factur-X" icon="file">
+  <Card title="ZUGFeRD 2.3.3 (EN 16931) CII" icon="file">
     This format combines a human readable PDF with embedded XML data. It is the most commonly used option due to lower implementation and operational costs compared to fiscal EDI based processes.
   </Card>
   <Card title="XRechnung UBL Invoice" icon="file-code">
@@ -69,7 +69,7 @@ Germany supports two e-invoicing formats:
 </Columns>
 
 ### Implementation notes
-**ZUGFeRD 2.3.3** has no differences compared to the French Factur-X implementation. Existing Factur-X code can be fully reused.
+**ZUGFeRD 2.3.3** has no differences compared to the French Factur-X implementation. Existing CII code can be fully reused.
 **XRechnung** may require additional tags that are not present in the French UBL implementation. These tags should be added under the UBL folder.
 
 Example:
