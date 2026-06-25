@@ -47,6 +47,56 @@ This gives you control over whether changes impact current or future billing.
   Customers will receive an invoice reflecting this update.
 </Info>
 
+### Update a fixed charge via the API[](#update-fixed-charge-api "Direct link to heading")
+To update a fixed charge on a subscription, pass it under the [`plan_overrides`](/guide/subscriptions/assign-plan#overriding-a-plan) object when you create or update the subscription.
+
+How you update it changes the outcome:
+- Pass **only** `units` (and `apply_units_immediately` if needed) to change the quantity. This does **not** create a plan override.
+- Pass any other field, such as a price or `properties`, and Lago **creates a plan override**.
+
+This request updates the units only. It does not create a plan override:
+
+```json Update units only (no override)
+{
+  "subscription": {
+    "plan_overrides": {
+      "fixed_charges": [
+        {
+          "id": "af360881-357a-4334-ad16-8cd38e246d03",
+          "units": 20,
+          "apply_units_immediately": true
+        }
+      ]
+    }
+  }
+}
+```
+
+This request creates a plan override, because it changes the price:
+
+```json Update price (creates an override)
+{
+  "subscription": {
+    "plan_overrides": {
+      "fixed_charges": [
+        {
+          "id": "af360881-357a-4334-ad16-8cd38e246d03",
+          "units": 20,
+          "properties": {
+            "amount": "30"
+          },
+          "apply_units_immediately": true
+        }
+      ]
+    }
+  }
+}
+```
+
+<Info>
+  Send only `units` to change the quantity without creating an override. Any other field creates one.
+</Info>
+
 ## Delete a fixed charge[](#delete-fixed-charge "Direct link to heading")
 You can delete a fixed-charge even if the plan is associated to active [subscriptions](/guide/subscriptions/assign-plan).
 
