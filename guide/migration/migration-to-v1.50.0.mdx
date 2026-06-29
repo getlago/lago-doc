@@ -1,0 +1,80 @@
+---
+title: "Migration to v1.50.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about important changes in Lago v1.50.0 that introduce **support for multiple payment methods per customer**.
+
+# What are the changes?
+
+## Multiple payment methods per customer
+
+Starting with v1.50.0, Lago supports storing **multiple payment methods per customer**. To enable this, payment methods are now stored in a **dedicated table**. Previously, a customer's payment method was stored on the payment provider customer record, which only allowed a single payment method.
+
+As a result, **existing payment methods must be migrated to the new table**. This is done through provider-specific rake tasks that backfill payment methods from the payment provider customer records into Lago's new dedicated table.
+
+These tasks must be **triggered manually** based on the payment providers you use.
+
+# Why are we doing this?
+
+Previously, the payment method was stored on the payment provider customer record, which only allowed a single payment method per customer. By moving payment methods to a dedicated table, Lago can now store and manage multiple payment methods for the same customer, providing more flexibility for billing and collection.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you're using a version below `v1.45.0`, please first follow the migration steps for [v1.45.0](/guide/migration/migration-to-v1.45.0).
+Only after completing those should you proceed to v1.50.0.
+</Warning>
+
+## Migration Steps
+
+### 1. Install Lago v1.50.0
+
+Install the new version.
+
+### 2. Run the backfill tasks for the providers you use
+
+Open a shell (bash) on your API server and run the backfill task **for each payment provider you have configured**. You only need to run the tasks that correspond to the payment methods used in your installation.
+
+**Stripe**
+
+```bash
+bundle exec rails migrations:backfill_stripe_payment_methods
+```
+
+**Adyen**
+
+```bash
+bundle exec rails migrations:backfill_adyen_payment_methods
+```
+
+**GoCardless**
+
+```bash
+bundle exec rails migrations:backfill_gocardless_payment_methods
+```
+
+**MoneyHash**
+
+```bash
+bundle exec rails migrations:backfill_moneyhash_payment_methods
+```
+
+Each task migrates the existing payment methods for the corresponding provider into the new dedicated table.
+
+<Note>
+The backfill tasks are safe to run multiple times. If a payment method has already been migrated, it will not be duplicated.
+</Note>
+
+# Get Involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
