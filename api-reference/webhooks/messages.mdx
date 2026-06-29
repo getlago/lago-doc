@@ -298,6 +298,12 @@ description: "Below is a list of the event types we currently send. Please note 
   [Schema example](https://swagger.getlago.com/#/webhooks/feeTaxProviderError)
 </ParamField>
 
+<ParamField path="subscription.incomplete" type="data.object">
+  Sent when a subscription is created in the `incomplete` state, held by an [activation rule](/guide/subscriptions/activation-rules) until its conditions are satisfied (for the payment rule, until the first payment succeeds). While incomplete, no invoice is issued and no usage is billed.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionIncomplete)
+</ParamField>
+
 <ParamField path="subscription.started" type="data.object">
   Sent when a subscription starts. The `previous_plan_code` argument is filled if the subscription has been upgraded or downgraded.
 
@@ -314,6 +320,12 @@ description: "Below is a list of the event types we currently send. Please note 
   Sent when a subscription is terminated. The `next_plan_code` argument is filled if the subscription has been upgraded or downgraded.
 
   [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionTerminated)
+</ParamField>
+
+<ParamField path="subscription.canceled" type="data.object">
+  Sent when an `incomplete` subscription is canceled before it ever activated, because an [activation rule](/guide/subscriptions/activation-rules) could not be satisfied. The `cancellation_reason` field indicates why: `payment_failed` (the payment was declined) or `timeout` (the activation timeout elapsed without a confirmed payment).
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionCanceled)
 </ParamField>
 
 <ParamField path="subscription.trial_ended" type="data.object">
