@@ -3,9 +3,9 @@ title: "Export revenue recognition data"
 description: "Get your recognized and deferred revenue out of Lago for the close."
 ---
 
-{/* INTERNAL: Confirm exact export formats, destinations, and UI/API steps against the shipped product before publishing. Sources do not define export formats. */}
-
 Revenue recognition data is meant to feed your accounting close. You can export the figures from Lago to reconcile against your general ledger and bring them into your accounting or ERP system.
+
+Every report and graph in the revenue recognition section is exportable. You can pull the underlying figures out in multiple formats to work with them in a spreadsheet, a BI tool, or your accounting system.
 
 ## What you can export
 
@@ -27,6 +27,28 @@ Most teams export at month-end, once the reporting period is settled, to:
 <Tip>
 Export after the period's billing is finalized. In-arrears usage and true-ups settle at invoicing, so exporting before invoices are issued can capture figures that are still moving.
 </Tip>
+
+## Clickable fields in exports
+
+Some fields in the reports are clickable links back to the Lago app, like an invoice that opens its overview page. In the export, these come through as HTML so the link is preserved. A clickable invoice field looks like this in the exported file:
+
+```html
+<a href="https://app.eu-staging.getlago.com/customer/0bdb9e31-0455-46e9-9a73-b26e33a0a0e8/invoice/f1345e17-45a8-4295-95b2-dace4b877a29/overview" target="_blank">DEF-6175-043-001</a>
+```
+
+To turn that raw HTML into a clean clickable cell, wrap it in a formula that pulls out the URL and the label. Assuming the HTML sits in cell `C2`:
+
+<CodeGroup>
+```text Google Sheets
+=IFERROR(HYPERLINK(REGEXEXTRACT(C2,"href=""([^""]+)"""),REGEXEXTRACT(C2,">([^<]+)<")),"")
+```
+
+```text Excel
+=IFERROR(HYPERLINK(REGEXEXTRACT(C2,"href=""([^""]+)"""),REGEXEXTRACT(C2,">([^<]+)<")),"")
+```
+</CodeGroup>
+
+The cell then shows the invoice number (`DEF-6175-043-001`) and links straight to the invoice in Lago. Apply the formula down the column to convert every linked field at once.
 
 ## What this means for your reports
 
