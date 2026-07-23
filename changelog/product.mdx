@@ -4,6 +4,29 @@ description: "New updates and improvements to Lago."
 rss: "true"
 ---
 
+<Update label="July 2026">
+  ## Delete draft invoices: erase billing mistakes before they become real
+
+  <Frame>
+    ![](/changelog/images/20260723-delete-draft-invoice.png)
+  </Frame>
+
+  Grace periods exist to catch mistakes before an invoice becomes real. Until now, there was nothing you could do about the biggest one: a draft that should never have been generated. A duplicate subscription producing two drafts. Test data leaking into production. A misconfigured charge generating nonsensical fees. Your only option was to let the draft finalize, then void it. That leaves a numbered, zero-value invoice in your records and a question from your auditor.
+
+  You can now **delete a draft invoice**. It disappears as if it had never been generated. No accounts receivable entry, no invoice number consumed, no voided record to explain. The subscription stays active and billing resumes cleanly from the next period.
+
+  This is safe because a draft has no footprint yet: no email sent, no payment attempted, no sync to your accounting or tax stack. Deleting one removes it from every view, export, and analytics surface. The action itself stays traceable: an audit log entry records who deleted what, and an `invoice.deleted` webhook fires with the full payload before the invoice disappears.
+
+  - **Draft-only, by design**: finalized invoices keep their paper trail and can only be voided.
+  - **A dedicated permission**: `invoices:delete`, granted to Admins by default, so you decide who can use it.
+  - **Dashboard and API**: one click in the app, or `DELETE /api/v1/invoices/:id`.
+
+  Two actions, two intents. Void keeps the record because the invoice was real. Delete removes the record because the invoice was a mistake.
+
+  [Learn more](/guide/invoicing/draft-invoices#delete-a-draft-invoice)
+
+</Update>
+
 <Update label="June 2026">
   ## Activation Rules: hold a subscription until it's ready to bill
 
