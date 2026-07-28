@@ -473,6 +473,44 @@ If the new invoice amount falls below the [minimum amount supported by Stripe](h
   details](https://stripe.com/docs/payments/save-and-reuse)).
 </Warning>
 
+## Metadata on Stripe objects
+When Lago creates objects in Stripe, it attaches metadata that identifies the corresponding Lago records. You can rely on these keys to reconcile Stripe activity against Lago, for example to separate Lago-managed transactions from everything else in your Stripe account.
+
+### PaymentIntents
+| Metadata key | Description |
+|---|---|
+| `lago_invoice_id` | Lago invoice ID |
+| `lago_invoice_number` | Lago invoice number |
+| `lago_customer_id` | Lago customer ID |
+| `lago_payment_id` | Lago payment ID |
+| `lago_payable_id` | ID of the paid object (an invoice, or a payment request when collecting overdue balances) |
+| `lago_payable_type` | `Invoice` or `PaymentRequest` |
+| `lago_organization_id` | Lago organization ID |
+| `lago_billing_entity_id` | Lago billing entity ID |
+| `invoice_issuing_date` | Invoice issuing date (ISO 8601) |
+| `invoice_type` | Invoice type, for example `subscription` or `one_off` |
+
+<Info>
+  PaymentIntents created to collect overdue balances (dunning) settle several invoices at once, so they carry a `lago_payable_type` of `PaymentRequest` and do not include `lago_invoice_id`. Use `lago_customer_id` or `lago_organization_id` when you need a marker that is present on every Lago payment.
+</Info>
+
+### Refunds
+| Metadata key | Description |
+|---|---|
+| `lago_customer_id` | Lago customer ID |
+| `lago_credit_note_id` | Lago credit note ID |
+| `lago_invoice_id` | Lago invoice ID the refund relates to |
+
+### Customers
+| Metadata key | Description |
+|---|---|
+| `lago_customer_id` | Lago customer ID |
+| `customer_id` | The customer's external ID in Lago |
+
+<Warning>
+  These metadata keys are a supported part of the Stripe integration. Any change to them is treated as a breaking change and communicated in advance.
+</Warning>
+
 ## Payment disputes
 In the event of a **lost** payment dispute within Stripe, Lago initiates an automatic response by marking the relevant invoice as disputed lost. This action involves populating the `dispute_lost_at` field with the timestamp when the dispute was lost. Following this update:
 
