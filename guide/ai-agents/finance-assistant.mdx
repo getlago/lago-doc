@@ -1,0 +1,133 @@
+---
+title: "The Finance Assistant (Beta)"
+description: "Ask any question about your billing data in plain text and get an aggregated report back, in the app or through the MCP server."
+---
+
+## Overview
+
+The AI Finance Assistant answers questions about your billing data in plain language. Ask what you want to know, and Lago returns an aggregated report. No filters to build, no dashboard to configure, no SQL to write.
+
+Ask *"What was my MRR by plan last quarter?"* or *"How much did EU customers pay in June?"* and the assistant reads your data and returns the numbers.
+
+<Frame caption="AI Finance Assistant">
+  <img src="/guide/images/finance-assistant.png" />
+</Frame>
+
+<Info>
+**AI-generated results** ✨
+
+The assistant is powered by AI. It can make mistakes. Treat every report as a draft worth reviewing, not a final source of truth. Confirm the numbers against your dashboards or the API before you act on them or share them.
+</Info>
+
+## What it does
+
+- **Plain-text questions:** Describe what you want in your own words. No query language, no report builder.
+- **Aggregated reports:** The assistant computes the answer across your data and returns totals, breakdowns, and trends.
+- **Read-only:** The Finance Assistant reports on your data. It does not create, update, or delete anything. For operations and mutations, use the [Billing Assistant](/guide/ai-agents/billing-assistant).
+- **Preview then export:** In the app, the result is a preview of the underlying data. Export the full CSV when you need the complete dataset.
+
+## How to access it
+
+You can reach the AI Finance Assistant two ways.
+
+<Steps>
+  <Step title="From the side panel">
+    Open the **AI Finance Assistant** in the Lago side panel. Type your question and read the report inline.
+  </Step>
+  <Step title="Through the MCP server">
+    Connect the [Lago MCP Server](/guide/ai-agents/mcp-server) to your AI client (Claude Desktop, your own agent, or any MCP-compatible tool) and ask the same questions there. Same data, in the environment you already work in.
+  </Step>
+</Steps>
+
+## Ask a question
+
+<Steps>
+  <Step title="Open the assistant">
+    Select **AI Finance Assistant** in the side panel, or query it through the MCP server.
+  </Step>
+  <Step title="Ask in plain text">
+    Type any question about your billing, revenue, or usage data.
+  </Step>
+  <Step title="Read the report">
+    The assistant returns an aggregated report. In the app, this is a preview of the data.
+  </Step>
+  <Step title="Review and confirm">
+    Check the numbers. Results are AI-generated and worth confirming before you rely on them.
+  </Step>
+  <Step title="Export the full CSV">
+    Need the complete dataset? Export it as CSV directly from the result.
+  </Step>
+</Steps>
+
+## Example questions
+
+<Accordion title="Revenue">
+  - *"What was my MRR last month, broken down by plan?"*
+  - *"How much revenue did I recognize in Q2?"*
+  - *"Which customers grew the most in the last 90 days?"*
+  - *"Compare this month's revenue to the same month last year."*
+</Accordion>
+
+<Accordion title="Invoices and payments">
+  - *"What's the total value of overdue invoices right now?"*
+  - *"How much did I collect in June, by currency?"*
+  - *"Show me the failed payment amount for the last 30 days."*
+</Accordion>
+
+<Accordion title="Usage">
+  - *"What's the total metered usage per billable metric this quarter?"*
+  - *"Which customers consumed the most credits last month?"*
+  - *"How is usage trending across my top 10 customers?"*
+</Accordion>
+
+<Accordion title="Customers">
+  - *"How many active subscriptions do I have by plan?"*
+  - *"What's the average invoice value for US customers?"*
+  - *"List my top customers by lifetime billed amount."*
+</Accordion>
+
+## Preview and export
+
+In the Lago app, every answer is a **preview** of the underlying data. It shows enough to read the result and sanity-check it at a glance. When you need every row, export the **full CSV** and take it into your spreadsheet, BI tool, or reconciliation workflow.
+
+## Non-destructive by design
+
+The Finance Assistant only reads. It queries your billing data, interprets it, and returns a report. That is all it can do. It cannot create, update, or delete anything: no invoices, no subscriptions, no customers, no payments. There is no confirmation step to worry about because there is no action to confirm.
+
+Use it for data and reporting only. If you need to *change* something in natural language, that is the [Billing Assistant](/guide/ai-agents/billing-assistant), and unlike the Finance Assistant, the Billing Assistant can perform destructive actions such as terminating subscriptions or issuing refunds.
+
+| | Finance Assistant | Billing Assistant |
+|---|---|---|
+| **Reads data** | Yes | Yes |
+| **Changes data** | No | Yes |
+| **Can be destructive** | No | Yes |
+| **Use it for** | Reports and analysis | Billing operations |
+
+## Access and permissions
+
+<Warning>
+**Access is scoped to the API key, not to the role of the person asking.**
+
+The Finance Assistant reads data through Lago's general API key, not through the individual permissions of the user typing the question. Every user who can reach the assistant can query **everything that API key can see**, regardless of their own role.
+
+If a user should not have access to this data, do not rely on their role to limit it. **Remove their permission to access the AI Assistants entirely.** Controlling access to the assistant is the only way to control what data it can surface for them.
+</Warning>
+
+This is the key difference to understand before you roll the Finance Assistant out to your team. The assistant does not filter results per user. It answers with the full scope of the API key behind it. Gate access at the assistant level, in each user's permissions, not through role-based data restrictions that the assistant does not enforce.
+
+## Limitations
+
+- **Reports are point-in-time.** Each answer reflects your data at the moment you ask. Ask the same question tomorrow and the numbers can differ as your data changes.
+- **You cannot save reports yet.** There is no way to store or pin a report inside the assistant. To keep a result, export the **CSV** while it is on screen. A report you do not export is not retained.
+
+## Good to know
+
+- **Results are AI-generated.** They can be wrong. Review before you rely on them, and cross-check against your [Reports](/guide/analytics/reports) dashboards or the API for anything you report externally.
+- **Read-only by design.** The Finance Assistant never changes your data. Use the [Billing Assistant](/guide/ai-agents/billing-assistant) for actions.
+- **Be specific.** "MRR by plan for Q2 2026" returns a sharper report than "show me revenue." Include timeframes, currencies, and dimensions when they matter.
+
+## Related
+
+- [Reports](/guide/analytics/reports): prebuilt finance and usage dashboards.
+- [Billing Assistant](/guide/ai-agents/billing-assistant): run billing operations in natural language.
+- [Lago MCP Server](/guide/ai-agents/mcp-server): connect Lago data to any AI client.
