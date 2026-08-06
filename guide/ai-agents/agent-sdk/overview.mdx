@@ -7,7 +7,7 @@ Pricing AI features requires per-token billing. Historically that meant building
 
 The **Lago Agent SDK** removes that layer. You wrap your existing LLM client and keep calling it the same way: same arguments, same return shape, same exceptions. The SDK extracts normalized token usage from each response and streams events to Lago in the background.
 
-It can also price each call for you. The SDK fetches live LLM prices, turns every call into a dollar cost, and lets you add a margin on top. Your LLM costs land in one place, and you decide what to resell them for.
+It can also price calls for you. The SDK fetches live per-token prices, turns the priced token types on each call into a dollar cost, and lets you add a margin on top. Your LLM costs land in one place, and you decide what to resell them for.
 
 Available in two flavors, both open source and versioned together:
 
@@ -274,7 +274,7 @@ your code ──────▶ │ wrapped client │ ──────▶ pro
 
 ## Bill in tokens or in dollars
 
-The SDK can bill two ways. By default it sends **token counts**, and you turn those into money with your Lago plans. Switch to **price mode** and the SDK sends the **dollar cost** of each call instead. It looks up the price of the model, multiplies by the tokens used, applies your markup, and emits one cost event.
+The SDK can bill two ways. By default it sends **token counts**, and you turn those into money with your Lago plans. Switch to **price mode** and the SDK sends the **dollar cost** of each call instead. It looks up the per-token price of the model, multiplies by the tokens used, applies your markup, and emits cost events.
 
 **Where prices come from.** OpenRouter for native OpenAI, Anthropic, Mistral, and Gemini clients. The AWS Bedrock public bulk price list for Bedrock, parsed per region. Cloudflare's own model catalog for Workers AI, which is the one source that needs credentials. No price file for you to maintain. Prices refresh in the background on the queue thread, so your LLM call is never slowed down waiting on a price.
 
@@ -318,10 +318,24 @@ A gateway that meters its own real cost per call beats any price the SDK can com
 You can also flip a single call to price mode and set a one-off markup. Python: `extra_lago={"mode": "price", "markup": 1.5}`. TypeScript: `lago: { mode: "price", markup: 1.5 }`. For Bedrock, attach it to the command as `__lago`.
 
 <Note>
-  **Lago setup for price mode.** The SDK emits one event per call with the metric code `llm_cost`. The event carries a top-level `precise_total_amount_cents` (total cost in cents, after markup) plus a full breakdown in `properties`: `unit` (total billed tokens), `value` (USD total), `base_cost` (pre-markup), `markup`, `price_source`, and per-field `*_tokens` / `*_unit_price` / `*_cost`.
+  **Lago setup for price mode.** Register a `sum` billable metric `llm_cost` on `field_name: "unit"` and attach a **dynamic** charge to it. Lago sums each event's `precise_total_amount_cents` into a single fee, and `unit` is the displayed usage quantity.
 
-  In Lago, register a `sum` billable metric `llm_cost` on `field_name: "unit"` and attach a **dynamic** charge to it. Lago sums each event's `precise_total_amount_cents` into a single fee, and `unit` is the displayed usage quantity.
+  Group the charge by `["model", "token_type"]` so one metric breaks the cost down by both dimensions.
 </Note>
+
+**What price mode emits.** One `llm_cost` event **per priced token type**, not one per call. Each event carries `precise_total_amount_cents` at the top level, plus `token_type`, `unit` (tokens of that type), `value` (billed cost after markup), `base_cost` (before markup), `unit_price`, `markup`, `price_source`, `model`, `provider`, and `api` in `properties`.
+
+The exception is a cost the SDK did not compute. When a gateway reports its own metered cost per call and you pass it through, there is no per-field split to report, so that path emits a **single** event with no `token_type` rather than inventing a proportional breakdown. See [Cloudflare AI Gateway](/guide/ai-agents/agent-sdk/cloudflare#backfill-path).
+
+<Warning>
+  **Price mode prices five fields.** `input`, `output`, `cache_read`, `cache_write`, and `reasoning`. Tool calls, audio, image, and the 5-minute and 1-hour cache-write splits carry no unit price, so they produce no cost event. A call whose only counts are unpriced yields a total of `0` rather than disappearing.
+
+  If you bill on those dimensions, meter them in token mode instead of, or alongside, price mode.
+</Warning>
+
+<Tip>
+  **Subset overlaps are handled for you.** Where a provider's `input` already contains the cached tokens (OpenAI and Gemini), the cached portion is moved out of `input` and billed at the cache-read rate, so it is charged once at the right price. Where `output` already contains reasoning tokens (OpenAI), the separate reasoning line is dropped rather than billed twice. This is the double-counting trap from [Captured token dimensions](#captured-token-dimensions), except price mode resolves it instead of leaving it to your plan.
+</Tip>
 
 <Warning>
   **Never under-bill.** If a price is not available (the price table has not warmed up on the very first call, or the model is missing from the source), the SDK falls back to emitting normal token-count events and fires `on_error` / `onError` so you can see it. It never silently drops the usage.
@@ -686,7 +700,7 @@ The design promise: **your LLM call never breaks because of the SDK.** Anything 
 
 The SDK's foreground cost is negligible. The ceiling is downstream: a single process drains at the rate of sequential HTTP POSTs multiplied by Lago's 100-event batch cap, which measures at roughly **180 events/sec**.
 
-A sustained-load test at 500 emit/sec for 60 seconds against production Lago, with `max_buffer_size` raised to 200,000:
+A sustained-load test at 500 emit/sec for 60 seconds against production Lago, with `max_buffer_size` raised to 200,000 and `flush_interval_seconds` lowered to 0.1:
 
 | Quantity | Value |
 |----------|-------|
@@ -736,7 +750,7 @@ Both SDKs expose the same configuration surface with idiomatic naming.
 | `cost_metric_code`        | `costMetricCode`          | `llm_cost`                       | Billable metric `code` for the per-call cost event in price mode. |
 | `pricing_ttl_seconds`     | `pricingTtlMs`            | `3600` / `3_600_000`             | How long a fetched price table stays fresh before a background refresh. |
 | `bedrock_default_region`  | `bedrockDefaultRegion`    | `us-east-1`                      | Region used to look up Bedrock prices when the model id carries no region prefix. |
-| `cloudflare_account_id`   | `cloudflareAccountId`     | `None` / `undefined`             | Required, with the token below, to price Workers AI calls. See [Cloudflare AI Gateway](/guide/ai-agents/agent-sdk/cloudflare#workers-ai-is-priced-automatically). |
+| `cloudflare_account_id`   | `cloudflareAccountId`     | `None` / `undefined`             | Required, with the token below, to price Workers AI calls. See [Cloudflare AI Gateway](/guide/ai-agents/agent-sdk/cloudflare#workers-ai-is-priced-from-cloudflares-own-catalog). |
 | `cloudflare_api_token`    | `cloudflareApiToken`      | `None` / `undefined`             | Cloudflare API token for the model catalog. Cloudflare's catalog is not public, unlike OpenRouter and AWS. |
 | `mistral_api_key`         | `mistralApiKey`           | `None` / `undefined`             | Usually unnecessary. Wrapping a Mistral client auto-detects the key it already carries. Set it only when pricing Mistral usage without ever calling `wrap()`, such as a log-backfill poller. |
 | `verify_ssl`              | `verifySsl`               | `true`                           | TLS verification for requests to `api_url`. Only set `false` against a local dev instance behind a self-signed certificate. |

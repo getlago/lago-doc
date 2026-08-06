@@ -11,10 +11,10 @@ The SDK handles both, through two paths you can use separately or together:
 
 <CardGroup cols={2}>
   <Card title="Live path" icon="bolt">
-    Point your existing wrapped client at the gateway. `wrap()` detects it and adjusts. Bills as calls happen.
+    Point your existing wrapped client at the gateway. Bills as calls happen, and skips Cloudflare's own cache hits on OpenAI and Anthropic.
   </Card>
   <Card title="Backfill path" icon="clock-rotate-left">
-    Poll the gateway's Logs API and bill Cloudflare's own metered cost. Idempotent, so re-running a window never double-bills.
+    Poll the gateway's Logs API and bill Cloudflare's own metered cost. Pass each entry's id and re-running a window does not double-bill.
   </Card>
 </CardGroup>
 
@@ -77,9 +77,9 @@ Everything on the [Anthropic](/guide/ai-agents/agent-sdk/anthropic), [OpenAI](/g
   Some provider SDKs take the gateway auth header per call rather than at construction. The Mistral client, for example, wants `http_headers={"cf-aig-authorization": ...}` on `chat.complete`, and takes `server_url` rather than `base_url`.
 </Note>
 
-### Gateway cache hits are not billed
+### Gateway cache hits are not billed, on two of the five clients
 
-When the gateway serves a response from its own cache, it sets `cf-aig-cache-status: HIT` and never calls the provider. Nothing was spent, so the SDK emits nothing for that response.
+When the gateway serves a response from its own cache, it sets `cf-aig-cache-status: HIT` and never calls the provider. Nothing was spent, so the SDK emits nothing for that response. This is implemented in the OpenAI and Anthropic wrappers only, and only for non-streaming calls.
 
 Reading that header means going through the provider SDK's raw-response accessor rather than the plain create call. In Python, `.with_raw_response.create(...)` then `.parse()`, which returns the identical object, so nothing downstream changes. With no gateway in the path the header is simply absent, making this a no-op on direct provider calls.
 
@@ -94,10 +94,10 @@ Reading that header means going through the provider SDK's raw-response accessor
 
   Streaming is excluded deliberately: it would need `.with_streaming_response`, which behaves differently and is not verified end to end. An older or custom OpenAI client that does not expose `with_raw_response` also falls back to the plain path with no detection.
 
-  If you rely on gateway caching for cost control, use the backfill path. It reads the `cached` flag off every log entry, for every provider, streaming included.
+  If you rely on gateway caching for cost control, use the backfill path. It handles cache hits for every provider, streaming included, because Cloudflare logs them with zero tokens and zero cost.
 </Warning>
 
-### Workers AI is priced automatically
+### Workers AI is priced from Cloudflare's own catalog
 
 Workers AI is Cloudflare's own inference, reached through the gateway's OpenAI-compatible `/compat` endpoint. Wrap an OpenAI-shaped client at that endpoint and use `workers-ai/@cf/...` model ids:
 
@@ -133,6 +133,8 @@ Workers AI is Cloudflare's own inference, reached through the gateway's OpenAI-c
 
 An OpenAI-shaped client can point at real OpenAI or at Workers AI, and the client type alone cannot tell you which. The SDK resolves it from the model string the response reports: an id starting with `@cf/` is Workers AI's naming convention and never a real OpenAI model, so those events are stamped `provider: "workers-ai"` and priced from Cloudflare's catalog rather than OpenRouter.
 
+That distinction is worth real money, not just correctness. Cloudflare's catalog is the rate the gateway actually bills at. OpenRouter lists other hosts' prices for the same open-weight models, and on a live check its figure for one model came out around 3.5x lower than what Cloudflare charged. Pricing Workers AI off OpenRouter would not be a naming mismatch, it would be the wrong number.
+
 <Note>
   **Workers AI pricing needs credentials.** OpenRouter and the AWS price list are public. Cloudflare's model catalog is not, so price mode needs a Cloudflare account id and an API token:
 
@@ -159,6 +161,8 @@ An OpenAI-shaped client can point at real OpenAI or at Workers AI, and the clien
   </CodeGroup>
 
   Without both set, Workers AI prices are unavailable and the SDK falls back to token-count events, the same as any other price miss.
+
+  The catalog is read for three units: input tokens, output tokens, and cached input tokens. A Workers AI model priced per image or per audio-minute, or with no price published at all, is absent from the table and falls back to token events too.
 </Note>
 
 The catalog fetch is primed the moment you call `wrap()` on a client pointed at `gateway.ai.cloudflare.com`, not at SDK init, and it runs on the background thread. `wrap()` normally happens well before your first completion, so the table is usually warm before it lands.
@@ -206,6 +210,12 @@ This lives in a separate namespace from the wrapper adapters, because there is n
 </CodeGroup>
 
 The logs endpoint is `GET https://api.cloudflare.com/client/v4/accounts/{account_id}/ai-gateway/gateways/{gateway_id}/logs`, paginated, authenticated with a Cloudflare API token. The list and single-entry endpoints return the same entry shape.
+
+Because Cloudflare hands over one lump sum per call rather than a per-token-type split, this path emits a **single** `llm_cost` event with no `token_type`, and `unit` set to input plus output tokens. Splitting that lump proportionally would substitute a guess for the exact number you came here for. Live-path price mode, which does have per-token unit prices, emits one event per priced type instead. Both work with the same `sum` metric on `field_name: "unit"` and a dynamic charge.
+
+<Note>
+  **You do not need to filter cache hits out.** Cloudflare reports a gateway cache hit with `tokens_in: 0`, `tokens_out: 0`, and `cost: 0`, so a cached entry extracts as zero usage and bills zero on its own. Billing policy never has to branch on the `cached` flag. The flag is exposed in `extras` for your own reporting, not because the maths needs it.
+</Note>
 
 ### Two new `emit()` arguments
 

@@ -23,19 +23,19 @@ rss: "true"
   ))
   ```
 
-  On OpenAI and Anthropic clients, the SDK checks whether Cloudflare answered from cache. If it did, the model was never called, so nothing is billed. Your customer does not pay for a request that never left Cloudflare.
+  On non-streaming OpenAI and Anthropic calls, the SDK checks whether Cloudflare answered from cache. If it did, the model was never called, so nothing is billed. Your customer does not pay for a request that never left Cloudflare.
 
   **Or bill from the gateway's own books.** Point the SDK at the gateway's logs and it bills Cloudflare's metered cost per call. Not our estimate of what the call cost. The number Cloudflare charged you.
 
-  - **The real figure, not a rate card.** Cloudflare reports an exact cost per call. On this path the SDK bills that number and skips its own price lookup entirely. No gap between what you bill and what you pay.
-  - **Bill history you never metered.** The logs reach back further than your integration does. Backfill the whole window, and re-run it as often as you like: pass each entry's log id as the event key and Lago rejects the duplicate instead of billing it again.
+  - **The real figure, not a rate card.** Cloudflare reports an exact cost per call. On this path the SDK bills that number and skips its own price lookup entirely. The cost you bill on is the cost you were charged, before you add your own margin.
+  - **Bill history you never metered.** Your gateway kept logging while you were still wiring up billing. Backfill as far back as its log retention goes, and re-run it as often as you like: pass each entry's log id as the event key and Lago rejects the duplicate instead of billing it again.
   - **Cache hits settle themselves.** Cloudflare logs a cache hit with zero tokens and zero cost, so a backfilled cache hit bills zero without you filtering anything.
   - **Workers AI, priced from source.** Give the SDK a Cloudflare account id and API token and it prices Cloudflare's own models from Cloudflare's own catalog. No price file to maintain.
   - **Every provider, one gateway.** OpenAI, Anthropic, Mistral, Gemini, Workers AI. Each event is tagged with the model that actually served it, so one billable metric can charge a different rate per provider.
 
   Run both and you get the best of each. Live events so customers see usage right away, and a periodic backfill that reconciles them against what Cloudflare really metered.
 
-  Two limits worth knowing up front. Live cache-hit detection reads a response header, so it covers non-streaming calls on OpenAI and Anthropic clients only. Streamed calls, and Mistral, Gemini and Bedrock clients, bill a cache hit as a normal call. The log backfill carries the cache flag on every entry and catches all of them.
+  Two limits worth knowing up front. Live cache-hit detection reads a response header, so it covers non-streaming calls on OpenAI and Anthropic clients only. Streamed calls, and Mistral, Gemini and Bedrock clients, bill a cache hit as a normal call. The log backfill catches all of them, because Cloudflare records a cache hit with zero tokens and zero cost.
 
   Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
 
