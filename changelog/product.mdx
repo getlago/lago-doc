@@ -7,6 +7,10 @@ rss: "true"
 <Update label="August 2026">
   ## Cloudflare AI Gateway: bill what your gateway actually metered
 
+  <Frame>
+    ![](/changelog/images/20260805-cloudflare-ai-gateway.png)
+  </Frame>
+
   If your AI features run through Cloudflare AI Gateway, your gateway already knows things your billing does not. It serves some responses straight from its own cache, so those calls cost you nothing. And it meters the real cost of every call it does forward.
 
   Standard metering throws both away. It counts the tokens in the response and prices them off a public rate card. So you charge customers for cached responses you never paid for, and your revenue drifts from the invoice your provider actually sends you.
@@ -34,8 +38,6 @@ rss: "true"
   - **Every provider, one gateway.** OpenAI, Anthropic, Mistral, Gemini, Workers AI. Each event is tagged with the model that actually served it, so one billable metric can charge a different rate per provider.
 
   Run both and you get the best of each. Live events so customers see usage right away, and a periodic backfill that reconciles them against what Cloudflare really metered.
-
-  Two limits worth knowing up front. Live cache-hit detection reads a response header, so it covers non-streaming calls on OpenAI and Anthropic clients only. Streamed calls, and Mistral, Gemini and Bedrock clients, bill a cache hit as a normal call. The log backfill catches all of them, because Cloudflare records a cache hit with zero tokens and zero cost.
 
   Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
 
