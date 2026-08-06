@@ -4,6 +4,38 @@ description: "New updates and improvements to Lago."
 rss: "true"
 ---
 
+<Update label="August 2026">
+  ## Cloudflare AI Gateway: stop billing for calls that never happened
+
+  If your AI features run through Cloudflare AI Gateway, your gateway already knows more about your LLM spend than any billing tool does. It caches responses. It logs every call. It meters the exact cost of each one.
+
+  Most metering setups ignore all of that. They count the tokens in the response and bill them. Two things go wrong. You charge customers for cached responses that cost you nothing, and you price every call from a public rate card instead of the real number your provider invoiced.
+
+  The **Lago Agent SDK** now reads the gateway. Same `wrap()` call, same code, one URL change:
+
+  ```python
+  client = sdk.wrap(Anthropic(
+      api_key="...",
+      base_url=f"https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/anthropic",
+      default_headers={"cf-aig-authorization": f"Bearer {gateway_auth}"},
+  ))
+  ```
+
+  - **Cache hits are free, so we bill them as free.** When the gateway answers from its own cache, the model was never called. The SDK sees it and emits nothing. Your customer is not charged for a call that never left Cloudflare.
+  - **Real cost, not an estimate.** Cloudflare meters what each call actually cost. The SDK bills that exact number instead of computing its own. No rate card to trust, no drift between your bill and theirs.
+  - **Bill usage from before you set this up.** Point the SDK at the gateway's logs and it bills your entire history. Re-run the same window as often as you like: every event carries a key, so nothing is ever billed twice.
+  - **Workers AI just works.** Cloudflare's own models are priced from Cloudflare's own catalog, automatically. No separate price list to wire up.
+  - **Every provider behind one gateway.** OpenAI, Anthropic, Mistral, Gemini, Workers AI. Each event is tagged with the model that actually served it, so you can charge different rates per provider from one place.
+
+  The short version: bill what really happened, at the price you really paid, including retroactively.
+
+  One honest note. In live mode, the cache-hit check reads a response header, which streamed responses do not expose. A streamed cache hit is billed as a normal call. The log backfill has the cache flag on every entry, so a periodic reconciliation catches those.
+
+  Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
+
+  [Learn more](/guide/ai-agents/agent-sdk/cloudflare)
+</Update>
+
 <Update label="July 2026">
   ## Purchase order number on Subscription and wallet
   <Frame>
