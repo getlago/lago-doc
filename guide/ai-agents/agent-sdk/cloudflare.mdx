@@ -1,0 +1,279 @@
+---
+title: "Cloudflare AI Gateway"
+description: "Bill LLM usage routed through Cloudflare AI Gateway. Live instrumentation on the wrapped client, or backfill from the gateway's own Logs API."
+---
+
+Cloudflare AI Gateway is a proxy, not a provider. It sits in front of OpenAI, Anthropic, Mistral, Gemini, and Cloudflare's own Workers AI, and it caches, logs, and meters everything passing through.
+
+That changes two things for billing. Some responses never reach the provider at all, so they cost nothing and must not be billed. And Cloudflare already meters the real cost of every call it forwards, which is more accurate than any price a third party can compute.
+
+The SDK handles both, through two paths you can use separately or together:
+
+<CardGroup cols={2}>
+  <Card title="Live path" icon="bolt">
+    Point your existing wrapped client at the gateway. `wrap()` detects it and adjusts. Bills as calls happen.
+  </Card>
+  <Card title="Backfill path" icon="clock-rotate-left">
+    Poll the gateway's Logs API and bill Cloudflare's own metered cost. Idempotent, so re-running a window never double-bills.
+  </Card>
+</CardGroup>
+
+<Warning>
+  **This is not released yet.** Cloudflare support lands in [lago-agent-sdk-python#13](https://github.com/getlago/lago-agent-sdk-python/pull/13) and [lago-agent-sdk-js#28](https://github.com/getlago/lago-agent-sdk-js/pull/28), both open at the time of writing. Install from the branch until they ship.
+</Warning>
+
+## Live path
+
+There is no Cloudflare-specific client to wrap. You wrap the same provider client as always, pointed at your gateway's base URL instead of the provider's.
+
+<CodeGroup>
+  ```python Python
+  from anthropic import Anthropic
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(api_key="<YOUR_LAGO_API_KEY>", default_subscription_id="sub_acme")
+
+  client = sdk.wrap(Anthropic(
+      api_key="<YOUR_ANTHROPIC_API_KEY>",
+      base_url=f"https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/anthropic",
+      default_headers={"cf-aig-authorization": f"Bearer {gateway_auth}"},
+  ))
+
+  client.messages.create(
+      model="claude-sonnet-4-6",
+      max_tokens=200,
+      messages=[{"role": "user", "content": "Hello"}],
+  )
+  sdk.flush()
+  ```
+
+  ```typescript TypeScript
+  import Anthropic from "@anthropic-ai/sdk";
+  import { LagoSDK } from "lago-agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    defaultSubscriptionId: "sub_acme",
+  });
+
+  const client = sdk.wrap(new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY!,
+    baseURL: `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/anthropic`,
+    defaultHeaders: { "cf-aig-authorization": `Bearer ${gatewayAuth}` },
+  }));
+
+  await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 200,
+    messages: [{ role: "user", content: "Hello" }],
+  });
+  await sdk.flush();
+  ```
+</CodeGroup>
+
+Everything on the [Anthropic](/guide/ai-agents/agent-sdk/anthropic), [OpenAI](/guide/ai-agents/agent-sdk/openai), [Gemini](/guide/ai-agents/agent-sdk/gemini), and [Mistral](/guide/ai-agents/agent-sdk/mistral) pages still applies. Two behaviors are layered on top.
+
+<Note>
+  Some provider SDKs take the gateway auth header per call rather than at construction. The Mistral client, for example, wants `http_headers={"cf-aig-authorization": ...}` on `chat.complete`, and takes `server_url` rather than `base_url`.
+</Note>
+
+### Gateway cache hits are not billed
+
+When the gateway serves a response from its own cache, it sets `cf-aig-cache-status: HIT` and never calls the provider. Nothing was spent, so the SDK emits nothing for that response.
+
+The check reads the response header through the provider SDK's raw-response accessor. With no gateway in the path the header is simply absent, so this is a no-op on direct provider calls.
+
+<Warning>
+  **Cache-hit detection covers non-streaming calls only.** Streamed responses do not expose the response headers to the wrapper, so a streamed cache hit is billed as a normal call. If you rely on gateway caching for cost control, prefer non-streaming for cacheable requests, or use the backfill path, which reads the `cached` flag straight off the log entry.
+</Warning>
+
+### Workers AI is priced automatically
+
+Workers AI is Cloudflare's own inference, reached through the gateway's OpenAI-compatible `/compat` endpoint. Wrap an OpenAI-shaped client at that endpoint and use `workers-ai/@cf/...` model ids:
+
+<CodeGroup>
+  ```python Python
+  from openai import OpenAI
+
+  client = sdk.wrap(OpenAI(
+      api_key=gateway_auth,
+      base_url=f"https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/compat",
+  ))
+
+  resp = client.chat.completions.create(
+      model="workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      messages=[{"role": "user", "content": "Hello"}],
+  )
+  ```
+
+  ```typescript TypeScript
+  import OpenAI from "openai";
+
+  const client = sdk.wrap(new OpenAI({
+    apiKey: gatewayAuth,
+    baseURL: `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/compat`,
+  }));
+
+  await client.chat.completions.create({
+    model: "workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    messages: [{ role: "user", content: "Hello" }],
+  });
+  ```
+</CodeGroup>
+
+An OpenAI-shaped client can point at real OpenAI or at Workers AI, and the client type alone cannot tell you which. The SDK resolves it from the model string the response reports: an id starting with `@cf/` is Workers AI's naming convention and never a real OpenAI model, so those events are stamped `provider: "workers-ai"` and priced from Cloudflare's catalog rather than OpenRouter.
+
+<Note>
+  **Workers AI pricing needs credentials.** OpenRouter and the AWS price list are public. Cloudflare's model catalog is not, so price mode needs a Cloudflare account id and an API token:
+
+  <CodeGroup>
+    ```python Python
+    LagoConfig(
+        api_key="...",
+        pricing_mode="price",
+        cloudflare_account_id="<CF_ACCOUNT_ID>",
+        cloudflare_api_token="<CF_API_TOKEN>",
+    )
+    ```
+
+    ```typescript TypeScript
+    new LagoSDK({
+      apiKey: "...",
+      config: {
+        pricingMode: "price",
+        cloudflareAccountId: "<CF_ACCOUNT_ID>",
+        cloudflareApiToken: "<CF_API_TOKEN>",
+      },
+    });
+    ```
+  </CodeGroup>
+
+  Without both set, Workers AI prices are unavailable and the SDK falls back to token-count events, the same as any other price miss.
+</Note>
+
+The catalog fetch is primed the moment you call `wrap()` on a client pointed at `gateway.ai.cloudflare.com`, not at SDK init, and it runs on the background thread. `wrap()` normally happens well before your first completion, so the table is usually warm before it lands.
+
+## Backfill path
+
+For usage that already happened, do not replay calls. Read the gateway's own logs. Cloudflare reports a real metered `cost` per entry, so there is no price lookup on our side at all.
+
+This lives in a separate namespace from the wrapper adapters, because there is no client to instrument here. It is meant to run as a poller.
+
+<CodeGroup>
+  ```python Python
+  from lago_agent_sdk.gateway.adapters import extract_cloudflare_log, resolve_subscription
+
+  for entry in fetch_gateway_logs():   # GET .../ai-gateway/gateways/{id}/logs
+      usage = extract_cloudflare_log(entry)
+      sub = resolve_subscription(entry) or "sub_default"
+      sdk.emit(
+          usage,
+          subscription=sub,
+          mode="price",
+          usd_cost=entry.get("cost") or 0,      # Cloudflare's own metered price
+          event_id=f"cf_{sub}_{entry['id']}",   # idempotency key
+      )
+
+  sdk.flush()
+  ```
+
+  ```typescript TypeScript
+  import { extractCloudflareLog, resolveSubscription } from "lago-agent-sdk/gateway/adapters";
+
+  for (const entry of await fetchGatewayLogs()) {
+    const usage = extractCloudflareLog(entry);
+    const sub = resolveSubscription(entry) ?? "sub_default";
+    sdk.emit(usage, {
+      subscription: sub,
+      mode: "price",
+      usdCost: entry.cost ?? 0,              // Cloudflare's own metered price
+      eventId: `cf_${sub}_${entry.id}`,      // idempotency key
+    });
+  }
+
+  await sdk.flush();
+  ```
+</CodeGroup>
+
+The logs endpoint is `GET https://api.cloudflare.com/client/v4/accounts/{account_id}/ai-gateway/gateways/{gateway_id}/logs`, paginated, authenticated with a Cloudflare API token. The list and single-entry endpoints return the same entry shape.
+
+### Two new `emit()` arguments
+
+The backfill path is built on two arguments that price mode gained for exactly this case:
+
+| Argument | Python | TypeScript | What it does |
+|----------|--------|------------|--------------|
+| Cost override | `usd_cost` | `usdCost` | Bill this exact amount and skip the SDK's own price lookup. Only consulted when the effective mode is `price`. |
+| Idempotency key | `event_id` | `eventId` | Use this as Lago's `transaction_id` instead of a random UUID, so re-running the same window never double-bills. In token mode, which emits several events per call, each field's event is suffixed with the field name so they do not collide. |
+
+<Warning>
+  **Scope the idempotency key by subscription.** `transaction_id` is unique across your whole Lago organization, not per subscription. If you backfill a window onto one subscription and later re-run it onto a different one, a bare `cf_{entry_id}` key collides with the ids already used and the events silently go nowhere.
+
+  Always include the subscription in the key, as in `f"cf_{sub}_{entry['id']}"`.
+</Warning>
+
+<Tip>
+  **Unified or per-call attribution.** If all of a gateway's traffic belongs to one customer, bill every entry to a single subscription and ignore per-call attribution. If one gateway serves several customers, use `resolve_subscription(entry)` and fall back to a default only for unattributed entries. Vary the `event_id` prefix between the two strategies so a switch does not collide with keys already spent.
+</Tip>
+
+### Attributing a log entry to a subscription
+
+`resolve_subscription()` reads `lago_subscription` out of the entry's `metadata`, which is populated from the `cf-aig-metadata` header on the original request. Set that header at call time and every log entry carries its own Lago subscription:
+
+```http
+cf-aig-metadata: {"lago_subscription": "sub_acme"}
+```
+
+It returns `None` when the header was never set. Deciding what to do with an unattributed entry (drop it, warn, bill a default) is left to you, deliberately.
+
+## What gets captured
+
+From a Logs API entry:
+
+| Canonical field | Cloudflare log source |
+|-----------------|-----------------------|
+| `input`         | `tokens_in` |
+| `output`        | `tokens_out` |
+| `cache_read`    | `usage_metadata.input_cached_tokens` |
+| `cache_write`   | `usage_metadata.input_cache_creation_tokens` |
+| `reasoning`     | `usage_metadata.reasoningTokens` or `reasoning_tokens` |
+| `model`         | `model`, passed straight through |
+| `provider`      | `provider`, passed straight through |
+
+Events are tagged `api: "cloudflare_gateway"`. The entry's `cached` flag, `step`, and `id` land in `CanonicalUsage.extras`, because the poller needs them: `cached` to decide whether Cloudflare served the request for free, `id` as the replay key.
+
+<Warning>
+  **Cloudflare does not normalize `usage_metadata` key casing.** It passes through whatever convention the underlying provider used. Anthropic and OpenAI entries come back snake_case (`input_cached_tokens`); a captured Gemini entry used camelCase (`reasoningTokens`). The adapter checks both forms for every field it maps, but that is observed behavior across two providers, not a documented Cloudflare guarantee. A provider using a third convention could report tokens the adapter reads as zero.
+
+  If you add a provider to your gateway, verify one log entry against the counter in Lago before trusting the rollup.
+</Warning>
+
+<Note>
+  Unlike the provider-native adapters, this one never has to guess which model actually served a request. A Cloudflare log entry always reports the resolved model, so it is immune by construction to the alias-versus-snapshot mismatch that affects request-side model ids.
+</Note>
+
+Malformed or missing fields degrade to zero rather than raising. One bad entry in a batch does not take down a whole poller run.
+
+## Choosing a path
+
+| | Live path | Backfill path |
+|---|---|---|
+| When it bills | As the call happens | On the next poll |
+| Price source | OpenRouter, AWS, or Cloudflare's catalog | Cloudflare's own metered `cost` |
+| Cache hits | Skipped, non-streaming only | Skipped, read from the `cached` flag |
+| Streaming | Billed, cache hits included | Handled correctly |
+| Re-runnable | No, one shot per call | Yes, idempotent on `event_id` |
+| Needs Cloudflare credentials | Only for Workers AI pricing | Yes, a Logs API token |
+
+Running both is reasonable: the live path gives your customers near-real-time usage, and a periodic backfill reconciles against what Cloudflare actually metered. The `event_id` key is what makes that safe.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/overview#configuration-reference">
+    Every config knob, in both SDKs.
+  </Card>
+  <Card title="Bill in dollars" icon="dollar-sign" href="/guide/ai-agents/agent-sdk/overview#bill-in-tokens-or-in-dollars">
+    How price mode and the `llm_cost` metric work.
+  </Card>
+</CardGroup>

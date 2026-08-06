@@ -1,0 +1,227 @@
+---
+title: "AWS Bedrock"
+description: "Bill AWS Bedrock token usage with the Lago Agent SDK. Converse and InvokeModel, streaming included, across seven response-shape families."
+---
+
+Bedrock is the widest surface the SDK covers, because Bedrock is really two APIs over dozens of model families with different response shapes. The SDK normalizes all of them.
+
+Instrumented calls:
+
+| Method | Tagged as |
+|--------|-----------|
+| `converse` | `bedrock_converse` |
+| `converse_stream` | `bedrock_converse` |
+| `invoke_model` | `bedrock_invoke` |
+| `invoke_model_with_response_stream` | `bedrock_invoke` |
+
+In JavaScript the SDK wraps `client.send(command)` and dispatches on the command constructor: `ConverseCommand`, `ConverseStreamCommand`, `InvokeModelCommand`, `InvokeModelWithResponseStreamCommand`.
+
+## Install
+
+<CodeGroup>
+  ```bash pip
+  pip install 'lago-agent-sdk[bedrock]'
+  ```
+
+  ```bash npm
+  npm install lago-agent-sdk @aws-sdk/client-bedrock-runtime
+  ```
+</CodeGroup>
+
+## Wrap and call
+
+<CodeGroup>
+  ```python Python
+  import boto3
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(
+      api_key="<YOUR_LAGO_API_KEY>",
+      default_subscription_id="sub_acme",
+  )
+  client = sdk.wrap(boto3.client("bedrock-runtime", region_name="eu-west-1"))
+
+  resp = client.converse(
+      modelId="eu.amazon.nova-lite-v1:0",
+      messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+  )
+  sdk.flush()
+  ```
+
+  ```typescript TypeScript
+  import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
+  import { LagoSDK } from "lago-agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    defaultSubscriptionId: "sub_acme",
+  });
+  const client = sdk.wrap(new BedrockRuntimeClient({ region: "eu-west-1" }));
+
+  await client.send(new ConverseCommand({
+    modelId: "eu.amazon.nova-lite-v1:0",
+    messages: [{ role: "user", content: [{ text: "Hello" }] }],
+  }));
+  await sdk.flush();
+  ```
+</CodeGroup>
+
+The wrapper is installed on the boto3 client object itself, so any code holding that client is instrumented. `wrap()` is idempotent.
+
+## InvokeModel
+
+`invoke_model` needs special handling and gets it. AWS returns the response body as a **single-use stream**. Reading it to extract usage would leave your code with an exhausted body.
+
+The SDK consumes the body once, parses the JSON, extracts usage, then re-wraps the bytes as a fresh `StreamingBody`. Your code reads `response["body"].read()` exactly as before.
+
+<CodeGroup>
+  ```python Python
+  import json
+
+  resp = client.invoke_model(
+      modelId="eu.anthropic.claude-haiku-4-5-v1:0",
+      body=json.dumps({
+          "anthropic_version": "bedrock-2023-05-31",
+          "max_tokens": 200,
+          "messages": [{"role": "user", "content": "Hello"}],
+      }),
+  )
+  payload = json.loads(resp["body"].read())   # works unchanged
+  ```
+
+  ```typescript TypeScript
+  import { InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
+
+  const out = await client.send(new InvokeModelCommand({
+    modelId: "eu.anthropic.claude-haiku-4-5-v1:0",
+    body: JSON.stringify({
+      anthropic_version: "bedrock-2023-05-31",
+      max_tokens: 200,
+      messages: [{ role: "user", content: "Hello" }],
+    }),
+  }));
+  const payload = JSON.parse(new TextDecoder().decode(out.body));
+  ```
+</CodeGroup>
+
+### Response-shape families
+
+`InvokeModel` has no single usage schema. Each model family reports differently. The SDK dispatches on `modelId` across seven families, verified against 39 models in `eu-west-1`:
+
+| Family | Models |
+|--------|--------|
+| `openai_compat_basic` | Gemma, Qwen, gpt-oss-120b/20b, Voxtral, MiniMax M2.5, Magistral, Devstral, Ministral, NVIDIA Nemotron Nano, GLM |
+| `openai_compat_with_details` | gpt-oss Safeguard 120B/20B, MiniMax M2, MiniMax M2.1 |
+| `anthropic` | Claude Sonnet 4.5/4.6, Haiku 4.5, Opus 4.5/4.6 |
+| `anthropic_opus_4_7` | Claude Opus 4.7 (adds `service_tier`, captured into `extras`) |
+| `nova` | Amazon Nova Pro / Lite / Micro / 2-Lite |
+| `pixtral` | Mistral Pixtral Large |
+| `mistral_legacy` | Mistral 7B, Mixtral 8x7B, Mistral Large 24.02 |
+
+<Warning>
+  **Legacy Mistral models on Bedrock report no usage at all.** Mistral 7B, Mixtral 8x7B, and Mistral Large 24.02 return no token counts through `InvokeModel`. The SDK logs a warning and emits nothing, because there is nothing to bill on. Use `Converse` with those models, or a current model, if you need to meter them.
+</Warning>
+
+`Converse` is simpler: three shape families, all handled by one adapter. Standard (`inputTokens` / `outputTokens`, 33 models), cache-read-only (Claude Opus 4.7), and full-cache (Claude Sonnet 4.5/4.6, Haiku 4.5, Opus 4.5/4.6).
+
+## Streaming
+
+Both streaming methods are instrumented. Usage arrives in the terminal `metadata` chunk of the event stream, and the SDK emits once the stream is exhausted.
+
+<CodeGroup>
+  ```python Python
+  resp = client.converse_stream(
+      modelId="eu.amazon.nova-lite-v1:0",
+      messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+  )
+  for event in resp["stream"]:
+      ...
+  ```
+
+  ```typescript TypeScript
+  import { ConverseStreamCommand } from "@aws-sdk/client-bedrock-runtime";
+
+  const out = await client.send(new ConverseStreamCommand({
+    modelId: "eu.amazon.nova-lite-v1:0",
+    messages: [{ role: "user", content: [{ text: "Hello" }] }],
+  }));
+  for await (const event of out.stream!) {
+    // ...
+  }
+  ```
+</CodeGroup>
+
+## Per-call override
+
+Bedrock's request shape is validated strictly by AWS, so the override rides on the command object rather than inside the request body.
+
+<CodeGroup>
+  ```python Python
+  client.converse(
+      modelId="eu.amazon.nova-lite-v1:0",
+      messages=[{"role": "user", "content": [{"text": "Hello"}]}],
+      extra_lago={
+          "subscription": "sub_acme",
+          "dimensions": {"feature": "summarize"},
+          "mode": "price",     # optional
+          "markup": 1.5,       # optional
+      },
+  )
+  ```
+
+  ```typescript TypeScript
+  const cmd = new ConverseCommand({
+    modelId: "eu.amazon.nova-lite-v1:0",
+    messages: [{ role: "user", content: [{ text: "Hello" }] }],
+  });
+  (cmd as any).__lago = {
+    subscription: "sub_acme",
+    dimensions: { feature: "summarize" },
+    mode: "price",   // optional
+    markup: 1.5,     // optional
+  };
+  await client.send(cmd);
+  ```
+</CodeGroup>
+
+## What gets captured
+
+| Canonical field  | Converse | InvokeModel |
+|------------------|----------|-------------|
+| `input`          | `usage.inputTokens` | family-dependent |
+| `output`         | `usage.outputTokens` | family-dependent |
+| `cache_read`     | `usage.cacheReadInputTokens` (Anthropic models) | ✓ (Anthropic families) |
+| `cache_write`    | `usage.cacheWriteInputTokens` (Anthropic models) | ✓ (Anthropic families) |
+| `cache_write_5m` | ✗ | ✓ (Anthropic families) |
+| `cache_write_1h` | ✗ | ✓ (Anthropic families) |
+| `reasoning`      | folded into `output` | folded into `output` |
+| `tool_calls`     | ✓ | ✓ |
+
+The `provider` property on each event is derived from `modelId`, so a single Bedrock client produces events tagged `anthropic`, `amazon`, `meta`, `mistral`, `cohere`, `openai`, `qwen`, `google`, `minimax`, `nvidia`, or `zai`. That makes `provider` a useful charge filter when you resell several model families through one Bedrock account.
+
+<Tip>
+  Combine the `provider` and `model` properties with [charges with filters](/guide/plans/charges/charges-with-filters) to price Nova and Claude differently off the same billable metric.
+</Tip>
+
+## Pricing
+
+In price mode, Bedrock is priced from the **AWS Bedrock Price List Bulk API**, parsed per region. Region comes from the model id prefix when present (`eu.`, `us.`), otherwise from `bedrock_default_region` / `bedrockDefaultRegion`, which defaults to `us-east-1`.
+
+<Warning>
+  **Set your default region.** If your model ids carry no region prefix and you leave `bedrock_default_region` at `us-east-1` while calling `eu-west-1`, you will price against the wrong region's rates.
+</Warning>
+
+<Warning>
+  **AWS's public bulk data has a gap.** It lists Titan, Llama, Mistral, Cohere, and older Claude models, but at time of writing not the current Claude 3.5/3.7/4 models. Bedrock calls for models absent from AWS's data fall back to token-count events and fire `on_error` with a `PricingUnavailableError`. Native Anthropic clients are priced through OpenRouter and unaffected.
+</Warning>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/overview#configuration-reference">
+    Every config knob, in both SDKs.
+  </Card>
+  <Card title="Charges with filters" icon="filter" href="/guide/plans/charges/charges-with-filters">
+    Price each model family off one billable metric.
+  </Card>
+</CardGroup>

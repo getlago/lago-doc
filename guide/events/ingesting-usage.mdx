@@ -469,7 +469,7 @@ client.Event().Create(ctx, &event)
 
 ### Agent SDK
 
-For applications that bill on LLM tokens, the [Agent SDK](/guide/ai-agents/agent-sdk) is the lowest-effort path to ingestion. You wrap your existing provider client and keep calling it the same way. The SDK extracts token usage from each response, normalizes it across providers, and ships events to Lago in the background.
+For applications that bill on LLM tokens, the [Agent SDK](/guide/ai-agents/agent-sdk/overview) is the lowest-effort path to ingestion. You wrap your existing provider client and keep calling it the same way. The SDK extracts token usage from each response, normalizes it across providers, and ships events to Lago in the background.
 
 - **Providers:** AWS Bedrock (`Converse` and `InvokeModel`, sync and stream), Mistral, OpenAI, Anthropic, Google Gemini, and potentially more.
 - **Languages:** [Python](https://github.com/getlago/lago-agent-sdk-python) and [JavaScript / TypeScript](https://github.com/getlago/lago-agent-sdk-js)).
@@ -490,7 +490,7 @@ For applications that bill on LLM tokens, the [Agent SDK](/guide/ai-agents/agent
 
   ```typescript TypeScript
   import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
-  import { LagoSDK } from "@getlago/agent-sdk";
+  import { LagoSDK } from "lago-agent-sdk";
 
   const sdk = new LagoSDK({
     apiKey: process.env.LAGO_API_KEY!,
@@ -505,7 +505,7 @@ For applications that bill on LLM tokens, the [Agent SDK](/guide/ai-agents/agent
   ```
 </CodeGroup>
 
-The SDK emits one event per non-zero token dimension (input, output, cached input, cache creation, tool calls, etc.) and maps each to a default Lago metric code. See the [Agent SDK guide](/guide/ai-agents/agent-sdk) for the full list of dimensions, configuration options, and multi-tenant subscription routing.
+The SDK emits one event per non-zero token dimension (input, output, cached input, cache creation, tool calls, etc.) and maps each to a default Lago metric code. See the [Agent SDK guide](/guide/ai-agents/agent-sdk/overview) for the full list of dimensions, configuration options, and multi-tenant subscription routing.
 
 ### Kafka / Redpanda configuration
 

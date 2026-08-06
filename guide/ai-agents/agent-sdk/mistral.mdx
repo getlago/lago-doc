@@ -1,0 +1,159 @@
+---
+title: "Mistral"
+description: "Bill Mistral token usage with the Lago Agent SDK. chat.complete and chat.stream, with cache-read tokens when the cache hits."
+---
+
+The SDK wraps a `Mistral` client in place and instruments:
+
+- `client.chat.complete(...)`
+- `client.chat.stream(...)`
+
+Mistral has the smallest usage surface of the supported providers: input, output, cache reads, and tool calls.
+
+## Install
+
+<CodeGroup>
+  ```bash pip
+  pip install 'lago-agent-sdk[mistral]'
+  ```
+
+  ```bash npm
+  npm install lago-agent-sdk @mistralai/mistralai
+  ```
+</CodeGroup>
+
+## Wrap and call
+
+<CodeGroup>
+  ```python Python
+  from mistralai.client import Mistral
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(
+      api_key="<YOUR_LAGO_API_KEY>",
+      default_subscription_id="sub_acme",
+  )
+  client = sdk.wrap(Mistral(api_key="<YOUR_MISTRAL_API_KEY>"))
+
+  resp = client.chat.complete(
+      model="mistral-small-latest",
+      messages=[{"role": "user", "content": "Hello"}],
+  )
+  sdk.flush()
+  ```
+
+  ```typescript TypeScript
+  import { Mistral } from "@mistralai/mistralai";
+  import { LagoSDK } from "lago-agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    defaultSubscriptionId: "sub_acme",
+  });
+  const client = sdk.wrap(new Mistral({ apiKey: process.env.MISTRAL_API_KEY! }));
+
+  await client.chat.complete({
+    model: "mistral-small-latest",
+    messages: [{ role: "user", content: "Hello" }],
+  });
+  await sdk.flush();
+  ```
+</CodeGroup>
+
+## Streaming
+
+Usage is captured from the final chunk of the stream.
+
+<CodeGroup>
+  ```python Python
+  for chunk in client.chat.stream(
+      model="mistral-small-latest",
+      messages=[{"role": "user", "content": "Hello"}],
+  ):
+      ...
+  ```
+
+  ```typescript TypeScript
+  const stream = await client.chat.stream({
+    model: "mistral-small-latest",
+    messages: [{ role: "user", content: "Hello" }],
+  });
+  for await (const chunk of stream) {
+    // ...
+  }
+  ```
+</CodeGroup>
+
+<Note>
+  The TypeScript wrapper preserves `chat.stream`'s async-function shape, so `instanceof Promise` and `.then(...)` behave exactly as on the unwrapped client.
+</Note>
+
+## Per-call override
+
+<CodeGroup>
+  ```python Python
+  client.chat.complete(
+      model="mistral-small-latest",
+      messages=[{"role": "user", "content": "Hello"}],
+      extra_lago={
+          "subscription": "sub_acme",
+          "dimensions": {"feature": "summarize"},
+          "mode": "price",     # optional
+          "markup": 1.5,       # optional
+      },
+  )
+  ```
+
+  ```typescript TypeScript
+  await client.chat.complete({
+    model: "mistral-small-latest",
+    messages: [{ role: "user", content: "Hello" }],
+    lago: {
+      subscription: "sub_acme",
+      dimensions: { feature: "summarize" },
+      mode: "price",   // optional
+      markup: 1.5,     // optional
+    },
+  } as any);
+  ```
+</CodeGroup>
+
+The wrapper strips `extra_lago` / `lago` before forwarding.
+
+## What gets captured
+
+| Canonical field | Mistral source |
+|-----------------|----------------|
+| `input`         | `usage.prompt_tokens` |
+| `output`        | `usage.completion_tokens` |
+| `cache_read`    | `usage.prompt_tokens_details.cached_tokens` |
+| `tool_calls`    | count of `choices[0].message.tool_calls` |
+
+Not exposed by Mistral: `cache_write` and its TTL splits, `reasoning` (folded into `completion_tokens`), `image_input`, `audio_input`, `audio_output`.
+
+<Note>
+  `cache_read` only appears on a cache hit. The correct source field is `usage.prompt_tokens_details.cached_tokens`. Mistral has no `prompt_cache_hit_tokens` field, contrary to what some third-party integrations assume.
+</Note>
+
+<Warning>
+  `cache_read` is part of `prompt_tokens`, not additive to it. Bill `llm_input_tokens` as the total and use `llm_cached_input_tokens` for a discounted rate tier.
+</Warning>
+
+## Mistral models through Bedrock
+
+Calling Mistral models on AWS Bedrock is a different code path with different coverage. Notably, the legacy models (Mistral 7B, Mixtral 8x7B, Mistral Large 24.02) report no usage at all through `InvokeModel`. See the [Bedrock page](/guide/ai-agents/agent-sdk/bedrock#response-shape-families).
+
+## Pricing
+
+In price mode, native Mistral clients are priced from **OpenRouter's public model list**, per token, refreshed hourly on the background thread.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/overview#configuration-reference">
+    Every config knob, in both SDKs.
+  </Card>
+  <Card title="Per-token pricing template" icon="table" href="/templates/per-token/mistral">
+    A complete plan built on Mistral token metrics.
+  </Card>
+</CardGroup>
