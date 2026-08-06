@@ -32,6 +32,20 @@ Please note that you can edit or delete the redirect URL, and this will only aff
   URL defined should always begin with `http://` or `https://`.
 </Warning>
 
+## Consent collection
+
+You can require your customers to accept your **terms of service** before paying on the Stripe checkout and payment pages that Lago generates. When this option is enabled, a mandatory "I agree to the Terms of Service" checkbox is shown on the page, and the customer cannot complete the payment until it is checked.
+
+This option is configured **per Stripe connection** and is **turned off by default**, so existing connections are not affected. To enable it, navigate to **Settings > Integrations > Stripe**, open your connection settings, and turn on **Consent collection**.
+
+<Warning>
+  Before enabling this option, you must set a **Terms of service URL** in your Stripe account, under [**Settings > Business > Public details**](https://dashboard.stripe.com/settings/public).
+
+  If **Consent collection** is enabled while no Terms of service URL is set on the Stripe account, Stripe rejects the request and **Lago is unable to generate the checkout or payment link**. Your customer will not receive a working link until the URL is added, and Lago surfaces the Stripe error in the API response and through the related payment webhooks.
+</Warning>
+
+Once enabled, consent collection applies to every Stripe checkout page Lago generates: the payment-method checkout link, invoice payment links, and payment-request links.
+
 ## Customer information
 
 To collect payments automatically, the customer must exist in both the Lago and Stripe databases.
