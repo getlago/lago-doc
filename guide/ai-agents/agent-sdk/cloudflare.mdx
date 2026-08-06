@@ -81,10 +81,20 @@ Everything on the [Anthropic](/guide/ai-agents/agent-sdk/anthropic), [OpenAI](/g
 
 When the gateway serves a response from its own cache, it sets `cf-aig-cache-status: HIT` and never calls the provider. Nothing was spent, so the SDK emits nothing for that response.
 
-The check reads the response header through the provider SDK's raw-response accessor. With no gateway in the path the header is simply absent, so this is a no-op on direct provider calls.
+Reading that header means going through the provider SDK's raw-response accessor rather than the plain create call. In Python, `.with_raw_response.create(...)` then `.parse()`, which returns the identical object, so nothing downstream changes. With no gateway in the path the header is simply absent, making this a no-op on direct provider calls.
 
 <Warning>
-  **Cache-hit detection covers non-streaming calls only.** Streamed responses do not expose the response headers to the wrapper, so a streamed cache hit is billed as a normal call. If you rely on gateway caching for cost control, prefer non-streaming for cacheable requests, or use the backfill path, which reads the `cached` flag straight off the log entry.
+  **Cache-hit detection covers OpenAI and Anthropic clients, non-streaming only.**
+
+  | Client | Non-streaming | Streaming |
+  |--------|---------------|-----------|
+  | OpenAI (Chat Completions and Responses) | Cache hit skipped | Billed as a normal call |
+  | Anthropic (`messages.create`) | Cache hit skipped | Billed as a normal call |
+  | Mistral, Gemini, Bedrock | Billed as a normal call | Billed as a normal call |
+
+  Streaming is excluded deliberately: it would need `.with_streaming_response`, which behaves differently and is not verified end to end. An older or custom OpenAI client that does not expose `with_raw_response` also falls back to the plain path with no detection.
+
+  If you rely on gateway caching for cost control, use the backfill path. It reads the `cached` flag off every log entry, for every provider, streaming included.
 </Warning>
 
 ### Workers AI is priced automatically
@@ -259,11 +269,15 @@ Malformed or missing fields degrade to zero rather than raising. One bad entry i
 | | Live path | Backfill path |
 |---|---|---|
 | When it bills | As the call happens | On the next poll |
-| Price source | OpenRouter, AWS, or Cloudflare's catalog | Cloudflare's own metered `cost` |
-| Cache hits | Skipped, non-streaming only | Skipped, read from the `cached` flag |
-| Streaming | Billed, cache hits included | Handled correctly |
+| Price source | OpenRouter, AWS, or Cloudflare's catalog. The SDK's own estimate | Cloudflare's own metered `cost`. The figure you were charged |
+| Cache hits | Skipped on OpenAI and Anthropic clients, non-streaming only | Zero tokens and zero cost on the entry, so they bill zero |
+| Streaming | Billed as normal calls, cache hits included | Same as any other entry |
 | Re-runnable | No, one shot per call | Yes, idempotent on `event_id` |
 | Needs Cloudflare credentials | Only for Workers AI pricing | Yes, a Logs API token |
+
+<Note>
+  Only the backfill path bills Cloudflare's metered cost. The live path never sees it: no response header carries a per-call cost, so price mode there works exactly as it does for a direct provider call, off the public rate cards. If matching your Cloudflare invoice exactly is the goal, the backfill path is the one that does it.
+</Note>
 
 Running both is reasonable: the live path gives your customers near-real-time usage, and a periodic backfill reconciles against what Cloudflare actually metered. The `event_id` key is what makes that safe.
 
