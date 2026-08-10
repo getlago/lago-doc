@@ -1,0 +1,80 @@
+---
+title: "Creating a quote"
+description: "Create a quote for a customer, pick the quote type, and manage versions during negotiation."
+---
+
+A Quote is created for a customer, captures the proposed pricing and terms, and can go through several versions before it is approved.
+
+## Create a quote
+
+1. Access the **"Quotes"** section via the side menu;
+2. Click **"Create a quote"**;
+3. Select a **customer**;
+4. Select the **currency**. If the customer already has a currency, the field is locked to it. If not, pick one: it becomes the customer's currency, and the quote's;
+5. Select the **"Quote type"** (see below);
+6. For a subscription amendment, select the **subscription** to amend (only active subscriptions are listed);
+7. Optionally select **owners**, the teammates responsible for the quote; and
+8. Click **"Create quote"** to confirm.
+
+<Info>
+  The customer, currency, and quote type cannot be changed after creation. They apply to all versions of the quote.
+</Info>
+
+## Quote types
+
+The quote type determines what you can add to the quote:
+
+- **Subscription creation**: build a quote to create a new subscription. You add a plan from your catalog, with price overrides if needed, and optionally coupons and prepaid credits.
+- **Subscription amendment**: build a quote to update an existing subscription (upgrade, downgrade, repricing). The quote covers one plan, tied to the subscription you selected. You can pick a different plan than the current one. Coupons and prepaid credits are also available.
+- **One-off**: build a quote for a standalone one-off invoice, made of add-ons. Useful for POCs, pilots, or implementation fees. Plans, coupons, and prepaid credits are not available on this type.
+
+## Quote settings
+
+After creation you land on the quote editor. The panel next to the document shows the quote's settings:
+
+- **Main settings**: the quote type and the billing entity, both read-only.
+- **Execution details**: the customer, currency, and subscription (for amendments), read-only. A **"Start date"** and **"End date"** for the deal, which you set here. And the **"Payment term"**, displayed from the customer's or billing entity's net payment term.
+
+Dates save automatically. The start and end dates are required before you can approve the quote. One-off quotes have no execution details: their invoice is dated at execution.
+
+The pricing itself, along with discounts and credits, is configured inside the document. See [writing the quote content](/guide/quotes/quote-editor).
+
+## Versions
+
+A negotiation rarely lands on the first try. The customer asks for a bigger discount, a different plan, a later start date. Instead of overwriting the proposal, or juggling copies of a document, each round of negotiation becomes a version of the same quote.
+
+Versions give you two things. A single quote to track per deal, whatever the number of back-and-forths. And a permanent record of every offer you made: what you proposed in round one, what changed in round two, and why the final price looks the way it does.
+
+Each quote is numbered automatically. Its versions are numbered v1, v2, and so on. Creating a quote creates v1. A version has one of three statuses:
+
+| Status | Meaning |
+| --- | --- |
+| **Draft** | Work in progress. The only editable state. |
+| **Approved** | Signed off by your team. Locked. The order form has been generated from it. |
+| **Voided** | Withdrawn, superseded by a new version, or voided because its order form expired or was voided. |
+
+Only one version can be draft or approved at a time. That version is the current offer. All other versions are voided, and stay visible: the **"Version history"** table on the quote page lists every version with its status and date, and clicking a voided version opens it as a read-only preview.
+
+### Working with versions
+
+From a draft version, the **"Actions"** menu offers:
+
+- **"Edit quote"**: open the editor.
+- **"Approve quote"**: lock the version and generate the order form. See [approving a quote](/guide/quotes/order-forms).
+- **"Void quote"**: withdraw the version. Voiding is irreversible. You can also pick **"Void and create new version"** to start over immediately.
+- **"Duplicate version"**: create a new draft from this version.
+
+Duplicating is how you start a new round. It copies the version's content and pricing into a new draft, and instantly voids all previous versions, so there is never any doubt about which offer is the live one. You can duplicate any version that is not approved, including older voided ones. Useful when the customer says "actually, your first offer was better": duplicate v1 and pick up from there.
+
+While a version is approved, the quote is frozen: no version can be edited or duplicated. The approved version is a commitment, and its order form may be in the customer's hands. To renegotiate, [void the order form](/guide/quotes/order-forms#void-an-order-form) first: this voids the approved version, and duplication becomes available again.
+
+### A typical negotiation
+
+1. You create a quote for Acme. That's v1. You add the plan, a 10% discount, and approve it. The order form goes out;
+2. Acme pushes back and asks for 15%. You void the order form, which voids v1;
+3. You duplicate v1 into v2, change the discount block to 15%, and approve. A new order form goes out; and
+4. Acme signs. v2 becomes the record of the deal, and v1 stays in the version history as the trace of round one.
+
+<Info>
+  A draft can be incomplete. Required fields (a pricing block, the currency, the start and end dates) are checked when you approve the quote, not while you draft it.
+</Info>

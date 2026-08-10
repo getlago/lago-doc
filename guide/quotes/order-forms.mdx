@@ -1,0 +1,72 @@
+---
+title: "Order forms"
+description: "Approve a quote to generate an order form, share it for signature, and mark it as signed."
+---
+
+An Order Form is the formal document the customer signs. It is generated when you approve a quote, inherits everything from it (the document, the pricing blocks, the terms), and cannot be edited. This page covers its full lifecycle: generation, sharing, signature, expiration, and voiding.
+
+## Approve a quote
+
+When negotiation is over, you approve the quote. Approval is internal: your own team signs off in Lago, the customer is not involved at this step.
+
+1. Open the draft version and click **"Approve quote"**;
+2. Review the quote information (number, customer, type);
+3. Optionally set **"Order form valid until"**, the date after which the order form expires if it has not been signed; and
+4. Click **"Approve quote"** to confirm.
+
+Approval checks that the quote is complete: a pricing block, a currency, and start and end dates for subscription quotes, at least one add-on for one-off quotes. An incomplete draft cannot be approved.
+
+Approval changes three things. The version is locked: it can no longer be edited, and no version of the quote can be duplicated while it is approved. The [variable values](/guide/quotes/quote-editor#variables) are frozen. And the order form is generated, with its own number, distinct from the quote number.
+
+## Order form statuses
+
+| Status | Meaning |
+| --- | --- |
+| **Generated** | Ready to be sent for signature. |
+| **Signed** | Marked as signed. An order has been created from it. |
+| **Expired** | The "valid until" date passed without signature. |
+| **Voided** | Manually withdrawn. |
+
+When an order form expires or is voided, the approved quote version is automatically voided with it. The deal goes back to negotiation: duplicate a version to create a new draft.
+
+<Info>
+  Expiration is checked every hour, based on the date in the customer's billing entity timezone. An order form without a "valid until" date never expires.
+</Info>
+
+## Share the order form
+
+Click **"Download PDF"** on the order form and send the file to the customer yourself, by email or through your signature tool (DocuSign, Concord, or any other). Lago does not send emails and does not provide a public link.
+
+## Mark an order form as signed
+
+The customer signs the order form outside Lago: DocuSign, Concord, email, or any other tool. Lago does not handle the signature itself. Once the document is signed, you record it in Lago:
+
+1. Open the order form and click **"Sign order form"**;
+2. Select the **"Execution type"** (see [Execution types](#execution-types) below);
+3. Optionally set an **"Execution date"**, a future date on which the order executes automatically. Without a date, the order must be executed manually;
+4. Optionally upload the signed contract under **"Attachments"** (PDF, JPG, JPEG, or PNG, under 10MB), for record-keeping; and
+5. Click **"Sign order form"** to confirm.
+
+The order form moves to Signed and an [Order](/guide/quotes/orders) is created. The uploaded contract stays attached to the order form; you can open it later with **"View signed document"**.
+
+## Execution types
+
+You choose the execution type when signing the order form. It defines what happens when the resulting order runs. The choice is not final at signing: it can still be changed on the order with **"Edit order"**, until the order is executed.
+
+### Execute in Lago
+
+Lago provisions billing from the order. The billing blocks configured in the quote become live billing objects:
+
+- On a **subscription creation** quote, the quoted plan, with its overrides, becomes a subscription for the customer. Coupons from discount blocks are applied to the customer. Credit blocks create wallets, so the first invoice can already consume credits and discounts.
+- On a **subscription amendment** quote, the existing subscription is updated with the quoted plan and overrides.
+- On a **one-off** quote, a one-off invoice is issued from the quoted add-ons, dated at the execution date.
+
+Invoices are only generated where normal billing generates them: the one-off invoice at execution, or a first subscription invoice if the plan is paid in advance. Execution never creates invoices for the past. If the deal's start date is already behind, the subscription is created at that date, but past periods are not invoiced.
+
+### Order only
+
+Nothing is provisioned in Lago. The order is recorded as executed, and you provision billing in your external system. Use this when Lago handles the quoting but another tool handles the billing.
+
+## Void an order form
+
+To withdraw an order form that has not been signed, click **"Void order form"**. Voiding is irreversible: the order form becomes inactive, can no longer become an order, and the source quote version is voided automatically. To rework the deal, use **"Duplicate version"** on the quote and edit the new draft.
