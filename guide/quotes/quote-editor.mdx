@@ -3,25 +3,21 @@ title: "Writing the quote content"
 description: "Write the proposal in the rich text editor, personalize it with variables, and insert live billing blocks with commands."
 ---
 
-The quote document is written in a rich text editor. It holds everything the customer will read: the proposal text, the terms, and the pricing itself. The pricing is not pasted in as text. It is inserted as billing blocks that Lago executes when the order runs.
+The quote document is written in a rich text editor. It holds everything the customer will read: the proposal text, the terms, and the pricing. The pricing is not pasted in as text. It is inserted as billing blocks that Lago executes when the order runs.
 
 ## Rich text and capabilities
 
-The editor works like a modern document editor. An empty line shows the hint **"Type / for commands..."**.
+The editor works like a modern document editor. An empty line shows the hint **"Type / for commands..."**. The toolbar covers standard formatting: headings, bold and italic, colors, lists, alignment, links, tables, code blocks, and images (PNG, JPG, WEBP, GIF under 5MB). Hover a block to move or delete it. Cmd+Z restores deleted blocks.
 
-The toolbar covers text formatting: paragraph styles and four heading levels, bold, italic, underline, strikethrough, inline code, superscript and subscript, text and background colors, bullet and ordered lists, text alignment, links, tables, code blocks, and images (PNG, JPG, WEBP, GIF under 5MB). Hovering a block reveals a handle to move it up or down, or delete it. Deleted blocks can be restored with Cmd+Z.
+The document saves automatically: a chip in the header shows **"Saving..."**, then **"Saved"**, or **"Save failed"** with a retry button.
 
-The document saves automatically. A chip in the header shows **"Saving..."**, then **"Saved"**. If saving fails, the chip shows **"Save failed"** with a retry button.
+**"Preview"** renders the document as the customer will see it, in the customer's document language. **"Download PDF"** uses that same rendering: the preview is exactly what the customer receives.
 
-Click **"Preview"** at any time to see the document as the customer will see it, rendered in the customer's document language. **"Download PDF"** produces the PDF from that same rendering, so the preview is exactly what the customer receives.
+## Variables
 
-## Variables (@)
+Type `@` to insert a variable: a dynamic value that fills in automatically, so one quote structure personalizes itself per customer.
 
-Type `@` to insert a variable: a dynamic value that fills in automatically. Variables let you write one quote structure and have Lago personalize it. Insert **Customer name** in your opening line, and every quote greets the right customer without retyping.
-
-In the editor, a variable appears as a pill, for example `@Customer name`. In the preview and the PDF, the pill is replaced by the actual value, for example "Mistral AI". A variable with no value renders as nothing.
-
-Available variables:
+In the editor, a variable appears as a pill, for example `@Customer name`. In the preview and PDF, it is replaced by the actual value. A variable with no value renders as nothing.
 
 | Variable | Fills in with |
 | --- | --- |
@@ -42,64 +38,51 @@ Available variables:
 | Start date | The deal's start date |
 | Payment terms | The applicable net payment term |
 
-Variable values are frozen when the quote is approved. If the customer's name changes afterwards, the order form keeps the value it was approved with.
+Variable values are frozen at approval. If the customer's name changes afterwards, the order form keeps the value it was approved with.
 
-## Commands for structure (/)
+## Commands for structure
 
-Type `/` to open the command menu and insert document elements:
+Type `/` to insert document elements: `Heading 1`, `Heading 2`, `Heading 3`, `Bullet List`, `Table`, `Code Block`. Ordered lists, links, and images are inserted from the toolbar.
 
-- `Heading 1`: a large section heading.
-- `Heading 2`: a medium section heading.
-- `Heading 3`: a small section heading.
-- `Bullet List`: a bulleted list.
-- `Table`: a 3x3 table with a header row.
-- `Code Block`: a block of preformatted code.
+## Commands for billing blocks
 
-Ordered lists, links, and images are inserted from the toolbar.
+Three more commands insert live billing blocks. Each opens a drawer where you configure the block, and that configuration is what Lago provisions at execution: the document and the billing configuration are the same thing.
 
-## Commands for billing blocks (`/Pricing`, `/Discount`, `/Credits`)
+In the document, a billing block appears as a card. In the preview and PDF, it renders as a pricing table with the note "All prices exclude any applicable taxes". All blocks use the quote's currency. A partially configured block cannot be saved.
 
-Three more commands insert live billing blocks, not text. Each one opens a drawer where you configure the block. What you configure there is what Lago provisions when the order is executed: the document and the billing configuration are the same thing.
+### The `Pricing` command
 
-In the document, a billing block appears as a card showing its configuration. In the preview and the PDF, it renders as a pricing table with the note "All prices exclude any applicable taxes". All blocks use the quote's currency. A block that is not fully configured cannot be saved.
+The pricing block. Type `/` and select `Pricing` to insert it.
 
-### `/Pricing`
+On subscription quotes (**"Pricing for a subscription"**):
 
-Inserts the pricing block. A quote has exactly one: the command is disabled once a pricing block exists. The drawer depends on the quote type.
+1. Select a **"Plan"** from your catalog. On an amendment, the subscription context is already set;
+2. Adjust the settings cards: **"Subscription settings"** (external ID, name, anniversary or calendar billing, start and end dates), **"Invoicing & payments settings"**, **"Plan settings"**, and the **"Subscription fee"**;
+3. Override prices where needed: subscription fee, fixed charges, usage charges, minimum commitment, progressive billing; and
+4. Click **"Save edits"**.
 
-On subscription quotes, the drawer is titled **"Pricing for a subscription"**:
+Only changed fields are saved as overrides; everything else follows the catalog plan. Overrides follow the same rules as subscription overrides: you can only override what is already overridable.
 
-1. Type `/` and select `Pricing`. The drawer opens;
-2. Select a **"Plan"** from your catalog. On a subscription amendment, the subscription context is already set;
-3. Adjust the configuration through the settings cards: **"Subscription settings"** (external ID, name, anniversary or calendar billing, start and end dates), **"Invoicing & payments settings"**, **"Plan settings"**, and the **"Subscription fee"**;
-4. Override prices where needed: the subscription fee, fixed charges, usage charges, minimum commitment, and progressive billing are all editable, exactly like when assigning a plan to a customer; and
-5. Click **"Save edits"**. The block appears in the document with the plan's name.
+On one-off quotes (**"Pricing for one-off invoice"**):
 
-Only the fields you change are saved as overrides; everything else follows the catalog plan. Price overrides follow the same rules as subscription overrides today: you can only override what is already overridable.
+1. Click **"Add an add-on"** and select an add-on from your catalog;
+2. Set the **"Units"** and **"Unit price"** for each line;
+3. Optionally click **"Edit"** on a line to set billing period dates, invoice display name, and description, shown on the invoice PDF; and
+4. Click **"Save edits"**.
 
-On one-off quotes, the drawer is titled **"Pricing for one-off invoice"**:
+### The `Discount` command
 
-1. Type `/` and select `Pricing`. The drawer opens;
-2. Click **"Add an add-on"** and select an add-on from your catalog;
-3. Set the **"Units"** and **"Unit price"** for each line;
-4. Optionally click **"Edit"** on a line to set its billing period dates, invoice display name, and description, which will appear on the invoice PDF; and
-5. Click **"Save edits"**. The block appears in the document with the invoice total, excluding tax.
+Applies a coupon. Type `/` and select `Discount` to insert it. Subscription quotes only. Several discount blocks allowed.
 
-### `/Discount`
+1. Select a **"Coupon"** (only active coupons are listed);
+2. Adjust the prefilled **"Amount"** or **"Percentage rate"**, and the **"Frequency"** (once, recurring, or forever); and
+3. Click **"Save edits"**.
 
-Applies a coupon to the quote. Available on subscription quotes only. You can insert several discount blocks.
+### The `Credits` command
 
-1. Type `/` and select `Discount`. The drawer opens;
-2. Select a **"Coupon"** (only active coupons are listed);
-3. Adjust the prefilled values if needed: the **"Amount"** or **"Percentage rate"**, and the **"Frequency"** (once, recurring for a number of billing periods, or forever); and
-4. Click **"Save edits"**. The block appears in the document with the coupon's name, and renders as a table showing the discount, its value, and its duration.
+Adds prepaid credits. Type `/` and select `Credits` to insert it. Subscription quotes only. Each block configures one wallet, up to 5 per quote.
 
-### `/Credits`
+1. Configure the wallet through its four cards: **"Credits and wallet settings"** (name, credit rate, priority, expiration, top-up limits, PO number), **"Wallet scope limitation"**, **"Free and paid credits"**, and **"Wallet recurring top-up rule"**; and
+2. Click **"Save edits"**.
 
-Adds prepaid credits to the quote. Available on subscription quotes only. Each block configures one wallet, up to 5 per quote; the command is disabled at the limit.
-
-1. Type `/` and select `Credits`. The **"Prepaid credits"** drawer opens;
-2. Configure the wallet through its four cards: **"Credits and wallet settings"** (name, credit rate, priority, expiration, top-up limits, PO number), **"Wallet scope limitation"** (restrict credits to specific fees, objects, or billable metrics), **"Free and paid credits"** (the credits included in the quote), and **"Wallet recurring top-up rule"** (automatic top-ups by interval or threshold); and
-3. Click **"Save edits"**. The block appears in the document with the wallet's name, and renders as a table showing the credits, their price, and any recurring top-up.
-
-The settings are the same as when [creating a wallet](/guide/wallet-and-prepaid-credits/overview) directly on a customer. The difference is timing: here, the wallet is only created when the order is executed.
+The settings are the same as when [creating a wallet](/guide/wallet-and-prepaid-credits/overview) directly on a customer. The difference is timing: the wallet is only created when the order is executed.
