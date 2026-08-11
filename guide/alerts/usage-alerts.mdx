@@ -66,6 +66,35 @@ Usage alerts notify you when a subscription's usage crosses thresholds you defin
             }
         }'
     ```
+
+    ```bash Billable metric usage alert creation
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/subscriptions/:external_id/alerts" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+            "alert": {
+                "alert_type": "billable_metric_current_usage_units",
+                "code": "api_calls_soft_limit",
+                "name": "API calls limit",
+                "billable_metric_code": "api_calls",
+                "thresholds": [
+                    {
+                        "code": "warn",
+                        "value": "5000",
+                        "recurring": false
+                    },
+                    {
+                        "code": "repeat",
+                        "value": "1000",
+                        "recurring": true
+                    }
+                ]
+            }
+        }'
+    ```
     </CodeGroup>
   </Tab>
 </Tabs>

@@ -76,8 +76,27 @@ You can also start a subscription through the API, as described in the
 ## 5\. Send usage-based events
 
 Events sent from your backend to Lago will be automatically aggregated according
-to the predefined billable metrics. To start sending usage-based events, please
-refer to the [documentation](/guide/events/ingesting-usage).
+to the predefined billable metrics ([learn more about ingesting usage](/guide/events/ingesting-usage)):
+
+```bash
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/events" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "event": {
+      "transaction_id": "__UNIQUE_ID__",
+      "external_subscription_id": "sub_1234567890",
+      "code": "storage",
+      "timestamp": 1651240791,
+      "properties": {
+        "gb": 10
+      }
+    }
+  }'
+```
 
 ## 6\. Invoice your customers
 
