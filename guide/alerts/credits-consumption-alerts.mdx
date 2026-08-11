@@ -29,7 +29,7 @@ Credits consumption alerts help you monitor wallet balances and notify your cust
         9. Click on the **"Create alert"** button to confirm.
 
       <Info>
-        Unlike usage alerts where thresholds are increasing, wallet alert thresholds must be **decreasing** — each new threshold must be lower than the previous one. You can define up to 20 thresholds per alert, plus an optional recurring threshold.
+        Unlike usage alerts where thresholds are increasing, wallet alert thresholds must be **decreasing**: each new threshold must be lower than the previous one. You can define up to 20 thresholds per alert, including one optional recurring threshold.
       </Info>
 
       <Info>
@@ -48,7 +48,7 @@ Credits consumption alerts help you monitor wallet balances and notify your cust
       --header 'Content-Type: application/json' \
       --data-raw '{
             "alert": {
-                "alert_type": "wallet_ongoing_balance",
+                "alert_type": "wallet_ongoing_balance_amount",
                 "code": "low_balance_alerts",
                 "name": "Low Balance Alerts",
                 "thresholds": [
@@ -77,17 +77,17 @@ Credits consumption alerts help you monitor wallet balances and notify your cust
 
 
 ## Alert types
-Lago supports the following credits consumption alert types. You can create **one alert per type** on each wallet. You can also create multiple alerts at once using the batch create endpoint, or delete all alerts for a wallet in a single API call.
+Lago supports the following credits consumption alert types. You can create **one alert per type** on each wallet. You can also create multiple alerts at once by sending an `alerts` array to the same create endpoint, or delete all alerts for a wallet in a single API call.
 
-- **Wallet Balance Amount**: Triggered when a wallet's balance drops below predefined thresholds. Values are expressed in the customer's currency. The minimum threshold value is 0.
-- **Wallet Credits Balance**: Triggered when a wallet's credits balance drops below predefined thresholds. Values are expressed in credits. The minimum threshold value is 0.
-- **Wallet Ongoing Balance Amount**: Triggered when a wallet's ongoing balance drops below predefined thresholds. Values are expressed in the customer's currency. Thresholds can be negative since the ongoing balance can go below zero.
-- **Wallet Ongoing Credits Balance**: Triggered when a wallet's ongoing credits balance drops below predefined thresholds. Values are expressed in credits. Thresholds can be negative since the ongoing balance can go below zero.
+- **Wallet Balance Amount** (`wallet_balance_amount`): Triggered when a wallet's balance drops below predefined thresholds. Values are expressed in the customer's currency. The minimum threshold value is 0.
+- **Wallet Credits Balance** (`wallet_credits_balance`): Triggered when a wallet's credits balance drops below predefined thresholds. Values are expressed in credits. The minimum threshold value is 0.
+- **Wallet Ongoing Balance Amount** (`wallet_ongoing_balance_amount`): Triggered when a wallet's ongoing balance drops below predefined thresholds. Values are expressed in the customer's currency. Thresholds can be negative since the ongoing balance can go below zero.
+- **Wallet Credits Ongoing Balance** (`wallet_credits_ongoing_balance`): Triggered when a wallet's ongoing credits balance drops below predefined thresholds. Values are expressed in credits. Thresholds can be negative since the ongoing balance can go below zero.
 
 ## Thresholds
 
 ### Decreasing thresholds
-Wallet alert thresholds must be **decreasing** from one to another, representing gradual levels as the balance drops. You can define up to 20 thresholds per alert, each with an optional name.
+Wallet alert thresholds must be **decreasing** from one to another, representing gradual levels as the balance drops. You can define up to 20 thresholds per alert, each with an optional `code`.
 
 For example, with a starting wallet balance of USD 500, you might set thresholds at USD 100, USD 50, and USD 10. As the balance decreases:
 - When the ongoing balance crosses USD 100, Lago triggers a notification;
@@ -110,7 +110,7 @@ After configuring an alert, you can listen for the `alert.triggered` webhook mes
     "lago_wallet_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
     "alert_name": "Low Balance Alerts",
     "alert_code": "low_balance_alerts",
-    "alert_type": "wallet_ongoing_balance",
+    "alert_type": "wallet_ongoing_balance_amount",
     "current_value": "45.0",
     "previous_value": "55.0",
     "crossed_thresholds": [
@@ -131,4 +131,4 @@ Please consider the following limitations for credits consumption alerts:
 - Alerts only evaluate wallet data after their creation;
 - Alerts run on a default 5-minute interval clock, aligned with the wallet refresh cycle. Contact the team if you need a different frequency;
 - Only one alert per alert type can be created on each wallet; and
-- Each alert supports up to 20 decreasing thresholds, plus one optional recurring threshold.
+- Each alert supports up to 20 decreasing thresholds, including one optional recurring threshold.
