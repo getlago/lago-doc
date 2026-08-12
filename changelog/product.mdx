@@ -31,13 +31,13 @@ rss: "true"
 
   **Or bill from the gateway's own books.** Point the SDK at the gateway's logs and it bills Cloudflare's metered cost per call. Not our estimate of what the call cost. The number Cloudflare charged you.
 
-  - **The real figure, not a rate card.** Cloudflare reports an exact cost per call. On this path the SDK bills that number and skips its own price lookup entirely. The cost you bill on is the cost you were charged, before you add your own margin.
+  - **The real figure, not a rate card.** Cloudflare reports an exact cost per call. On this path the SDK bills that number and skips its own price lookup entirely, so the cost you bill on is the cost you were charged, before you add your own margin. One caveat: Cloudflare's figure leaves out reasoning tokens, so bill thinking-heavy models in token mode instead.
   - **Bill history you never metered.** Your gateway kept logging while you were still wiring up billing. Backfill as far back as its log retention goes, and re-run it as often as you like: pass each entry's log id as the event key and Lago rejects the duplicate instead of billing it again.
   - **Cache hits settle themselves.** Cloudflare logs a cache hit with zero tokens and zero cost, so a backfilled cache hit bills zero without you filtering anything.
   - **Workers AI, priced from source.** Give the SDK a Cloudflare account id and API token and it prices Cloudflare's own models from Cloudflare's own catalog. No price file to maintain.
   - **Every provider, one gateway.** OpenAI, Anthropic, Mistral, Gemini, Workers AI. Each event is tagged with the model that actually served it, so one billable metric can charge a different rate per provider.
 
-  Run both and you get the best of each. Live events so customers see usage right away, and a periodic backfill that reconciles them against what Cloudflare really metered.
+  Use each for different traffic and you get both: live events so customers see usage right away, and a backfill for the windows the live path never covered. Pointing both at the same calls would bill them twice — the two paths share no idempotency key.
 
   Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
 
@@ -198,7 +198,7 @@ rss: "true"
 
   Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
 
-  [Learn more](/guide/ai-agents/agent-sdk/overview#bill-in-tokens-or-in-dollars)
+  [Learn more](/guide/ai-agents/agent-sdk/billing)
 
   ## Stripe Shared Payment Token: Lago auto-charges invoices through agent payments
 

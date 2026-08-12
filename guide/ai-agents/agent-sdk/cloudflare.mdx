@@ -79,19 +79,7 @@ When the gateway serves a response from its own cache, it sets `cf-aig-cache-sta
 
 Reading that header means going through the provider SDK's raw-response accessor rather than the plain create call. In Python, `.with_raw_response.create(...)` then `.parse()`, which returns the identical object, so nothing downstream changes. With no gateway in the path the header is simply absent, making this a no-op on direct provider calls.
 
-<Warning>
-  **Cache-hit detection covers OpenAI and Anthropic clients, non-streaming only.**
-
-  | Client | Non-streaming | Streaming |
-  |--------|---------------|-----------|
-  | OpenAI (Chat Completions and Responses) | Cache hit skipped | Billed as a normal call |
-  | Anthropic (`messages.create`) | Cache hit skipped | Billed as a normal call |
-  | Mistral, Gemini, Bedrock | Billed as a normal call | Billed as a normal call |
-
-  Streaming is excluded deliberately: it would need `.with_streaming_response`, which behaves differently and is not verified end to end. An older or custom OpenAI client that does not expose `with_raw_response` also falls back to the plain path with no detection.
-
-  If you rely on gateway caching for cost control, use the backfill path. It handles cache hits for every provider, streaming included, because Cloudflare logs them with zero tokens and zero cost.
-</Warning>
+Streaming is excluded deliberately: it would need `.with_streaming_response`, which behaves differently and is not verified end to end. See [Known limits](#known-limits) for the full per-client picture.
 
 ### Workers AI is priced from Cloudflare's own catalog
 
@@ -254,15 +242,11 @@ From a Logs API entry:
 | `cache_write`   | `usage_metadata.input_cache_creation_tokens` |
 | `reasoning`     | `usage_metadata.reasoningTokens` or `reasoning_tokens` |
 | `model`         | `model`, passed straight through |
-| `provider`      | `provider`, passed straight through |
+| `provider`      | `provider`, normalized onto the SDK's own vocabulary |
 
-Events are tagged `api: "cloudflare_gateway"`. The entry's `cached` flag, `step`, and `id` land in `CanonicalUsage.extras`, because the poller needs them: `cached` to decide whether Cloudflare served the request for free, `id` as the replay key.
+Events are tagged `api: "cloudflare_gateway"`. The entry's `cached` flag, `step`, and `id` land in `CanonicalUsage.extras` (as `cached`, `step`, and `log_id`), because the poller needs them: `cached` to decide whether Cloudflare served the request for free, `log_id` as the replay key.
 
-<Warning>
-  **Cloudflare does not normalize `usage_metadata` key casing.** It passes through whatever convention the underlying provider used. Anthropic and OpenAI entries come back snake_case (`input_cached_tokens`); a captured Gemini entry used camelCase (`reasoningTokens`). The adapter checks both forms for every field it maps, but that is observed behavior across two providers, not a documented Cloudflare guarantee. A provider using a third convention could report tokens the adapter reads as zero.
-
-  If you add a provider to your gateway, verify one log entry against the counter in Lago before trusting the rollup.
-</Warning>
+Cloudflare names some providers differently from the SDK, so a few are mapped on the way in: `google-ai-studio`, `google-vertex-ai`, and `vertex` all become `gemini`; `azure-openai` and `azureopenai` become `openai`; `workersai` becomes `workers-ai`. Anything unrecognized passes through unchanged, which means it will miss on price and fall back to token events rather than being billed against the wrong rate card. Bedrock is deliberately left unmapped for that reason.
 
 <Note>
   Unlike the provider-native adapters, this one never has to guess which model actually served a request. A Cloudflare log entry always reports the resolved model, so it is immune by construction to the alias-versus-snapshot mismatch that affects request-side model ids.
@@ -275,25 +259,41 @@ Malformed or missing fields degrade to zero rather than raising. One bad entry i
 | | Live path | Backfill path |
 |---|---|---|
 | When it bills | As the call happens | On the next poll |
-| Price source | OpenRouter, AWS, or Cloudflare's catalog. The SDK's own estimate | Cloudflare's own metered `cost`. The figure you were charged |
+| Price source | OpenRouter, AWS, or Cloudflare's catalog. The SDK's own estimate | Cloudflare's own metered `cost`, with one gap on reasoning tokens (see [Known limits](#known-limits)) |
 | Cache hits | Skipped on OpenAI and Anthropic clients, non-streaming only | Zero tokens and zero cost on the entry, so they bill zero |
 | Streaming | Billed as normal calls, cache hits included | Same as any other entry |
 | Re-runnable | No, one shot per call | Yes, idempotent on `event_id` |
 | Needs Cloudflare credentials | Only for Workers AI pricing | Yes, a Logs API token |
 
 <Note>
-  Only the backfill path bills Cloudflare's metered cost. The live path never sees it: no response header carries a per-call cost, so price mode there works exactly as it does for a direct provider call, off the public rate cards. If matching your Cloudflare invoice exactly is the goal, the backfill path is the one that does it.
+  Only the backfill path bills Cloudflare's metered cost. The live path never sees it: no response header carries a per-call cost, so price mode there works exactly as it does for a direct provider call, off the public rate cards.
 </Note>
 
-Running both is reasonable: the live path gives your customers near-real-time usage, and a periodic backfill reconciles against what Cloudflare actually metered. The `event_id` key is what makes that safe.
+You can run both, but only over **different traffic**. The two paths share no idempotency key: a live event gets a random `transaction_id`, a backfilled one gets the `event_id` you pass. Lago treats them as unrelated events and bills the same call twice. Use the live path for current traffic and the backfill path only for windows the live path never covered.
+
+## Known limits
+
+**Cache-hit skipping covers OpenAI and Anthropic clients only, and only when not streaming.** Reading `cf-aig-cache-status` means going through the provider SDK's raw-response accessor, which the streaming path does not expose.
+
+| Client | Non-streaming | Streaming |
+|--------|---------------|-----------|
+| OpenAI (Chat Completions and Responses) | Cache hit skipped | Billed as a normal call |
+| Anthropic (`messages.create`) | Cache hit skipped | Billed as a normal call |
+| Mistral, Gemini, Bedrock | Billed as a normal call | Billed as a normal call |
+
+An older or custom OpenAI client without `with_raw_response` also falls back to the plain path with no detection. If you rely on gateway caching for cost control, use the backfill path — it handles cache hits for every provider, streaming included, because Cloudflare logs them with zero tokens and zero cost.
+
+**Cloudflare's metered `cost` excludes reasoning tokens.** It is exact on input, output, cache reads, and cache writes, but additive reasoning tokens are left out. On two measured thinking-heavy Gemini calls the reported cost came to roughly 4% of what Google actually charged — 22.8× and 39.6× under. For models that do not reason, the backfill figure is the one to bill on; for a thinking-heavy workload, meter it in token mode and price the reasoning tokens yourself.
+
+**Cloudflare does not normalize `usage_metadata` key casing.** It passes through whatever convention the underlying provider used: Anthropic and OpenAI entries come back snake_case (`input_cached_tokens`), while a captured Gemini entry used camelCase (`reasoningTokens`). The adapter checks both forms for every field it maps, but that is observed behavior across two providers, not a documented Cloudflare guarantee — a provider using a third convention could report tokens the adapter reads as zero. If you add a provider to your gateway, verify one log entry against the counter in Lago before trusting the rollup.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/overview#configuration-reference">
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
     Every config knob, in both SDKs.
   </Card>
-  <Card title="Bill in dollars" icon="dollar-sign" href="/guide/ai-agents/agent-sdk/overview#bill-in-tokens-or-in-dollars">
+  <Card title="Bill in dollars" icon="dollar-sign" href="/guide/ai-agents/agent-sdk/billing">
     How price mode and the `llm_cost` metric work.
   </Card>
 </CardGroup>

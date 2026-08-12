@@ -84,11 +84,9 @@ Same client, same wrap. The SDK detects the API shape from the usage payload and
 
 ## Streaming
 
-<Warning>
-  **OpenAI streams carry no usage by default.** Chat Completions only reports usage on a streamed response when `stream_options.include_usage` is set. Without it you get silent under-billing.
-
-  The SDK injects `stream_options={"include_usage": True}` for you whenever `stream=True` is passed and you have not set the flag yourself. If you set it explicitly, your choice wins. The Responses API rejects that option, so the SDK skips the injection there and reads usage from the terminal `response.completed` event instead.
-</Warning>
+<Note>
+  **Streamed usage is handled for you.** Chat Completions only reports usage on a streamed response when `stream_options.include_usage` is set, so the SDK injects `stream_options={"include_usage": True}` whenever `stream=True` is passed and you have not set the flag yourself. If you set it explicitly, your choice wins. The Responses API rejects that option, so the SDK skips the injection there and reads usage from the terminal `response.completed` event instead.
+</Note>
 
 <CodeGroup>
   ```python Python
@@ -181,9 +179,7 @@ The wrapper strips `extra_lago` / `lago` before forwarding, so OpenAI's strict r
 
 Not exposed by either API: `cache_write`, `cache_write_5m`, `cache_write_1h`. OpenAI auto-caches without surfacing creation counts, so you only ever see cache reads. `image_input` is not surfaced separately either.
 
-<Warning>
-  **`reasoning` is a subset of `output`.** OpenAI counts reasoning tokens inside `completion_tokens`. Billing on `llm_output_tokens + llm_reasoning_tokens` double-counts. Same for `cache_read` and `audio_input`, which sit inside `prompt_tokens`.
-</Warning>
+On OpenAI everything is a subset: `reasoning` sits inside `completion_tokens`, and `cache_read` and `audio_input` sit inside `prompt_tokens`. Bill `llm_input_tokens` and `llm_output_tokens` as the totals — [Bill in tokens](/guide/ai-agents/agent-sdk/billing#subsets-and-additive-fields) shows the metric setup that handles this across providers.
 
 <Note>
   **Reasoning tokens** populate automatically on o-series models (`o1`, `o4-mini`, and friends). OpenAI was the first provider to expose the metric separately.
@@ -195,14 +191,28 @@ Not exposed by either API: `cache_write`, `cache_write_5m`, `cache_write_1h`. Op
 
 ## Pricing
 
-In price mode, OpenAI models are priced from **OpenRouter's public model list**, per token, refreshed hourly on the background thread. No API key needed.
+In price mode, OpenAI models are priced from **OpenRouter's public model list**, per token, refreshed hourly on the background thread. No API key needed. See [Billing](/guide/ai-agents/agent-sdk/billing) for setup.
 
-See [Bill in tokens or in dollars](/guide/ai-agents/agent-sdk/overview#bill-in-tokens-or-in-dollars) for setup.
+## What is and isn't instrumented
+
+`wrap()` patches exactly two methods — `chat.completions.create` and `responses.create` — on both the sync `OpenAI` and async `AsyncOpenAI` clients.
+
+**The `.stream()` helpers are covered.** `chat.completions.stream(...)` and `responses.stream(...)` pass `self.create` into their stream manager, which resolves to the patched method, so they bill normally.
+
+**`parse()` is not.** Both `chat.completions.parse` and `responses.parse` issue their own request instead of calling `create`, so the patch never sees them.
+
+<Warning>
+  `parse()` is the easy one to miss. It looks like a `create` variant and returns the same usage, but it is not instrumented — a workload built on structured outputs would bill nothing.
+</Warning>
+
+Other billable surfaces on the client are also unmetered: `embeddings`, `images`, `audio`, `batches`, `videos`, `realtime`, `conversations`, and `beta`. If you use any of them, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
+
+**Audio tokens are captured but not priced separately.** They are reported as `llm_audio_input_tokens` and `llm_audio_output_tokens`, and in price mode they are billed at the model's text rate. Providers often charge considerably more for audio — see [Known limits](/guide/ai-agents/agent-sdk/billing#known-limits).
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/overview#configuration-reference">
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
     Every config knob, in both SDKs.
   </Card>
   <Card title="Per-token pricing template" icon="table" href="/templates/per-token/openai">

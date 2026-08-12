@@ -1,0 +1,214 @@
+---
+title: "Databricks AI Gateway"
+description: "Bill LLM usage routed through Databricks AI Gateway. Live instrumentation on the wrapped client, or backfill from Databricks' own system tables."
+---
+
+Databricks AI Gateway fronts two different kinds of traffic: **hosted** foundation models that Databricks serves and bills you for in DBUs, and **BYOK** traffic where Databricks proxies your own OpenAI or Anthropic credential and reports the vendor's cost.
+
+They bill differently, so the SDK treats them differently. Both are reachable two ways:
+
+<CardGroup cols={2}>
+  <Card title="Live path" icon="bolt">
+    Wrap the provider client you already use, pointed at your workspace. Bills as calls happen.
+  </Card>
+  <Card title="Backfill path" icon="clock-rotate-left">
+    Read Databricks' own `system.ai_gateway.usage` table and bill from it. Idempotent, so a window can be re-run.
+  </Card>
+</CardGroup>
+
+<Warning>
+  **Do not run both over the same traffic.** They share no idempotency key — a live event gets a random `transaction_id`, a backfilled one gets the id derived from the source row. Lago accepts both and bills the call twice. Use the live path for current traffic and backfill only for windows it never covered.
+</Warning>
+
+## Live path
+
+There is no Databricks client to wrap. You wrap `OpenAI` or `Anthropic` pointed at your workspace, and **the `base_url` is load-bearing** — the same `OpenAI` class serves both hosted and BYOK, and only the path tells them apart.
+
+| Surface | `base_url` | Events tagged |
+|---|---|---|
+| Hosted foundation models | `{host}/ai-gateway/mlflow/v1` | `provider: "databricks"` |
+| OpenAI BYOK | `{host}/ai-gateway/openai/v1` | `provider: "openai"` |
+| Anthropic BYOK | `{host}/ai-gateway/anthropic` | `provider: "anthropic"` |
+
+Only `/ai-gateway/mlflow/` marks a call as Databricks-hosted. The BYOK surfaces keep their real vendor so they price against the vendor's rate card as normal.
+
+<CodeGroup>
+  ```python Hosted
+  from openai import OpenAI
+  from lago_agent_sdk import LagoSDK
+  import json
+
+  sdk = LagoSDK(api_key="<YOUR_LAGO_API_KEY>", default_subscription_id="sub_acme")
+
+  tags = json.dumps({"lago_subscription": "sub_acme", "team": "search"})
+  client = sdk.wrap(OpenAI(
+      api_key="<DATABRICKS_TOKEN>",
+      base_url="https://<workspace>.cloud.databricks.com/ai-gateway/mlflow/v1",
+      default_headers={"Databricks-Ai-Gateway-Request-Tags": tags},
+  ))
+
+  client.chat.completions.create(
+      model="system.ai.llama-4-maverick",
+      messages=[{"role": "user", "content": "Hello"}],
+      max_tokens=400,
+  )
+  sdk.flush()
+  ```
+
+  ```python Anthropic BYOK
+  from anthropic import Anthropic
+
+  client = sdk.wrap(Anthropic(
+      api_key="unused",                      # Databricks supplies the real credential
+      base_url="https://<workspace>.cloud.databricks.com/ai-gateway/anthropic",
+      default_headers={
+          "Authorization": f"Bearer {databricks_token}",
+          "Databricks-Model-Provider-Service": "<unity-catalog-credential>",
+          "Databricks-Ai-Gateway-Request-Tags": tags,
+      },
+  ))
+
+  client.messages.create(
+      model="claude-sonnet-4-5",
+      max_tokens=400,
+      messages=[{"role": "user", "content": "Hello"}],
+  )
+  ```
+
+  ```python OpenAI BYOK
+  from openai import OpenAI
+
+  # Same class as hosted — only the base_url differs.
+  client = sdk.wrap(OpenAI(
+      api_key="<DATABRICKS_TOKEN>",
+      base_url="https://<workspace>.cloud.databricks.com/ai-gateway/openai/v1",
+      default_headers={
+          "Databricks-Model-Provider-Service": "<unity-catalog-credential>",
+          "Databricks-Ai-Gateway-Request-Tags": tags,
+      },
+  ))
+
+  client.chat.completions.create(model="gpt-4o", messages=[{"role": "user", "content": "Hello"}])
+  ```
+</CodeGroup>
+
+Everything on the [OpenAI](/guide/ai-agents/agent-sdk/openai) and [Anthropic](/guide/ai-agents/agent-sdk/anthropic) pages still applies — streaming, async, per-call overrides.
+
+### Attribution
+
+Set `Databricks-Ai-Gateway-Request-Tags` to a JSON object containing `lago_subscription` and every call carries its own Lago subscription. The backfill path reads the same tag out of the usage table, so the two agree.
+
+## Backfill path
+
+For usage that already happened, read Databricks' own system tables rather than replaying calls.
+
+<CodeGroup>
+  ```python Python
+  from lago_agent_sdk.gateway.databricks import DatabricksSource
+
+  source = DatabricksSource(
+      host="https://<workspace>.cloud.databricks.com",
+      token="<DATABRICKS_TOKEN>",
+      warehouse_id="<WAREHOUSE_ID>",
+  )
+  # ...or DatabricksSource.from_env(), which reads
+  # DATABRICKS_HOST, DATABRICKS_TOKEN and DATABRICKS_WAREHOUSE_ID.
+
+  rows = list(source.read_usage("7 days"))
+
+  counts = sdk.backfill_databricks(rows, default_subscription="sub_acme")
+  assert sdk.flush(timeout=30.0)
+  print(counts)   # {'cost': 60, 'tokens': 88, 'skipped': 0}
+  ```
+
+  ```typescript TypeScript
+  import { DatabricksSource } from "lago-agent-sdk/gateway";
+
+  const source = new DatabricksSource(
+    "https://<workspace>.cloud.databricks.com",
+    process.env.DATABRICKS_TOKEN!,
+    process.env.DATABRICKS_WAREHOUSE_ID!,
+  );
+  // ...or DatabricksSource.fromEnv(), which reads the same three variables.
+
+  const rows = await source.readUsage("7 days");
+  const counts = await sdk.backfillDatabricks(rows, "7 days", {
+    defaultSubscription: "sub_acme",
+  });
+  await sdk.flush(30_000);
+  ```
+</CodeGroup>
+
+<Note>
+  The Python import is `from lago_agent_sdk.gateway.databricks import DatabricksSource` — the `gateway` package itself re-exports nothing. In JavaScript the subpath export does: `import { DatabricksSource } from "lago-agent-sdk/gateway"`.
+</Note>
+
+`backfill_databricks` returns `{"cost": n, "tokens": n, "skipped": n}` and follows the rule the connector establishes rather than re-deriving it: **a BYOK row carries Databricks' own metered USD and bills as a dollar cost; a hosted row has no per-request dollar figure anywhere in Databricks' system tables and bills as token counts.**
+
+Options:
+
+| Argument | Default | What it does |
+|---|---|---|
+| `since` | `"1 day"` | A `datetime`, or an interval like `"7 days"`. Validated against a strict pattern, not escaped, so it cannot carry SQL |
+| `default_subscription` | `None` | Billed when a row carries no tag of its own. Rows with neither are counted in `skipped` |
+| `unified` | `False` | Bill everything to `default_subscription`, ignoring per-call tags. Right when one workspace serves one customer |
+| `dimensions` | `None` | Extra event properties, merged over the row's own and winning on collision |
+| `event_id_prefix` | `"dbx"` | Prefix for the idempotency key. Vary it if you switch attribution strategy |
+
+<Tip>
+  Pass the already-read `rows` rather than the `source` when you have inspected them first, as above. Handing over `source` re-runs the warehouse query — which costs real money (see below) and lets rows land between the two reads, so the summary you printed disagrees with what was billed.
+</Tip>
+
+### Idempotency
+
+Every event id is derived from the source row's own id **and scoped by the subscription actually billed**, so re-running the same window has Lago reject the duplicates rather than double-bill. The scoping matters: `transaction_id` is unique account-wide, so an id built from the row alone would silently block that row from ever reaching a second subscription — and an untagged row billed to your default is not always going to the same place.
+
+## What gets captured
+
+From `system.ai_gateway.usage`:
+
+| Canonical field | Source column |
+|---|---|
+| `input`     | `input_tokens` |
+| `output`    | `output_tokens` |
+| `cache_read`  | `token_details.cache_read_input_tokens` |
+| `cache_write` | `token_details.cache_creation_input_tokens` |
+| `reasoning`   | `token_details.output_reasoning_tokens` |
+| `model`, `provider` | derived from `destination_type` and `destination_name` / `destination_model` |
+
+Events are tagged `api: "databricks_gateway"`. `total_tokens` is deliberately not mapped — it is derived, and mapping it would double-count. `request_id`, `invocation_id`, `endpoint_name`, `endpoint_id`, `destination_type`, `destination_name`, `api_type` and `status_code` land in `extras`.
+
+Each event also carries the Databricks-side grouping key for its row — `endpoint_name` for hosted, `bucket` for BYOK — so grouping Lago the same way the Databricks usage page groups puts the two side by side for reconciliation.
+
+## Known limits
+
+**Hosted models are always billed as token counts, never priced.** `provider="databricks"` is deliberately unmatchable against the price sources: Databricks bills these in DBUs against a rate card published only as HTML, and the open-weight models it hosts are listed elsewhere at a fraction of what Databricks charges. The SDK notes this once per model at info level rather than reporting an error on every call.
+
+**`input_tokens` in this table includes cache reads and writes** — the inverse of a provider response body. One measured row reported `input=1825, cache_read=1812` where the response body for the same call said `input_tokens: 13`. The SDK never prices these tokens, so there is no over-bill from the SDK itself, but a plan that charges `llm_input_tokens` *and* `llm_cached_input_tokens` will double-count. Bill the input total alone for Databricks-hosted rows.
+
+**Live and backfill report different numbers for the same call** — 13 versus 1,825 in the example above. That is another reason not to run both over the same traffic.
+
+**The token needs the `sql` scope** for the backfill. The live path needs neither that nor a warehouse.
+
+**A SQL warehouse costs roughly 1,500× the model-serving usage it reports on.** Read one wide window per run. Never poll in a loop.
+
+**Failed calls record NULL token counts**, extract to all zeros, and emit nothing — the same way a gateway cache hit does.
+
+**Model names arrive in three forms.** Databricks reports the same hosted model as `system.ai.llama-4-maverick`, `llama-4-maverick`, and `Llama 4 Maverick` depending on the column. The adapter normalizes to the bare id, stripping the `databricks-` serving-endpoint prefix only when `destination_model` confirms it is an artefact — because `databricks-dbrx-instruct` and `databricks-dolly-v2` are genuine model names.
+
+**Gemini through this gateway is out of scope** while that connection returns an unhandled `500`.
+
+<Note>
+  `gpt-oss` models inflate input by roughly 100 tokens from a server-injected preamble — a two-character prompt bills 102 input tokens. That is Databricks' count, and it is what you are charged, so the SDK reports it faithfully.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Billing" icon="dollar-sign" href="/guide/ai-agents/agent-sdk/billing">
+    Why hosted models bill in tokens and BYOK bills in dollars.
+  </Card>
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
+    Every config knob, plus `emit()` and its idempotency arguments.
+  </Card>
+</CardGroup>

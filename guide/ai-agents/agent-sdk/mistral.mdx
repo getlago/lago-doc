@@ -135,9 +135,15 @@ Not exposed by Mistral: `cache_write` and its TTL splits, `reasoning` (folded in
   `cache_read` only appears on a cache hit. The correct source field is `usage.prompt_tokens_details.cached_tokens`. Mistral has no `prompt_cache_hit_tokens` field, contrary to what some third-party integrations assume.
 </Note>
 
-<Warning>
-  `cache_read` is part of `prompt_tokens`, not additive to it. Bill `llm_input_tokens` as the total and use `llm_cached_input_tokens` for a discounted rate tier.
-</Warning>
+`cache_read` is part of `prompt_tokens`, not additive to it — Mistral's own documented example reports `prompt_tokens: 1013` with `cached_tokens: 1008`, and `total_tokens` equal to prompt plus completion. Bill `llm_input_tokens` as the total and use `llm_cached_input_tokens` for a discounted rate tier; [Bill in tokens](/guide/ai-agents/agent-sdk/billing#subsets-and-additive-fields) shows the setup.
+
+## What is and isn't instrumented
+
+`wrap()` patches four methods on `client.chat`: `complete`, `stream`, `complete_async`, and `stream_async`.
+
+**Structured outputs are covered.** `chat.parse` calls `complete` internally, so it routes through the instrumented method and bills normally — as do `parse_async`, `parse_stream`, and `parse_stream_async`.
+
+Other billable surfaces on the client are unmetered: `fim` (fill-in-the-middle), `embeddings`, `ocr`, `agents`, `classifiers`, `audio`, `batch`, and `beta`. If you use those, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
 
 ## Mistral models through Bedrock
 
@@ -150,7 +156,7 @@ In price mode, native Mistral clients are priced from **OpenRouter's public mode
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/overview#configuration-reference">
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
     Every config knob, in both SDKs.
   </Card>
   <Card title="Per-token pricing template" icon="table" href="/templates/per-token/mistral">

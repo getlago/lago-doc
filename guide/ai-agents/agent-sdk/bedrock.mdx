@@ -113,14 +113,10 @@ The SDK consumes the body once, parses the JSON, extracts usage, then re-wraps t
 | `openai_compat_basic` | Gemma, Qwen, gpt-oss-120b/20b, Voxtral, MiniMax M2.5, Magistral, Devstral, Ministral, NVIDIA Nemotron Nano, GLM |
 | `openai_compat_with_details` | gpt-oss Safeguard 120B/20B, MiniMax M2, MiniMax M2.1 |
 | `anthropic` | Claude Sonnet 4.5/4.6, Haiku 4.5, Opus 4.5/4.6 |
-| `anthropic_opus_4_7` | Claude Opus 4.7 (adds `service_tier`, captured into `extras`) |
+| `opus_4_7` | Claude Opus 4.7 (adds `service_tier`, captured into `extras`) |
 | `nova` | Amazon Nova Pro / Lite / Micro / 2-Lite |
 | `pixtral` | Mistral Pixtral Large |
 | `mistral_legacy` | Mistral 7B, Mixtral 8x7B, Mistral Large 24.02 |
-
-<Warning>
-  **Legacy Mistral models on Bedrock report no usage at all.** Mistral 7B, Mixtral 8x7B, and Mistral Large 24.02 return no token counts through `InvokeModel`. The SDK logs a warning and emits nothing, because there is nothing to bill on. Use `Converse` with those models, or a current model, if you need to meter them.
-</Warning>
 
 `Converse` is simpler: three shape families, all handled by one adapter. Standard (`inputTokens` / `outputTokens`, 33 models), cache-read-only (Claude Opus 4.7), and full-cache (Claude Sonnet 4.5/4.6, Haiku 4.5, Opus 4.5/4.6).
 
@@ -195,7 +191,9 @@ Bedrock's request shape is validated strictly by AWS, so the override rides on t
 | `cache_write_5m` | ✗ | ✓ (Anthropic families) |
 | `cache_write_1h` | ✗ | ✓ (Anthropic families) |
 | `reasoning`      | folded into `output` | folded into `output` |
-| `tool_calls`     | ✓ | ✓ |
+| `tool_calls`     | server-side tools only (`usage.serverToolUsage`) | ✓ (Anthropic families) |
+
+On `Converse`, `tool_calls` counts only Bedrock's own server-side tool invocations, which is the one number the API reports. Client-side tool calls you execute yourself are not counted — meter those on your own side if you bill on them.
 
 The `provider` property on each event is derived from `modelId`, so a single Bedrock client produces events tagged `anthropic`, `amazon`, `meta`, `mistral`, `cohere`, `openai`, `qwen`, `google`, `minimax`, `nvidia`, or `zai`. That makes `provider` a useful charge filter when you resell several model families through one Bedrock account.
 
@@ -211,14 +209,18 @@ In price mode, Bedrock is priced from the **AWS Bedrock Price List Bulk API**, p
   **Set your default region.** If your model ids carry no region prefix and you leave `bedrock_default_region` at `us-east-1` while calling `eu-west-1`, you will price against the wrong region's rates.
 </Warning>
 
-<Warning>
-  **AWS's public bulk data has a gap.** It lists Titan, Llama, Mistral, Cohere, and older Claude models, but at time of writing not the current Claude 3.5/3.7/4 models. Bedrock calls for models absent from AWS's data fall back to token-count events and fire `on_error` with a `PricingUnavailableError`. Native Anthropic clients are priced through OpenRouter and unaffected.
-</Warning>
+## Known limits
+
+**AWS's public bulk price data has a gap.** It lists Titan, Llama, Mistral, Cohere, and older Claude models, but at time of writing not the current Claude 3.5/3.7/4 models. Bedrock calls for models absent from AWS's data fall back to token-count events and fire `on_error` with a `PricingUnavailableError`. Native Anthropic clients are priced through OpenRouter and unaffected.
+
+**Legacy Mistral models report no usage at all through `InvokeModel`.** Mistral 7B, Mixtral 8x7B, and Mistral Large 24.02 return no token counts, so the SDK logs a warning and emits nothing — there is nothing to bill on. Use `Converse` with those models, or a current model, if you need to meter them.
+
+**Only `Converse` and `InvokeModel` are instrumented**, in both their streaming and non-streaming forms. Two other billable Bedrock Runtime operations pass through unmetered: `start_async_invoke` (asynchronous inference) and `apply_guardrail`. If you use either, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/overview#configuration-reference">
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
     Every config knob, in both SDKs.
   </Card>
   <Card title="Charges with filters" icon="filter" href="/guide/plans/charges/charges-with-filters">

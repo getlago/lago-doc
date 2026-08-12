@@ -1,0 +1,203 @@
+---
+title: "Billing"
+description: "Bill LLM usage in tokens or in dollars. Which mode to pick, the metric codes to register, and the plan setup that prices each token type correctly."
+---
+
+The SDK bills two ways. In **token mode**, the default, it sends token counts and your Lago plan turns them into money. In **price mode**, it looks up the per-token price of the model, multiplies by the tokens used, applies your markup, and sends the dollar cost.
+
+Both modes ship the same normalized usage. The difference is only where the arithmetic happens.
+
+## Which mode do you want
+
+| Pick **token mode** when | Pick **price mode** when |
+|---|---|
+| You bill in your own units — credits, requests, seats — and tokens are just the input | You resell LLM access at a margin and want the dollar cost to follow the rate card automatically |
+| You want billing to be independent of any third-party price source | You want your revenue to track your provider invoice without maintaining a price table |
+| Your workload is audio-heavy or very long-context (see [Known limits](#known-limits)) | Your workload is text, and the models you use are in the price sources |
+| You use Bedrock Claude or Databricks, where price data is missing or deliberately unmatched | You want the cost broken down by token type on the invoice |
+
+You can also mix: set one mode globally and override per call with `extra_lago={"mode": "price"}` in Python or `lago: { mode: "price" }` in TypeScript.
+
+<CodeGroup>
+  ```python Python
+  from lago_agent_sdk import LagoConfig, LagoSDK
+
+  sdk = LagoSDK(
+      api_key="<YOUR_LAGO_API_KEY>",
+      default_subscription_id="sub_acme",
+      config=LagoConfig(
+          api_key="<YOUR_LAGO_API_KEY>",
+          pricing_mode="price",   # "tokens" (default) | "price"
+          markup=1.2,             # optional. 1.2 = +20%
+      ),
+  )
+  ```
+
+  ```typescript TypeScript
+  import { LagoSDK } from "lago-agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    defaultSubscriptionId: "sub_acme",
+    config: {
+      pricingMode: "price", // "tokens" (default) | "price"
+      markup: 1.2,          // optional. 1.2 = +20%
+    },
+  });
+  ```
+</CodeGroup>
+
+## Token mode
+
+The SDK emits **one event per non-zero field**. A field with no metric code is not emitted at all, so trimming `metric_codes` down to what you actually bill on is a legitimate way to cut event volume.
+
+| Canonical field  | Default metric code         | What it counts |
+|------------------|-----------------------------|----------------|
+| `input`          | `llm_input_tokens`          | Total prompt tokens |
+| `output`         | `llm_output_tokens`         | Total completion tokens |
+| `cache_read`     | `llm_cached_input_tokens`   | Prompt tokens served from cache |
+| `cache_write`    | `llm_cache_creation_tokens` | Prompt tokens written to cache |
+| `cache_write_5m` | `llm_cache_write_5m_tokens` | Cache writes at the 5-minute TTL (Anthropic) |
+| `cache_write_1h` | `llm_cache_write_1h_tokens` | Cache writes at the 1-hour TTL (Anthropic) |
+| `reasoning`      | `llm_reasoning_tokens`      | Thinking tokens (OpenAI o-series, Gemini 2.5) |
+| `tool_calls`     | `llm_tool_calls`            | Tool invocations in the response |
+| `image_input`    | `llm_image_input_tokens`    | Image tokens in the prompt (Gemini) |
+| `audio_input`    | `llm_audio_input_tokens`    | Audio tokens in the prompt (OpenAI, Gemini) |
+| `audio_output`   | `llm_audio_output_tokens`   | Audio tokens in the response (OpenAI, Gemini) |
+
+Register each one you plan to bill on as a `sum_agg` billable metric on `field_name: "value"`. Every event also carries `model`, `provider`, and `api` in its properties, so you can build filter-based charges without passing anything extra.
+
+## Subsets and additive fields
+
+This is the one thing to get right, and it is the source of most mis-billing.
+
+**Some fields are breakdowns *inside* another field. Some are additions to it.** Summing a subset into its parent double-counts; forgetting to add an additive field under-counts.
+
+| Field | Relationship | Providers |
+|---|---|---|
+| `cache_read` | **subset of `input`** | OpenAI, Gemini, Mistral, Workers AI |
+| `cache_read` | **additive to `input`** | Anthropic (native and Bedrock) |
+| `cache_write` | **additive to `input`** | Anthropic |
+| `audio_input`, `image_input` | **subset of `input`** | OpenAI, Gemini |
+| `audio_output` | **subset of `output`** | OpenAI, Gemini |
+| `reasoning` | **subset of `output`** | OpenAI |
+| `reasoning` | **additive to `output`** | Gemini |
+
+So `llm_input_tokens` is already your total prompt count on OpenAI and Gemini, but on Anthropic your true total is `llm_input_tokens + llm_cached_input_tokens + llm_cache_creation_tokens`.
+
+### The setup that gets this right
+
+Rather than reasoning about it per provider, bill the parent fields at your standard rate and use the subset fields only to *discount*, with a `provider` filter to separate the two rules.
+
+For a mixed OpenAI / Anthropic / Gemini estate:
+
+| Charge | Metric | Filter | Why |
+|---|---|---|---|
+| Standard input | `llm_input_tokens` | none | The prompt total on every provider |
+| Cached input discount | `llm_cached_input_tokens` | `provider != anthropic` | Already inside `llm_input_tokens`, so charge a **negative** or reduced-rate adjustment, never an addition |
+| Anthropic cached input | `llm_cached_input_tokens` | `provider = anthropic` | Additive — charge it at Anthropic's cache-read rate |
+| Anthropic cache writes | `llm_cache_creation_tokens` | `provider = anthropic` | Additive — charge at the premium cache-creation rate |
+| Standard output | `llm_output_tokens` | none | Completion total on every provider |
+| Gemini reasoning | `llm_reasoning_tokens` | `provider = gemini` | Additive on Gemini only. Do **not** add it on OpenAI |
+
+See [Charges with filters](/guide/plans/charges/charges-with-filters) for the filter syntax.
+
+<Warning>
+  The two mistakes that cost real money: billing `llm_input_tokens + llm_cached_input_tokens` on OpenAI or Gemini (double-counts the cached portion), and billing `llm_output_tokens` alone on Gemini (misses the thinking tokens you are already paying Google for).
+</Warning>
+
+<Tip>
+  Price mode resolves all of this for you — it applies the correct per-field prices itself, so none of the above has to be encoded in your plan.
+</Tip>
+
+## Price mode
+
+### Where prices come from
+
+- **OpenRouter's public model list** for native OpenAI, Anthropic, Mistral, and Gemini clients. No credentials.
+- **The AWS Bedrock Price List Bulk API** for Bedrock, parsed per region. No credentials.
+- **Cloudflare's own model catalog** for Workers AI. This is the one source that needs credentials — see [Cloudflare AI Gateway](/guide/ai-agents/agent-sdk/cloudflare#workers-ai-is-priced-from-cloudflares-own-catalog).
+
+Tables refresh in the background on the queue thread, so your LLM call is never slowed down waiting on a price.
+
+Prices are keyed off **the model that answered, not the one you asked for**. Providers resolve short aliases to dated snapshots server-side (`claude-sonnet-4-5` becomes `claude-sonnet-4-5-20250929`, Mistral's `-latest` and Gemini's aliases hot-swap the same way), and OpenRouter lists the snapshot. The adapters read the model off the response and fall back to the requested id only when the response is silent about it.
+
+### What it emits
+
+**One `llm_cost` event per priced token type**, each carrying `precise_total_amount_cents` at the top level plus `token_type`, `unit` (tokens of that type), `value` (cost after markup), `base_cost` (before markup), `unit_price`, `markup`, `price_source`, `model`, `provider`, and `api` in `properties`.
+
+The exception is a cost the SDK did not compute. When a gateway reports its own metered cost per call and you pass it through, there is no per-field split to report, so that path emits a **single** event with no `token_type`.
+
+<Note>
+  **Lago setup for price mode.** Register a `sum` billable metric `llm_cost` on `field_name: "unit"` and attach a **dynamic** charge to it. Lago sums each event's `precise_total_amount_cents` into a single fee, and `unit` is the displayed usage quantity.
+
+  Group the charge by `["model", "token_type"]` so one metric breaks the cost down by both dimensions.
+</Note>
+
+### Markup
+
+Set `markup` to resell at a profit — `1.2` means the customer pays your cost plus 20%. It applies per priced field, and both the pre-markup `base_cost` and post-markup `value` land on every event so the margin stays auditable. Override it for one call with `extra_lago={"markup": 1.5}`.
+
+## Known limits
+
+**Price mode prices five fields: `input`, `output`, `cache_read`, `cache_write`, and `reasoning`.** Tool calls and the 5-minute / 1-hour cache-write splits carry no unit price, so they produce no cost event — meter those in token mode if you bill on them.
+
+**Audio and image tokens are priced at the text rate.** They sit inside `input`/`output`, so they are billed, but at the model's text price rather than its modality price. Providers often charge considerably more for audio. If your workload is audio-heavy, bill it in token mode using `llm_audio_input_tokens` and `llm_audio_output_tokens` and set your own rate.
+
+**Long-context and service-tier rates are not modelled.** Some providers raise the per-token rate above a context threshold, and discount batch or flex tiers. The SDK prices everything at the model's base rate.
+
+**A price miss never drops usage.** If the table has not warmed up on the very first call, or the model is missing from the source, the SDK falls back to token-count events and reports a `PricingUnavailableError` through `on_error`. It never bills zero and never drops the call.
+
+<Warning>
+  If you have configured *only* the `llm_cost` metric and a price lookup misses, the fallback token events have nowhere to land and that usage goes unbilled. Register the token metrics alongside `llm_cost` even when you bill in price mode.
+</Warning>
+
+**Databricks-hosted models are always billed as token counts**, even in price mode. Their provider name is deliberately unmatched against the price sources, because the open-weight models Databricks hosts are listed elsewhere at a fraction of what Databricks charges. The SDK logs this once per model at info level rather than reporting an error. See [Databricks](/guide/ai-agents/agent-sdk/databricks).
+
+**AWS's public bulk price data omits the current Claude models.** It lists Titan, Llama, Mistral, Cohere and older Claude, but at time of writing not Claude 3.5/3.7/4. Bedrock calls for those fall back to token events. Native Anthropic clients are priced through OpenRouter and unaffected.
+
+## Custom metric codes
+
+If your Lago tenant already uses different codes, override them at init:
+
+<CodeGroup>
+  ```python Python
+  from lago_agent_sdk import LagoConfig, LagoSDK
+
+  sdk = LagoSDK(
+      api_key="<YOUR_LAGO_API_KEY>",
+      config=LagoConfig(
+          api_key="<YOUR_LAGO_API_KEY>",
+          metric_codes={
+              "input": "ai_input_tokens",
+              "output": "ai_output_tokens",
+          },
+      ),
+  )
+  ```
+
+  ```typescript TypeScript
+  import { LagoSDK } from "lago-agent-sdk";
+
+  new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    config: {
+      metricCodes: {
+        input: "ai_input_tokens",
+        output: "ai_output_tokens",
+      },
+    },
+  });
+  ```
+</CodeGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
+    Every config knob, error type, and the `emit()` escape hatch.
+  </Card>
+  <Card title="Charges with filters" icon="filter" href="/guide/plans/charges/charges-with-filters">
+    Price cache reads and cache writes at different rates.
+  </Card>
+</CardGroup>

@@ -177,15 +177,19 @@ The wrapper strips `extra_lago` / `lago` before forwarding, so Anthropic's stric
   **Reasoning tokens are not exposed.** Anthropic folds extended-thinking tokens into `output_tokens`. Billing on `llm_output_tokens` already captures thinking. `llm_reasoning_tokens` stays at zero and no event is emitted for it.
 </Note>
 
+<Warning>
+  **Anthropic's cache tokens are additive, not a subset.** `input_tokens` counts only the tokens that were *not* served from cache or written to it. Your true prompt total is `llm_input_tokens + llm_cached_input_tokens + llm_cache_creation_tokens`.
+
+  A real cached response makes this unmistakable: `input_tokens: 13` alongside `cache_read_input_tokens: 2803`. Billing `llm_input_tokens` alone would charge that call for 13 tokens instead of 2,816.
+
+  This is the opposite of OpenAI, Gemini and Mistral, where the cached tokens are already inside the prompt count. See [Bill in tokens](/guide/ai-agents/agent-sdk/billing#subsets-and-additive-fields) for a setup that keeps the two rules apart.
+</Warning>
+
 <Tip>
-  **Cache writes are the interesting part.** Anthropic prices cache creation above normal input and cache reads well below it, and the SDK gives you all three counts separately. That lets you mirror Anthropic's own rate structure in your plan: charge `llm_cache_creation_tokens` at a premium, `llm_cached_input_tokens` at a discount, and `llm_input_tokens` at the standard rate, minus the cache portion.
+  **Cache writes are the interesting part.** Anthropic prices cache creation above normal input and cache reads well below it, and the SDK gives you all three counts separately. That lets you mirror Anthropic's own rate structure directly: charge `llm_cache_creation_tokens` at a premium, `llm_cached_input_tokens` at a discount, and `llm_input_tokens` at the standard rate — each on its own count, no subtraction needed.
 
   The 5-minute and 1-hour TTL splits are reported separately because Anthropic prices them differently.
 </Tip>
-
-<Warning>
-  `cache_read` is part of `input_tokens`, not additive to it. Summing `llm_input_tokens + llm_cached_input_tokens` double-counts. Bill `llm_input_tokens` as the total and use the cache fields for rate differentiation.
-</Warning>
 
 Unrecognized usage fields (`service_tier`, `inference_geo`, `server_tool_use`) land in `CanonicalUsage.extras` so provider drift is visible instead of silently dropped.
 
@@ -197,10 +201,29 @@ In price mode, native Anthropic clients are priced from **OpenRouter's public mo
   Claude models accessed **through Bedrock** are priced from AWS's bulk price list instead, which currently omits the newest Claude models. If you need dollar-cost billing for Claude and you are on Bedrock, see the [Bedrock page](/guide/ai-agents/agent-sdk/bedrock#pricing).
 </Note>
 
+## What is and isn't instrumented
+
+`wrap()` patches exactly two methods — `messages.create` and `messages.stream` — on both the sync `Anthropic` and async `AsyncAnthropic` clients.
+
+Everything else on the client passes through unmetered, and each of these is billable:
+
+| Surface | Why it is missed |
+|---|---|
+| `messages.parse` | Issues its own request rather than calling `create`, so the patch never sees it |
+| `messages.batches.create` | A separate resource, not patched |
+| `client.beta.messages.create` | `beta.messages` is a distinct object from `client.messages` |
+| `client.completions.create` | The legacy Text Completions API |
+
+<Warning>
+  `messages.parse` is the easy one to miss. It looks like a `create` variant and returns the same usage, but it is not instrumented — a workload built on structured outputs would bill nothing.
+</Warning>
+
+If you use any of these, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
+
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/overview#configuration-reference">
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
     Every config knob, in both SDKs.
   </Card>
   <Card title="Charges with filters" icon="filter" href="/guide/plans/charges/charges-with-filters">
