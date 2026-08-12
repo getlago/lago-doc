@@ -1,0 +1,221 @@
+---
+title: "OpenAI"
+description: "Bill OpenAI token usage with the Lago Agent SDK. Chat Completions and the Responses API, sync, async, and streaming."
+---
+
+The SDK wraps an `OpenAI` or `AsyncOpenAI` client in place and instruments both API surfaces:
+
+- `client.chat.completions.create(...)`
+- `client.responses.create(...)`
+
+Sync, async, and streaming are covered on both. Your call signature, return type, and exceptions are unchanged.
+
+## Install
+
+<CodeGroup>
+  ```bash pip
+  pip install 'lago-agent-sdk[openai]'
+  ```
+
+  ```bash npm
+  npm install lago-agent-sdk openai
+  ```
+</CodeGroup>
+
+## Wrap and call
+
+<CodeGroup>
+  ```python Python
+  from openai import OpenAI
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(
+      api_key="<YOUR_LAGO_API_KEY>",
+      default_subscription_id="sub_acme",
+  )
+  client = sdk.wrap(OpenAI(api_key="<YOUR_OPENAI_API_KEY>"))
+
+  resp = client.chat.completions.create(
+      model="gpt-4o-mini",
+      messages=[{"role": "user", "content": "Hello"}],
+      max_completion_tokens=200,
+  )
+  sdk.flush()
+  ```
+
+  ```typescript TypeScript
+  import OpenAI from "openai";
+  import { LagoSDK } from "lago-agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    defaultSubscriptionId: "sub_acme",
+  });
+  const client = sdk.wrap(new OpenAI({ apiKey: process.env.OPENAI_API_KEY! }));
+
+  await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: "Hello" }],
+    max_completion_tokens: 200,
+  });
+  await sdk.flush();
+  ```
+</CodeGroup>
+
+## Responses API
+
+Same client, same wrap. The SDK detects the API shape from the usage payload and tags the event with `api: "responses"` instead of `api: "chat_completions"`.
+
+<CodeGroup>
+  ```python Python
+  resp = client.responses.create(
+      model="gpt-4o-mini",
+      input="Summarize this invoice",
+  )
+  ```
+
+  ```typescript TypeScript
+  await client.responses.create({
+    model: "gpt-4o-mini",
+    input: "Summarize this invoice",
+  });
+  ```
+</CodeGroup>
+
+## Streaming
+
+<Note>
+  **Streamed usage is handled for you.** Chat Completions only reports usage on a streamed response when `stream_options.include_usage` is set, so the SDK injects `stream_options={"include_usage": True}` whenever `stream=True` is passed and you have not set the flag yourself. If you set it explicitly, your choice wins. The Responses API rejects that option, so the SDK skips the injection there and reads usage from the terminal `response.completed` event instead.
+</Note>
+
+<CodeGroup>
+  ```python Python
+  stream = client.chat.completions.create(
+      model="gpt-4o-mini",
+      messages=[{"role": "user", "content": "Hello"}],
+      stream=True,
+  )
+  for chunk in stream:
+      ...
+  # usage is emitted when the iterator is exhausted
+  ```
+
+  ```typescript TypeScript
+  const stream = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: "Hello" }],
+    stream: true,
+  });
+  for await (const chunk of stream) {
+    // ...
+  }
+  // usage is emitted when the iterator is exhausted
+  ```
+</CodeGroup>
+
+<Note>
+  Events are emitted from the iterator's `finally` block, so a partially consumed or abandoned stream still bills what OpenAI reported. If the stream never reaches its final chunk, there is no usage payload to bill and nothing is emitted.
+</Note>
+
+## Async
+
+Wrap `AsyncOpenAI` the same way. The SDK detects the async client and installs async wrappers on both surfaces.
+
+```python Python
+from openai import AsyncOpenAI
+
+client = sdk.wrap(AsyncOpenAI(api_key="..."))
+resp = await client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+In TypeScript the single `OpenAI` client is already promise-based. The SDK preserves OpenAI's `APIPromise` interface (including `.withResponse()` and `.asResponse()`) by proxying the returned promise rather than replacing it.
+
+## Per-call override
+
+<CodeGroup>
+  ```python Python
+  client.chat.completions.create(
+      model="gpt-4o-mini",
+      messages=[{"role": "user", "content": "Hello"}],
+      extra_lago={
+          "subscription": "sub_acme",
+          "dimensions": {"feature": "summarize"},
+          "mode": "price",     # optional, overrides pricing_mode
+          "markup": 1.5,       # optional, overrides markup
+      },
+  )
+  ```
+
+  ```typescript TypeScript
+  await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: "Hello" }],
+    lago: {
+      subscription: "sub_acme",
+      dimensions: { feature: "summarize" },
+      mode: "price",   // optional
+      markup: 1.5,     // optional
+    },
+  } as any);
+  ```
+</CodeGroup>
+
+The wrapper strips `extra_lago` / `lago` before forwarding, so OpenAI's strict request validation never sees it.
+
+## What gets captured
+
+| Canonical field | Chat Completions source | Responses API source |
+|-----------------|-------------------------|----------------------|
+| `input`         | `usage.prompt_tokens` | `usage.input_tokens` |
+| `output`        | `usage.completion_tokens` | `usage.output_tokens` |
+| `cache_read`    | `prompt_tokens_details.cached_tokens` | `input_tokens_details.cached_tokens` |
+| `reasoning`     | `completion_tokens_details.reasoning_tokens` | `output_tokens_details.reasoning_tokens` |
+| `audio_input`   | `prompt_tokens_details.audio_tokens` | `input_tokens_details.audio_tokens` |
+| `audio_output`  | `completion_tokens_details.audio_tokens` | not exposed |
+| `tool_calls`    | count of `choices[0].message.tool_calls` | count of `output[]` items with `type == "function_call"` |
+
+Not exposed by either API: `cache_write`, `cache_write_5m`, `cache_write_1h`. OpenAI auto-caches without surfacing creation counts, so you only ever see cache reads. `image_input` is not surfaced separately either.
+
+On OpenAI everything is a subset: `reasoning` sits inside `completion_tokens`, and `cache_read` and `audio_input` sit inside `prompt_tokens`. Bill `llm_input_tokens` and `llm_output_tokens` as the totals — [Bill in tokens](/guide/ai-agents/agent-sdk/billing#subsets-and-additive-fields) shows the metric setup that handles this across providers.
+
+<Note>
+  **Reasoning tokens** populate automatically on o-series models (`o1`, `o4-mini`, and friends). OpenAI was the first provider to expose the metric separately.
+</Note>
+
+<Note>
+  **Predicted Outputs are not billed separately.** `accepted_prediction_tokens` is a subset of `completion_tokens` and is skipped to avoid double-counting. `rejected_prediction_tokens` is extra cost beyond `completion_tokens` and is not surfaced as a canonical field. Unrecognized usage fields land in `CanonicalUsage.extras` for drift detection.
+</Note>
+
+## Pricing
+
+In price mode, OpenAI models are priced from **OpenRouter's public model list**, per token, refreshed hourly on the background thread. No API key needed. See [Billing](/guide/ai-agents/agent-sdk/billing) for setup.
+
+## What is and isn't instrumented
+
+`wrap()` patches exactly two methods — `chat.completions.create` and `responses.create` — on both the sync `OpenAI` and async `AsyncOpenAI` clients.
+
+**The `.stream()` helpers are covered.** `chat.completions.stream(...)` and `responses.stream(...)` pass `self.create` into their stream manager, which resolves to the patched method, so they bill normally.
+
+**`parse()` is not.** Both `chat.completions.parse` and `responses.parse` issue their own request instead of calling `create`, so the patch never sees them.
+
+<Warning>
+  `parse()` is the easy one to miss. It looks like a `create` variant and returns the same usage, but it is not instrumented — a workload built on structured outputs would bill nothing.
+</Warning>
+
+Other billable surfaces on the client are also unmetered: `embeddings`, `images`, `audio`, `batches`, `videos`, `realtime`, `conversations`, and `beta`. If you use any of them, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
+
+**Audio tokens are captured but not priced separately.** They are reported as `llm_audio_input_tokens` and `llm_audio_output_tokens`, and in price mode they are billed at the model's text rate. Providers often charge considerably more for audio — see [Known limits](/guide/ai-agents/agent-sdk/billing#known-limits).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
+    Every config knob, in both SDKs.
+  </Card>
+  <Card title="Per-token pricing template" icon="table" href="/templates/per-token/openai">
+    A complete plan built on OpenAI token metrics.
+  </Card>
+</CardGroup>

@@ -1,0 +1,349 @@
+---
+title: "Overview"
+description: "Bill LLM token usage directly from your application. Wrap your provider client, ship events to Lago, no middleware to maintain."
+---
+
+Pricing AI features requires per-token billing. Historically that meant building middleware to extract usage from every provider, normalize it across response shapes, batch events to a billing system, and survive outages. That work isn't your product.
+
+The **Lago Agent SDK** removes that layer. You wrap your existing LLM client and keep calling it the same way: same arguments, same return shape, same exceptions. The SDK extracts normalized token usage from each response and streams events to Lago in the background.
+
+It can also price calls for you. The SDK fetches live per-token prices, turns the priced token types on each call into a dollar cost, and lets you add a margin on top. Your LLM costs land in one place, and you decide what to resell them for.
+
+Available in two flavors, both open source and versioned together:
+
+- **Python**: [`lago-agent-sdk`](https://github.com/getlago/lago-agent-sdk-python) on PyPI. Python 3.10+.
+- **JavaScript / TypeScript**: [`lago-agent-sdk`](https://github.com/getlago/lago-agent-sdk-js) on npm. Authored in TypeScript, ships compiled JS with `.d.ts`.
+
+## Pick your provider
+
+Each integration page carries the install command, the wrap call, streaming and async coverage, the per-call override syntax, and the exact fields captured for that provider.
+
+<CardGroup cols={2}>
+  <Card
+    title="OpenAI"
+    icon={
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#000000" />
+        <g transform="translate(8 8)">
+          <path
+            d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6115-1.4997Z"
+            fill="white"
+            transform="scale(0.6667)"
+          />
+        </g>
+      </svg>
+    }
+    href="/guide/ai-agents/agent-sdk/openai"
+  >
+    Chat Completions and the Responses API. Reasoning tokens on o-series models.
+  </Card>
+
+  <Card
+    title="Anthropic"
+    icon={
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#D97757" />
+        <g transform="translate(8 8)">
+          <path
+            d="M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5527h3.7442L10.5363 3.541Zm-.3712 10.2814 2.2914-5.9456 2.2914 5.9456Z"
+            fill="white"
+            transform="scale(0.6667)"
+          />
+        </g>
+      </svg>
+    }
+    href="/guide/ai-agents/agent-sdk/anthropic"
+  >
+    `messages.create` and the streaming helper. Full prompt-caching breakdown.
+  </Card>
+
+  <Card
+    title="AWS Bedrock"
+    icon={
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#01A88D" />
+        <path d="M16 8 24 12.5 16 17 8 12.5 16 8Z" fill="white" />
+        <path d="M8 14.2 16 18.7v6.6L8 20.8v-6.6Z" fill="white" fillOpacity="0.75" />
+        <path d="M24 14.2 16 18.7v6.6l8-4.5v-6.6Z" fill="white" fillOpacity="0.45" />
+      </svg>
+    }
+    href="/guide/ai-agents/agent-sdk/bedrock"
+  >
+    Converse and InvokeModel, streaming included. Seven InvokeModel shape families.
+  </Card>
+
+  <Card
+    title="Google Gemini"
+    icon={
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#1A1C2B" />
+        <path
+          d="M16 25.5a11.32 11.32 0 0 0-9.5-9.5 11.32 11.32 0 0 0 9.5-9.5 11.32 11.32 0 0 0 9.5 9.5 11.32 11.32 0 0 0-9.5 9.5Z"
+          fill="url(#gemini_grad)"
+        />
+        <defs>
+          <linearGradient id="gemini_grad" x1="6.5" y1="6.5" x2="25.5" y2="25.5" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#4285F4" />
+            <stop offset="0.5" stopColor="#9B72CB" />
+            <stop offset="1" stopColor="#D96570" />
+          </linearGradient>
+        </defs>
+      </svg>
+    }
+    href="/guide/ai-agents/agent-sdk/gemini"
+  >
+    `google-genai` unified SDK. Reasoning tokens on Gemini 2.5, plus audio and image.
+  </Card>
+
+  <Card
+    title="Mistral"
+    icon={
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#141414" />
+        <rect x="7" y="8" width="18" height="3" fill="#FFD800" />
+        <rect x="7" y="11.5" width="18" height="3" fill="#FFAF00" />
+        <rect x="7" y="15" width="18" height="3" fill="#FF8205" />
+        <rect x="7" y="18.5" width="18" height="3" fill="#FA500F" />
+        <rect x="7" y="22" width="18" height="3" fill="#E10500" />
+      </svg>
+    }
+    href="/guide/ai-agents/agent-sdk/mistral"
+  >
+    `chat.complete` and `chat.stream`, with cache-read tokens when the cache hits.
+  </Card>
+
+  <Card
+    title="Cloudflare AI Gateway"
+    icon={
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#F6821F" />
+        <g fill="white">
+          <circle cx="13" cy="15.8" r="4.1" />
+          <circle cx="18.6" cy="14.2" r="5.4" />
+          <circle cx="22.9" cy="17.6" r="3.4" />
+          <rect x="8.9" y="17" width="14.2" height="4.1" rx="2.05" />
+        </g>
+      </svg>
+    }
+    href="/guide/ai-agents/agent-sdk/cloudflare"
+  >
+    Any provider behind your gateway. Cache hits skipped, Workers AI priced, logs backfilled.
+  </Card>
+
+  <Card
+    title="Databricks AI Gateway"
+    icon={
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#FF3621" />
+        <g fill="white">
+          <path d="M16 7.5 25 12v2.1L16 18.6 7 14.1V12l9-4.5Z" />
+          <path d="M25 16.4v2.1L16 23 7 18.5v-2.1l9 4.5 9-4.5Z" fillOpacity="0.6" />
+        </g>
+      </svg>
+    }
+    href="/guide/ai-agents/agent-sdk/databricks"
+  >
+    Hosted models and BYOK traffic. Live instrumentation, or backfill from Databricks' own system tables.
+  </Card>
+</CardGroup>
+
+<Note>
+  Something missing? The wrapper layer is one file per provider in both repos. Open an issue or a PR on [Python](https://github.com/getlago/lago-agent-sdk-python) or [JavaScript](https://github.com/getlago/lago-agent-sdk-js).
+</Note>
+
+## How it works
+
+```text
+                  ┌────────────────┐
+your code ──────▶ │ wrapped client │ ──────▶ provider (OpenAI / Bedrock / …)
+                  └────────┬───────┘
+                           │ (extract usage)
+                           ▼
+                  ┌────────────────┐
+                  │  Lago events   │ ──────▶ api.getlago.com
+                  └────────────────┘
+```
+
+- Wraps your existing LLM client in place. Your application code does not change.
+- Extracts usage from each response into a normalized shape (`CanonicalUsage`, 11 numeric fields).
+- Buffers events in memory and flushes them in batches to Lago's `/events/batch` endpoint.
+- Survives provider and Lago outages with exponential backoff and a bounded buffer.
+- Never blocks your LLM call on Lago. Recording usage costs microseconds against a call that takes hundreds of milliseconds, and the request to Lago goes out on a background thread.
+- Never breaks your LLM call. Instrumentation errors are caught, logged, and optionally forwarded to your observability stack.
+
+## Quickstart
+
+<Steps>
+  <Step title="Install the SDK">
+    Install the core package plus the provider SDK you already use. Python ships provider support as optional extras; in JavaScript you install the provider package yourself.
+
+    <CodeGroup>
+      ```bash pip
+      pip install lago-agent-sdk
+
+      # Add the provider you use:
+      pip install 'lago-agent-sdk[openai]'      # adds openai
+      pip install 'lago-agent-sdk[anthropic]'   # adds anthropic
+      pip install 'lago-agent-sdk[bedrock]'     # adds boto3
+      pip install 'lago-agent-sdk[gemini]'      # adds google-genai
+      pip install 'lago-agent-sdk[mistral]'     # adds mistralai
+
+      # Or several at once:
+      pip install 'lago-agent-sdk[openai,anthropic]'
+      ```
+
+      ```bash npm
+      npm install lago-agent-sdk
+
+      # Plus the provider SDK(s) you use:
+      npm install openai
+      npm install @anthropic-ai/sdk
+      npm install @aws-sdk/client-bedrock-runtime
+      npm install @google/genai
+      npm install @mistralai/mistralai
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Initialize and wrap your LLM client">
+    Pass your Lago API key and a default `external_subscription_id`, then wrap your provider client. The returned object is a drop-in replacement, and `wrap()` is idempotent: calling it twice on the same client is a no-op.
+
+    <CodeGroup>
+      ```python Python
+      from openai import OpenAI
+      from lago_agent_sdk import LagoSDK
+
+      sdk = LagoSDK(
+          api_key="<YOUR_LAGO_API_KEY>",
+          default_subscription_id="sub_acme",
+      )
+      client = sdk.wrap(OpenAI(api_key="<YOUR_OPENAI_API_KEY>"))
+      ```
+
+      ```typescript TypeScript
+      import OpenAI from "openai";
+      import { LagoSDK } from "lago-agent-sdk";
+
+      const sdk = new LagoSDK({
+        apiKey: process.env.LAGO_API_KEY!,
+        defaultSubscriptionId: "sub_acme",
+      });
+      const client = sdk.wrap(new OpenAI({ apiKey: process.env.OPENAI_API_KEY! }));
+      ```
+    </CodeGroup>
+
+    <Tip>
+      On the EU region or a self-hosted instance, set `api_url` / `apiUrl`. The default is `https://api.getlago.com/api/v1`.
+    </Tip>
+  </Step>
+
+  <Step title="Make LLM calls normally">
+    The wrapped client preserves the original signature, return shape, and exceptions. No call-site changes required.
+
+    <CodeGroup>
+      ```python Python
+      resp = client.chat.completions.create(
+          model="gpt-4o-mini",
+          messages=[{"role": "user", "content": "Hello"}],
+          max_completion_tokens=200,
+      )
+      ```
+
+      ```typescript TypeScript
+      await client.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: "Hello" }],
+        max_completion_tokens: 200,
+      });
+      ```
+    </CodeGroup>
+
+    <Tip>
+      Streaming works the same way. The SDK wraps the iterator, reads usage from the terminal chunk, and emits one set of events per completed response. See your provider's page for the exact streaming surface.
+    </Tip>
+  </Step>
+
+  <Step title="Flush events on shutdown">
+    Events flush automatically: every second, or as soon as 100 events are buffered. Call `flush()` explicitly at process exit (FastAPI shutdown hook, Express server close, AWS Lambda extension) so in-flight events are not lost.
+
+    <CodeGroup>
+      ```python Python
+      sdk.flush()          # returns True when the buffer drained
+      ```
+
+      ```typescript TypeScript
+      await sdk.flush();   // resolves to true when the buffer drained
+      ```
+    </CodeGroup>
+
+    <Note>
+      A clean interpreter exit already triggers a 2-second flush. Python registers an `atexit` hook, JavaScript a `beforeExit` handler. An explicit `flush()` is still the right call in a request-scoped or serverless runtime.
+    </Note>
+  </Step>
+
+  <Step title="Wire up on_error">
+    Instrumentation failures are silent by design — the SDK will never break your LLM call to tell you about one. That makes the error hook the only way to find out something is wrong, so set it on day one rather than later.
+
+    <CodeGroup>
+      ```python Python
+      from lago_agent_sdk import LagoConfig, LagoSDK
+
+      sdk = LagoSDK(
+          api_key="<YOUR_LAGO_API_KEY>",
+          default_subscription_id="sub_acme",
+          config=LagoConfig(
+              api_key="<YOUR_LAGO_API_KEY>",
+              on_error=lambda exc, where: logger.warning("lago %s: %s", where, exc),
+          ),
+      )
+      ```
+
+      ```typescript TypeScript
+      const sdk = new LagoSDK({
+        apiKey: process.env.LAGO_API_KEY!,
+        defaultSubscriptionId: "sub_acme",
+        config: {
+          onError: (err, where) => logger.warn({ where, err }, "lago"),
+        },
+      });
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Register billable metrics in Lago">
+    Before events count toward charges, register matching billable metrics in your Lago tenant. The SDK ships with default metric codes — [Billing](/guide/ai-agents/agent-sdk/billing) lists all eleven and shows the plan setup that prices them correctly.
+
+    Follow [Create a billable metric](/api-reference/billable-metrics/create) to create them, then attach charges in your plan. For a full worked example, see the [per-token pricing template](/templates/per-token/openai).
+  </Step>
+</Steps>
+
+## What the SDK does not cover
+
+`wrap()` instruments the chat and completion surfaces, not everything a provider client can do. Embeddings, image and video generation, audio endpoints, batch APIs, and — on OpenAI and Anthropic — the `parse()` structured-output helpers all pass through unmetered.
+
+Each provider page has a "what is and isn't instrumented" section with the exact list. For anything the wrappers miss, including providers with no wrapper at all, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
+
+## Where to go next
+
+<CardGroup cols={2}>
+  <Card title="Billing" icon="dollar-sign" href="/guide/ai-agents/agent-sdk/billing">
+    Token mode versus price mode, the metric codes to register, and the plan setup that prices each token type correctly.
+  </Card>
+  <Card title="Reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
+    Every configuration option, subscription routing, the error types, and how the SDK behaves under failure.
+  </Card>
+</CardGroup>
+
+## Verify the integration
+
+Make one call through the wrapped client and call `flush()`. In the Lago dashboard, open **Developers → Events** and confirm an event arrives with the expected metric `code` and `properties`, then check that the customer's usage counter moved.
+
+If nothing arrives, look at `on_error` first — instrumentation failures are silent by design. The usual causes are an unregistered metric code, no resolvable `external_subscription_id`, and an API key without write access.
+
+## Resources
+
+- Python SDK: [GitHub](https://github.com/getlago/lago-agent-sdk-python) · [PyPI](https://pypi.org/project/lago-agent-sdk/) · [CHANGELOG](https://github.com/getlago/lago-agent-sdk-python/blob/main/CHANGELOG.md)
+- JavaScript SDK: [GitHub](https://github.com/getlago/lago-agent-sdk-js) · [npm](https://www.npmjs.com/package/lago-agent-sdk) · [CHANGELOG](https://github.com/getlago/lago-agent-sdk-js/blob/main/CHANGELOG.md)
+- Per-token pricing example: [Template](/templates/per-token/openai)
+- Billable metric API: [Create a billable metric](/api-reference/billable-metrics/create)
+- Charges with filters: [Guide](/guide/plans/charges/charges-with-filters)

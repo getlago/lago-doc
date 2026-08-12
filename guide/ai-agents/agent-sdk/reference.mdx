@@ -1,0 +1,215 @@
+---
+title: "Reference"
+description: "Every configuration option, the error types, how the SDK behaves under failure, and how to bill a provider it does not wrap."
+---
+
+## Configuration
+
+Both SDKs expose the same surface with idiomatic naming. Python takes seconds, JavaScript takes milliseconds.
+
+| Python (`LagoConfig`)     | TypeScript (`LagoConfig`) | Default                          | Purpose |
+|---------------------------|---------------------------|----------------------------------|---------|
+| `api_key`                 | `apiKey`                  | *(required)*                     | Your Lago API key |
+| `api_url`                 | `apiUrl`                  | `https://api.getlago.com/api/v1` | Override for the EU region or a self-hosted instance |
+| `default_subscription_id` | `defaultSubscriptionId`   | `None` / `null`                  | Fallback `external_subscription_id` when none is set per call or per context |
+| `metric_codes`            | `metricCodes`             | `DEFAULT_METRIC_CODES`           | Map each canonical field to your billable metric `code` |
+| `pricing_mode`            | `pricingMode`             | `"tokens"`                       | `"tokens"` sends token counts, `"price"` sends the computed dollar cost |
+| `markup`                  | `markup`                  | `1.0`                            | Cost multiplier in price mode. `1.2` adds 20% |
+| `cost_metric_code`        | `costMetricCode`          | `llm_cost`                       | Metric `code` for cost events in price mode |
+| `pricing_ttl_seconds`     | `pricingTtlMs`            | `3600` / `3_600_000`             | How long a fetched price table stays fresh before a background refresh |
+| `bedrock_default_region`  | `bedrockDefaultRegion`    | `us-east-1`                      | Region for Bedrock prices when the model id carries no region prefix |
+| `cloudflare_account_id`   | `cloudflareAccountId`     | `None` / `undefined`             | Required, with the token below, to price Workers AI |
+| `cloudflare_api_token`    | `cloudflareApiToken`      | `None` / `undefined`             | Cloudflare API token for the model catalog |
+| `mistral_api_key`         | `mistralApiKey`           | `None` / `undefined`             | Usually unnecessary — wrapping a Mistral client auto-detects the key it already carries. Set it only when pricing Mistral usage without ever calling `wrap()` |
+| `verify_ssl`              | `verifySsl`               | `True` / `true`                  | TLS verification for requests to `api_url`. Only disable against a local dev instance with a self-signed certificate |
+| `flush_interval_seconds`  | `flushIntervalMs`         | `1.0` / `1000`                   | How often the background worker flushes |
+| `max_batch_size`          | `maxBatchSize`            | `100`                            | Max events per request. Lago's hard cap is 100 |
+| `max_buffer_size`         | `maxBufferSize`           | `10_000`                         | In-memory cap. Oldest events drop with a warning when exceeded |
+| `request_timeout_seconds` | `requestTimeoutMs`        | `10.0` / `10_000`                | HTTP timeout per batch request |
+| `max_retry_seconds`       | `maxRetryMs`              | `60.0` / `60_000`                | Upper bound on exponential backoff between retries |
+| `on_error`                | `onError`                 | `None` / `undefined`             | Callback for instrumentation failures |
+
+<Tip>
+  The Python constructor also takes `api_key`, `api_url` and `default_subscription_id` directly. When you pass both a constructor argument and a `config`, the constructor argument wins — so set `api_url` on the constructor, not only on the config.
+</Tip>
+
+## Choosing a subscription
+
+Lago needs to know which customer to bill. The SDK resolves `external_subscription_id` in this order:
+
+1. **Per-call override** — highest precedence
+2. **Context-bound** — set once per request handler, propagating across async boundaries via `contextvars` (Python) and `AsyncLocalStorage` (Node)
+3. **Default at init** — the fallback
+
+<CodeGroup>
+  ```python Python
+  # 1. Per-call
+  client.chat.completions.create(
+      model="gpt-4o-mini",
+      messages=[{"role": "user", "content": "Hello"}],
+      extra_lago={
+          "subscription": "sub_acme",
+          "dimensions": {"feature": "summarize", "user_id": "u_42"},
+      },
+  )
+
+  # 2. Context-bound
+  token = sdk.set_subscription("sub_acme")
+  # ... all calls in this thread / asyncio task bill sub_acme
+  sdk.reset_subscription(token)
+
+  # 3. Default at init
+  sdk = LagoSDK(api_key="...", default_subscription_id="sub_default")
+
+  # Or bind once for a whole client
+  client = sdk.wrap(openai_client, subscription="sub_acme", dimensions={"env": "prod"})
+  ```
+
+  ```typescript TypeScript
+  // 1. Per-call
+  await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: "Hello" }],
+    lago: {
+      subscription: "sub_acme",
+      dimensions: { feature: "summarize", user_id: "u_42" },
+    },
+  } as any);
+
+  // 2. Context-bound
+  await sdk.withSubscription("sub_acme", async () => {
+    await client.chat.completions.create(/* … */);
+  });
+
+  // 3. Default at init
+  new LagoSDK({ apiKey: "...", defaultSubscriptionId: "sub_default" });
+
+  // Or bind once for a whole client
+  const client = sdk.wrap(openaiClient, { subscription: "sub_acme", dimensions: { env: "prod" } });
+  ```
+</CodeGroup>
+
+Per-call `dimensions` are merged with any set at `wrap()` time, with the per-call keys winning. They land on the event as `properties`, so they work as charge filters.
+
+<Warning>
+  If none of the three resolve, the event is dropped and an error is logged. Make sure at least one is set before your first call.
+</Warning>
+
+## Billing a provider the SDK does not wrap
+
+`emit()` and `CanonicalUsage` are public. Together they let you bill anything — a provider with no wrapper, an endpoint `wrap()` does not patch, or usage read from a log after the fact.
+
+<CodeGroup>
+  ```python Python
+  from lago_agent_sdk import CanonicalUsage
+
+  usage = CanonicalUsage(
+      input=1200,
+      output=350,
+      model="command-r-plus",
+      provider="cohere",
+      api="native",
+  )
+  sdk.emit(usage, subscription="sub_acme", dimensions={"feature": "rerank"})
+  ```
+
+  ```typescript TypeScript
+  import { makeCanonicalUsage } from "lago-agent-sdk";
+
+  const usage = makeCanonicalUsage({
+    input: 1200,
+    output: 350,
+    model: "command-r-plus",
+    provider: "cohere",
+    api: "native",
+  });
+  sdk.emit(usage, { subscription: "sub_acme", dimensions: { feature: "rerank" } });
+  ```
+</CodeGroup>
+
+`emit()` accepts the same `mode` and `markup` overrides as a per-call `extra_lago`, plus two arguments meant for backfills:
+
+| Argument | Python | TypeScript | What it does |
+|---|---|---|---|
+| Cost override | `usd_cost` | `usdCost` | Bill this exact amount and skip the price lookup. Only consulted when the effective mode is `price` |
+| Idempotency key | `event_id` | `eventId` | Use this as Lago's `transaction_id` instead of a random UUID, so re-running the same window does not double-bill. In token mode each field's event is suffixed with the field name so they do not collide |
+
+<Note>
+  `emit()` is documented as never raising. Anything that goes wrong inside it is caught and routed to `on_error`.
+</Note>
+
+## Errors
+
+Both SDKs export the same classes:
+
+- `LagoSDKError` — base class for every SDK-raised error
+- `LagoApiError` — non-2xx from Lago. Carries `status` and `body`
+- `LagoConfigError` — invalid configuration at init
+- `UnknownClientError` — `wrap()` was called on a client the SDK does not recognize. Subclasses `LagoConfigError`
+- `PricingUnavailableError` — price mode could not resolve a price. Surfaced through `on_error`, never raised at the call site
+
+Because instrumentation failures are silent by design, wire `on_error` on day one:
+
+<CodeGroup>
+  ```python Python
+  import sentry_sdk
+  from lago_agent_sdk import LagoConfig, LagoSDK
+
+  def on_error(exc: Exception, where: str) -> None:
+      sentry_sdk.capture_exception(exc, tags={"sdk_phase": where})
+
+  sdk = LagoSDK(api_key="...", config=LagoConfig(api_key="...", on_error=on_error))
+  ```
+
+  ```typescript TypeScript
+  import * as Sentry from "@sentry/node";
+  import { LagoSDK } from "lago-agent-sdk";
+
+  new LagoSDK({
+    apiKey: "...",
+    config: {
+      onError: (err, where) => Sentry.captureException(err, { tags: { sdk_phase: where } }),
+    },
+  });
+  ```
+</CodeGroup>
+
+The `where` argument names the phase that failed: `emit`, `send_batch`, `pricing`, one of `pricing.fetch_openrouter` / `pricing.fetch_bedrock` / `pricing.fetch_cloudflare_workers_ai` / `pricing.fetch_mistral_aliases`, or `overflow` (JavaScript only).
+
+## Behaviour under failure
+
+The design promise: **your LLM call never breaks because of the SDK.** Anything that goes wrong inside instrumentation is caught, logged, and either retried or absorbed.
+
+| Failure | SDK response | Events lost |
+|---------|--------------|-------------|
+| Adapter throws (provider drift, malformed response) | Catch, log, call `on_error(exc, "emit")` | 1 event |
+| Network blip, or a Lago 5xx | Re-prepend the batch, exponential backoff | 0 |
+| Lago 4xx (bad metric code, duplicate `transaction_id`) | Treated as permanent. The batch is re-sent one event at a time so one bad event cannot block the rest, then the rejected ones are dropped with a warning | Only the individually-rejected events |
+| Lago unreachable, within the buffer window | Events accumulate and drain when it recovers | 0 |
+| Lago unreachable, buffer full | Oldest events drop with a warning | Yes, oldest sacrificed |
+| `flush()` | Waits for the buffer to empty or the timeout to expire | 0, but see the note below |
+| `shutdown()` | Flush, stop the worker, join the thread, final bounded drain | 0 within the timeout |
+| Clean process exit | `atexit` (Python) / `beforeExit` (Node) runs a 2-second shutdown | 0 within 2 s |
+| `SIGKILL` or OOM | No hooks run | Yes, buffered events lost |
+| Fork (Gunicorn, uWSGI prefork) | The child gets a fresh queue, lock and worker | 0 in the parent. The child starts empty |
+| `wrap()` called twice | Idempotent, the second call is a no-op | 0 |
+| Async context switch | `contextvars` / `AsyncLocalStorage` carry the subscription | 0. Concurrent requests do not cross-bleed |
+
+**Retries.** Transient failures re-prepend the batch and back off 1s → 2s → 4s → 8s → 16s → 32s → `max_retry_seconds` (60s default), resetting to zero on the first success. Permanent failures never accrue backoff.
+
+**Overflow.** The buffer is a bounded FIFO. When it is full, the *oldest* event is dropped to make room, on the reasoning that recent events best reflect what the customer is doing now. Python logs a warning; JavaScript also fires `onError(err, "overflow")`.
+
+<Note>
+  `flush()` waits for the buffer to empty, not for the in-flight request to come back. A batch already handed to the worker is invisible to it, so `flush()` can return `True` a moment before that POST lands. For a hard guarantee at process exit, use `shutdown()`.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Billing" icon="dollar-sign" href="/guide/ai-agents/agent-sdk/billing">
+    Token mode, price mode, and the plan setup for each.
+  </Card>
+  <Card title="Overview" icon="book" href="/guide/ai-agents/agent-sdk/overview">
+    Quickstart and the provider list.
+  </Card>
+</CardGroup>

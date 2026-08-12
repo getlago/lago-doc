@@ -1,0 +1,232 @@
+---
+title: "Anthropic"
+description: "Bill Anthropic token usage with the Lago Agent SDK. messages.create and the streaming helper, with the full prompt-caching breakdown."
+---
+
+The SDK wraps an `Anthropic` or `AsyncAnthropic` client in place and instruments the messages surface:
+
+- `client.messages.create(...)`, non-streaming and `stream=True`
+- `client.messages.stream(...)`, the context-manager helper
+- the async equivalents on `AsyncAnthropic`
+
+Anthropic is the provider with the richest cache reporting, so it is the one where the cache-specific metrics matter most.
+
+## Install
+
+<CodeGroup>
+  ```bash pip
+  pip install 'lago-agent-sdk[anthropic]'
+  ```
+
+  ```bash npm
+  npm install lago-agent-sdk @anthropic-ai/sdk
+  ```
+</CodeGroup>
+
+## Wrap and call
+
+<CodeGroup>
+  ```python Python
+  from anthropic import Anthropic
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(
+      api_key="<YOUR_LAGO_API_KEY>",
+      default_subscription_id="sub_acme",
+  )
+  client = sdk.wrap(Anthropic(api_key="<YOUR_ANTHROPIC_API_KEY>"))
+
+  resp = client.messages.create(
+      model="claude-sonnet-4-6",
+      max_tokens=200,
+      messages=[{"role": "user", "content": "Hello"}],
+  )
+  sdk.flush()
+  ```
+
+  ```typescript TypeScript
+  import Anthropic from "@anthropic-ai/sdk";
+  import { LagoSDK } from "lago-agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    defaultSubscriptionId: "sub_acme",
+  });
+  const client = sdk.wrap(new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! }));
+
+  await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 200,
+    messages: [{ role: "user", content: "Hello" }],
+  });
+  await sdk.flush();
+  ```
+</CodeGroup>
+
+## Streaming
+
+Both streaming styles are instrumented. Usage is captured from the final `message_delta` event, which is where Anthropic reports the completed token counts.
+
+<CodeGroup>
+  ```python Python
+  # Style 1: stream=True on create()
+  stream = client.messages.create(
+      model="claude-sonnet-4-6",
+      max_tokens=200,
+      messages=[{"role": "user", "content": "Hello"}],
+      stream=True,
+  )
+  for event in stream:
+      ...
+
+  # Style 2: the context-manager helper
+  with client.messages.stream(
+      model="claude-sonnet-4-6",
+      max_tokens=200,
+      messages=[{"role": "user", "content": "Hello"}],
+  ) as stream:
+      for text in stream.text_stream:
+          ...
+  ```
+
+  ```typescript TypeScript
+  // Style 1: stream: true on create()
+  const stream = await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 200,
+    messages: [{ role: "user", content: "Hello" }],
+    stream: true,
+  });
+  for await (const event of stream) {
+    // ...
+  }
+
+  // Style 2: the stream() helper
+  const s = client.messages.stream({
+    model: "claude-sonnet-4-6",
+    max_tokens: 200,
+    messages: [{ role: "user", content: "Hello" }],
+  });
+  await s.finalMessage();
+  ```
+</CodeGroup>
+
+## Async
+
+Wrap `AsyncAnthropic` the same way. The SDK detects the async client and instruments `create` and `stream` with async wrappers.
+
+```python Python
+from anthropic import AsyncAnthropic
+
+client = sdk.wrap(AsyncAnthropic(api_key="..."))
+
+resp = await client.messages.create(
+    model="claude-sonnet-4-6",
+    max_tokens=200,
+    messages=[{"role": "user", "content": "Hello"}],
+)
+```
+
+## Per-call override
+
+<CodeGroup>
+  ```python Python
+  client.messages.create(
+      model="claude-sonnet-4-6",
+      max_tokens=200,
+      messages=[{"role": "user", "content": "Hello"}],
+      extra_lago={
+          "subscription": "sub_acme",
+          "dimensions": {"feature": "summarize"},
+          "mode": "price",     # optional
+          "markup": 1.5,       # optional
+      },
+  )
+  ```
+
+  ```typescript TypeScript
+  await client.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 200,
+    messages: [{ role: "user", content: "Hello" }],
+    lago: {
+      subscription: "sub_acme",
+      dimensions: { feature: "summarize" },
+      mode: "price",   // optional
+      markup: 1.5,     // optional
+    },
+  } as any);
+  ```
+</CodeGroup>
+
+The wrapper strips `extra_lago` / `lago` before forwarding, so Anthropic's strict request validation never sees it.
+
+## What gets captured
+
+| Canonical field  | Anthropic source |
+|------------------|------------------|
+| `input`          | `usage.input_tokens` |
+| `output`         | `usage.output_tokens` |
+| `cache_read`     | `usage.cache_read_input_tokens` |
+| `cache_write`    | `usage.cache_creation_input_tokens` |
+| `cache_write_5m` | `usage.cache_creation.ephemeral_5m_input_tokens` |
+| `cache_write_1h` | `usage.cache_creation.ephemeral_1h_input_tokens` |
+| `tool_calls`     | count of `content[]` blocks with `type == "tool_use"` |
+
+<Note>
+  **Reasoning tokens are not exposed.** Anthropic folds extended-thinking tokens into `output_tokens`. Billing on `llm_output_tokens` already captures thinking. `llm_reasoning_tokens` stays at zero and no event is emitted for it.
+</Note>
+
+<Warning>
+  **Anthropic's cache tokens are additive, not a subset.** `input_tokens` counts only the tokens that were *not* served from cache or written to it. Your true prompt total is `llm_input_tokens + llm_cached_input_tokens + llm_cache_creation_tokens`.
+
+  A real cached response makes this unmistakable: `input_tokens: 13` alongside `cache_read_input_tokens: 2803`. Billing `llm_input_tokens` alone would charge that call for 13 tokens instead of 2,816.
+
+  This is the opposite of OpenAI, Gemini and Mistral, where the cached tokens are already inside the prompt count. See [Bill in tokens](/guide/ai-agents/agent-sdk/billing#subsets-and-additive-fields) for a setup that keeps the two rules apart.
+</Warning>
+
+<Tip>
+  **Cache writes are the interesting part.** Anthropic prices cache creation above normal input and cache reads well below it, and the SDK gives you all three counts separately. That lets you mirror Anthropic's own rate structure directly: charge `llm_cache_creation_tokens` at a premium, `llm_cached_input_tokens` at a discount, and `llm_input_tokens` at the standard rate — each on its own count, no subtraction needed.
+
+  The 5-minute and 1-hour TTL splits are reported separately because Anthropic prices them differently.
+</Tip>
+
+Unrecognized usage fields (`service_tier`, `inference_geo`, `server_tool_use`) land in `CanonicalUsage.extras` so provider drift is visible instead of silently dropped.
+
+## Pricing
+
+In price mode, native Anthropic clients are priced from **OpenRouter's public model list**, per token, refreshed hourly on the background thread.
+
+<Note>
+  Claude models accessed **through Bedrock** are priced from AWS's bulk price list instead, which currently omits the newest Claude models. If you need dollar-cost billing for Claude and you are on Bedrock, see the [Bedrock page](/guide/ai-agents/agent-sdk/bedrock#pricing).
+</Note>
+
+## What is and isn't instrumented
+
+`wrap()` patches exactly two methods — `messages.create` and `messages.stream` — on both the sync `Anthropic` and async `AsyncAnthropic` clients.
+
+Everything else on the client passes through unmetered, and each of these is billable:
+
+| Surface | Why it is missed |
+|---|---|
+| `messages.parse` | Issues its own request rather than calling `create`, so the patch never sees it |
+| `messages.batches.create` | A separate resource, not patched |
+| `client.beta.messages.create` | `beta.messages` is a distinct object from `client.messages` |
+| `client.completions.create` | The legacy Text Completions API |
+
+<Warning>
+  `messages.parse` is the easy one to miss. It looks like a `create` variant and returns the same usage, but it is not instrumented — a workload built on structured outputs would bill nothing.
+</Warning>
+
+If you use any of these, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
+    Every config knob, in both SDKs.
+  </Card>
+  <Card title="Charges with filters" icon="filter" href="/guide/plans/charges/charges-with-filters">
+    Price cache reads and cache writes at different rates.
+  </Card>
+</CardGroup>
