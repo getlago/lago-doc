@@ -155,7 +155,7 @@ There are two ways to parallelize the migration:
 space into non-overlapping windows, you can run several independent processes in parallel — each handling a different
 slice. This sidesteps the GVL entirely and scales linearly with the number of processes.
 
-To set this up, you simple launch the first process to discover the next cursor, then launch additional processes with the provided cursor to split the workload:
+To set this up, you simply launch the first process to discover the next cursor, then launch additional processes with the provided cursor to split the workload:
 
 ```bash
 # Process 1: first 50,000 customers
@@ -202,7 +202,7 @@ These issues can be fixed by updating the data directly in the database, then re
 
 | Issue | Validation message | Cause | Resolution |
 |---|---|---|---|
-| **Decimal amount_cents** | `Decimal amount_cents on inbound TX_ID: 12.9999 (expected integer)` | Historical bug storing values non-rounded decimals instead of integers. | Update the transaction amount in the database to rounded integers. |
+| **Decimal amount_cents** | `Decimal amount_cents on inbound TX_ID: 12.9999 (expected integer)` | Historical bug storing non-rounded decimal values instead of integers. | Update the transaction amount in the database to rounded integers. |
 | **Balance drift (small)** | `Balance drift < 1 unit: 0.5 cents (...) — likely rounding` | Historical rounding bug. | Update the wallet balance in the database to match the sum of its transactions. |
 | **Balance drift (large)** | `Balance drift >= 1 unit: 500 cents (...)` | Historical rounding bug. | This issue might be caused by a significant number of outbound transactions impacted by the historical rounding bug and therefore causing a bigger drift. Update the wallet balance in the database to match the sum of its transactions. |
 

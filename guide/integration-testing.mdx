@@ -4,13 +4,12 @@ description:
   "This step-by-step integration guide will help you get started with Lago."
 ---
 
-## Foreword[](#foreword "Direct link to heading")
+## Foreword
 
-At the moment, each Lago account is associated with a unique environment. It is
-currently not possible to have your test environment and production environment
-in the same account.
+Each Lago account is associated with a single environment. It is not possible
+to have your test environment and production environment in the same account.
 
-However, we can suggest different workarounds:
+Two workarounds:
 
 1. **Create two accounts** to get access to two environments, one that could be
    called "Company Staging" and another one that could be called "Company
@@ -18,15 +17,15 @@ However, we can suggest different workarounds:
 2. **Leverage our two hosting solutions** to use Lago Cloud as a test
    environment and Lago Open Source as a production environment (or vice versa).
 
-Please note that the above workarounds will require you to replicate the same
-setup in both environments.
+Both workarounds require you to replicate the same setup in each
+environment.
 
 <Info>
   In the future, you will be able to get access to a test environment and a
   production environment with the same Lago account.
 </Info>
 
-## 1\. Define a billable metric[](#1-define-a-billable-metric "Direct link to heading")
+## 1\. Define a billable metric
 
 To define a billable metric through the user interface:
 
@@ -35,7 +34,7 @@ To define a billable metric through the user interface:
 3. Fill in the form ([learn more about billable metrics](/guide/billable-metrics/create-billable-metrics)); and
 4. Click **"Add billable metric"** to save.
 
-## 2\. Create a plan (with charges)[](#2-create-a-plan-with-charges "Direct link to heading")
+## 2\. Create a plan (with charges)
 
 To create a plan through the user interface:
 
@@ -44,7 +43,7 @@ To create a plan through the user interface:
 3. Fill in the form ([learn more about plans](/guide/plans/overview)); and
 4. Click **"Add plan"** to save.
 
-## 3\. Create a customer[](#3-create-a-customer "Direct link to heading")
+## 3\. Create a customer
 
 To create a customer through the user interface:
 
@@ -57,7 +56,7 @@ To create a customer through the user interface:
 You can also create customers through the API, as described in the
 [documentation](/api-reference/customers/create).
 
-## 4\. Start a subscription[](#4-start-a-subscription "Direct link to heading")
+## 4\. Start a subscription
 
 To start a subscription, you need to assign a plan to an existing customer. To
 do so through the user interface:
@@ -74,13 +73,32 @@ customer view.
 You can also start a subscription through the API, as described in the
 [documentation](/api-reference/subscriptions/assign-plan).
 
-## 5\. Send usage-based events[](#5-send-usage-based-events "Direct link to heading")
+## 5\. Send usage-based events
 
 Events sent from your backend to Lago will be automatically aggregated according
-to the predefined billable metrics. To start sending usage-based events, please
-refer to the [documentation](/guide/events/ingesting-usage).
+to the predefined billable metrics ([learn more about ingesting usage](/guide/events/ingesting-usage)):
 
-## 6\. Invoice your customers[](#6-invoice-your-customers "Direct link to heading")
+```bash
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/events" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "event": {
+      "transaction_id": "__UNIQUE_ID__",
+      "external_subscription_id": "sub_1234567890",
+      "code": "storage",
+      "timestamp": 1651240791,
+      "properties": {
+        "gb": 10
+      }
+    }
+  }'
+```
+
+## 6\. Invoice your customers
 
 At the end of the billing period, Lago will automatically generate an invoice
 for each customer. Invoices will be sent to your application using webhooks. To

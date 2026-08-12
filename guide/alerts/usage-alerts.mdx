@@ -4,7 +4,7 @@ description: "Usage alerts allow you to monitor your subscriptions' usage and bi
 ---
 
 ## Overview
-Usage alerts are essential for effectively monitoring customer activity and managing billing. They help ensure that customers stay within their usage limits and prevent unexpected charges. Below are some key use cases where alerts can be beneficial:
+Usage alerts notify you when a subscription's usage crosses thresholds you define. Common use cases:
 1. Allow customers to set and manage their own usage limits and budgets, empowering them to control their consumption;
 2. Alert customers with skyrocketing usage to prevent unexpected costs or overages on their bills; or
 3. Implement entitlement logic to halt usage tracking when a customer reaches their predefined limit, ensuring accurate billing and compliance.
@@ -62,7 +62,36 @@ Usage alerts are essential for effectively monitoring customer activity and mana
                         "recurring": false
                     }
                 ],
-                "billable_metric": null
+                "billable_metric_code": null
+            }
+        }'
+    ```
+
+    ```bash Billable metric usage alert creation
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/subscriptions/:external_id/alerts" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+            "alert": {
+                "alert_type": "billable_metric_current_usage_units",
+                "code": "api_calls_soft_limit",
+                "name": "API calls limit",
+                "billable_metric_code": "api_calls",
+                "thresholds": [
+                    {
+                        "code": "warn",
+                        "value": "5000",
+                        "recurring": false
+                    },
+                    {
+                        "code": "repeat",
+                        "value": "1000",
+                        "recurring": true
+                    }
+                ]
             }
         }'
     ```
@@ -74,10 +103,10 @@ Usage alerts are essential for effectively monitoring customer activity and mana
 ## Alert types
 Lago supports the following usage alert types:
 
-- **Lifetime Usage Amount**: Triggered when a subscription's lifetime usage exceeds predefined thresholds.
-- **Current Usage Amount**: Triggered when a subscription's usage exceeds predefined thresholds for the current billing period.
-- **Billable Metric Current Usage Amount**: Triggered when the usage of a specific billable metric exceeds predefined thresholds for the current billing period.
-- **Billable Metric Current Usage Units**: Triggered when the usage of a specific billable metric units exceeds predefined thresholds for the current billing period.
+- **Lifetime Usage Amount** (`lifetime_usage_amount`): Triggered when a subscription's lifetime usage exceeds predefined thresholds.
+- **Current Usage Amount** (`current_usage_amount`): Triggered when a subscription's usage exceeds predefined thresholds for the current billing period.
+- **Billable Metric Current Usage Amount** (`billable_metric_current_usage_amount`): Triggered when the usage of a specific billable metric exceeds predefined thresholds for the current billing period.
+- **Billable Metric Current Usage Units** (`billable_metric_current_usage_units`): Triggered when the number of units of a specific billable metric exceeds predefined thresholds for the current billing period.
 
 ## Alert notifications
 After configuring an alert and starting to ingest usage, you can listen for the `alert.triggered` webhook message. These webhooks serve as notifications sent to your system, indicating when an alert threshold has been crossed, along with all the relevant alert details.
@@ -93,7 +122,7 @@ After configuring an alert and starting to ingest usage, you can listen for the 
     "billable_metric_code": null,
     "alert_name": "Total Usage Alerts",
     "alert_code": "total_usage",
-    "alert_type": "usage_amount",
+    "alert_type": "current_usage_amount",
     "current_value": "100.0",
     "previous_value": "0.0",
     "crossed_thresholds": [
@@ -109,7 +138,6 @@ After configuring an alert and starting to ingest usage, you can listen for the 
 ```
 
 ## Limitations
-Please consider the following limitations for usage alerts:
 - Alerts only evaluate usage data reported after their creation;
-- Alerts run on a default 5-minute interval clock. Contact the team if you need a different frequency; and
-- Identical alerts cannot be created more than once.
+- Alerts are processed close to real time; and
+- Each alert `code` must be unique per subscription, and only one alert per type (per billable metric for metric-scoped types) can exist on a subscription.
