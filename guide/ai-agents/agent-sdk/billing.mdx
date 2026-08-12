@@ -129,7 +129,7 @@ Prices are keyed off **the model that answered, not the one you asked for**. Pro
 The exception is a cost the SDK did not compute. When a gateway reports its own metered cost per call and you pass it through, there is no per-field split to report, so that path emits a **single** event with no `token_type`.
 
 <Note>
-  **Lago setup for price mode.** Register a `sum` billable metric `llm_cost` on `field_name: "unit"` and attach a **dynamic** charge to it. Lago sums each event's `precise_total_amount_cents` into a single fee, and `unit` is the displayed usage quantity.
+  **Lago setup for price mode.** Register a `sum_agg` billable metric `llm_cost` on `field_name: "unit"` and attach a **dynamic** charge to it. Lago sums each event's `precise_total_amount_cents` into a single fee, and `unit` is the displayed usage quantity.
 
   Group the charge by `["model", "token_type"]` so one metric breaks the cost down by both dimensions.
 </Note>

@@ -195,7 +195,7 @@ This lives in a separate namespace from the wrapper adapters, because there is n
 
 The logs endpoint is `GET https://api.cloudflare.com/client/v4/accounts/{account_id}/ai-gateway/gateways/{gateway_id}/logs`, paginated, authenticated with a Cloudflare API token. The list and single-entry endpoints return the same entry shape.
 
-Because Cloudflare hands over one lump sum per call rather than a per-token-type split, this path emits a **single** `llm_cost` event with no `token_type`, and `unit` set to input plus output tokens. Splitting that lump proportionally would substitute a guess for the exact number you came here for. Live-path price mode, which does have per-token unit prices, emits one event per priced type instead. Both work with the same `sum` metric on `field_name: "unit"` and a dynamic charge.
+Because Cloudflare hands over one lump sum per call rather than a per-token-type split, this path emits a **single** `llm_cost` event with no `token_type`, and `unit` set to input plus output tokens. Splitting that lump proportionally would substitute a guess for the exact number you came here for. Live-path price mode, which does have per-token unit prices, emits one event per priced type instead. Both work with the same `sum_agg` metric on `field_name: "unit"` and a dynamic charge.
 
 <Note>
   **You do not need to filter cache hits out.** Cloudflare reports a gateway cache hit with `tokens_in: 0`, `tokens_out: 0`, and `cost: 0`, so a cached entry extracts as zero usage and bills zero on its own. Billing policy never has to branch on the `cached` flag. The flag is exposed in `extras` for your own reporting, not because the maths needs it.
