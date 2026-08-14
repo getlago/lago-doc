@@ -5,6 +5,39 @@ rss: "true"
 ---
 
 <Update label="August 2026">
+  ## Databricks AI Gateway: hosted models in tokens, BYOK in dollars
+
+  <Frame>
+    ![](/changelog/images/20260812-databricks-ai-gateway.png)
+  </Frame>
+
+  Databricks AI Gateway fronts two kinds of traffic. Hosted foundation models that Databricks serves and bills you for in DBUs. And BYOK calls, where Databricks proxies your own OpenAI or Anthropic credential and records the vendor's cost. They bill differently, so the **Lago Agent SDK** treats them differently.
+
+  **Bill as calls happen.** There is no Databricks client to wrap. You wrap the `OpenAI` or `Anthropic` client you already use, pointed at your workspace:
+
+  ```python
+  client = sdk.wrap(OpenAI(
+      api_key="<DATABRICKS_TOKEN>",
+      base_url="https://<workspace>.cloud.databricks.com/ai-gateway/mlflow/v1",
+      default_headers={"Databricks-Ai-Gateway-Request-Tags": tags},
+  ))
+  ```
+
+  The `base_url` does the routing. `/ai-gateway/mlflow/` marks a call as Databricks-hosted. The BYOK paths keep their real vendor, so those calls price against the vendor's rate card as normal.
+
+  **Or backfill from Databricks' own books.** Point the SDK at the `system.ai_gateway.usage` table and bill usage that already happened:
+
+  - **BYOK rows bill the metered dollar cost.** Databricks records the vendor's USD per call. The SDK bills that number, not a rate-card estimate.
+  - **Hosted rows bill as token counts.** Databricks publishes no per-request dollar figure for its own models, and prices them well above the open-weight rate cards, so the SDK deliberately never prices them. You set the rate in Lago.
+  - **Re-run any window safely.** Event ids derive from the source row, so a re-run has Lago reject the duplicates instead of billing them again.
+  - **Per-call attribution.** Set `Databricks-Ai-Gateway-Request-Tags` with a `lago_subscription` and every call carries its own subscription. The backfill reads the same tag, so the two paths agree on who pays.
+
+  Use each for different traffic: live events for current calls, backfill for the windows the live path never covered.
+
+  Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
+
+  [Learn more](/guide/ai-agents/agent-sdk/databricks)
+
   ## Cloudflare AI Gateway: bill what your gateway actually metered
 
   <Frame>
