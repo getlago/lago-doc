@@ -5,6 +5,34 @@ rss: "true"
 ---
 
 <Update label="August 2026">
+  ## The Dunning Agent: chase the customer, not the calendar <Badge color="blue" shape="pill">Beta</Badge>
+
+  <Frame>
+    ![](/changelog/images/20260814-dunning-agent.png)
+  </Frame>
+
+  A dunning campaign is a timer. Day 3, day 7, day 14, the same ladder for everyone on the overdue list. It sends a past due notice to the customer who has paid on day 8 for two years. It chases the full face value of an invoice a partial payment already covered. It sends "please pay your invoice" to someone whose card simply expired. Every one of those emails costs you something, and none of them collect anything.
+
+  The **Dunning Agent** reads the account before it writes the email. Twelve months of invoices and payments, the disputes, the credit notes, the provider status. Then it acts at the lowest rung that is justified, and if nothing is justified it does nothing and tells you why.
+
+  - **It waits on the customers who aren't actually a problem.** It works out the median pay lag across a customer's paid invoices and whether that lag is consistent. Reliably eight days late and six days overdue is not a collections problem. No email goes out.
+  - **It chases the net, never the face value.** A partial payment leaves an invoice fully `pending` at its full amount in Lago. The agent nets out payments and credit notes first, so the email, the escalation threshold, and the retry limit all work off what is actually still owed.
+  - **A declined card gets a card-fix email, not a reminder.** With a self-serve portal link to update the card. Below the retry cap it re-attempts the charge itself, once, through whichever payment provider you already have connected.
+  - **Large and stubborn accounts stop and go to a person.** Above the materiality line, or chased three times with no answer, the agent hands off to Slack with the reason and the recommended next step. Chasing forever is not a strategy.
+  - **Every decision cites a rule and the evidence.** *"Repeat-late, 3 of 5 invoices late, 40 days overdue, so firm."* *"\$14,000, above the \$10,000 line, so a human."* An action that can't cite both never fires.
+
+  The model drafts. Deterministic code decides. Touch caps, deduplication, and a live re-read of the invoice a moment before sending, so an invoice paid between the decision and the send is never chased. Nothing above the lowest blast radius executes without a human approving it.
+
+  Run it as a Claude Skill against your Lago MCP connector and it drafts into Gmail for a person to send. Self-host the app and it collects.
+
+  [Learn more](/guide/ai-agents/dunning-agent)
+
+  <Info>
+  **Beta.** Available upon request. **[Contact us](mailto:hello@getlago.com)** to get access.
+
+  This agent acts on real customers: it sends email and re-attempts real charges. Run a dry-run sweep, read the decisions it made, and confirm the policy limits before letting it run unattended.
+  </Info>
+
   ## Revenue Recognition: from what you billed to what you earned <Badge color="orange" shape="pill">Alpha</Badge>
 
   <Frame>
