@@ -194,6 +194,15 @@ For some 4xx errors, the response body will include additional information to he
 { "status": 429, "error": "Too Many Provider Requests", "code": "too_many_provider_requests", "error_details": { "provider_name": "[provider_name]", "message": "[message]" } }
 ```
 
+This error is returned when a downstream payment or tax provider rate-limits Lago. It is distinct from the platform rate limit below.
+
+### rate_limited
+```
+HTTP/1.1 429 Too Many Requests
+```
+
+Returned when you exceed the REST API rate limit for your organization. The response includes `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. See [Rate limits](/api-reference/rate-limits) for the limits and retry guidance.
+
 ### internal_server_error
 ```json
 { "status": 500, "errors": [{ "message": "[error_message]", "backtrace": [backtrace] }], "data": {} }

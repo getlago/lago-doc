@@ -4,6 +4,8 @@ authMethod: "bearer"
 title: "Batch usage events"
 ---
 
+Batches are atomic. If a single event is invalid, Lago rejects the entire batch with a `422` and persists nothing, including the valid events in the same request. "Invalid" covers a bad schema, an unknown subscription, or a duplicate `transaction_id` (`value_already_exist`). The `error_details` object reports failures by the event's index in the array you sent, not by `transaction_id`, so keep your array order to trace an index back to its source event.
+
 <RequestExample>
 
 ```bash cURL
@@ -139,3 +141,22 @@ func main() {
 ```
 
 </RequestExample>
+
+<ResponseExample>
+
+```json Batch rejected (422)
+{
+  "status": 422,
+  "error": "Unprocessable Entity",
+  "code": "validation_errors",
+  "error_details": {
+    "1": {
+      "transaction_id": [
+        "value_already_exist"
+      ]
+    }
+  }
+}
+```
+
+</ResponseExample>

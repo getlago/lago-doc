@@ -1,0 +1,207 @@
+---
+title: "Google Gemini"
+description: "Bill Google Gemini token usage with the Lago Agent SDK. The unified google-genai SDK, with reasoning, audio, and image breakdowns."
+---
+
+The SDK wraps a `google-genai` client in place and instruments:
+
+- `client.models.generate_content(...)` / `generateContent`
+- `client.models.generate_content_stream(...)` / `generateContentStream`
+- the async equivalents on `client.aio.models` (Python)
+
+Gemini is the provider with the widest modality breakdown: audio and image input tokens are reported separately, and Gemini 2.5 surfaces reasoning tokens.
+
+<Note>
+  **Only the unified SDK is supported.** The legacy `google-generativeai` package (`genai.GenerativeModel(...)` in Python, `GoogleGenerativeAI` in JavaScript) has a different surface that cannot be instrumented, so `wrap()` rejects it with a migration message rather than silently wrapping nothing — you will know immediately, not at invoice time.
+
+  Migrate to `google-genai` / `@google/genai`. See [Google's migration guide](https://ai.google.dev/gemini-api/docs/migrate).
+</Note>
+
+## Install
+
+<CodeGroup>
+  ```bash pip
+  pip install 'lago-agent-sdk[gemini]'
+  ```
+
+  ```bash npm
+  npm install lago-agent-sdk @google/genai
+  ```
+</CodeGroup>
+
+## Wrap and call
+
+<CodeGroup>
+  ```python Python
+  from google import genai
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(
+      api_key="<YOUR_LAGO_API_KEY>",
+      default_subscription_id="sub_acme",
+  )
+  client = sdk.wrap(genai.Client(api_key="<YOUR_GEMINI_API_KEY>"))
+
+  resp = client.models.generate_content(
+      model="gemini-2.5-flash",
+      contents="Hello",
+  )
+  sdk.flush()
+  ```
+
+  ```typescript TypeScript
+  import { GoogleGenAI } from "@google/genai";
+  import { LagoSDK } from "lago-agent-sdk";
+
+  const sdk = new LagoSDK({
+    apiKey: process.env.LAGO_API_KEY!,
+    defaultSubscriptionId: "sub_acme",
+  });
+  const client = sdk.wrap(new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! }));
+
+  await client.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: "Hello",
+  });
+  await sdk.flush();
+  ```
+</CodeGroup>
+
+Wrap the `Client` object, not a per-model handle. The SDK installs its wrappers on `client.models` (and `client.aio.models` in Python).
+
+## Streaming
+
+Usage lives on the final chunk's `usage_metadata` / `usageMetadata`. The SDK wraps the iterator and emits once it is exhausted.
+
+<CodeGroup>
+  ```python Python
+  for chunk in client.models.generate_content_stream(
+      model="gemini-2.5-flash",
+      contents="Hello",
+  ):
+      ...
+  ```
+
+  ```typescript TypeScript
+  const stream = await client.models.generateContentStream({
+    model: "gemini-2.5-flash",
+    contents: "Hello",
+  });
+  for await (const chunk of stream) {
+    // ...
+  }
+  ```
+</CodeGroup>
+
+<Note>
+  The JavaScript wrapper reads both camelCase (`usageMetadata`) and snake_case (`usage_metadata`) forms, since the transport varies across `@google/genai` versions.
+</Note>
+
+## Async
+
+Python exposes the async surface under `client.aio.models`. The SDK instruments it at wrap time, so nothing extra is needed.
+
+```python Python
+client = sdk.wrap(genai.Client(api_key="..."))
+
+resp = await client.aio.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Hello",
+)
+
+async for chunk in await client.aio.models.generate_content_stream(
+    model="gemini-2.5-flash",
+    contents="Hello",
+):
+    ...
+```
+
+In JavaScript `@google/genai` returns plain promises, so the wrapper simply awaits and emits. No proxy machinery involved.
+
+## Per-call override
+
+<CodeGroup>
+  ```python Python
+  client.models.generate_content(
+      model="gemini-2.5-flash",
+      contents="Hello",
+      extra_lago={
+          "subscription": "sub_acme",
+          "dimensions": {"feature": "summarize"},
+          "mode": "price",     # optional
+          "markup": 1.5,       # optional
+      },
+  )
+  ```
+
+  ```typescript TypeScript
+  await client.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: "Hello",
+    lago: {
+      subscription: "sub_acme",
+      dimensions: { feature: "summarize" },
+      mode: "price",   // optional
+      markup: 1.5,     // optional
+    },
+  } as any);
+  ```
+</CodeGroup>
+
+The wrapper strips `extra_lago` / `lago` before forwarding, so Google's request validation never sees it.
+
+## What gets captured
+
+| Canonical field | Gemini source |
+|-----------------|---------------|
+| `input`         | `usage_metadata.prompt_token_count` |
+| `output`        | `usage_metadata.candidates_token_count` |
+| `cache_read`    | `usage_metadata.cached_content_token_count` |
+| `reasoning`     | `usage_metadata.thoughts_token_count` |
+| `audio_input`   | `prompt_tokens_details[modality=AUDIO].token_count` |
+| `image_input`   | `prompt_tokens_details[modality=IMAGE].token_count` |
+| `audio_output`  | `candidates_tokens_details[modality=AUDIO].token_count` |
+| `tool_calls`    | count of `candidates[0].content.parts[]` entries carrying a `function_call` |
+
+<Warning>
+  **Gemini reasoning is additive, not a subset.** `thoughts_token_count` sits *outside* `candidates_token_count`. Your total billable output from Google is `candidates + thoughts`. That is the opposite of OpenAI, where `reasoning_tokens` is already inside `completion_tokens`.
+
+  So on Gemini you should bill `llm_output_tokens + llm_reasoning_tokens`. On OpenAI you should not. If you meter both providers on the same plan, use the `provider` event property as a charge filter to keep the two rules apart.
+</Warning>
+
+<Note>
+  Reasoning tokens populate automatically on Gemini 2.5. The model reasons internally by default, so `thoughts_token_count` shows up without you enabling anything, and it is money you are already paying Google.
+</Note>
+
+`cache_read`, `audio_input`, and `image_input` are breakdowns inside `input`, not additions to it — Google's docs are explicit that `prompt_token_count` includes cached content. [Bill in tokens](/guide/ai-agents/agent-sdk/billing#subsets-and-additive-fields) shows the metric setup that handles this.
+
+Unrecognized top-level usage fields land in `CanonicalUsage.extras`, which is how provider drift becomes visible instead of silently dropped.
+
+## Pricing
+
+In price mode, Gemini models are priced from **OpenRouter's public model list**, per token, refreshed hourly on the background thread.
+
+<Tip>
+  Because Gemini reasoning is additive, price mode is often the cleaner option here: the SDK applies the correct per-field unit prices itself, so you do not have to encode the additive-versus-subset rule in your plan.
+</Tip>
+
+## What is and isn't instrumented
+
+`wrap()` patches `generate_content` and `generate_content_stream` on `client.models`, and the same two on `client.aio.models`.
+
+**Chat sessions are covered.** `client.chats` and `client.aio.chats` hold a reference to the same `models` object the SDK patched, so `chat.send_message(...)` routes through the instrumented call and bills normally. Create the chat after `wrap()`.
+
+**Other model operations are not.** `embed_content`, `generate_images`, `generate_videos`, and the image editing calls consume billable Google quota and emit no Lago event, as do `client.batches` and `client.caches`. If you bill on those, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
+
+**Audio and image tokens are captured but not priced separately.** They are reported as `llm_audio_input_tokens`, `llm_audio_output_tokens`, and `llm_image_input_tokens`, and in price mode they are billed at the model's text rate. See [Known limits](/guide/ai-agents/agent-sdk/billing#known-limits).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
+    Every config knob, in both SDKs.
+  </Card>
+  <Card title="Bill in dollars" icon="dollar-sign" href="/guide/ai-agents/agent-sdk/billing">
+    Emit cost per call instead of token counts.
+  </Card>
+</CardGroup>

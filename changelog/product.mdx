@@ -4,7 +4,257 @@ description: "New updates and improvements to Lago."
 rss: "true"
 ---
 
+<Update label="August 2026">
+  ## Databricks AI Gateway: hosted models in tokens, BYOK in dollars
+
+  <Frame>
+    ![](/changelog/images/20260812-databricks-ai-gateway.png)
+  </Frame>
+
+  Databricks AI Gateway fronts two kinds of traffic. Hosted foundation models that Databricks serves and bills you for in DBUs. And BYOK calls, where Databricks proxies your own OpenAI or Anthropic credential and records the vendor's cost. They bill differently, so the **Lago Agent SDK** treats them differently.
+
+  **Bill as calls happen.** There is no Databricks client to wrap. You wrap the `OpenAI` or `Anthropic` client you already use, pointed at your workspace:
+
+  ```python
+  client = sdk.wrap(OpenAI(
+      api_key="<DATABRICKS_TOKEN>",
+      base_url="https://<workspace>.cloud.databricks.com/ai-gateway/mlflow/v1",
+      default_headers={"Databricks-Ai-Gateway-Request-Tags": tags},
+  ))
+  ```
+
+  The `base_url` does the routing. `/ai-gateway/mlflow/` marks a call as Databricks-hosted. The BYOK paths keep their real vendor, so those calls price against the vendor's rate card as normal.
+
+  **Or backfill from Databricks' own books.** Point the SDK at the `system.ai_gateway.usage` table and bill usage that already happened:
+
+  - **BYOK rows bill the metered dollar cost.** Databricks records the vendor's USD per call. The SDK bills that number, not a rate-card estimate.
+  - **Hosted rows bill as token counts.** Databricks publishes no per-request dollar figure for its own models, and prices them well above the open-weight rate cards, so the SDK deliberately never prices them. You set the rate in Lago.
+  - **Re-run any window safely.** Event ids derive from the source row, so a re-run has Lago reject the duplicates instead of billing them again.
+  - **Per-call attribution.** Set `Databricks-Ai-Gateway-Request-Tags` with a `lago_subscription` and every call carries its own subscription. The backfill reads the same tag, so the two paths agree on who pays.
+
+  Use each for different traffic: live events for current calls, backfill for the windows the live path never covered.
+
+  Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
+
+  [Learn more](/guide/ai-agents/agent-sdk/databricks)
+
+  ## Cloudflare AI Gateway: bill what your gateway actually metered
+
+  <Frame>
+    ![](/changelog/images/20260805-cloudflare-ai-gateway.png)
+  </Frame>
+
+  If your AI features run through Cloudflare AI Gateway, your gateway already knows things your billing does not. It serves some responses straight from its own cache, so those calls cost you nothing. And it meters the real cost of every call it does forward.
+
+  Standard metering throws both away. It counts the tokens in the response and prices them off a public rate card. So you charge customers for cached responses you never paid for, and your revenue drifts from the invoice your provider actually sends you.
+
+  The **Lago Agent SDK** now reads the gateway, two ways.
+
+  **Bill as calls happen.** Same `wrap()`, same code. Change a URL:
+
+  ```python
+  client = sdk.wrap(Anthropic(
+      api_key="...",
+      base_url=f"https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/anthropic",
+      default_headers={"cf-aig-authorization": f"Bearer {gateway_auth}"},
+  ))
+  ```
+
+  On non-streaming OpenAI and Anthropic calls, the SDK checks whether Cloudflare answered from cache. If it did, the model was never called, so nothing is billed. Your customer does not pay for a request that never left Cloudflare.
+
+  **Or bill from the gateway's own books.** Point the SDK at the gateway's logs and it bills Cloudflare's metered cost per call. Not our estimate of what the call cost. The number Cloudflare charged you.
+
+  - **The real figure, not a rate card.** Cloudflare reports an exact cost per call. On this path the SDK bills that number and skips its own price lookup entirely, so the cost you bill on is the cost you were charged, before you add your own margin. One caveat: Cloudflare's figure leaves out reasoning tokens, so bill thinking-heavy models in token mode instead.
+  - **Bill history you never metered.** Your gateway kept logging while you were still wiring up billing. Backfill as far back as its log retention goes, and re-run it as often as you like: pass each entry's log id as the event key and Lago rejects the duplicate instead of billing it again.
+  - **Cache hits settle themselves.** Cloudflare logs a cache hit with zero tokens and zero cost, so a backfilled cache hit bills zero without you filtering anything.
+  - **Workers AI, priced from source.** Give the SDK a Cloudflare account id and API token and it prices Cloudflare's own models from Cloudflare's own catalog. No price file to maintain.
+  - **Every provider, one gateway.** OpenAI, Anthropic, Mistral, Gemini, Workers AI. Each event is tagged with the model that actually served it, so one billable metric can charge a different rate per provider.
+
+  Use each for different traffic and you get both: live events so customers see usage right away, and a backfill for the windows the live path never covered. Pointing both at the same calls would bill them twice — the two paths share no idempotency key.
+
+  Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
+
+  [Learn more](/guide/ai-agents/agent-sdk/cloudflare)
+
+  ## Sign in to Lago with Microsoft Entra ID
+
+  <Frame>
+    ![](/changelog/images/20260805-entra-id-sso.png)
+  </Frame>
+
+  Single Sign-On (SSO) now supports Microsoft Entra ID. Alongside Google and Okta, your team can sign in to Lago using their corporate Microsoft accounts through OpenID Connect (OIDC).
+
+  Setup takes just a few fields. Once configured, your team signs in with their existing Microsoft account—no additional usernames or passwords to manage.
+
+  What you can do:
+  - Connect Microsoft Entra ID by adding your client ID, client secret, and tenant ID in Settings → Authentication.
+  - Custom Microsoft login domains are also supported.
+  - Sign in or accept invitations using a corporate Microsoft account, as long as the Entra ID email matches the email used in Lago.
+  - Control authentication methods by choosing which login providers are allowed for your organization.
+
+  Available as a Premium add-on on request ✨
+
+  [Learn more](/guide/security/sso)
+</Update>
+
+<Update label="July 2026">
+  ## AI Finance Assistant (Beta): ask your billing data anything, get the report
+
+  <Frame>
+    ![](/changelog/images/20260730-finance-assistant.png)
+  </Frame>
+
+  <Info>
+  **Beta**
+
+  The AI Finance Assistant is currently in beta. Results are AI-generated and can contain mistakes, so review each report before relying on it or sharing it.
+  </Info>
+
+  Your numbers, one question away. The **AI Finance Assistant** turns plain-text questions into aggregated reports. Ask *"What was my MRR by plan last quarter?"* or *"How much did EU customers pay in June?"* and Lago reads your data and hands back the answer. No dashboard to build, no filters to set, no SQL to write.
+
+  - **Just ask:** Type what you want to know in your own words. Revenue, invoices, payments, usage, customers. The assistant does the aggregation.
+  - **Preview, then export:** In the app you get a clean preview of the data. Need every row? Export the full CSV in one click.
+  - **Where you already work:** Open it from the side panel, or query the same data through the [Lago MCP Server](/guide/ai-agents/mcp-server) from Claude, your own agent, or any MCP client.
+  - **Reporting, not operations:** The Finance Assistant is read-only. It answers questions and never touches your data.
+
+  [Learn more](/guide/ai-agents/finance-assistant)
+  
+  ## Delete draft invoices: erase billing mistakes before they become real
+
+  <Frame>
+    ![](/changelog/images/20260723-delete-draft-invoice.png)
+  </Frame>
+
+  Grace periods exist to catch mistakes before an invoice becomes real. Until now, there was nothing you could do about the biggest one: a draft that should never have been generated. A duplicate subscription producing two drafts. Test data leaking into production. A misconfigured charge generating nonsensical fees. Your only option was to let the draft finalize, then void it. That leaves a numbered, zero-value invoice in your records and a question from your auditor.
+
+  You can now **delete a draft invoice**. It disappears as if it had never been generated. No accounts receivable entry, no invoice number consumed, no voided record to explain. The subscription stays active and billing resumes cleanly from the next period.
+
+  This is safe because a draft has no footprint yet: no email sent, no payment attempted, no sync to your accounting or tax stack. Deleting one removes it from every view, export, and analytics surface. The action itself stays traceable: an audit log entry records who deleted what, and an `invoice.deleted` webhook fires with the full payload before the invoice disappears.
+
+  - **Draft-only, by design**: finalized invoices keep their paper trail and can only be voided.
+  - **A dedicated permission**: `invoices:delete`, granted to Admins by default, so you decide who can use it.
+  - **Dashboard and API**: one click in the app, or `DELETE /api/v1/invoices/:id`.
+
+  Two actions, two intents. Void keeps the record because the invoice was real. Delete removes the record because the invoice was a mistake.
+
+  [Learn more](/guide/invoicing/draft-invoices#delete-a-draft-invoice)
+
+  ## One customer, many currencies and billing entities
+
+  <Frame>
+    ![](/changelog/images/20260706-multi-entity-currency.png)
+  </Frame>
+
+  Until now, a customer was tied to one currency and one billing entity. Billing the same customer in another currency or from another entity required creating duplicate customer records.
+
+  That limitation is now gone.
+
+  Customer currency and billing entity now act as **defaults, not constraints**. When creating a billing object — subscription, coupon, one-off invoice, or wallet — you can choose a different currency or billing entity when needed.
+
+  Invoices are then issued using the currency and billing entity selected on the object.
+
+  This makes it easier to manage global customers from a single profile, while keeping settings, payment methods, taxes, CRM sync, accounting sync, and reporting aligned in one place.
+
+  [Learn more](/guide/customers/customer-management#currency-and-billing-entity)
+  
+  ## Purchase order numbers on one-off invoices
+
+  <Frame>
+    ![](/changelog/images/20260707-po-number-one-off.png)
+  </Frame>
+
+  Enterprise accounts payable teams need a purchase order reference to approve an invoice. Without it, the invoice gets sent back and payment is delayed.
+
+  You can now set a **purchase order number** when creating a one-off invoice. The reference appears on the invoice your customer receives, ready to be matched and approved on the first pass.
+
+  - **In the dashboard**: add the PO number directly in the invoice creation form.
+  - **Via the API**: pass `purchase_order_number` when creating the invoice.
+
+  This is the first step for this field: we'll roll it out to subscriptions and wallets next.
+
+  [Learn more](/guide/one-off-invoices/create-one-off-invoices)
+
+</Update>
+
 <Update label="June 2026">
+  ## Activation Rules: hold a subscription until it's ready to bill
+
+    <Frame>
+    ![](/changelog/images/20260629-activation-rule-payments.png)
+  </Frame>
+
+  Subscriptions used to start the moment their start date arrived. Sometimes that's too soon. You want the customer to pay first, or to clear a condition, before access is granted and the meter starts running.
+
+  **Activation Rules** put that gate in your hands. Add a rule to a subscription and it stays `incomplete` until the rule is satisfied. While it waits, no invoice is issued, no usage is billed, and nothing lands in your books. Once the rule passes, the subscription activates and bills exactly like any other. No rules means nothing changes: subscriptions activate on their start date as they always have.
+
+  The first rule is **payment activation**. The subscription stays incomplete until its first payment succeeds, then it activates and the invoice is finalized. If the payment fails, or a timeout you set is reached, the subscription cancels on its own. No access granted, no revenue booked, nothing to clean up. Turn it on when you assign a plan: choose **"Activate on successful payment"**, set a timeout, confirm.
+
+  This is the start of a framework, not a one-off. Activation Rules are designed to grow, and payment is the first of more conditions to come.
+
+  [Learn more](/guide/subscriptions/activation-rules)
+
+  ## German e-invoicing: XRechnung and ZUGFeRD now supported
+
+  <Frame>
+    ![](/changelog/images/20260619-german-einvoicing.png)
+  </Frame>
+
+  Germany 🇩🇪 is now a fully supported e-invoicing jurisdiction in Lago. Invoices, credit notes, and payment receipts are issued in both formats the German mandate recognizes, with no extra configuration.
+
+  - **XRechnung**: a pure XML file using UBL (EN 16931), built for machine processing and public-sector portals.
+  - **ZUGFeRD 2.x**: a hybrid PDF/A-3 with embedded CII (UN/CEFACT), readable by a human and a machine from the same file.
+
+  Both run on the same UBL and CII templates that already power France. Adding Germany was a template change, not a new engine. That is the point of an open-source, format-first approach: each new jurisdiction reuses the standards underneath instead of rebuilding from scratch.
+
+  As with France, Lago **does not transmit documents to the authorities**. You download the XML and upload it to your jurisdiction portal. Turn it on per billing entity in **Settings**.
+
+  [Learn more](/guide/invoicing/e-invoicing/overview)
+
+  ## Redesigned plan and subscription experience
+  <Frame>
+    ![](/changelog/images/20260618-redesign-plan-sub.png)
+  </Frame>
+
+  We’ve revamped the way you navigate and manage plans and subscriptions.
+  A new sidebar gives you a clear view of the plan structure. Expand folders to reveal their contents, then click any item to jump directly to the relevant section.
+
+  We’ve also redesigned editing under the hood:
+  - Faster performance
+  - Improved accessibility
+  - Simpler editing workflows
+
+  Changes are now applied through focused updates, making it easier to manage complex plans and subscriptions with confidence.
+  Take full control of how your plans and subscriptions work.
+
+  ## Agent SDK: bill the dollar cost of LLM calls, with your margin built in
+
+  <Frame>
+    ![](/changelog/images/20260615-llm-markup.png)
+  </Frame>
+
+  The Lago Agent SDK already turns LLM token usage into billing events. It can now do the pricing for you. Switch on **price mode** and the SDK looks up the price of every model you call, computes the dollar cost, **applies your markup**, and sends Lago one cost event per call. Your LLM costs are centralized in one place, and you decide what to resell them for.
+
+  - **Real cost per call**: the SDK sends the dollar amount, after your markup, ready to bill on a dynamic charge.
+  - **Prices fetched for you**: live from OpenRouter and the AWS Bedrock public price lists. No API keys, no price file to maintain, refreshed automatically in the background.
+  - **Your margin, your call**: set a markup to resell LLM access at a profit. `1.2` bills your cost plus 20%.
+  - **Never under-bill**: if a price is not available, the SDK falls back to sending token counts and alerts you. It never silently drops usage.
+  - **Opt-in**: the default stays token mode, so nothing changes until you turn it on.
+
+  Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
+
+  [Learn more](/guide/ai-agents/agent-sdk/billing)
+
+  ## Stripe Shared Payment Token: Lago auto-charges invoices through agent payments
+
+  When an AI agent buys on a customer's behalf, there is no card to type into a checkout page. Stripe issues a **Shared Payment Token** instead: a scoped credential the agent grants to you, with built-in usage limits, expiry, and deactivation. Lago now reads that token and charges your invoices against it automatically when they are generated. If the token is valid and within its limits, Stripe resolves it to a real payment method and the charge goes through. No extra step in your billing flow.
+
+  - **Automatic fallback**: the token kicks in only when no other payment method is on file, so existing cards and mandates are never touched.
+  - **Same receipts**: Stripe still issues a real payment method behind the scenes, so `last4`, payment status, and receipts look exactly like a card charge.
+  - **Public preview**: available behind a flag while Stripe rolls the feature out.
+
+  A big thank you to Julien and the Laravel team, who built this contribution.
+
+  [Learn more](/integrations/payments/stripe/shared-payment-tokens)
 
   ## Stripe Shared Payment Token: Lago auto-charges invoices through agent payments
 
@@ -79,7 +329,7 @@ rss: "true"
 
   Built for AI or SaaS teams that want to ship usage-based billing the same week they ship their new AI product on top of LLMs.
 
-  [Learn more](/guide/ai-agents/agent-sdk)
+  [Learn more](/guide/ai-agents/agent-sdk/overview)
 
 
   ## Invoice consolidation: Choose what gets bundled into a single invoice
@@ -508,7 +758,7 @@ This allows teams to store key operational details — such as the reason for is
 
   We've made some improvements to the Revenue Streams dashboard to make it more intuitive, espeicially for the gross vs net revenue calculation. We now display the contra revenue, including coupons, discounts, and credits.
 
-  [Learn more](/guide/analytics/revenue-streams)
+  [Learn more](/guide/analytics/reports#finance-reports)
 
   ## Set service periods on one-off line items
 
@@ -561,7 +811,7 @@ This allows teams to store key operational details — such as the reason for is
   2. Give customers visibility into their upcoming bills
   3. Helping customers stay in control of their spend
 
-Built on the same engine as the [current usage endpoint](../../api-reference/customer-usage/get-current), it ensures consistent and trustworthy projections.
+Built on the same engine as the [current usage endpoint](/api-reference/customer-usage/get-current), it ensures consistent and trustworthy projections.
 
 [Learn more](/guide/events/retrieve-usage#retrieve-projected-usage)
   
@@ -764,7 +1014,7 @@ Built on the same engine as the [current usage endpoint](../../api-reference/cus
   <Frame>
     ![](/changelog/images/20250425-analytics-prepaid-credits-flow.png)
   </Frame>
-  [Learn more](../guide/analytics/prepaid-credits)
+  [Learn more](/guide/analytics/reports#usage-and-credits-reports)
 </Update>
 
 <Update label="April 2025">
@@ -829,7 +1079,7 @@ Built on the same engine as the [current usage endpoint](../../api-reference/cus
 
   This marks a major step forward in Lago's new Analytics view, designed to help you make smarter, data-driven decisions. If you're part of the beta, we'd love to hear your feedback\!
 
-  [Learn more](../guide/analytics/revenue-streams)
+  [Learn more](/guide/analytics/reports#finance-reports)
 </Update>
 
 <Update label="March 2025">
@@ -1022,7 +1272,7 @@ Built on the same engine as the [current usage endpoint](../../api-reference/cus
     ![](/changelog/images/20250206-add-fee-draft-invoice.png)
   </Frame>
   As communicated, we no longer generate fees at 0 units, but you can still add them to Draft invoices if no event has been received.
-  Don’t hestiate to navigate into a Draft invoice and add fees linked to charges with no Event.
+  Don’t hesitate to navigate into a Draft invoice and add fees linked to charges with no Event.
 
   [Learn more](../guide/invoicing/draft-invoices#add-fees-to-draft-invoice)
 
@@ -2829,7 +3079,7 @@ Built on the same engine as the [current usage endpoint](../../api-reference/cus
 
   Before the release of this feature, usaged-based features (charges) were following the plan period. If the plan period was invoiced yearly, the charges were invoiced yearly.
 
-  It's now possible to **invoice billable metrics on a montly basis** for a plan billed yearly. The base amount of the plan will be invoice yearly (in-arrears or in-advance), but your usage based features will be invoiced on a monthly basis.
+  It's now possible to **invoice billable metrics on a monthly basis** for a plan billed yearly. The base amount of the plan will be invoice yearly (in-arrears or in-advance), but your usage based features will be invoiced on a monthly basis.
 
   **To do so:**
 
