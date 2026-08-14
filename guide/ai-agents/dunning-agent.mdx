@@ -13,10 +13,6 @@ A dunning campaign is a timer. Day 3, day 7, day 14, the same ladder for every o
 
 The Dunning Agent reads the account before it writes the email. It pulls twelve months of invoices and payments, works out how this customer actually pays, and then acts at the lowest rung that is justified. If nothing is justified, it does nothing and says why.
 
-<Frame caption="Dunning Agent">
-  <img src="/guide/images/dunning-agent.png" />
-</Frame>
-
 <Info>
 **BETA** ✨
 
@@ -52,44 +48,26 @@ Campaigns are the deterministic floor: predictable, auditable, no model involved
 
 One ordered ladder, re-evaluated from live billing data on every run. The first rung that matches wins, and the agent stops there.
 
-| # | Rung | Condition | Disposition |
-|---|---|---|---|
-| 0 | Settled | Net due is zero or less | `skip (settled)` |
-| 1 | Manual hold | A person took the account over | `paused` |
-| 2 | Disputed | The invoice carries `payment_dispute_lost_at` | `skip (dispute)` |
-| 3 | Possibly paid | A settled payment landed on **this** invoice recently | `skip (possibly-paid)` |
-| 4 | Provider collecting | A PSP is connected and nothing has failed | `skip (provider in-flight)` |
-| 5 | Failed charge, small | Net below the retry cap, never retried | `retry (auto)` |
-| 6 | Failed charge, large or exhausted | At or above the cap, or already retried | `loop-in-human (retry)` |
-| 7 | Materiality | Net at or above the materiality line | `loop-in-human (materiality)` |
-| 8 | Terminal | Chased the maximum number of times, no result | `loop-in-human (terminal)` |
-| 9 | Respect the pattern | Reliable habitual lag, still inside it | `wait` |
-| 10 | No email | No address on the customer record | `skip (no email)` |
-| 11 | Otherwise | Nothing above matched | `draft (tone)` |
+<Frame caption="The disposition ladder: every overdue invoice enters at the top and stops at the first rung that matches">
+  <img src="/guide/images/dunning-agent-ladder.png" />
+</Frame>
 
-```mermaid
-flowchart TD
-    Start["Overdue invoice"] --> Net{"Net due > 0?"}
-    Net -->|No| Settled["skip (settled)"]
-    Net -->|Yes| Hold{"Manual hold?"}
-    Hold -->|Yes| Paused["paused"]
-    Hold -->|No| Disp{"Disputed?"}
-    Disp -->|Yes| Dispute["skip (dispute)"]
-    Disp -->|No| Paid{"Recent payment<br/>on this invoice?"}
-    Paid -->|Yes| Verify["skip (possibly-paid)"]
-    Paid -->|No| Prov{"PSP connected?"}
-    Prov -->|"Yes, collecting"| InFlight["skip (provider in-flight)"]
-    Prov -->|"Yes, charge failed"| Cap{"Below retry cap<br/>and never retried?"}
-    Cap -->|Yes| Retry["retry (auto)"]
-    Cap -->|No| CardFix["loop-in-human (retry)<br/>+ card-fix email"]
-    Prov -->|No| Mat{"Net >= materiality?"}
-    Mat -->|Yes| Human1["loop-in-human (materiality)"]
-    Mat -->|No| Term{"Chased too often?"}
-    Term -->|Yes| Human2["loop-in-human (terminal)"]
-    Term -->|No| Pattern{"Inside habitual<br/>pay lag?"}
-    Pattern -->|Yes| Wait["wait"]
-    Pattern -->|No| Draft["draft (tone by score)"]
-```
+<Accordion title="The ladder as text">
+  | # | Rung | Condition | Disposition |
+  |---|---|---|---|
+  | 0 | Settled | Net due is zero or less | `skip (settled)` |
+  | 1 | Manual hold | A person took the account over | `paused` |
+  | 2 | Disputed | The invoice carries `payment_dispute_lost_at` | `skip (dispute)` |
+  | 3 | Possibly paid | A settled payment landed on **this** invoice recently | `skip (possibly-paid)` |
+  | 4 | Provider collecting | A PSP is connected and nothing has failed | `skip (provider in-flight)` |
+  | 5 | Failed charge, small | Net below the retry cap, never retried | `retry (auto)` |
+  | 6 | Failed charge, large or exhausted | At or above the cap, or already retried | `loop-in-human (retry)` |
+  | 7 | Materiality | Net at or above the materiality line | `loop-in-human (materiality)` |
+  | 8 | Terminal | Chased the maximum number of times, no result | `loop-in-human (terminal)` |
+  | 9 | Respect the pattern | Reliable habitual lag, still inside it | `wait` |
+  | 10 | No email | No address on the customer record | `skip (no email)` |
+  | 11 | Otherwise | Nothing above matched | `draft (tone)` |
+</Accordion>
 
 <Note>
 **Net, never face value.** Lago keeps an invoice at `payment_status: pending` and its full `total_amount_cents` after a partial payment. The amount already paid shows up in `total_paid_amount_cents`, not on the balance.
