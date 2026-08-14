@@ -1,0 +1,56 @@
+---
+title: "Journal Entry Details"
+description: "The underlying double-entry lines behind every recognized-revenue figure."
+---
+
+{/* INTERNAL: Confirm exact column labels and available filters/grouping against the shipped report UI before publishing. */}
+
+Every figure in the other reports is built from journal entries: balanced accounting records where debits equal credits. The Journal Entry Details report is the line-level source of truth. When a number anywhere else needs explaining, this is where you trace it.
+
+## When to use it
+
+- Tracing a recognized-revenue figure back to the exact billing event that produced it.
+- Posting to or reconciling against your general ledger.
+- Auditing a specific invoice, subscription, credit note, or dispute.
+
+## Who uses it
+
+Accounting teams reconciling to the ledger, and anyone investigating a number.
+
+## Main fields
+
+| Field | What it means | How to use it |
+|-------|---------------|---------------|
+| Date | The day the entry is booked. | Place the entry in the right period. |
+| Service period | The window the underlying service covers. | See what the entry is recognizing revenue for. |
+| Amount | The value of the entry. | The debit and credit are equal and opposite. |
+| Account | The account debited or credited (revenue, deferred revenue, receivable, cash, tax, and so on). | Map to your general ledger. |
+| Linked source | The invoice, subscription, fee, credit note, or payment behind the entry. | Trace back to the billing object. |
+
+## How to read it
+
+Each event produces one or more balanced entries. A daily subscription recognition, for example, moves an amount out of deferred revenue and into recognized revenue on a single day. A payment moves an amount from receivable to cash. Reading the account pair tells you what happened.
+
+## Example
+
+A few entries from a \$50 monthly subscription billed in advance, then a payment.
+
+| Date | Service period | From account | To account | Amount | Source |
+|------|----------------|--------------|------------|--------|--------|
+| Jan 1 | Jan 1 – Jan 31 | Accounts receivable | Deferred revenue | \$50.00 | Invoice |
+| Jan 1 | Jan 1 | Deferred revenue | Recognized revenue | \$1.61 | Daily recognition |
+| Jan 2 | Jan 2 | Deferred revenue | Recognized revenue | \$1.61 | Daily recognition |
+| Jan 20 | — | Accounts receivable | Cash | \$50.00 | Payment |
+
+The daily recognition lines repeat for each day of January, draining deferred revenue to zero by the 31st.
+
+## Relationship to other reports
+
+- Summing the recognized-revenue lines for a period gives the [Recognized Revenue report](/guide/revenue-recognition/reports/recognized-revenue) total.
+- Deferred-revenue lines roll up into the [Deferred Revenue report](/guide/revenue-recognition/reports/deferred-revenue).
+- All accounts roll up into the [Statements](/guide/revenue-recognition/reports/statements).
+
+## Limitations to keep in mind
+
+- Entries are pre-tax for revenue; tax sits in its own account.
+- Closed periods are fixed; late events appear as adjustments in a later period.

@@ -1,0 +1,53 @@
+---
+title: "Subscriptions"
+description: "How Lago recognizes subscription fees, billed in advance or in arrears."
+---
+
+Subscriptions are the most common case. A subscription delivers service continuously over a period, so Lago recognizes its fee **daily across the service period**. What changes between billing in advance and billing in arrears is only which balance-sheet account holds the not-yet-earned (or not-yet-billed) amount.
+
+The daily figure is the same in both cases:
+
+> **Daily recognized revenue = subscription fee ÷ number of days in the service period.**
+
+## Billed in advance
+
+When you bill in advance, you invoice at the start of the period for service you haven't delivered yet. That full amount goes into **deferred revenue**, and Lago releases it into recognized revenue one day at a time. By the last day of the period, deferred revenue has drained to zero.
+
+A customer is invoiced \$50 on January 1 for January service (January 1 to January 31). January has 31 days, so Lago recognizes \$50 ÷ 31 ≈ \$1.61 per day.
+
+| Date | Billing event | Invoice amount | Service period | Daily recognized revenue | Recognized revenue to date | Deferred revenue remaining | Explanation |
+|------|---------------|----------------|----------------|--------------------------|----------------------------|----------------------------|-------------|
+| Jan 1 | Monthly fee invoiced in advance | \$50.00 | Jan 1 – Jan 31 | \$1.61 | \$1.61 | \$48.39 | Whole fee deferred up front, first day earned. |
+| Jan 15 | (mid-period) | — | — | \$1.61 | \$24.19 | \$25.81 | Roughly half earned halfway through. |
+| Jan 31 | Period ends | — | — | \$1.64 | \$50.00 | \$0.00 | Final day absorbs rounding. Deferred fully drained. |
+
+By January 31 you've recognized the full \$50 and deferred revenue is zero.
+
+## Billed in arrears
+
+When you bill in arrears, you deliver the service first and invoice at the end. There's nothing to defer, because you haven't collected anything yet. Instead, Lago recognizes revenue daily as the period elapses and books it to **unbilled revenue** (also called accrued revenue). When you issue the invoice, that unbilled revenue converts into a normal receivable.
+
+Same \$50 monthly fee, but billed in arrears. Service runs January 1 to January 31, invoice issues February 1.
+
+| Date | Billing event | Service period | Daily recognized revenue | Recognized revenue to date | Unbilled revenue | Explanation |
+|------|---------------|----------------|--------------------------|----------------------------|------------------|-------------|
+| Jan 1 | Service begins | Jan 1 – Jan 31 | \$1.61 | \$1.61 | \$1.61 | Earned daily, not yet invoiced. |
+| Jan 31 | Service ends | — | \$1.61 | ~\$49.91 | ~\$49.91 | Full month earned and sitting in unbilled revenue. |
+| Feb 1 | Invoice issued | — | — | \$50.00 | \$0.00 | Unbilled revenue becomes a receivable. A small rounding difference is trued up here. |
+
+The recognized revenue for January is the same \$50 as the advance case. Only the account differs: deferred revenue when billed in advance, unbilled revenue when billed in arrears.
+
+<Info>
+Because each day is recognized independently, the daily amounts can add up to a few cents short of the invoice total before the invoice issues. Lago trues up that small rounding difference when the invoice is created, so the final recognized total matches the invoice exactly.
+</Info>
+
+## Mid-period changes
+
+If a subscription ends partway through a period, Lago recognizes the days actually served and the final invoice settles the amount. Upgrades, downgrades, and terminations are reflected through the new subscription amounts and, where needed, credit notes. See [Credit notes and adjustments](/guide/revenue-recognition/how-it-works/credit-notes-and-adjustments).
+
+## What this means for your reports
+
+- Advance-billed subscriptions show up in the [Deferred Revenue report](/guide/revenue-recognition/reports/deferred-revenue) until earned.
+- Arrears-billed subscriptions show up as unbilled revenue until invoiced.
+- Both contribute the same daily amount to the [Recognized Revenue report](/guide/revenue-recognition/reports/recognized-revenue).
+- The [Revenue Waterfall](/guide/revenue-recognition/reports/revenue-waterfall) shows how an advance invoice releases across the months it covers.

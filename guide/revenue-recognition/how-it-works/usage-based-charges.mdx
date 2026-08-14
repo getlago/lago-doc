@@ -1,0 +1,47 @@
+---
+title: "Usage-based charges"
+description: "How Lago recognizes metered usage as it's consumed."
+---
+
+Usage-based charges work differently from subscriptions. There's no fixed amount to spread across a period, because the amount depends on what the customer actually consumes. So Lago recognizes usage revenue **on the day the usage happens**. The service is delivered the moment usage is recorded, so that's the moment revenue is earned.
+
+## Recognized as it's consumed
+
+For metered usage billed in arrears, Lago recognizes each day's usage as that day's revenue. Because the charge is earned but not yet invoiced, it sits in **unbilled revenue** until the invoice issues at the end of the period.
+
+A customer is on a \$0.05-per-API-call plan, billed monthly in arrears. They make calls throughout January.
+
+> **Daily recognized revenue = calls that day × price per call.**
+
+| Date | Usage that day | Price per call | Daily recognized revenue | Recognized revenue to date | Explanation |
+|------|----------------|----------------|--------------------------|----------------------------|-------------|
+| Jan 3 | 200 calls | \$0.05 | \$10.00 | \$10.00 | Earned on the day consumed. |
+| Jan 10 | 500 calls | \$0.05 | \$25.00 | \$35.00 | More usage, more revenue, same day it happens. |
+| Jan 20 | 300 calls | \$0.05 | \$15.00 | \$50.00 | Running total grows with consumption. |
+| Feb 1 | Invoice issued for January usage | — | — | \$50.00 | Unbilled revenue becomes a receivable. |
+
+There's no deferred revenue here. You can't defer what you haven't billed, and you recognize as you deliver.
+
+## Usage billed in advance
+
+Some usage charges are billed in advance at the moment they happen, like a one-shot transaction fee. Because the service is delivered immediately, Lago recognizes the revenue immediately. There's nothing to spread and nothing to defer.
+
+## Recurring usage, such as seats
+
+When the charge is for something that persists across the period, like per-seat pricing, Lago treats it like a subscription: it spreads each seat's fee daily across the days that seat is active. Add a seat mid-month and that seat gets its own daily schedule for the remaining days.
+
+A customer adds 1 seat at \$30/month on January 16. January has 31 days, so the seat is active for 16 days (January 16 to January 31).
+
+| Date | Billing event | Amount | Active period | Daily recognized revenue | Recognized revenue in January | Explanation |
+|------|---------------|--------|---------------|--------------------------|-------------------------------|-------------|
+| Jan 16 | Seat added | \$30.00 | Jan 16 – Jan 31 | \$30.00 ÷ 31 ≈ \$0.97 | ≈ \$15.48 | Only the active days of January are recognized. |
+
+## What this means for your reports
+
+- Usage revenue lands in the [Recognized Revenue report](/guide/revenue-recognition/reports/recognized-revenue) on the days it's consumed, not when invoiced.
+- Until the invoice issues, in-arrears usage shows as unbilled revenue, not deferred revenue.
+- Spikes in the daily recognized revenue line usually map to heavy usage days.
+
+<Info>
+Usage recognition is only as precise as the usage data feeding it. For high-volume metering, treat the recognized figures as a close, continuously updated estimate that finalizes when the invoice is issued.
+</Info>

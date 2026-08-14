@@ -1,0 +1,97 @@
+---
+title: "Full lifecycle example"
+description: "One customer, one reporting period, every moving part."
+---
+
+This walkthrough follows a single customer through one reporting period, January 1 to January 31, with every common billing event in play: an advance-billed annual subscription, metered usage, a minimum commitment true-up, tax, a payment, and a credit note. It shows how each event is recognized and how the period looks across all the reports.
+
+## The setup
+
+| Event | Date | Details |
+|-------|------|---------|
+| Annual subscription | Jan 1 | \$1,200 pre-tax, billed in advance, service Jan 1 – Dec 31. Tax 20% (\$240). Invoice total \$1,440. |
+| Metered usage | Throughout January | 1,000 API calls at \$0.05 = \$50, billed in arrears, invoiced Feb 1. |
+| Minimum commitment | Jan 31 | \$100 usage commitment. Actual usage \$50, so a \$50 true-up is created. |
+| Payment | Jan 20 | Customer pays the \$1,440 subscription invoice. |
+| Credit note | Jan 25 | \$30 service credit issued. |
+
+## Event by event
+
+### The annual subscription
+
+The \$1,200 fee is spread daily over the 365-day service period: \$1,200 ÷ 365 ≈ \$3.29 per day. January has 31 days. The \$240 tax is booked to a tax liability on January 1 and is never part of revenue.
+
+| Date | Billing event | Invoice amount | Service period | Daily recognized revenue | Recognized in January | Deferred at Jan 31 |
+|------|---------------|----------------|----------------|--------------------------|-----------------------|--------------------|
+| Jan 1 | Annual subscription invoiced (advance) | \$1,200.00 | Jan 1 – Dec 31 | \$3.29 | \$101.92 | \$1,098.08 |
+
+### The usage
+
+The customer's usage is recognized on the days it's consumed, into unbilled revenue, since the usage invoice doesn't issue until February 1.
+
+| Period | Billing event | Amount | Recognized in January | Explanation |
+|--------|---------------|--------|-----------------------|-------------|
+| Throughout January | 1,000 calls at \$0.05, billed in arrears | \$50.00 | \$50.00 | Earned as consumed. Sits in unbilled revenue until invoiced Feb 1. |
+
+### The minimum commitment true-up
+
+The customer committed to \$100 of usage but consumed only \$50. The \$50 shortfall is recognized in full when the true-up fee is created on January 31.
+
+| Date | Billing event | Amount | Recognized in January | Explanation |
+|------|---------------|--------|-----------------------|-------------|
+| Jan 31 | True-up fee created | \$50.00 | \$50.00 | Commitment (\$100) minus usage (\$50), recognized at period end. |
+
+### The payment
+
+On January 20 the customer pays the \$1,440 subscription invoice. This moves \$1,440 from receivable to cash and does **not** change recognized revenue.
+
+| Date | Billing event | Recognized revenue impact | Balance-sheet impact |
+|------|---------------|---------------------------|----------------------|
+| Jan 20 | \$1,440 payment received | None | Receivable → cash |
+
+### The credit note
+
+On January 25 you issue a \$30 service credit. It reduces recognized revenue by \$30 in January, the period it's issued.
+
+| Date | Billing event | Recognized revenue impact | Explanation |
+|------|---------------|---------------------------|-------------|
+| Jan 25 | \$30 credit note issued | −\$30.00 | Contra-revenue, booked in January. Earlier days are not restated. |
+
+## The period totals
+
+Adding up the recognized revenue for January:
+
+| Revenue type | Amount |
+|--------------|--------|
+| Subscription (recognized daily) | \$101.92 |
+| Usage (recognized as consumed) | \$50.00 |
+| Minimum commitment true-up | \$50.00 |
+| Credit note (contra-revenue) | −\$30.00 |
+| **Recognized revenue, January** | **\$171.92** |
+
+And the balances at January 31:
+
+| Balance | Amount | Why |
+|---------|--------|-----|
+| Deferred revenue | \$1,098.08 | The unearned part of the annual subscription. |
+| Unbilled revenue | \$50.00 | January usage, not yet invoiced. |
+| Tax liability | \$240.00 | Subscription tax, owed to the authority. |
+| Cash | \$1,440.00 | The subscription payment received. |
+
+## How each report reflects this
+
+| Report | What it shows for January |
+|--------|---------------------------|
+| [Recognized Revenue](/guide/revenue-recognition/reports/recognized-revenue) | \$171.92 total, broken down by type, with the credit note as −\$30. |
+| [Deferred Revenue](/guide/revenue-recognition/reports/deferred-revenue) | \$1,098.08 remaining on the annual subscription. |
+| [Revenue Waterfall](/guide/revenue-recognition/reports/revenue-waterfall) | The \$1,200 subscription releasing \$101.92 in January and the rest across February to December. |
+| [Statements](/guide/revenue-recognition/reports/statements) | Income statement: \$171.92 net revenue. Balance sheet: deferred revenue, unbilled revenue, tax liability, and cash as above. |
+| [Journal Entry Details](/guide/revenue-recognition/reports/journal-entry-details) | Every line: daily subscription recognition, daily usage, the true-up, the payment, and the credit note. |
+
+## The takeaways
+
+- Recognized revenue (\$171.92) has little to do with what was invoiced (\$1,440 subscription) or collected (\$1,440). It reflects what was **earned** in January.
+- Recognized plus deferred for the subscription (\$101.92 + \$1,098.08) equals the \$1,200 pre-tax invoice.
+- Tax (\$240) never touches revenue.
+- The payment moved cash without moving revenue.
+- The credit note reduced revenue only in the period it was issued.
