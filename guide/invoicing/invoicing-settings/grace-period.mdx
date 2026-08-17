@@ -35,7 +35,7 @@ The grace period set at the billing entity level applies to all customers linked
       5. Click **"Edit grace period"** to confirm.
 
       <Warning>
-        If you shorten the organization's grace period, some invoices in `draft`
+        If you shorten the billing entity's grace period, some invoices in `draft`
         status may be automatically `finalized`. For instance, if the initial grace
         period was five days, but then three days into the grace period you decide to
         reduce it to two days, then all `draft` invoices will automatically switch to
@@ -45,7 +45,7 @@ The grace period set at the billing entity level applies to all customers linked
   <Tab title="API">
     You can also modify the entity's grace period at any time through [the API](/api-reference/billing-entities/update).
       <CodeGroup>
-      ```bash Add a grace period on the organization {28}
+      ```bash Add a grace period on the billing entity
       LAGO_URL="https://api.getlago.com"
       API_KEY="__YOUR_API_KEY__"
 
@@ -53,8 +53,10 @@ The grace period set at the billing entity level applies to all customers linked
         --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
-          "organization": {
+          "billing_entity": {
+            "billing_configuration": {
               "invoice_grace_period": 3
+            }
           }
         }'
       ```
@@ -87,7 +89,7 @@ The grace period set at the billing entity level applies to all customers linked
   <Tab title="API">
     You can also modify the customer's grace period at any time through the Dashboard or [the API](/api-reference/customers/create).
       <CodeGroup>
-      ```bash Add a grace period on the customer {28}
+      ```bash Add a grace period on the customer
       LAGO_URL="https://api.getlago.com"
       API_KEY="__YOUR_API_KEY__"
 
