@@ -1,0 +1,86 @@
+---
+title: "Churn"
+description: "How Lago counts terminations, what it excludes as plan changes, and why subscription churn is not customer churn."
+---
+
+Terminations in the period, dated on the termination date and split the same way as starts: real churn on one side, plan changes on the other.
+
+Four charts: **Subscription terminations**, split churn against plan changes, **Day of terminations**, **Churn subscriptions by plan**, which excludes plan changes, and **Churn details**, one row per termination.
+
+## Terminations
+
+Subscriptions that ended and were not replaced.
+
+**Included** Terminated subscriptions with no successor subscription.
+
+**Excluded** Terminations that are the old half of a plan change. Those are counted as plan changes instead.
+
+**How it's calculated** A count of terminated subscriptions in the period with no live successor.
+
+**Grain and timing** Flow, dated on the termination date.
+
+**Currency** Grouped by the plan's currency.
+
+## Plan changes
+
+The old half of an upgrade or a downgrade.
+
+**Included** Terminated subscriptions superseded by a successor that was not itself cancelled.
+
+**Excluded** Terminations with no successor, which are the churn line.
+
+**How it's calculated** A count of terminated subscriptions in the period that have a live successor.
+
+**Grain and timing** Flow, dated on the termination date.
+
+**Currency** Grouped by the plan's currency.
+
+## Churned customers
+
+How many customers the churn represents.
+
+**Included** Distinct customers behind terminations that had no successor, per plan and currency.
+
+**Excluded** Customers whose only terminations were plan changes.
+
+**How it's calculated** A distinct count of customers behind the churn line. The by-plan chart excludes plan changes entirely, so an upgrade never appears as churn.
+
+**Grain and timing** Flow, dated on the termination date.
+
+**Currency** Grouped by the plan's currency.
+
+<Warning>
+**Subscription churn is not customer churn.** A customer who terminates one of three subscriptions appears in terminations while remaining a customer. The churn details table carries a flag for exactly this: whether the customer still has another active subscription.
+</Warning>
+
+The churn details table adds the context the charts cannot show:
+
+| Column | What it tells you |
+| --- | --- |
+| Days alive | How long the subscription ran, start to termination. |
+| Termination category | Churn, or a plan change classified as an upgrade, a downgrade or a same-price move. Plans on different intervals are compared on their normalized monthly amount, so a move to a cheaper yearly plan reads as a downgrade. |
+| Churn type | For churn only: a scheduled end, meaning the subscription reached its planned end date, or a manual termination. |
+| Customer still active | For churn only: whether the customer kept another subscription. |
+| Next plan | The plan the customer moved to, for plan changes. |
+
+**Day of terminations** plots terminations by weekday, on the same fixed axis as new subscriptions.
+
+## Reconciliation and common questions
+
+<AccordionGroup>
+<Accordion title="A customer upgraded. Does that show as churn?">
+No. An upgrade adds one to plan changes here and one to plan changes on [New subscriptions](/guide/analytics/subscriptions/new), and nothing to terminations. The by-plan churn chart excludes plan changes altogether.
+</Accordion>
+
+<Accordion title="Does this match MRR churn?">
+Not directly. Subscription churn counts subscriptions, MRR churn measures money, and their classifications differ in one case: a termination that leaves the customer with other active subscriptions is a termination here, but contraction rather than churn in [MRR](/guide/analytics/revenue/mrr).
+</Accordion>
+
+<Accordion title="How many customers did we actually lose?">
+Read churned customers, and check the customer-still-active flag in the details table. A customer who terminated one of several subscriptions is not a lost customer.
+</Accordion>
+
+<Accordion title="A subscription reached its end date. Is that churn?">
+Yes, and the details table labels it a scheduled end rather than a manual termination. Both reduce the base.
+</Accordion>
+</AccordionGroup>

@@ -1,0 +1,127 @@
+---
+title: "Overview"
+description: "What Lago's analytics reports measure, how to read them, and how they are filtered, refreshed and exported."
+---
+
+Analytics is the default view after login. Six dashboards cover subscriptions, revenue, prepaid credits, usage, cash collection and invoices. Every chart sits on a dataset that you can also query through the API.
+
+<Frame caption="Analytics dashboards in Lago">
+  <img src="/guide/analytics/images/analytics-dashboard.png" />
+</Frame>
+
+This page covers what applies to every report: how to read a number, which filters exist, when the data refreshes. Each dashboard has its own page with the precise definition of every metric on it.
+
+## The dashboards
+
+<CardGroup cols={2}>
+    <Card title="Subscriptions" href="/guide/analytics/subscriptions/active">
+        Active subscriptions, new subscriptions and churn, with plan-change lineage.
+    </Card>
+    <Card title="Revenue streams" href="/guide/analytics/revenue/revenue-streams">
+        Gross, contra and net revenue from finalized invoices.
+    </Card>
+    <Card title="MRR" href="/guide/analytics/revenue/mrr">
+        Recurring revenue as a balance, and the movements that changed it.
+    </Card>
+    <Card title="Prepaid credits" href="/guide/analytics/prepaid-credits">
+        Wallet inflows, consumption and end-of-period balances.
+    </Card>
+    <Card title="Usage" href="/guide/analytics/usage">
+        Metered cost and units consumed, invoiced or not.
+    </Card>
+    <Card title="Cash collection" href="/guide/analytics/cash-collection/payments">
+        Payment attempts, failure reasons and dunning recovery.
+    </Card>
+    <Card title="Invoices" href="/guide/analytics/invoices">
+        Invoiced amounts, lifecycle and payment statuses, receivables aging.
+    </Card>
+    <Card title="Forecasted usage" href="/guide/analytics/forecasted-usage">
+        Machine-learning projection of future usage and revenue.
+    </Card>
+</CardGroup>
+
+## How to read a number
+
+Three kinds of measure live on these dashboards. Mixing them up is the most common source of confusion.
+
+| Kind | What it means | Reports |
+| --- | --- | --- |
+| **Stock** | A balance read at a point in time. Never add it across periods. | Starting and ending MRR, active subscriptions, credit balances |
+| **Flow** | An amount or a count that accumulates over the period. Adding it across periods is correct. | MRR movements, revenue streams, usage cost and units, credit ledger movements, new subscriptions, terminations, invoiced amounts, payment attempts, dunning outcome |
+| **As-of snapshot** | A picture of today, whatever the date range says. | AR aging, outstanding revenue exposure |
+
+<Warning>
+A stock and a flow behave differently when you export. Twelve monthly ending-MRR values do not sum to an annual figure: the December value **is** the year-end balance. Twelve monthly new-MRR values do sum to the year's new MRR.
+</Warning>
+
+The active subscriptions reports deserve their own warning: with a date range applied, they answer "how many were active at the end of this range", not "how many were active at some point during it". See [Active subscriptions](/guide/analytics/subscriptions/active).
+
+## Filters
+
+Filters are applied before the numbers are computed, not after they are drawn. A filtered chart is a full recomputation, not a cropped view of a bigger one. Two filters are structural rather than restrictive:
+
+- **Granularity** sets the bucket width: day, week or month. Weeks and months are calendar-based. The current period is shown as far as it has gone, which is why the last bar is usually short.
+- **Breakdown** sets which dimensions form the series. Removing a dimension re-aggregates the chart instead of hiding lines.
+
+Each dashboard carries its own filter bar. They do not bleed into each other.
+
+| Dashboard | Filters |
+| --- | --- |
+| Subscriptions | Date range, Currency, Country, Customers, Customer type, Plan code, Subscription ext. ID, Customer has tax ID |
+| Revenue streams and MRR | Date range, Granularity, Breakdown, Currency, Country, Customers, Customer type, Plan code, Subscription ext. ID, Customer has tax ID |
+| Usage | Date range, Granularity, Breakdown, Currency, Billable metric, Country, Customers, Customer type, Plan code, Subscription ext. ID, Customer has tax ID |
+| Prepaid credits | Date range, Granularity, Credits metric, Currency, Country, Customers, Customer type, Plan code, Subscription ext. ID, Customer has tax ID |
+| Cash collection | Date range, Granularity, Invoice number |
+| Invoices | Date range, Granularity, Invoice number, Currency, Country, Customers, Customer type, Plan code, Subscription ext. ID, Customer has tax ID |
+
+Subscriptions has no granularity selector: its charts are fixed to a monthly or weekday axis.
+
+## Currency
+
+Amounts are reported in the currency they were billed in. Lago does not convert between currencies and never adds two currencies together. A chart showing several currencies at once stacks them side by side, so the total on screen is not a meaningful number. Filter on one currency, or break the chart down by currency, whenever you need a total you can quote.
+
+Zero-decimal currencies such as JPY and KRW, and three-decimal currencies such as KWD and BHD, are handled at their own precision.
+
+## Excluded everywhere
+
+Two populations are out of scope on the revenue reports, by design:
+
+- **Partner accounts.** Customers flagged as partners are excluded from MRR and revenue streams. Revenue share is reported separately. See [Revenue share](/guide/revenue-share).
+- **Self-billed invoices.** Invoices you issue on a partner's behalf never count as your revenue.
+
+## Refresh and caching
+
+The analytical data behind these dashboards is refreshed on a daily cycle, around 12:00 AM UTC, and query results are cached on top of that.
+
+Two consequences:
+
+- A change made today, such as a finalized invoice or a terminated subscription, may not appear until the next refresh.
+- The same figure can differ from the transactional views in the app for a few hours after a billing run.
+
+For same-day operational checks, use the invoice and subscription views in the app or the API, not these dashboards.
+
+## Exports
+
+Any chart or table exports to CSV, JSON or Excel. The export honours the filters and breakdown active at the time, so what you download matches what you see.
+
+## API
+
+The same datasets are available through the API, which is what you want for a BI tool or a scheduled reconciliation.
+
+```bash
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --request GET "$LAGO_URL/api/v1/analytics/mrr?currency=USD" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+Usage analytics has its own endpoint and query parameters. See [Retrieve usage](/guide/events/retrieve-usage) and the [usage endpoint reference](/api-reference/customer-usage/usages).
+
+## Composable by design
+
+The dashboards run on [Apache Superset](https://superset.apache.org/). What Lago ships covers the standard finance and usage questions. You can extend it: add a chart, change a breakdown, or build your own dashboard on the same datasets for board reporting or a customer-level deep dive.
+
+## Not the same as revenue recognition
+
+These dashboards report billing activity: what was invoiced, collected, consumed and committed. [Revenue recognition](/guide/revenue-recognition/overview) reports accrual-basis revenue as journal entries, spreading amounts across the periods they were earned in. The two answer different questions and will not match line for line.

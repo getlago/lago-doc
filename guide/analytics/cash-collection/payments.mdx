@@ -1,0 +1,84 @@
+---
+title: "Payments"
+description: "How Lago reports payment attempts, their outcomes, failure reasons and payment methods."
+---
+
+Every collection attempt against an invoice or a dunning request, with its outcome.
+
+<Warning>
+The unit of measurement here is the **payment attempt**, not the invoice. One invoice can produce many attempts: a first charge, a retry, then a successful dunning attempt. Counting attempts and counting invoices give different answers, and both are correct for their own question.
+</Warning>
+
+Full history is shown by default. Filters are Date range, Granularity and Invoice number.
+
+## Payment intents by status
+
+How many collection attempts succeeded and how many failed.
+
+**Included** Payment attempts that resolved: succeeded or failed. Attempts against invoices, and attempts against dunning payment requests.
+
+**Excluded** Attempts still pending, since they have no outcome yet. A pending attempt appears once it resolves.
+
+**How it's calculated** A count of attempts per period and outcome.
+
+**Grain and timing** Flow, dated on the attempt. Adds correctly across periods.
+
+**Currency** Not applicable. This is a count of attempts.
+
+## Failed payment reasons
+
+Why collection is failing.
+
+**Included** Failed attempts, grouped by the error code the payment provider returned. The ten most frequent codes are shown, with the remainder grouped as others. Attempts with no code appear as unknown.
+
+**Excluded** Successful attempts. Failures for reasons your provider does not report as a code land in unknown.
+
+**How it's calculated** A count of failed attempts per period and error code.
+
+**Grain and timing** Flow, dated on the attempt.
+
+**Currency** Not applicable. This is a count.
+
+<Note>
+These are **your payment provider's** codes, passed through unchanged. Two providers will describe the same failure differently, so an organization using more than one provider will see overlapping vocabularies.
+</Note>
+
+## Successful payments by method
+
+How your customers actually pay.
+
+**Included** Successful attempts, grouped by the payment method type reported by the provider. Payments you recorded by hand appear as manual.
+
+**Excluded** Failed attempts. Successful payments whose provider reports no method type appear as unknown.
+
+**How it's calculated** A count of successful attempts per period and method type.
+
+**Grain and timing** Flow, dated on the attempt.
+
+**Currency** Not applicable. This is a count. Use the payment list for amounts.
+
+## Payment list
+
+One row per attempt, with the customer, the invoice, the amount, the method and the failure context when there is one. This is the report to use when a specific payment needs explaining.
+
+  
+
+## Reconciliation and common questions
+
+<AccordionGroup>
+<Accordion title="Why are there more payment attempts than invoices?">
+Because retries and dunning attempts each count. A single invoice can fail twice and succeed on the third attempt, producing three attempts and one paid invoice. See [Payment retries](/guide/payments/payment-retries).
+</Accordion>
+
+<Accordion title="Does a successful payment mean the invoice is settled?">
+Not necessarily. A partial payment succeeds as an attempt while leaving a balance on the invoice. For settlement, read payment status on the [Invoices](/guide/analytics/invoices) dashboard, or the remaining balance in AR aging.
+</Accordion>
+
+<Accordion title="A manual payment doesn't show a payment method.">
+Payments you record by hand carry no provider method, so they are labelled manual. See [Record manual payments](/guide/payments/record-manual-payments).
+</Accordion>
+
+<Accordion title="Two providers report the same failure differently. Why?">
+Error codes are passed through from your payment provider unchanged. An organization using more than one provider will see overlapping vocabularies for the same underlying failure.
+</Accordion>
+</AccordionGroup>

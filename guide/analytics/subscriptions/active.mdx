@@ -1,0 +1,80 @@
+---
+title: "Active subscriptions"
+description: "How Lago counts the live subscription base, and why a date range gives you a snapshot rather than a period count."
+---
+
+The size of your subscription base right now, or as it stood at a point in the past.
+
+<Warning>
+**This is an as-of measure.** With a date range applied, it counts subscriptions active at the **end** of that range, not subscriptions that were active at some point during it. The start of the range is ignored on purpose: a snapshot only has one instant.
+
+Without a date range, it is the current count.
+</Warning>
+
+Four charts: **Active subscriptions over time**, a monthly balance series, **Active subscriptions by plan** and **Active subscriptions by currency**, both as-of snapshots, and **Active subscriptions details**, one row per subscription.
+
+The Subscriptions dashboard has no granularity selector. Trend charts are monthly.
+
+## Active subscriptions
+
+The size of your subscription base.
+
+**Included** Subscriptions that have started and have not terminated. With a date range, subscriptions that started before the end of the range and were not terminated before it.
+
+**Excluded** Subscriptions that never started, such as scheduled future starts. Terminated subscriptions, from their termination date.
+
+**How it's calculated** A count of subscription records, read as a balance. The trend chart reports the end-of-period balance for each month, so its closing value and the current count agree.
+
+**Grain and timing** Stock. Do not add across periods.
+
+**Currency** Grouped by the plan's currency. Subscriptions with no plan are still counted, and carry no currency.
+
+## Net subscription change
+
+Whether the base grew or shrank.
+
+**Included** Starts less terminations in the period.
+
+**Excluded** Nothing: it is the arithmetic difference.
+
+**How it's calculated** Subscription starts in the period minus terminations in the period.
+
+**Grain and timing** Flow. Adds correctly across periods.
+
+**Currency** Grouped by the plan's currency.
+
+## Active customers
+
+How many customers the base represents.
+
+**Included** Distinct customers with at least one active subscription for the plan and currency.
+
+**Excluded** Nothing beyond the active-subscription rules. A customer with three subscriptions counts once per plan and currency.
+
+**How it's calculated** A distinct count of customers behind the active subscriptions.
+
+**Grain and timing** Stock, as-of the end of the range.
+
+**Currency** Grouped by the plan's currency.
+
+The by-plan charts group child plans under their **parent plan**, so a plan family reads as one line rather than as its overrides. The details table lists the underlying subscriptions one row each.
+
+## Reconciliation and common questions
+
+<AccordionGroup>
+<Accordion title="I set a date range of last quarter and the active count barely changed. Why?">
+Because the active count is a snapshot at the end of the range, not an activity count for the range. Last quarter's range gives you the base as it stood on the last day of that quarter. To see movement, read net subscription change, or the [New subscriptions](/guide/analytics/subscriptions/new) and [Churn](/guide/analytics/subscriptions/churn) reports.
+</Accordion>
+
+<Accordion title="A subscription is scheduled to start next month. Is it counted?">
+No. Only subscriptions that have actually started are counted, so scheduled starts appear once their start date arrives.
+</Accordion>
+
+<Accordion title="Why does a plan I deleted still show subscriptions?">
+The charts group on the plan a subscription was sold on, including plans since deleted. Child plans roll up to their parent plan.
+</Accordion>
+
+<Accordion title="Does this count customers or subscriptions?">
+Subscriptions, unless you read the active customers metric. A customer with three subscriptions adds three to the subscription count and one to the customer count.
+</Accordion>
+</AccordionGroup>
