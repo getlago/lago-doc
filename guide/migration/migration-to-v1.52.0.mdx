@@ -1,0 +1,60 @@
+---
+title: "Migration to v1.52.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about important changes in Lago v1.52.0 that introduce **multi-currency** and **multi-billing-entity billing on a single customer**.
+
+# What are the changes?
+
+## Billing entity on wallet transactions
+
+With multi-billing-entity billing, a customer's subscriptions, wallets and invoices are no longer tied to a single [billing entity](/guide/billing-entities), and a wallet's billing entity can change over time.
+
+To keep accounting traceable, **wallet transactions now store their own `billing_entity_id`**, stamped at creation time. A transaction therefore always reports the entity it was actually created under, even if the wallet is later moved to another entity — only transactions created after the change carry the new entity.
+
+As a result, **existing wallet transactions must be backfilled** with the billing entity of their customer. This is done through a rake task that must be **triggered manually**.
+
+# Why are we doing this?
+
+Previously, the billing entity of a wallet transaction could only be inferred from its customer, which had exactly one entity. Now that a wallet can be moved between entities, inferring the entity would retroactively rewrite the history of past transactions. Storing the entity on each transaction keeps historical records accurate and entity-level accounting reliable.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you're using a version below `v1.50.0`, please first follow the migration steps for [v1.50.0](/guide/migration/migration-to-v1.50.0).
+Only after completing those should you proceed to v1.52.0.
+</Warning>
+
+## Migration Steps
+
+### 1. Install Lago v1.52.0
+
+Install the new version. Schema migrations (new tables and columns) will run automatically on startup.
+
+### 2. Backfill wallet transactions
+
+Open a shell on your API server and run the migration task:
+
+```bash
+bundle exec rails migrations:backfill_wallet_transactions_billing_entity
+```
+
+The backfill runs in a background job. The task reports the number of remaining wallet transactions until it completes.
+
+<Note>
+The backfill task is safe to run multiple times. It only targets wallet transactions without a billing entity, so already-migrated records are left untouched.
+</Note>
+
+# Get Involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
