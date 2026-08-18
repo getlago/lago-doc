@@ -8,7 +8,7 @@ Adding metadata to an `invoice` object can provide additional structured informa
 
 1. Navigate to the Invoice detail page to target a specific invoice;
 2. Click on "Add metadata";
-3. Add the information (kindly note, a key cannot exist without its corresponding value, and vice versa); and
+3. Add the information (a key cannot exist without its value, and vice versa); and
 4. Save to confirm.
 
 <Info>
@@ -21,7 +21,7 @@ The invoice metadata will be included in the `invoice` object but will not be di
 
 1. Navigate to the Invoice detail page to target a specific invoice;
 2. Click on "Edit metadata";
-3. Add, edit, remove information (kindly note, a key cannot exist without its corresponding value, and vice versa); and
+3. Add, edit, or remove information (a key cannot exist without its value, and vice versa); and
 4. Save to confirm.
 
 **To edit metadata using the API:**
@@ -29,8 +29,37 @@ The invoice metadata will be included in the `invoice` object but will not be di
 1. In your payload, locate the key-value pair with the metadata ID you want to edit; and
 2. Modify the key and/or value as needed.
 
+<CodeGroup>
+```bash Update invoice metadata
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+INVOICE_ID="__YOUR_INVOICE_ID__"
+
+curl --location --request PUT "$LAGO_URL/api/v1/invoices/$INVOICE_ID" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "invoice": {
+      "metadata": [
+        {
+          "id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "key": "digital_ref_id",
+          "value": "INV-0123456-98765"
+        },
+        {
+          "key": "purchase_order",
+          "value": "PO-4567"
+        }
+      ]
+    }
+  }'
+```
+</CodeGroup>
+
+The first item updates an existing key-value pair, identified by its `id`. The second has no `id`, so Lago creates it.
+
 <Tip>
-When editing invoice metadata through the API, please make sure to include the existing metadata in your payload to avoid removing it.
+When editing invoice metadata through the API, make sure to include the existing metadata in your payload to avoid removing it.
 </Tip>
 
 ## Delete metadata on invoice
@@ -49,5 +78,6 @@ When editing invoice metadata through the API, please make sure to include the e
 ## Invoice metadata limitations
 
 1. You can add up to 5 metadata key-value pairs;
-2. Keys must be strings of 20 characters maximum; and
-3. Values must be strings of 140 characters maximum.
+2. Keys must be unique within an invoice;
+3. Keys must be strings of 20 characters maximum; and
+4. Values must be strings of 140 characters maximum.

@@ -4,7 +4,7 @@ description: "Configure whether Lago should generate invoices with a total amoun
 ---
 
 ## Finalize empty invoices
-By default, Lago finalizes all invoices — even those with a total amount of zero. However, some customers may prefer to skip these invoices to avoid generating unnecessary accounting documents.
+By default, Lago finalizes all invoices, including those with a total amount of zero. However, some customers may prefer to skip these invoices to avoid generating unnecessary accounting documents.
 To support this, you can configure Lago to skip finalizing invoices that are considered **empty**.
 
 ### Empty invoices definition
@@ -13,7 +13,7 @@ If a discount brings the total amount to zero but the invoice originally contain
 
 ### Billing entity level
 The setting `finalize_zero_amount_invoice` is enabled (`true`) by default.
-You can disable it at the billing entity level under Invoice settings. When set to `false`, Lago will skip finalizing empty invoices for all customers linked to that billing entity — unless a customer-specific override is applied.
+You can disable it at the billing entity level under Invoice settings. When set to `false`, Lago skips finalizing empty invoices for all customers linked to that billing entity, unless a customer-specific override is applied.
 
 <Tabs>
   <Tab title="Dashboard">
@@ -26,7 +26,7 @@ You can disable it at the billing entity level under Invoice settings. When set 
 
   <Tab title="API">
     <CodeGroup>
-    ```bash Update the organization's settings
+    ```bash Update the billing entity's settings
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
@@ -45,7 +45,7 @@ You can disable it at the billing entity level under Invoice settings. When set 
 </Tabs>
 
 ### Customer level
-By default, new customers inherit the `finalize_zero_amount_invoice` setting from the organization.
+By default, new customers inherit the `finalize_zero_amount_invoice` setting from the billing entity.
 You can override this setting for individual customers to meet specific needs. 
 
 The available options are:

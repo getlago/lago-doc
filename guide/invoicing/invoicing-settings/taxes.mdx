@@ -6,9 +6,9 @@ description:
 
 ## External integration
 
-Let your tax provider handle the complexity of tax logic! We support integrations that allow seamless tax automation.
+Let your tax provider handle tax logic. Lago integrates with the providers below to automate tax calculation.
 
-If you'd like to explore these integrations or be connected to a provider, feel free to contact us.
+To explore these integrations or be connected to a provider, contact us.
 
 <CardGroup cols={2}>
   <Card
@@ -154,12 +154,12 @@ When generating invoices, taxes can be applied at various levels and will impact
     <CodeGroup>
     ```bash
     # Add taxes to a customer
-    curl --location --request PUT "$LAGO_URL/api/v1/customers" \
+    curl --location --request POST "$LAGO_URL/api/v1/customers" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
         "customer": {
-          "code": "acme_inc",
+          "external_id": "acme_inc",
           "tax_codes": ["tax_fr"]
         }
       }'
@@ -262,7 +262,7 @@ Tax rates defined at the add-on level can be overridden when creating a one-off 
 
 ## Tax hierarchy
 
-### For Subscription Invoices
+### For subscription invoices
 
 When generating invoices for subscriptions, taxes are applied in the following order of priority:
 
@@ -278,8 +278,8 @@ When generating invoices for subscriptions, taxes are applied in the following o
 
 For one-off invoices, the hierarchy is:
 
-1. **Organization** taxes apply to all fees  
-2. **Customer** taxes override organization taxes  
+1. **Billing entity** taxes apply to all fees  
+2. **Customer** taxes override billing entity taxes  
 3. **Add-on** taxes override customer taxes for the add-on only  
 4. **Fee-level** taxes (set at invoice creation) override add-on-level taxes for the specific fee
 
@@ -291,7 +291,7 @@ Prepaid credits are considered upfront payments. Therefore, invoices for credit 
 
 ---
 
-## Auto-detect european taxes with Lago
+## Auto-detect European taxes with Lago
 
 Lago supports automatic tax detection for European customers.  
 Refer to our [integration guide](/integrations/taxes/lago-eu-taxes) to set it up.
