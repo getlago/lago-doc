@@ -1,0 +1,193 @@
+---
+title: "The Dunning Agent (Beta)"
+description: "An AR analyst for overdue invoices. It reads each customer's payment history before it chases, and hands the rest to a person."
+---
+
+## Overview
+
+A dunning campaign is a timer. Day 3, day 7, day 14, the same ladder for everyone. Three things go wrong on the same day:
+
+- The customer who has paid on day 8 for two years gets a past due notice on day 3.
+- An invoice a partial payment already covered gets chased for its full face value.
+- A customer whose card expired gets "please pay your invoice" instead of a link to fix the card.
+
+The Dunning Agent reads the account first: twelve months of invoices and payments, the disputes, the provider status. Then it acts at the lowest rung that is justified, or does nothing and tells you why.
+
+<Info>
+**Beta.** Available on request. **[Contact us](mailto:hello@getlago.com)** for access.
+
+This agent acts. It sends email and re-attempts charges, so start with a dry run.
+</Info>
+
+## Campaigns and the agent
+
+| | Dunning campaign | Dunning Agent |
+|---|---|---|
+| **Decides the next step** | Fixed attempts and delays | Per customer, re-evaluated every run |
+| **Reads payment history** | No | Yes, 12 months |
+| **Partial payments** | Chases the invoice total | Chases the net still owed |
+| **Declined card** | Same reminder as everyone | Card-fix email plus a retry |
+| **Escalates to a human** | No | Yes, with a reason |
+
+Campaigns are the deterministic floor. The agent is the judgment layer for the accounts where a fixed ladder gets it wrong. Running both is fine.
+
+## How it decides
+
+One ordered ladder, re-evaluated from live billing data on every run. The first rung that matches wins.
+
+<Frame caption="Every overdue invoice enters at the top and stops at the first rung that matches">
+  <img src="/guide/images/dunning-agent-ladder.png" />
+</Frame>
+
+<Accordion title="The ladder as text">
+  | # | Rung | Condition | Disposition |
+  |---|---|---|---|
+  | 0 | Settled | Net due is zero or less | `skip (settled)` |
+  | 1 | Manual hold | A person took the account over | `paused` |
+  | 2 | Disputed | The invoice carries `payment_dispute_lost_at` | `skip (dispute)` |
+  | 3 | Possibly paid | A settled payment landed on **this** invoice recently | `skip (possibly-paid)` |
+  | 4 | Provider collecting | A PSP is connected and nothing has failed | `skip (provider in-flight)` |
+  | 5 | Failed charge, small | Net below the retry cap, never retried | `retry (auto)` |
+  | 6 | Failed charge, large or exhausted | At or above the cap, or already retried | `loop-in-human (retry)` |
+  | 7 | Materiality | Net at or above the materiality line | `loop-in-human (materiality)` |
+  | 8 | Terminal | Chased the maximum number of times, no result | `loop-in-human (terminal)` |
+  | 9 | Respect the pattern | Reliable habitual lag, still inside it | `wait` |
+  | 10 | No email | No address on the customer record | `skip (no email)` |
+  | 11 | Otherwise | Nothing above matched | `draft (tone)` |
+</Accordion>
+
+<Note>
+**Net, never face value.** A partial payment leaves an invoice fully `pending` at its face amount in Lago. The agent chases `total_amount_cents - total_paid_amount_cents - credit_notes_amount_cents` everywhere: the email, the materiality test, the retry cap.
+</Note>
+
+## Who gets chased, and how firmly
+
+Two signals. A campaign confuses them.
+
+**Pattern decides whether to chase.** The median pay lag across a customer's paid invoices, and whether that lag is consistent. Reliably eight days late and six days overdue is not a collections problem, so the agent waits. Scattered lags mean no pattern to respect, so it chases.
+
+**Score decides the tone.** The on-time rate over the last 12 months, nothing more.
+
+| Score | Late on | Tone |
+|---|---|---|
+| `good-payer` | Under 25% of invoices | Gentle |
+| `occasionally-late` | 25% to 50%, or under three invoices on record | Neutral |
+| `repeat-late` | Over 50% of invoices | Firm |
+
+A customer scored `repeat-late` who is still inside their usual lag gets `wait`, not a firm notice. Consistency is not the same as delinquency.
+
+## What it can do
+
+- **Send a reminder.** One email per customer per run, itemizing every overdue invoice with its net amount and days overdue.
+- **Retry a failed charge.** Only below the retry cap, and only once. It also emails the customer a portal link to fix the card.
+
+It cannot terminate a subscription, suspend service, issue a credit note or a refund, or apply wallet credit. When one of those is the right call, it says so in Slack and stops.
+
+## Guardrails
+
+The agent proposes. A policy engine decides and is the only thing that executes, so every limit below lives in code rather than in a prompt.
+
+| Gate | Trips when | Result |
+|---|---|---|
+| Defensibility | The action cites no rule and no evidence | Needs approval |
+| Weekly budget | The touch cap for this customer is used up | Held until next run |
+| Deduplication | The same action already went out recently | Held until next run |
+| Blast radius | The action is rated above `low` | Needs approval |
+| Freshness | The invoice was paid or disputed since the decision | Aborted |
+
+Freshness re-reads the invoice from Lago in the moment before sending, so an invoice paid between the decision and the send is never chased.
+
+## Run it
+
+Three packagings, one decision policy. What changes is where memory lives and how a message goes out.
+
+| | Skill | Platform agent | Self-hosted app |
+|---|---|---|---|
+| **Runs in** | Claude Desktop or Claude Code | Claude platform | Your infrastructure |
+| **Memory** | Memory files | A memory store | Postgres |
+| **Email** | Gmail draft, never sent | Gmail draft, never sent | SMTP send, gated |
+| **Failed charge** | Drafts, flags a human | Drafts, flags a human | Retries below the cap |
+| **Approvals** | None | None | Yes |
+
+Use the Skill to see the decisions with a person still in the send loop. Use the app when you want it to collect.
+
+<Tabs>
+  <Tab title="Skill">
+    Upload the skill folder under **Settings → Capabilities → Skills**, enable the Gmail and Slack connectors, set your Lago API URL and key, then ask *"who owes me money"*.
+
+    It creates Gmail drafts and never sends. Memory lives in one file per customer, holding the score, the payment pattern, the contact history, and any hold. Clear the hold to hand an account back to the agent.
+  </Tab>
+  <Tab title="Self-hosted app">
+    ```bash
+    cp .env.template .env          # LAGO_API_URL, LAGO_API_KEY, a model key
+    python -m app init-db
+    python -m app sweep --dry-run  # decide and report, no side effects
+    python -m app sweep            # the real pass
+    python -m app web              # chat UI on :8000
+    ```
+
+    Review what the gates escalated, then release it:
+
+    ```bash
+    curl localhost:8000/approvals
+    curl -XPOST localhost:8000/approvals/<id>/approve
+    ```
+
+    A run is manual, driven from chat, or scheduled hourly. The scheduled sweep is opt-in and off by default. There are no webhook triggers: the work queue is a query on Lago's own `payment_overdue` flag, re-derived every run.
+  </Tab>
+</Tabs>
+
+## Connect and configure
+
+| Tool | What it gets you |
+|---|---|
+| **Lago** | The billing truth. Reads invoices, payments, disputes, portal links. One write, in the self-hosted app only: the retry. |
+| **SMTP or Gmail** | Sending, or drafting for a person to send. |
+| **Slack** | One alert per run, listing only the accounts a human should see. |
+| **Your PSP** | Reached through Lago, so it inherits whatever you already connected. |
+| **Bedrock or Anthropic** | The model backend. |
+
+Adding a new action or a new gate is a small extension: an action is a type, a blast radius, an executor, and a freshness check.
+
+| Setting | Default | Controls |
+|---|---|---|
+| `MAX_TOUCHES_PER_WEEK` | `2` | Outbound touches per customer per 7 days |
+| `DEDUP_WINDOW_HOURS` | `48` | How long the same action is blocked from repeating |
+| `SCORE_FRESH_DAYS` | `14` | How long a cached score is trusted |
+| `RECENTLY_PAID_DAYS` | `14` | The possibly-paid lookback window |
+| `MATERIALITY_CENTS` | `1000000` | Net due that goes to a human. Default $10,000 |
+| `TERMINAL_TOUCHES` | `3` | Touches with no result before handing off |
+| `RETRY_AUTO_CAP_CENTS` | `200000` | Failed charges below this are auto-retried. Default $2,000 |
+| `SLACK_WEBHOOK_URL` | none | Where the alert goes |
+
+<Note>
+The ladder order, the email templates, and the score thresholds are not settings. Changing them is a code change.
+</Note>
+
+## When it hands off
+
+One Slack message per run, ordered by urgency. Each line says what happened, what to do, and how automation resumes.
+
+| Reason | What to do |
+|---|---|
+| Materiality | The account owner reaches out personally |
+| Terminal | Call, offer a payment plan, or consider collections |
+| Retry | A card-fix email went out. Check the card or retry |
+| Dispute | Resolve the dispute before any collection |
+| Possibly paid | Verify and reconcile before chasing |
+| Manual hold | Nothing. A person already owns it |
+
+`wait` and cadence holds are not alerted. They resolve themselves.
+
+## Limits
+
+- Every run sweeps every overdue customer, not only the ones that are due.
+- The scheduled sweep is opt-in and off by default.
+- Emails are plain text. No HTML templates, no branding.
+- The ladder is deterministic, but the wording of a reminder is AI-generated. Read a dry run before trusting it unattended.
+
+## Related
+
+- [Automatic dunning](/guide/dunning/automatic-dunning): rule-based dunning campaigns.
+- [Payment retries](/guide/payments/payment-retries): retry collection on a single invoice.
+- [Billing Assistant](/guide/ai-agents/billing-assistant): run billing operations in natural language.
