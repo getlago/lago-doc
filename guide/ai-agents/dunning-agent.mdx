@@ -103,8 +103,8 @@ Three packagings, one decision policy. What changes is where memory lives and ho
 
 | | Skill | Platform agent | Self-hosted app |
 |---|---|---|---|
-| **Runs in** | claude.ai or Claude Code | Claude managed agent | Your infrastructure |
-| **Memory** | Lago customer metadata | Lago customer metadata | Postgres |
+| **Runs in** | Claude Desktop or Claude Code | Claude platform | Your infrastructure |
+| **Memory** | Memory files | A memory store | Postgres |
 | **Email** | Gmail draft, never sent | Gmail draft, never sent | SMTP send, gated |
 | **Failed charge** | Drafts, flags a human | Drafts, flags a human | Retries below the cap |
 | **Approvals** | None | None | Yes |
@@ -113,13 +113,9 @@ Use the Skill to see the decisions with a person still in the send loop. Use the
 
 <Tabs>
   <Tab title="Skill">
-    Upload the skill folder under **Settings → Capabilities → Skills**, enable the Lago, Gmail, and Slack connectors, then ask *"who owes me money"*.
+    Upload the skill folder under **Settings → Capabilities → Skills**, enable the Gmail and Slack connectors, set your Lago API URL and key, then ask *"who owes me money"*.
 
-    It creates Gmail drafts and never sends. Memory lives in three customer metadata keys: `dunning_score`, `dunning_contact`, and `dunning_hold`. Clear `dunning_hold` to hand an account back to the agent.
-
-    <Warning>
-    Metadata writes must merge. Resend existing items with their id, or Lago rejects the duplicate key and deletes anything you left out.
-    </Warning>
+    It creates Gmail drafts and never sends. Memory lives in one file per customer, holding the score, the payment pattern, the contact history, and any hold. Clear the hold to hand an account back to the agent.
   </Tab>
   <Tab title="Self-hosted app">
     ```bash
@@ -145,7 +141,7 @@ Use the Skill to see the decisions with a person still in the send loop. Use the
 
 | Tool | What it gets you |
 |---|---|
-| **Lago** | The billing truth. Reads invoices, payments, disputes, portal links. One write: the retry. |
+| **Lago** | The billing truth. Reads invoices, payments, disputes, portal links. One write, in the self-hosted app only: the retry. |
 | **SMTP or Gmail** | Sending, or drafting for a person to send. |
 | **Slack** | One alert per run, listing only the accounts a human should see. |
 | **Your PSP** | Reached through Lago, so it inherits whatever you already connected. |
