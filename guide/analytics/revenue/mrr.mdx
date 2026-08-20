@@ -1,0 +1,209 @@
+---
+title: "MRR"
+description: "How Lago computes monthly recurring revenue, what it includes and excludes, and how the new, expansion, contraction and churn movements are classified."
+---
+
+MRR is the recurring value your active subscriptions commit to, expressed as a monthly figure. It answers "what is the run rate of my subscription base, and what changed it".
+
+<Warning>
+MRR is a **commitment** measure, not a billing measure. It is built from plan amounts, not from invoices. It will not match invoiced revenue, and on a usage-heavy account it will not come close. For invoiced revenue, use [Revenue streams](/guide/analytics/revenue/revenue-streams).
+</Warning>
+
+## What MRR is built from
+
+Each active subscription contributes its plan's committed amount, normalized to a month. Plans on other billing intervals are converted at a fixed rate:
+
+| Plan interval | Monthly contribution |
+| --- | --- |
+| Weekly | Plan amount x 52 / 12 |
+| Monthly | Plan amount |
+| Quarterly | Plan amount / 3 |
+| Semiannual | Plan amount / 6 |
+| Yearly | Plan amount / 12 |
+
+A plan at 1,200 per year contributes 100 of MRR. That normalization is also what decides whether a plan change is an upgrade or a downgrade.
+
+**Included**
+
+- The committed amount of every active subscription, in the plan's currency.
+- Subscriptions on any billing interval, normalized as above.
+
+**Excluded**
+
+- **Metered usage.** MRR does not move when a customer consumes more. A usage-heavy account can invoice several times its MRR.
+- **One-off charges and add-ons.** They are not recurring, so they never enter MRR.
+- **Minimum commitment true-ups.** Billed at period end, not part of the committed plan amount.
+- **Coupons and discounts.** MRR is gross of discounts, so a discounted customer shows the full plan value.
+- **Prepaid credit purchases.** A wallet top-up is a payment on account, not recurring revenue.
+- **Taxes.** MRR is a net-of-tax figure.
+- **Partner accounts.** Customers flagged as partners are out of MRR entirely.
+- Subscriptions that started on or before 1 January 2020, and subscriptions whose termination date precedes their start date, are excluded as bad data.
+
+## The two reports
+
+{/* TODO screenshot: MRR overview stacked bars next to the MRR details pivot, showing the Summary and Movements sections */}
+
+**MRR overview** is a stacked bar chart over time. **MRR details** is a pivot table with the same numbers in two sections: a Summary section (Starting MRR, Change, Ending MRR) and a Movements section (New, Expansion, Contraction, Churn).
+
+The net line is deliberately absent from the overview's stack: including it alongside the movements would count the same money twice.
+
+## Summary
+
+### Starting MRR
+
+The recurring run rate on the first day of the period.
+
+**Included** Every subscription active on that day, at its normalized monthly value.
+
+**Excluded** Everything listed under [What MRR is built from](#what-mrr-is-built-from). Subscriptions that start later in the period are not in it.
+
+**How it's calculated** Read as a balance on the period's first day. It is not an average and not a sum of daily values.
+
+**Grain and timing** Stock. One value per period, per breakdown.
+
+**Currency** Reported in the plan's currency, never converted.
+
+### Change
+
+The net movement in the period.
+
+**Included** New, expansion, contraction and churn for the period.
+
+**Excluded** Nothing that the four movements cover. It is their sum.
+
+**How it's calculated** New plus expansion plus contraction plus churn. Contraction and churn are negative, so the sum reads as a net. When the period is complete, it also equals ending MRR less starting MRR, which is what makes the waterfall reconcile.
+
+**Grain and timing** Flow. Sums correctly across periods.
+
+**Currency** Reported in the plan's currency, never converted.
+
+### Ending MRR
+
+The recurring run rate on the last day of the period.
+
+**Included** Every subscription active on that day.
+
+**Excluded** Subscriptions terminated earlier in the period.
+
+**How it's calculated** Read as a balance on the period's last day. For the current, incomplete period it is read at the most recent day with data, so a partial month reports a real balance rather than zero.
+
+**Grain and timing** Stock. Do not add ending MRR across periods.
+
+**Currency** Reported in the plan's currency, never converted.
+
+## Movements
+
+Every movement is dated on the day the subscription started or terminated.
+
+### New
+
+Recurring revenue from a customer who had none.
+
+**Included** The customer's first subscription in that currency.
+
+**Excluded** A second subscription for a customer who already has one: that is expansion. A subscription that replaces a previous one: that is expansion or contraction.
+
+**How it's calculated** The new subscription's normalized monthly amount, positive.
+
+**Grain and timing** Flow, dated on the subscription's start date.
+
+**Currency** Reported in the plan's currency, never converted.
+
+### Expansion
+
+Additional recurring revenue from a customer who already had some.
+
+**Included**
+
+- An upgrade: a subscription that replaces a previous one at an equal or higher normalized monthly amount. Only the difference counts.
+- A second concurrent subscription for a customer who already has an active one. The full amount counts.
+- A reactivation: a returning customer with no currently active subscription, who is not new.
+
+**Excluded** The first subscription a customer ever takes, which is new.
+
+**How it's calculated** For an upgrade, the new normalized amount less the previous one. For a concurrent subscription or a reactivation, the full normalized amount.
+
+**Grain and timing** Flow, dated on the new subscription's start date.
+
+**Currency** Reported in the plan's currency, never converted.
+
+### Contraction
+
+Recurring revenue lost without losing the customer.
+
+**Included**
+
+- A downgrade: a subscription that replaces a previous one at a lower normalized monthly amount. Only the difference counts.
+- A termination where the customer keeps at least one other active subscription in that currency.
+
+**Excluded** A termination that leaves the customer with nothing, which is churn.
+
+**How it's calculated** For a downgrade, the new normalized amount less the previous one, so a negative number. For a partial termination, the terminated subscription's full normalized amount, negative.
+
+**Grain and timing** Flow, dated on the new subscription's start date for a downgrade, on the termination date for a partial termination.
+
+**Currency** Reported in the plan's currency, never converted.
+
+### Churn
+
+Recurring revenue lost because the customer stopped subscribing.
+
+**Included** A termination with no successor subscription and no other active subscription for that customer in that currency.
+
+**Excluded**
+
+- A termination followed by a successor subscription, which is an upgrade or a downgrade.
+- A termination where the customer keeps another active subscription, which is contraction.
+
+**How it's calculated** The terminated subscription's normalized monthly amount, negative.
+
+**Grain and timing** Flow, dated on the termination date.
+
+**Currency** Reported in the plan's currency, never converted.
+
+<Note>
+**Upgrades are never churn plus new.** Lago links a subscription to the one it replaced, so a plan change produces a single expansion or contraction on the difference. This is what keeps churn honest: churn only fires when the customer's recurring revenue in that currency reaches zero.
+</Note>
+
+## Worked example
+
+A customer on a 100 per month plan upgrades to 200 per month on 15 March, then terminates on 10 April with nothing else active.
+
+| Period | Starting MRR | New | Expansion | Contraction | Churn | Change | Ending MRR |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| March | 100 | 0 | 100 | 0 | 0 | 100 | 200 |
+| April | 200 | 0 | 0 | 0 | -200 | -200 | 0 |
+
+Had the customer moved to a 1,200 per year plan instead, the comparison would run on 100 per month against 100 per month: no movement at all.
+
+## Breakdown
+
+The Breakdown selector cuts the reports by Type (the movement line), Currency, Customer and Plan. Removing a dimension re-aggregates the chart rather than hiding series.
+
+## Reconciliation and common questions
+
+<AccordionGroup>
+<Accordion title="Why doesn't MRR match my invoiced revenue?">
+It is not supposed to. MRR is the committed plan value of active subscriptions, gross of discounts and before any usage. Invoiced revenue includes metered usage, one-off charges and commitment true-ups, and is net of coupons and credits. Compare MRR to the subscription fee line in [Revenue streams](/guide/analytics/revenue/revenue-streams) for the closest equivalent, and expect timing differences: MRR is dated on the subscription, invoiced revenue on the fee.
+</Accordion>
+
+<Accordion title="Why don't twelve months of ending MRR add up to an annual figure?">
+Ending MRR is a balance, not an amount earned. December's ending MRR is the year-end run rate. To measure a year's growth, add the twelve Change values, or subtract January's starting MRR from December's ending MRR.
+</Accordion>
+
+<Accordion title="A customer upgraded. Why is there no churn?">
+An upgrade is a plan change, and Lago tracks the link between the old and the new subscription. The old subscription's termination does not fire churn; the difference in normalized monthly amount is reported as expansion, or as contraction if the new plan is cheaper. A yearly plan can be cheaper than a monthly one once normalized.
+</Accordion>
+
+<Accordion title="A customer terminated one of three subscriptions. Where does it show?">
+As contraction, not churn. Churn only fires when the customer has no other active subscription in that currency.
+</Accordion>
+
+<Accordion title="Why is the current month's MRR lower than expected?">
+The current period is partial. Its ending MRR is read at the latest day with data, and its movements only cover the days elapsed. The analytical data also refreshes daily, so subscriptions created today may not be in it yet.
+</Accordion>
+
+<Accordion title="Does a coupon reduce MRR?">
+No. MRR is gross of coupons and discounts. A customer on a 100 plan with a 50 percent coupon contributes 100 of MRR and roughly 50 of invoiced revenue.
+</Accordion>
+</AccordionGroup>

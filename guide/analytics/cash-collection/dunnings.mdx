@@ -1,0 +1,86 @@
+---
+title: "Dunnings"
+description: "How Lago reports dunning outcomes, recovered revenue and the time it takes to collect."
+---
+
+What happened to invoices that went into dunning: how many were recovered, how much they were worth, and how long recovery took.
+
+Full history is shown by default. Filters are Date range, Granularity and Invoice number.
+
+## Dunning outcome
+
+Whether dunning is working.
+
+**Included** Invoices that went through dunning, split by whether they were eventually paid. An invoice counts as paid on a paid dunning request or on a direct successful payment.
+
+**Excluded** Invoices that never entered dunning.
+
+**How it's calculated** A count of dunned invoices per period, split paid and unpaid, at the invoice level rather than the attempt level.
+
+**Grain and timing** Flow, dated on the **invoice's creation date**, not on the dunning attempt. An invoice created in March and recovered in May is counted in March.
+
+**Currency** Not applicable. This is a count of invoices.
+
+## Dunning revenue recovered by currency
+
+How much dunning brought back.
+
+**Included** Dunned invoices that reached a successful payment. The report shows how many were recovered and the total amount of those invoices, per currency.
+
+**Excluded** Dunned invoices still unpaid.
+
+**How it's calculated** A count and a sum of invoice totals over recovered dunned invoices, grouped by currency.
+
+**Grain and timing** As-of. One row per currency, reflecting recoveries to date.
+
+**Currency** One figure per currency, never converted.
+
+## Dunning recovery time
+
+How fast dunning gets you paid.
+
+**Included** Dunned invoices that were recovered, bucketed by the number of days from the first dunning attempt to the first successful payment.
+
+**Excluded** Invoices still unpaid. This report measures the **speed** of recovery over the invoices that recovered, never the rate of recovery. Read it alongside dunning outcome, which gives you the rate.
+
+**How it's calculated** Days between the first attempt and the first successful payment, grouped into buckets: same day, 1 to 7 days, 8 to 30 days, more than 30 days.
+
+**Grain and timing** Flow, one invoice per bucket.
+
+**Currency** Not applicable. This is a count of invoices.
+
+## Dunning attempt summary per invoice
+
+The detail behind the dunning charts.
+
+**Included** One row per dunned invoice: the invoice number and amount, how many attempts it took, whether it was paid, whether payment came through a dunning request, the first attempt date, the first successful payment date, and the days between them.
+
+**Excluded** Invoices that never entered dunning.
+
+**How it's calculated** Attempts aggregated per invoice.
+
+**Grain and timing** One row per invoice.
+
+**Currency** Amounts in the invoice's currency, never converted.
+
+  
+
+## Reconciliation and common questions
+
+<AccordionGroup>
+<Accordion title="Why is the dunning outcome for last month still moving?">
+Because outcome is dated on the invoice's creation date, and recovery happens later. An invoice created last month and recovered this month improves last month's paid split when the data refreshes.
+</Accordion>
+
+<Accordion title="How do I get the dunning success rate?">
+Read dunning outcome: paid invoices over total dunned invoices for the period. Recovery time only covers invoices that were recovered, so it cannot give you a rate.
+</Accordion>
+
+<Accordion title="What triggers dunning in the first place?">
+Dunning campaigns and their retry schedules are configured outside analytics. See [Automatic dunning](/guide/dunning/automatic-dunning) and [Manual dunning](/guide/dunning/manual-dunning).
+</Accordion>
+
+<Accordion title="Does recovered revenue mean cash collected?">
+It is the total amount of dunned invoices that reached a successful payment. Read it alongside outstanding revenue exposure on the [Invoices](/guide/analytics/invoices) dashboard for what is still owed.
+</Accordion>
+</AccordionGroup>
