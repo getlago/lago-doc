@@ -31,10 +31,13 @@ Pre-authorization creates a Payment Intent in Stripe to verify that the payment 
 
 **Note**: The held funds are automatically released immediately after successful verification.
 
-Pre-authorization can fail for several reasons:
+### Supported payment methods
 
-- Invalid card details;
-- Insufficient funds; and
+Pre-authorization relies on Stripe's manual capture, so it only works with payment methods that support it. Cards and Link do; methods such as SEPA Direct Debit or Boleto do not, and using one returns a `provider_error` without creating the subscription.
+
+The exact list depends on the payment methods enabled on your Stripe account. Refer to the **Manual capture** column of [Stripe's payment method support matrix](https://docs.stripe.com/payments/payment-methods/payment-method-support).
+
+Pre-authorization can fail if the card details are invalid, if the customer has insufficient funds, or if the payment method type does not support manual capture.
 
 Please note that if 3DS is required during pre-authorization, the card is considered valid and the subscription is created.
 
@@ -67,7 +70,28 @@ You must manually specify the amount to authorize, as the final amount (includin
 }
 ```
 
-### Response format
+### Success response
+
+The response contains an `authorization` object describing the Stripe Payment Intent, alongside the created subscription.
+
+```json
+{
+  "authorization": {
+    "id": "pi_1a901a901a901a901a901a90",
+    "object": "payment_intent",
+    "amount": 5000,
+    "amount_capturable": 5000,
+    "status": "requires_capture"
+  },
+  "subscription": {
+    // Standard subscription object
+  }
+}
+```
+
+A `requires_capture` status means the amount is held and about to be released. When 3D Secure is required, the status is `requires_action` and the subscription is still created.
+
+### Error response
 
 ```json
 {
