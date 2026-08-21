@@ -45,7 +45,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
 
 <AccordionGroup>
   <Accordion title="transaction_id (required)">
-    A unique ID you generate. Lago uses it for **deduplication**: if the same event arrives twice, only the first is billed.
+    A unique ID you generate. Lago uses it for **deduplication**: if the same event arrives twice, it is billed once. Which copy Lago keeps depends on your event store — see Idempotency and deduplication.
 
     <Tip>
       **Good practice:** Don't use random UUIDs. Embed the customer, event type, and timestamp so you can trace a billed amount back to its source event without guessing:
@@ -63,6 +63,8 @@ The guiding question: **what do you charge your customers for?** That's your eve
       If your Lago organization uses the ClickHouse-based event pipeline (designed for high-volume processing), event uniqueness is maintained with **both** `transaction_id` and `timestamp` fields:
       - If both are new to Lago, the event is ingested
       - If both have already been received, the new event **replaces** the previous one
+      - If the `transaction_id` has been received but with a different `timestamp`, the two events are distinct and both are billed
+      Always send `timestamp` explicitly on this pipeline. When you omit it, Lago sets it to the ingestion time, which differs on every call — so a retry without an explicit `timestamp` is stored and billed as a separate event.
     </Warning>
   </Accordion>
 
@@ -404,7 +406,9 @@ For the full list of available ingestion sources, see [Metering ingestion source
     ```
 
     <Warning>
-      **Batches are atomic.** If a single event is invalid, Lago rejects the entire batch with a `422` and persists nothing. The valid events in the same request are dropped too. "Invalid" covers a bad schema, an unknown subscription, or a duplicate `transaction_id` (`value_already_exist`). The response reports failures by the event's **index in the array you sent**, not by `transaction_id`. Keep your array order so you can trace an index back to its source event. Validate and de-duplicate before batching.
+      **Batches are atomic.** If a single event is invalid, Lago rejects the entire batch with a `422` and persists nothing. The valid events in the same request are dropped too. "Invalid" covers a missing `transaction_id` or `code`, a `timestamp` Lago cannot parse (`invalid_format`), a custom expression that fails to evaluate, and — on the Postgres event store only — a duplicate `transaction_id` (`value_already_exist`). The response reports failures by the event's **index in the array you sent**, not by `transaction_id`. Keep your array order so you can trace an index back to its source event. Validate and de-duplicate before batching.
+
+      An `external_subscription_id` that matches no subscription does not fail the batch: those events are ingested and skipped at post-processing. On the ClickHouse event store, duplicate `transaction_ids` do not fail the batch either — they are accepted with a 200 and resolved by deduplication instead. Don't rely on a 422 to catch duplicates; de-duplicate before you send.
     </Warning>
   </Tab>
 </Tabs>
@@ -608,11 +612,23 @@ Kafka ingestion requires the **ClickHouse event store** (see Architecture sectio
 
 ## Idempotency and deduplication
 
-Lago guarantees **exactly-once processing** through the `transaction_id`:
+Lago deduplicates re-ingested events through the `transaction_id`, so a re-sent event is billed once. Deduplication works **across delivery methods**: a REST event isn't billed again if the same ID arrives via Kafka.
 
-- Same `transaction_id` + `external_subscription_id` arrives twice → only the first is billed.
-- Works **across delivery methods**: a REST event won't be billed again if the same ID arrives via Kafka.
-- Retries are always safe. REST timeout? Resend. Kafka consumer restart? Reprocess. S3 import interrupted? Re-trigger.
+The deduplication key and the resolution rule depend on which event store your organization runs on:
+
+| | Postgres event store | ClickHouse event store |
+|---|---|---|
+| Deduplication key | `transaction_id` + `external_subscription_id` | `transaction_id` + `timestamp` + `external_subscription_id` + `code` |
+| Repeat ingestion | Rejected with a `422` (`value_already_exist`) | Accepted with a `200`; the latest copy **replaces** the earlier one |
+| Which copy is billed | The first one received | The most recently ingested one |
+
+<Warning>
+  On the ClickHouse event store, the `timestamp` is part of the deduplication key. A retry that carries the same `transaction_id` but a **different** `timestamp` is a distinct event and **is billed again**. Because Lago defaults `timestamp` to the ingestion time when you omit it, every retry of a timestamp-less event produces a new billable event.
+
+  **Send `timestamp` explicitly, and resend the original payload verbatim on retry.** Done that way, retries are safe on both stores: REST timeout? Resend. Kafka consumer restart? Reprocess. S3 import interrupted? Re-trigger.
+</Warning>
+
+Charges billed **in advance** are protected separately: Lago deduplicates their fees on `transaction_id` alone, so a duplicate can't produce a second in-advance fee on either store, regardless of `timestamp`.
 
 Design your IDs to be **deterministic** (derived from source data), not random. This makes retries automatic and debugging straightforward.
 
@@ -625,8 +641,8 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
   </Accordion>
 
   <Accordion title="Correcting events">
-    - With Postgres: duplicates are rejected with 422 (no replacement). Use a new `transaction_id` to correct.
-    - With ClickHouse: to amend a previously sent event, send a new event with the same `transaction_id` and `timestamp` with the updated properties. The new event replaces the original.
+    - With Postgres: duplicates are rejected with a 422 and there is no replacement. Use a new transaction_id to correct an event.
+    - With ClickHouse: send a new event with the same transaction_id and the same timestamp, carrying the updated properties. The new event replaces the original. A different timestamp creates a second billable event instead of amending the first.
   </Accordion>
 
   <Accordion title="Events before subscription start">
@@ -647,13 +663,13 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
 **Reconciliation pattern:** Compare your source-of-truth event count against Lago. Use `GET /events` filtered by `external_subscription_id`, `timestamp_from`, and `timestamp_to`, then compare against your internal logs. Any delta means dropped events or events that failed validation.
 
 **What to watch on your side:**
-- **REST API response codes:** `200` = accepted, `422` = validation error (bad schema, unknown subscription), `429` = rate limited (retry safely), `5xx` = server-side error (investigate before retrying)
+- **REST API response codes:** 200 = accepted, 422 = validation error (missing transaction_id or code, invalid timestamp, failing expression, or a duplicate transaction_id on the Postgres event store), 429 = rate limited (retry safely), 5xx = server-side error (investigate before retrying)
 - **At invoice time:** compare line item quantities against your own event counts per subscription per billing period. If they diverge, check for late arrivals outside the billing window.
 
 
 ## Rate limits
 
-Lago enforces per-organization rate limits on the REST API, with the highest limits on event ingestion. If you exceed them you receive a `429 Too Many Requests` response with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Retrying after a `429` is safe thanks to `transaction_id` deduplication. See [Rate limits](/api-reference/rate-limits) for the full limits and retry guidance.
+Lago enforces per-organization rate limits on the REST API, with the highest limits on event ingestion. If you exceed them you receive a `429 Too Many Requests` response with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Retrying after a `429` is safe as long as you resend the identical payload, timestamp included (see Idempotency and deduplication). See [Rate limits](/api-reference/rate-limits) for the full limits and retry guidance.
 
 <Info>
   Kafka, Kinesis, and S3 connectors are not subject to REST API rate limits. Their throughput is bounded by your broker or infrastructure capacity.
