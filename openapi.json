@@ -4,6 +4,7 @@
     "title": "Lago API Discovery Profile",
     "version": "1.0.0",
     "description": "A same-origin, machine-readable discovery profile for high-value Lago billing operations. Use https://swagger.getlago.com/openapi.yaml for the complete production contract.",
+    "x-api-versioning-policy": "https://doc.getlago.com/api-reference/versioning",
     "contact": {
       "name": "Lago",
       "url": "https://doc.getlago.com/contact",
@@ -87,6 +88,9 @@
           },
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -123,6 +127,9 @@
           },
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -154,6 +161,9 @@
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -193,6 +203,9 @@
           },
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -224,6 +237,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -255,6 +271,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
           }
         }
       }
@@ -360,6 +379,24 @@
             }
           }
         }
+      },
+      "InternalServerError": {
+        "description": "Lago could not complete the request because of an internal server error.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ServerError"
+            },
+            "example": {
+              "errors": [
+                {
+                  "message": "An internal error occurred."
+                }
+              ],
+              "data": {}
+            }
+          }
+        }
       }
     },
     "schemas": {
@@ -385,6 +422,35 @@
           "error_details": {
             "type": "object",
             "description": "Field-level validation details when available.",
+            "additionalProperties": true
+          }
+        }
+      },
+      "ServerError": {
+        "type": "object",
+        "description": "Structured error returned when Lago cannot complete a request because of an internal server failure.",
+        "required": ["errors", "data"],
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["message"],
+              "properties": {
+                "message": {
+                  "type": "string"
+                },
+                "backtrace": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "data": {
+            "type": "object",
             "additionalProperties": true
           }
         }

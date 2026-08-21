@@ -2,7 +2,10 @@
 title: "Lago Developer Documentation"
 description: "Build usage metering, subscriptions, invoicing, payments, and revenue workflows with Lago's API-first billing platform."
 keywords: ["Lago API", "billing API", "usage metering", "OpenAPI", "billing SDK", "MCP"]
+mode: "custom"
 ---
+
+<h1 id="lago-developer-documentation">Lago Developer Documentation</h1>
 
 Lago is an open-source billing platform for engineering, product, and finance teams that need transparent, programmable control over pricing and revenue workflows. Use these docs to integrate the Lago API, ingest usage, configure pricing, generate invoices, orchestrate payments, or run Lago in your own infrastructure.
 
@@ -53,12 +56,71 @@ Lago calculates fees, produces invoices, and can coordinate payment providers. R
 
 Use the [Lago MCP server](/guide/ai-agents/mcp-server) when an AI client needs to search or retrieve documentation through a standard protocol. Use the [agent SDK](/guide/ai-agents/agent-sdk/overview) when your application needs structured billing tools for supported model providers. Keep write actions behind explicit approval and validate all generated inputs before calling the billing API.
 
+## How billing data moves through Lago
+
+1. Create a customer with a stable `external_id` from your application.
+2. Define billable metrics and plans that describe how product activity becomes a charge.
+3. Create a subscription that connects the customer to a plan.
+4. Send usage events with a unique `transaction_id`, customer identifier, metric code, timestamp, and properties.
+5. Let Lago aggregate usage, calculate fees, and generate invoices on the configured billing schedule.
+6. Collect payment through a supported integration and consume webhooks to synchronize billing state back to your application.
+
+The REST API remains the source of truth for resource state. Use external identifiers consistently so retries, imports, and reconciliation jobs address the same customer and subscription records. For exact fields and response shapes, consult the [complete OpenAPI specification](https://swagger.getlago.com/openapi.yaml).
+
+## Production integration checklist
+
+- Store Lago API keys only in a server-side secret manager, scope their access, and rotate or revoke them when an operator or integration changes.
+- Use HTTPS for every API request and never expose a Lago API key to browser or mobile client code.
+- Generate a unique event `transaction_id` before sending usage and reuse that value when retrying the same event.
+- Send timestamps with an explicit UTC offset and preserve the original event time when replaying delayed usage.
+- Validate customer, plan, subscription, currency, and effective-date inputs before any financial mutation.
+- Handle structured `4xx` errors explicitly, back off on `429` responses using the rate-limit headers, and retry transient `5xx` or network failures with bounded exponential backoff.
+- Verify webhook signatures, acknowledge deliveries quickly, deduplicate retries, and fetch current API state when order matters.
+- Test the full lifecycle—from customer creation through usage, invoicing, payment, credit notes, and cancellation—before enabling production traffic.
+- Monitor [Lago status](https://status.getlago.com/), API failures, webhook lag, rejected events, and billing reconciliation results.
+- Review the [API versioning and deprecation policy](/api-reference/versioning) and migration guides before upgrading a self-hosted deployment or generated client.
+
+## Core Lago resources to model correctly
+
+### Organizations, billing entities, and customers
+
+An organization contains the Lago configuration available to its API keys. Billing entities let eligible organizations separate invoicing identities, currencies, legal information, and numbering rules. Customers represent the businesses or people being billed. Give every customer a stable external identifier from your own system, and do not reuse that identifier for a different account. Store Lago-generated identifiers as references, but use the documented external identifier fields when an endpoint is designed around your application identity.
+
+### Billable metrics and usage events
+
+A billable metric defines how Lago aggregates events into usage: for example a count, sum, unique count, latest value, maximum, weighted sum, or custom expression. An event identifies the customer, metric code, transaction, time, and properties to aggregate. Choose metric codes and property names as durable contracts. Send numeric data in the form the metric expects, use the same `transaction_id` only when retrying the same logical event, and validate late or backfilled usage against the subscription period it should affect.
+
+### Plans, charges, and subscriptions
+
+A plan is a reusable pricing definition. Its fixed fees and usage-based charges describe when and how Lago calculates amounts. A subscription connects a customer to a plan and establishes lifecycle timing such as calendar or anniversary billing. Model product packaging in plans rather than hard-coding invoice calculations in the integration. When upgrading, downgrading, terminating, or backdating a subscription, read the lifecycle guide first because effective dates and proration determine which fees appear on an invoice.
+
+### Fees, invoices, and credit notes
+
+Fees are the calculated line items that Lago assembles into invoices. Invoices move through documented states and may be drafted, finalized, paid, voided, or otherwise updated by billing and payment workflows. Credit notes adjust eligible finalized invoice amounts; they are not interchangeable with deleting source usage. Treat currency amounts as integer minor units where the API specifies cents, preserve the currency alongside every amount, and reconcile Lago totals against your finance system before triggering downstream accounting actions.
+
+### Wallets, prepaid credits, and commitments
+
+Wallets let a customer fund prepaid credits that eligible charges can consume. Plans may also include commitments or spending minimums. These mechanisms affect the amount due but have distinct accounting and lifecycle behavior. Before creating or topping up a wallet, verify the customer, currency, conversion rate, expiration rules, and whether the transaction should be paid or granted. Keep the originating business action and approval linked to the Lago resource so later reconciliation can explain every balance change.
+
+### Payments, integrations, and webhooks
+
+Payment-provider integrations coordinate collection, but the billing API and webhook stream still require explicit failure handling. A successful API request does not guarantee a later provider action will succeed. Consume payment, invoice, subscription, customer, wallet, and credit-note webhooks as asynchronous notifications; deduplicate each delivery, tolerate reordering, and fetch current state when the next action depends on it. Never log full provider secrets, Lago API keys, bank data, or payment credentials while debugging a failed workflow.
+
+## Safe automation boundaries
+
+Read operations such as searching documentation, listing plans, or retrieving an invoice can often run without human intervention when the calling system is authorized. Mutations that create customers or send already-approved usage can be automated behind validation and idempotency controls. Financial corrections, backdating, wallet funding, invoice finalization, credit notes, payment collection, subscription termination, and bulk changes should follow the organization's approval policy. An AI agent must surface the target environment, resource identifiers, dates, currency, and expected effect before any approval-gated call, then verify the resulting API state instead of assuming success from generated intent.
+
 ## Machine-readable entry points
 
 - [Documentation index](/llms.txt) — concise navigation and guidance for AI agents.
 - [Complete documentation corpus](https://doc.getlago.com/llms-full.txt) — all documentation in one text file.
+- [Agentic Resource Discovery catalog](/ai-catalog.json) — typed inventory of Lago's docs MCP, OpenAPI contract, and billing-integration skill.
+- [RFC 9727 API catalog](/api-catalog.json) — linkset connecting the REST API to its schemas, documentation, versioning policy, and status page.
 - [Lago OpenAPI discovery schema](/openapi.json) — same-origin OpenAPI 3.1 contract with authentication and structured errors.
 - [Complete OpenAPI specification](https://swagger.getlago.com/openapi.yaml) — the full production API contract.
+- [Authentication guide](/auth) — safe API-key creation, use, error handling, rotation, and revocation.
+- [API versioning policy](/api-reference/versioning) — stable version paths, deprecation signals, and migration guidance.
+- [Pricing and packaging](/pricing) — current deployment and commercial options with a link to the controlling pricing page.
 - [Sitemap](https://doc.getlago.com/sitemap.xml) — every indexable documentation page.
 - [MCP server](https://doc.getlago.com/mcp) — Streamable HTTP endpoint generated for this documentation.
 
