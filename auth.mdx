@@ -4,7 +4,7 @@ description: "How developers and AI agents obtain, store, use, rotate, and revok
 keywords: ["Lago API authentication", "Lago API key", "Bearer token", "agent authentication"]
 ---
 
-Lago Cloud API requests use an organization API key as a Bearer credential. Lago does not currently advertise an automated OAuth or agent-registration flow for the REST API. An authorized human must create and manage the key, and any agent that uses it must operate within the permissions and approval rules established by that organization.
+Lago Cloud API requests use an organization API key as a Bearer credential. Lago does not currently advertise an automated delegated-authorization or agent-registration flow for the REST API. An authorized human must create and manage the key, and any agent that uses it must operate within the permissions and approval rules established by that organization.
 
 The resource server is `https://api.getlago.com/api/v1`. Keep credentials in server-side infrastructure and never paste a production key into a prompt, browser, mobile application, source file, or client-visible log.
 
@@ -14,13 +14,13 @@ Read the [API overview](/api-reference/intro), the `bearerAuth` security scheme 
 
 ## 2. Pick a method
 
-Use a Lago organization API key for server-to-server REST requests. Do not assume OAuth, OpenID Connect, anonymous agent registration, `identity_assertion`, or another `agent_auth` method is available unless Lago publishes a new supported flow in these docs.
+Use a Lago organization API key for server-to-server REST requests. Do not assume delegated authorization, federated identity, or anonymous agent registration is available unless Lago publishes a new supported flow in these docs.
 
 For documentation search and retrieval, the [Lago Docs MCP server](/guide/ai-agents/mcp-server) does not require a Lago organization API key. That read-only documentation surface is separate from the authenticated billing API.
 
 ## 3. Register
 
-There is no agent-callable `register_uri`. An authorized organization administrator creates an API key in Lago organization settings and transfers it through the organization's approved secret-management process. Agents must not automate account creation, key generation, or credential transfer by scraping the Lago interface.
+There is no agent-callable registration endpoint. An authorized organization administrator creates an API key in Lago organization settings and transfers it through the organization's approved secret-management process. Agents must not automate account creation, key generation, or credential transfer by scraping the Lago interface.
 
 ## 4. Claim
 
