@@ -18,7 +18,7 @@
       {
         "language": "JavaScript",
         "package": "lago-javascript-client",
-        "registry": "https://www.npmjs.com/package/lago-javascript-client",
+        "registry": "https://registry.npmjs.org/lago-javascript-client/latest",
         "source": "https://github.com/getlago/lago-javascript-client"
       },
       {
@@ -87,10 +87,25 @@
         "tags": ["Usage"],
         "parameters": [
           {
-            "$ref": "#/components/parameters/Page"
+            "name": "page",
+            "in": "query",
+            "description": "One-based result page.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
           },
           {
-            "$ref": "#/components/parameters/PerPage"
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of resources returned per page.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
           }
         ],
         "responses": {
@@ -99,7 +114,28 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EventListResponse"
+                  "type": "object",
+                  "required": ["events", "meta"],
+                  "properties": {
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "required": ["current_page", "next_page", "prev_page", "total_pages", "total_count"],
+                      "properties": {
+                        "current_page": { "type": "integer" },
+                        "next_page": { "type": ["integer", "null"] },
+                        "prev_page": { "type": ["integer", "null"] },
+                        "total_pages": { "type": "integer" },
+                        "total_count": { "type": "integer" }
+                      }
+                    }
+                  }
                 }
               }
             }
