@@ -28,7 +28,7 @@ Agents can also discover these surfaces through the [Agentic Resource Discovery 
 
 The [Agent Skills discovery index](/agent-skills-index.json) publishes the [Lago billing-integration skill](/lago-skill.md) with a content digest. The [A2A agent card](/.well-known/agent-card.json) and [MCP server card](/.well-known/mcp/server-card.json) expose Lago's identity, documentation tools, and read-only skill resource at predictable URLs.
 
-Compatible agent clients can also load the repository as an [Agent Plugin](/plugin.json). Its [MCP configuration](/mcp.json) points to the same read-only Lago Docs MCP server, and its packaged billing skill is maintained in the [public Lago documentation repository](https://github.com/getlago/lago-doc/tree/main/skills/lago-billing).
+Compatible agent clients can also load the repository as an [Agent Plugin](/plugin.json). Its [MCP configuration](/mcp.json) declares both Lago MCP surfaces, and its packaged billing skill is maintained in the [public Lago documentation repository](https://github.com/getlago/lago-doc/tree/main/skills/lago-billing).
 
 ## SDKs and clients
 
@@ -50,7 +50,12 @@ Use [webhooks](/guide/webhooks) to react to customer, subscription, invoice, cre
 
 ## AI agents and MCP
 
-Connect supported AI clients to the documentation [MCP server](/guide/ai-agents/mcp-server) at `/mcp`. It exposes search and retrieval capabilities through Streamable HTTP. For application-level billing agents, begin with the [agent SDK overview](/guide/ai-agents/agent-sdk/overview), then select the guide for your model provider. Keep financial mutations behind human approval and enforce the same authorization rules used by non-agent integrations.
+Lago exposes two distinct MCP surfaces:
+
+- The **Lago Docs MCP** at `/mcp` is a public, read-only Streamable HTTP server for documentation search and retrieval.
+- The **Lago Product MCP** is the open-source, Docker-distributed server documented in the [product MCP guide](/guide/ai-agents/mcp-server) and maintained in the [Lago Agent Toolkit repository](https://github.com/getlago/lago-agent-toolkit). It authenticates with a Lago API key and exposes live billing data and operations over stdio.
+
+Use the Docs MCP to learn and the Product MCP to act. Treat the product server as an authenticated operational integration: keep its API key in the client environment, verify the target Lago instance and organization, and keep financial mutations behind the same authorization and human-approval rules used by non-agent integrations. For application-level billing agents, also review the [agent SDK overview](/guide/ai-agents/agent-sdk/overview).
 
 ## Examples and self-hosting
 
