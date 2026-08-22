@@ -1,0 +1,677 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Lago API Discovery Profile",
+    "version": "1.0.0",
+    "description": "A same-origin, machine-readable discovery profile for high-value Lago billing operations. Use https://swagger.getlago.com/openapi.yaml for the complete production contract.",
+    "x-api-versioning-policy": "https://doc.getlago.com/api-reference/versioning",
+    "contact": {
+      "name": "Lago",
+      "url": "https://doc.getlago.com/contact",
+      "email": "hello@getlago.com"
+    },
+    "license": {
+      "name": "AGPL-3.0",
+      "identifier": "AGPL-3.0-only"
+    }
+  },
+  "externalDocs": {
+    "description": "Complete Lago API specification and developer documentation",
+    "url": "https://swagger.getlago.com/openapi.yaml"
+  },
+  "servers": [
+    {
+      "url": "https://api.getlago.com",
+      "description": "Lago Cloud production API"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Usage",
+      "description": "Ingest metered product usage."
+    },
+    {
+      "name": "Customers",
+      "description": "Create and retrieve billable customers."
+    },
+    {
+      "name": "Subscriptions",
+      "description": "Subscribe customers to pricing plans."
+    },
+    {
+      "name": "Plans",
+      "description": "Discover configured pricing plans."
+    },
+    {
+      "name": "Invoices",
+      "description": "Retrieve generated invoices."
+    }
+  ],
+  "paths": {
+    "/api/v1/events": {
+      "post": {
+        "operationId": "ingestUsageEvent",
+        "summary": "Ingest a usage event",
+        "description": "Records an idempotent product-usage event for aggregation and billing. Supply a unique transaction_id for every event.",
+        "tags": ["Usage"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The usage event was accepted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/customers": {
+      "post": {
+        "operationId": "createCustomer",
+        "summary": "Create a customer",
+        "description": "Creates or updates the billing customer identified by external_id.",
+        "tags": ["Customers"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The customer was created or updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{external_id}": {
+      "get": {
+        "operationId": "getCustomer",
+        "summary": "Retrieve a customer",
+        "description": "Returns the customer whose external identifier matches the supplied value.",
+        "tags": ["Customers"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested customer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/subscriptions": {
+      "post": {
+        "operationId": "createSubscription",
+        "summary": "Create a subscription",
+        "description": "Subscribes a customer to a Lago plan using stable external identifiers.",
+        "tags": ["Subscriptions"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The subscription was created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/plans": {
+      "get": {
+        "operationId": "listPlans",
+        "summary": "List plans",
+        "description": "Returns a paginated list of pricing plans available in the organization.",
+        "tags": ["Plans"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A paginated list of plans.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/invoices": {
+      "get": {
+        "operationId": "listInvoices",
+        "summary": "List invoices",
+        "description": "Returns invoices for the organization, optionally filtered and paginated.",
+        "tags": ["Invoices"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A paginated list of invoices.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Lago API key",
+        "description": "Use Authorization: Bearer <api_key>."
+      }
+    },
+    "parameters": {
+      "ExternalId": {
+        "name": "external_id",
+        "in": "path",
+        "required": true,
+        "description": "Stable customer identifier from your application.",
+        "schema": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "Page": {
+        "name": "page",
+        "in": "query",
+        "description": "One-based result page.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "PerPage": {
+        "name": "per_page",
+        "in": "query",
+        "description": "Number of resources returned per page.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "The request is malformed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "The Lago API key is missing or invalid.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "status": 401,
+              "error": "Unauthorized",
+              "code": "unauthorized"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The requested resource does not exist.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "status": 404,
+              "error": "Not Found",
+              "code": "resource_not_found"
+            }
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "description": "The request is valid JSON but fails semantic validation.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "status": 422,
+              "error": "Unprocessable Entity",
+              "code": "validation_errors",
+              "error_details": {
+                "external_id": ["value_is_mandatory"]
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Lago could not complete the request because of an internal server error.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ServerError"
+            },
+            "example": {
+              "errors": [
+                {
+                  "message": "An internal error occurred."
+                }
+              ],
+              "data": {}
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ApiError": {
+        "type": "object",
+        "description": "Structured Lago API error returned with a non-2xx status.",
+        "required": ["status", "error"],
+        "properties": {
+          "status": {
+            "type": "integer",
+            "description": "HTTP status code.",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "error": {
+            "type": "string",
+            "description": "Human-readable error category."
+          },
+          "code": {
+            "type": "string",
+            "description": "Stable machine-readable error code."
+          },
+          "error_details": {
+            "type": "object",
+            "description": "Field-level validation details when available.",
+            "additionalProperties": true
+          }
+        }
+      },
+      "ServerError": {
+        "type": "object",
+        "description": "Structured error returned when Lago cannot complete a request because of an internal server failure.",
+        "required": ["errors", "data"],
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["message"],
+              "properties": {
+                "message": {
+                  "type": "string"
+                },
+                "backtrace": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "EventRequest": {
+        "type": "object",
+        "required": ["event"],
+        "properties": {
+          "event": {
+            "type": "object",
+            "required": ["transaction_id", "external_customer_id", "code"],
+            "properties": {
+              "transaction_id": {
+                "type": "string",
+                "description": "Unique idempotency identifier for the event."
+              },
+              "external_customer_id": {
+                "type": "string",
+                "description": "Customer identifier from your application."
+              },
+              "code": {
+                "type": "string",
+                "description": "Billable metric code."
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Time at which the usage occurred."
+              },
+              "properties": {
+                "type": "object",
+                "description": "Metric dimensions and numeric values used for aggregation.",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      "EventResponse": {
+        "type": "object",
+        "required": ["event"],
+        "properties": {
+          "event": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "CustomerRequest": {
+        "type": "object",
+        "required": ["customer"],
+        "properties": {
+          "customer": {
+            "type": "object",
+            "required": ["external_id"],
+            "properties": {
+              "external_id": {
+                "type": "string",
+                "description": "Stable customer identifier from your application."
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name used on billing documents."
+              },
+              "email": {
+                "type": "string",
+                "format": "email",
+                "description": "Billing email address."
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$",
+                "description": "Three-letter ISO 4217 currency code."
+              }
+            }
+          }
+        }
+      },
+      "CustomerResponse": {
+        "type": "object",
+        "required": ["customer"],
+        "properties": {
+          "customer": {
+            "type": "object",
+            "required": ["lago_id", "external_id"],
+            "properties": {
+              "lago_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "external_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": ["string", "null"]
+              },
+              "email": {
+                "type": ["string", "null"],
+                "format": "email"
+              }
+            }
+          }
+        }
+      },
+      "SubscriptionRequest": {
+        "type": "object",
+        "required": ["subscription"],
+        "properties": {
+          "subscription": {
+            "type": "object",
+            "required": ["external_customer_id", "plan_code", "external_id"],
+            "properties": {
+              "external_customer_id": {
+                "type": "string"
+              },
+              "plan_code": {
+                "type": "string"
+              },
+              "external_id": {
+                "type": "string"
+              },
+              "billing_time": {
+                "type": "string",
+                "enum": ["calendar", "anniversary"],
+                "default": "calendar"
+              }
+            }
+          }
+        }
+      },
+      "SubscriptionResponse": {
+        "type": "object",
+        "required": ["subscription"],
+        "properties": {
+          "subscription": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "PlanListResponse": {
+        "type": "object",
+        "required": ["plans"],
+        "properties": {
+          "plans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["code", "name"],
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "interval": {
+                  "type": "string",
+                  "enum": ["weekly", "monthly", "quarterly", "semiannual", "yearly"]
+                }
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        }
+      },
+      "InvoiceListResponse": {
+        "type": "object",
+        "required": ["invoices"],
+        "properties": {
+          "invoices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["lago_id", "status", "currency"],
+              "properties": {
+                "lago_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "total_amount_cents": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        }
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "required": ["current_page", "next_page", "prev_page", "total_pages", "total_count"],
+        "properties": {
+          "current_page": {
+            "type": "integer"
+          },
+          "next_page": {
+            "type": ["integer", "null"]
+          },
+          "prev_page": {
+            "type": ["integer", "null"]
+          },
+          "total_pages": {
+            "type": "integer"
+          },
+          "total_count": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}
