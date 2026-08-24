@@ -48,7 +48,11 @@
   "servers": [
     {
       "url": "https://api.getlago.com",
-      "description": "Lago Cloud production API"
+      "description": "Lago Cloud US API"
+    },
+    {
+      "url": "https://api.eu.getlago.com",
+      "description": "Lago Cloud EU API"
     }
   ],
   "security": [
@@ -87,25 +91,10 @@
         "tags": ["Usage"],
         "parameters": [
           {
-            "name": "page",
-            "in": "query",
-            "description": "One-based result page.",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1
-            }
+            "$ref": "#/components/parameters/Page"
           },
           {
-            "name": "per_page",
-            "in": "query",
-            "description": "Number of resources returned per page.",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20
-            }
+            "$ref": "#/components/parameters/PerPage"
           }
         ],
         "responses": {
@@ -114,28 +103,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "required": ["events", "meta"],
-                  "properties": {
-                    "events": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "additionalProperties": true
-                      }
-                    },
-                    "meta": {
-                      "type": "object",
-                      "required": ["current_page", "next_page", "prev_page", "total_pages", "total_count"],
-                      "properties": {
-                        "current_page": { "type": "integer" },
-                        "next_page": { "type": ["integer", "null"] },
-                        "prev_page": { "type": ["integer", "null"] },
-                        "total_pages": { "type": "integer" },
-                        "total_count": { "type": "integer" }
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/EventListResponse"
                 }
               }
             }
@@ -452,8 +420,7 @@
         "schema": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 100,
-          "default": 20
+          "default": 100
         }
       }
     },
@@ -591,37 +558,40 @@
           }
         }
       },
+      "EventInput": {
+        "type": "object",
+        "required": ["transaction_id", "external_customer_id", "code"],
+        "properties": {
+          "transaction_id": {
+            "type": "string",
+            "description": "Unique idempotency identifier for the event."
+          },
+          "external_customer_id": {
+            "type": "string",
+            "description": "Customer identifier from your application."
+          },
+          "code": {
+            "type": "string",
+            "description": "Billable metric code."
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time at which the usage occurred."
+          },
+          "properties": {
+            "type": "object",
+            "description": "Metric dimensions and numeric values used for aggregation.",
+            "additionalProperties": true
+          }
+        }
+      },
       "EventRequest": {
         "type": "object",
         "required": ["event"],
         "properties": {
           "event": {
-            "type": "object",
-            "required": ["transaction_id", "external_customer_id", "code"],
-            "properties": {
-              "transaction_id": {
-                "type": "string",
-                "description": "Unique idempotency identifier for the event."
-              },
-              "external_customer_id": {
-                "type": "string",
-                "description": "Customer identifier from your application."
-              },
-              "code": {
-                "type": "string",
-                "description": "Billable metric code."
-              },
-              "timestamp": {
-                "type": "string",
-                "format": "date-time",
-                "description": "Time at which the usage occurred."
-              },
-              "properties": {
-                "type": "object",
-                "description": "Metric dimensions and numeric values used for aggregation.",
-                "additionalProperties": true
-              }
-            }
+            "$ref": "#/components/schemas/EventInput"
           }
         }
       },
@@ -668,7 +638,7 @@
             "minItems": 1,
             "maxItems": 100,
             "items": {
-              "$ref": "#/components/schemas/EventRequest/properties/event"
+              "$ref": "#/components/schemas/EventInput"
             }
           }
         }

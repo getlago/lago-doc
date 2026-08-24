@@ -9,7 +9,7 @@ Use this page as the canonical developer portal for Lago. It links the contracts
 
 ## API and authentication
 
-Lago Cloud uses `https://api.getlago.com/api/v1` as its REST API base URL. Authenticate server-to-server requests with the API key from your Lago organization settings. Send the key only over HTTPS, store it in a secret manager, and never expose it in browser code, logs, or source control.
+Choose the REST API base URL for the Lago deployment you are targeting: `https://api.getlago.com/api/v1` for US Cloud, `https://api.eu.getlago.com/api/v1` for EU Cloud, or your Lago API origin followed by `/api/v1` for self-hosted. Authenticate server-to-server requests with the API key from your Lago organization settings. Send the key only over HTTPS, store it in a secret manager, and never expose it in browser code, logs, or source control.
 
 - [API overview and authentication](/api-reference/intro)
 - [API standards](/api-reference/api-standards)
@@ -34,7 +34,7 @@ Compatible agent clients can also load the repository as an [Agent Plugin](/plug
 
 Lago maintains open-source clients for common server-side languages. Check each repository's README and release history before selecting a version.
 
-- [JavaScript client package metadata](https://registry.npmjs.org/lago-javascript-client/latest) and [source](https://github.com/getlago/lago-javascript-client)
+- [JavaScript client on npm](https://www.npmjs.com/package/lago-javascript-client) and [source](https://github.com/getlago/lago-javascript-client)
 - [Python client on PyPI](https://pypi.org/project/lago-python-client/) and [source](https://github.com/getlago/lago-python-client)
 - [Ruby client on RubyGems](https://rubygems.org/gems/lago-ruby-client) and [source](https://github.com/getlago/lago-ruby-client)
 - [Go module](https://pkg.go.dev/github.com/getlago/lago-go-client) and [source](https://github.com/getlago/lago-go-client)
@@ -53,7 +53,7 @@ Use [webhooks](/guide/webhooks) to react to customer, subscription, invoice, cre
 Lago exposes two distinct MCP surfaces:
 
 - The **Lago Docs MCP** at `/mcp` is a public, read-only Streamable HTTP server for documentation search and retrieval.
-- The **Lago Product MCP** is the open-source, Docker-distributed server documented in the [product MCP guide](/guide/ai-agents/mcp-server) and maintained in the [Lago Agent Toolkit repository](https://github.com/getlago/lago-agent-toolkit). It authenticates with a Lago API key and exposes live billing data and operations over stdio.
+- The **Lago Product MCP** is the open-source, Docker-distributed server documented in the [product MCP guide](/guide/ai-agents/mcp-server) and maintained in the [Lago Agent Toolkit repository](https://github.com/getlago/lago-agent-toolkit). It authenticates with a Lago API key and exposes live billing data and operations over stdio. Set `LAGO_API_URL` explicitly to the US, EU, or self-hosted base URL before starting it.
 
 Use the Docs MCP to learn and the Product MCP to act. Treat the product server as an authenticated operational integration: keep its API key in the client environment, verify the target Lago instance and organization, and keep financial mutations behind the same authorization and human-approval rules used by non-agent integrations. For application-level billing agents, also review the [agent SDK overview](/guide/ai-agents/agent-sdk/overview).
 

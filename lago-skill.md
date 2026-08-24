@@ -23,8 +23,11 @@ Use this skill when a task involves Lago billing architecture, API integration, 
 
 - Lago Cloud REST requests use an organization API key as a Bearer credential.
 - Keep keys in server-side secret storage. Never put a production key in prompts, browser code, mobile clients, source control, or client-visible logs.
-- The Lago Cloud API base URL is `https://api.getlago.com/api/v1`.
-- Confirm whether the task targets Lago Cloud or a self-hosted instance before constructing URLs or operational instructions.
+- Set the API base URL explicitly for the target deployment:
+  - US Cloud: `https://api.getlago.com/api/v1`
+  - EU Cloud: `https://api.eu.getlago.com/api/v1`
+  - Self-hosted: the Lago API origin followed by `/api/v1`
+- Confirm the deployment, organization, and environment before constructing URLs or operational instructions. For the Product MCP, pass the selected base URL through `LAGO_API_URL`.
 - Do not invent an OAuth flow, sandbox, endpoint, field, permission, price, or product limit that Lago has not published.
 
 ## Integration workflow
