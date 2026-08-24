@@ -6,7 +6,7 @@ description: "You can terminate a subscription at any time, whether it's active 
 ## Terminate an active subscription
 
 <Info>
-Subscriptions in the `incomplete` state (held by an [activation rule](/guide/subscriptions/activation-rules)) can't be terminated manually. They cancel on their own if the rule fails or its timeout is reached.
+Subscriptions in the `incomplete` state are held by an [activation rule](/guide/subscriptions/activation-rules). They cancel on their own if the rule fails or its timeout is reached, and you can also [cancel them on demand](#cancel-an-incomplete-subscription).
 </Info>
 
 <Tabs>
@@ -112,3 +112,35 @@ At termination, you can :
       To ensure the termination of a pending subscription, it is crucial to include the `?status=pending` filter in your endpoint. 
       Neglecting to do so will render any termination attempts ineffective.
     </Warning>
+
+## Cancel an incomplete subscription
+
+A subscription held `incomplete` by a payment [activation rule](/guide/subscriptions/activation-rules) (waiting for its first payment) can be canceled on demand, instead of waiting for the rule's timeout. This is useful when the payment clearly won't complete, for example when the customer abandons a 3D Secure challenge and you want to let them start over.
+
+<Tabs>
+  <Tab title="Dashboard">
+    To cancel an incomplete subscription through the user interface:
+    1. Access the **"Customers"** section via the side menu;
+    2. Select a customer from the list;
+    3. In the **"Overview"** tab, select the incomplete subscription; and
+    4. Click **"Cancel subscription"**.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Cancel an incomplete subscription
+      LAGO_URL="https://api.getlago.com"
+      API_KEY="__YOUR_API_KEY__"
+      EXTERNAL_ID="__YOUR_SUBSCRIPTION_ID__"
+
+      curl --location --request DELETE "$LAGO_URL/api/v1/subscriptions/$EXTERNAL_ID?status=incomplete" \
+        --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+The subscription becomes `canceled` with `cancellation_reason: manual`. Its draft invoice is closed (nothing is billed), and any applied coupons, credit notes and wallet credits are recredited. Any pending payment is canceled with the payment provider on a best-effort basis — some payment statuses can't be canceled, so a payment may still succeed later as a late payment. Termination options (`on_termination_credit_note`, `on_termination_invoice`) are ignored, since an incomplete subscription has never been billed.
+
+<Warning>
+Include the `?status=incomplete` filter. Without it the endpoint targets the `active` subscription for that `external_id` and returns a not-found error for an incomplete one.
+</Warning>

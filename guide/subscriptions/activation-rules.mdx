@@ -86,6 +86,7 @@ With the payment rule set, the subscription follows this flow:
 2. **Payment succeeds** → the subscription becomes `active` and the invoice is generated and finalized: it gets a real number and is recorded as AR, exactly like a normal invoice.
 3. **Payment fails** → the subscription becomes `canceled` (reason: `payment_failed`). No invoice is generated, the customer is not charged, and no AR is recorded.
 4. **Timeout reached** with no confirmed payment → the subscription becomes `canceled` (reason: `timeout`). No invoice is generated.
+5. **Canceled on demand** before the payment resolves → the subscription becomes `canceled` (reason: `manual`). See [Cancel an incomplete subscription](/guide/subscriptions/terminate-subscription#cancel-an-incomplete-subscription).
 
 A canceled subscription is final: it never activated, so there is nothing to resume. **To try again, recreate the subscription with a valid payment method.**
 
@@ -132,7 +133,7 @@ When you update a subscription, the `activation_rules` field is replace-all:
 
 ## While a subscription is incomplete
 
-- **Manual actions are locked.** You can't edit, upgrade, downgrade, or terminate an `incomplete` subscription. Only the rule outcome moves it out of that state.
+- **Editing is locked, but you can cancel.** You can't edit, upgrade, or downgrade an `incomplete` subscription. You can [cancel it on demand](/guide/subscriptions/terminate-subscription#cancel-an-incomplete-subscription) (reason: `manual`); otherwise it stays incomplete until its rule is satisfied, fails, or times out.
 - **Usage is not billed.** Usage events are stored but not billed while the subscription is `incomplete`, and they are not back-billed once it activates.
 
 ## Upgrades and downgrades
