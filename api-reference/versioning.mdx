@@ -1,0 +1,30 @@
+---
+title: "API versioning and deprecation policy"
+description: "How Lago versions its REST API, announces deprecations, publishes retirement dates, and guides integrations through breaking changes."
+keywords: ["Lago API versioning", "Lago API deprecation", "Lago API migration", "API sunset"]
+---
+
+The Lago REST API uses URL-path versioning. Lago Cloud's stable base URL is `https://api.getlago.com/api/v1`, and endpoint paths in the complete OpenAPI contract are resolved below that versioned base.
+
+## Compatible changes
+
+Clients should tolerate additive changes within `v1`, including new response fields, enum values, endpoints, optional request fields, and webhook event types. Avoid rejecting a response solely because it contains an unknown field, and handle unknown enum or webhook values safely.
+
+## Deprecation signals
+
+When Lago deprecates an endpoint or field, the API reference or OpenAPI description marks it as deprecated. The [product changelog](/changelog/product) and versioned migration guides, such as the [v1.50 migration guide](/guide/migration/migration-to-v1.50.0), describe the replacement and any required consumer change. When removal is scheduled, the migration guide states the retirement date; for example, earlier migrations documented exact dates for retired fields and endpoints.
+
+Do not infer a fixed support window when no retirement date is published. A deprecation notice and its linked migration guide are the controlling source for the affected surface.
+
+## Breaking changes and retirement
+
+Before a scheduled retirement, migrate to the documented replacement, update generated clients if necessary, test the integration, and deploy before the published date. Lago may remove a deprecated surface after that date. Self-hosted operators must also review the migration guide and [compatibility matrix](/guide/lago-self-hosted/compatibility-matrix) before upgrading.
+
+## Integration guidance
+
+- Build all REST URLs from the documented `/api/v1` base rather than an unversioned path.
+- Generate clients from the [complete OpenAPI specification](https://swagger.getlago.com/openapi.yaml) and review diffs before upgrading.
+- Monitor the [product changelog](/changelog/product) and migration guides for deprecations.
+- Treat fields marked `deprecated` as migration work, even when they still function.
+- Preserve tests for authentication, pagination, error handling, usage ingestion, webhooks, and every financial workflow your application depends on.
+- Contact Lago through the [support routes](/contact) if a published migration does not cover your integration.
