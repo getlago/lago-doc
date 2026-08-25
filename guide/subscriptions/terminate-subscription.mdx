@@ -123,7 +123,7 @@ A subscription held `incomplete` by a payment [activation rule](/guide/subscript
     1. Access the **"Customers"** section via the side menu;
     2. Select a customer from the list;
     3. In the **"Overview"** tab, select the incomplete subscription; and
-    4. Click **"Cancel subscription"**.
+    4. Click **"Terminate subscription"**.
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -139,8 +139,8 @@ A subscription held `incomplete` by a payment [activation rule](/guide/subscript
   </Tab>
 </Tabs>
 
-The subscription becomes `canceled` with `cancellation_reason: manual`. Its draft invoice is closed (nothing is billed), and any applied coupons, credit notes and wallet credits are recredited. Any pending payment is canceled with the payment provider on a best-effort basis — some payment statuses can't be canceled, so a payment may still succeed later as a late payment. Termination options (`on_termination_credit_note`, `on_termination_invoice`) are ignored, since an incomplete subscription has never been billed.
+The subscription becomes `canceled` with `cancellation_reason: manual`. Its invoice is closed and nothing is billed, and any applied coupons, credit notes and wallet credits are recredited. Any pending payment is canceled with the payment provider on a best-effort basis (some payment statuses can't be canceled, so a payment may still succeed later as a late payment). Termination options (`on_termination_credit_note`, `on_termination_invoice`) are ignored, since an incomplete subscription has never been billed.
 
 <Warning>
-Include the `?status=incomplete` filter. Without it the endpoint targets the `active` subscription for that `external_id` and returns a not-found error for an incomplete one.
+Include the `?status=incomplete` filter. Without it, the request targets the `active` subscription for that `external_id`, not the incomplete one. Depending on the account, it then either finds no subscription to terminate, or terminates a different, active subscription that shares the same `external_id`.
 </Warning>
