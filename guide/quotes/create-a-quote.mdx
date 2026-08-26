@@ -1,0 +1,72 @@
+---
+title: "Creating a quote"
+description: "Create a quote for a customer, pick the quote type, and manage versions during negotiation."
+---
+
+A Quote is created for a customer, captures the proposed pricing and terms, and can go through several versions before it is approved.
+
+## Create a quote
+
+1. Access the **"Quotes"** section via the side menu;
+2. Click **"Create a quote"**;
+3. Select a **customer**;
+4. Select the **"Quote type"** (see below);
+5. For a subscription amendment, select the **subscription** to amend (only active subscriptions are listed);
+6. Optionally select **owners**, the teammates responsible for the quote; and
+7. Click **"Create quote"** to confirm.
+
+<Info>
+  The customer and quote type cannot be changed after creation. They apply to all versions of the quote.
+</Info>
+
+## Quote types
+
+The quote type determines what you can add to the quote:
+
+- **Subscription creation**: quote a new subscription. A plan from your catalog, with price overrides if needed, plus optional coupons and prepaid credits.
+- **Subscription amendment**: quote an update to an existing subscription (upgrade, downgrade, repricing). One plan, tied to the selected subscription. The plan can differ from the current one. Coupons and prepaid credits available.
+- **One-off**: quote a standalone one-off invoice made of add-ons. Useful for POCs, pilots, or implementation fees. No plans, coupons, or prepaid credits.
+
+## Quote settings
+
+After creation you land on the quote editor. The panel next to the document shows:
+
+- **Main settings**: quote type and billing entity, read-only.
+- **Execution details**: customer and subscription (for amendments), read-only. The **currency**, which defaults to the customer's currency and can be updated while the version is a draft. A **"Start date"** and **"End date"** for the deal, which you set here. The **"Payment term"**, displayed from the customer's or billing entity's net payment term.
+
+Dates save automatically and are required before approval. One-off quotes have no execution details: their invoice is dated at execution.
+
+Pricing, discounts, and credits are configured inside the document. See [writing the quote content](/guide/quotes/quote-editor).
+
+## Versions
+
+Each round of negotiation is a version of the same quote: one quote to track per deal, and a permanent record of every offer made.
+
+Quotes are numbered automatically, versions as v1, v2, and so on. Creating a quote creates v1. A version has one of three statuses:
+
+| Status | Meaning |
+| --- | --- |
+| `draft` | Work in progress. The only editable state. |
+| `approved` | Signed off by your team. Locked. An order form has been generated. |
+| `voided` | Withdrawn or superseded. |
+
+Only one version can be `draft` or `approved` at a time: the current offer. All other versions are `voided` and stay visible in the **"Version history"** table. Clicking a voided version opens a read-only preview.
+
+### Working with versions
+
+From a draft version, the **"Actions"** menu offers:
+
+- **"Edit quote"**: open the editor.
+- **"Approve quote"**: lock the version and generate the order form. See [approving a quote](/guide/quotes/order-forms).
+- **"Void quote"**: withdraw the version. Irreversible. **"Void and create new version"** starts over immediately.
+- **"Duplicate version"**: create a new draft from this version.
+
+Duplicating is how you start a new round. It copies the version into a new draft and voids all previous versions, so the live offer is never ambiguous. Any non-approved version can be duplicated, including older voided ones: if the customer prefers your first offer, duplicate v1.
+
+While a version is `approved`, the quote is frozen: no editing, no duplicating. To renegotiate, [void the order form](/guide/quotes/order-forms#void-an-order-form) first. This voids the approved version and unlocks duplication.
+
+Example: v1 goes out with a 10% discount. The customer asks for 15%. You void the order form (voiding v1), duplicate v1 into v2, set 15%, approve. v2 becomes the deal, v1 stays in the history.
+
+<Info>
+  A draft can be incomplete. Required fields (a pricing block, the currency, the start and end dates) are checked at approval, not while drafting.
+</Info>

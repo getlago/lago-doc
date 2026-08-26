@@ -1,0 +1,51 @@
+---
+title: "Authenticate to the Lago API"
+description: "How developers and AI agents obtain, store, use, rotate, and revoke Lago API keys without exposing billing credentials."
+keywords: ["Lago API authentication", "Lago API key", "Bearer token", "agent authentication"]
+---
+
+Lago Cloud API requests use an organization API key as a Bearer credential. Lago does not currently advertise an automated delegated-authorization or agent-registration flow for the REST API. An authorized human must create and manage the key, and any agent that uses it must operate within the permissions and approval rules established by that organization.
+
+The resource server is `https://api.getlago.com/api/v1`. Keep credentials in server-side infrastructure and never paste a production key into a prompt, browser, mobile application, source file, or client-visible log.
+
+## 1. Discover
+
+Read the [API overview](/api-reference/intro), the `bearerAuth` security scheme in the [OpenAPI discovery profile](/openapi.json), and the [complete OpenAPI specification](https://swagger.getlago.com/openapi.yaml). These are the authoritative discovery sources for the API base URL, operations, and request shapes.
+
+## 2. Pick a method
+
+Use a Lago organization API key for server-to-server REST requests. Do not assume delegated authorization, federated identity, or anonymous agent registration is available unless Lago publishes a new supported flow in these docs.
+
+For documentation search and retrieval, the [Lago Docs MCP server](/guide/ai-agents/mcp-server) does not require a Lago organization API key. That read-only documentation surface is separate from the authenticated billing API.
+
+## 3. Register
+
+There is no agent-callable registration endpoint. An authorized organization administrator creates an API key in Lago organization settings and transfers it through the organization's approved secret-management process. Agents must not automate account creation, key generation, or credential transfer by scraping the Lago interface.
+
+## 4. Claim
+
+Lago does not expose an automated claim ceremony for API credentials. The human administrator remains responsible for approving the workload, environment, scope, and secret store that receive a key. If an agent lacks a credential, it must ask an authorized operator rather than inventing or harvesting one.
+
+## 5. Use the credential
+
+Send the key in the HTTP `Authorization` header:
+
+```http
+Authorization: Bearer <your_api_key>
+Content-Type: application/json
+```
+
+Keep production and non-production credentials separate. Before a financial mutation, verify the target organization, environment, customer and subscription identifiers, currency, effective date, and intended amount. Require explicit human approval wherever the calling application or organization policy requires it.
+
+## 6. Errors
+
+- `401 Unauthorized` means the key is missing, invalid, expired, or no longer accepted.
+- `403 Forbidden` means the authenticated organization cannot use the requested feature or action.
+- `422 Unprocessable Entity` means the request is authenticated but fails validation.
+- `429 Too Many Requests` means the organization exceeded its REST API rate limit. Use the documented rate-limit headers before retrying.
+
+Read [structured API errors](/api-reference/errors) and [rate limits](/api-reference/rate-limits) for machine-readable fields and retry behavior. Do not repeatedly retry `401`, `403`, or validation failures without operator intervention or a corrected request.
+
+## 7. Revocation and rotation
+
+An authorized administrator revokes or replaces API keys from Lago organization settings. When rotating a key, update the secret manager, deploy the consumer, verify successful authentication, and then revoke the old key. Immediately revoke a key that may have appeared in source control, a prompt, browser code, logs, or an unauthorized system, and follow the organization's incident-response process.

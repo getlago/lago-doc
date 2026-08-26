@@ -1,0 +1,65 @@
+---
+openapi: "GET /order_forms/{lago_id}"
+authMethod: "bearer"
+title: "Retrieve an order form"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+ORDER_FORM_ID="__ORDER_FORM_ID__"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v1/order_forms/$ORDER_FORM_ID" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.order_forms.find('__ORDER_FORM_ID__')
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.order_forms.get('__ORDER_FORM_ID__')
+```
+
+```js Javascript
+await client.orderForms.findOrderForm("__ORDER_FORM_ID__");
+```
+
+```go Go
+import (
+	"context"
+	"fmt"
+
+	lago "github.com/getlago/lago-go-client"
+)
+
+func main() {
+	lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+	ctx := context.Background()
+
+	orderForm, err := lagoClient.OrderForm().Get(ctx, "__ORDER_FORM_ID__")
+	if err != nil {
+		// Error is *lago.Error
+		panic(err)
+	}
+
+	// orderForm is *lago.OrderForm
+	fmt.Println(orderForm)
+}
+```
+
+</RequestExample>

@@ -1,0 +1,100 @@
+---
+openapi: "POST /order_forms/{lago_id}/mark_as_signed"
+authMethod: "bearer"
+title: "Mark an order form as signed"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+ORDER_FORM_ID="__ORDER_FORM_ID__"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/order_forms/$ORDER_FORM_ID/mark_as_signed" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "order_form": {
+      "signed_document": "data:application/pdf;base64,JVBERi0xLjQKJcfs...",
+      "execution_mode": "execute_in_lago",
+      "execute_at": "2026-07-01T00:00:00Z"
+    }
+  }'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import OrderFormMarkAsSigned
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.order_forms.mark_as_signed(
+        '__ORDER_FORM_ID__',
+        OrderFormMarkAsSigned(
+            signed_document='data:application/pdf;base64,JVBERi0xLjQKJcfs...',
+            execution_mode='execute_in_lago',
+            execute_at='2026-07-01T00:00:00Z',
+        ),
+    )
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.order_forms.mark_as_signed(
+  '__ORDER_FORM_ID__',
+  {
+    signed_document: 'data:application/pdf;base64,JVBERi0xLjQKJcfs...',
+    execution_mode: 'execute_in_lago',
+    execute_at: '2026-07-01T00:00:00Z',
+  },
+)
+```
+
+```js Javascript
+await client.orderForms.markOrderFormAsSigned("__ORDER_FORM_ID__", {
+  order_form: {
+    signed_document: "data:application/pdf;base64,JVBERi0xLjQKJcfs...",
+    execution_mode: "execute_in_lago",
+    execute_at: "2026-07-01T00:00:00Z",
+  },
+});
+```
+
+```go Go
+import (
+	"context"
+	"fmt"
+	"time"
+
+	lago "github.com/getlago/lago-go-client"
+)
+
+func main() {
+	lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+	ctx := context.Background()
+
+	executeAt := time.Date(2026, time.July, 1, 0, 0, 0, 0, time.UTC)
+	orderForm, err := lagoClient.OrderForm().MarkAsSigned(ctx, "__ORDER_FORM_ID__", &lago.OrderFormMarkAsSignedInput{
+		SignedDocument: "data:application/pdf;base64,JVBERi0xLjQKJcfs...",
+		ExecutionMode:  lago.OrderExecutionModeExecuteInLago,
+		ExecuteAt:      &executeAt,
+	})
+	if err != nil {
+		// Error is *lago.Error
+		panic(err)
+	}
+
+	// orderForm is *lago.OrderForm
+	fmt.Println(orderForm)
+}
+```
+
+</RequestExample>

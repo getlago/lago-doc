@@ -1,0 +1,97 @@
+{
+  "name": "Lago Docs MCP",
+  "description": "Search Lago documentation, retrieve exact published pages, and submit documentation feedback.",
+  "version": "1.0.0",
+  "serverInfo": {
+    "name": "Lago",
+    "version": "1.0.0"
+  },
+  "url": "https://doc.getlago.com/mcp",
+  "transport": "http",
+  "authentication": "none",
+  "icon": "https://doc.getlago.com/favicon.svg",
+  "iconUrl": "https://doc.getlago.com/favicon.svg",
+  "capabilities": {
+    "tools": true,
+    "resources": true
+  },
+  "tools": [
+    {
+      "name": "search_lago",
+      "description": "Search the Lago knowledge base for relevant documentation, code examples, API references, and guides.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query"
+          }
+        },
+        "required": ["query"],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "query_docs_filesystem_lago",
+      "description": "Run a read-only query against the virtual Lago documentation filesystem to inspect exact published content.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Read-only query such as rg, tree, ls, cat, head, tail, sed, awk, or jq"
+          }
+        },
+        "required": ["command"],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "submit_feedback",
+      "description": "Report an incorrect, outdated, confusing, incomplete, or broken documentation page to the Lago docs team.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Documentation page path"
+          },
+          "feedback": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Clear description of the documentation issue"
+          }
+        },
+        "required": ["path", "feedback"],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      }
+    }
+  ],
+  "resources": [
+    {
+      "uri": "mintlify://skills/lago",
+      "name": "lago",
+      "description": "Guidance for building or configuring usage-based billing systems with Lago.",
+      "mimeType": "text/markdown"
+    }
+  ]
+}

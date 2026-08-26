@@ -1,0 +1,73 @@
+---
+title: "Lago Developer Resources: API, OpenAPI, SDKs, Webhooks, and MCP"
+sidebarTitle: "Developer resources"
+description: "The canonical entry point for Lago API authentication, OpenAPI schemas, SDKs, webhooks, MCP, examples, status, and support."
+keywords: ["Lago developer resources", "Lago API", "Lago OpenAPI", "Lago SDK", "Lago MCP", "billing API"]
+---
+
+Use this page as the canonical developer portal for Lago. It links the contracts, guides, packages, tools, and operational resources needed to build and maintain a production billing integration.
+
+## API and authentication
+
+Choose the REST API base URL for the Lago deployment you are targeting: `https://api.getlago.com/api/v1` for US Cloud, `https://api.eu.getlago.com/api/v1` for EU Cloud, or your Lago API origin followed by `/api/v1` for self-hosted. Authenticate server-to-server requests with the API key from your Lago organization settings. Send the key only over HTTPS, store it in a secret manager, and never expose it in browser code, logs, or source control.
+
+- [API overview and authentication](/api-reference/intro)
+- [API standards](/api-reference/api-standards)
+- [API versioning and deprecation policy](/api-reference/versioning)
+- [Pagination](/api-reference/pagination)
+- [Rate limits](/api-reference/rate-limits)
+- [Structured API errors](/api-reference/errors)
+- [Authentication guide for agents and developers](/auth)
+- [Interactive Swagger reference](https://swagger.getlago.com/)
+
+## OpenAPI schemas
+
+Use the same-origin [OpenAPI discovery schema](/openapi.json) for automated discovery, function generation, and error-shape inspection. It describes representative high-value operations and points to the production server. Use the [complete Lago OpenAPI specification](https://swagger.getlago.com/openapi.yaml) for code generation and exhaustive endpoint coverage. The source is maintained in the [Lago OpenAPI repository](https://github.com/getlago/lago-openapi).
+
+Agents can also discover these surfaces through the [Agentic Resource Discovery catalog](/.well-known/ai-catalog.json) and the [RFC 9727 API catalog](/.well-known/api-catalog.json). The root-level JSON files provide version-controlled aliases of those well-known documents.
+
+The [Agent Skills discovery index](/agent-skills-index.json) publishes the [Lago billing-integration skill](/lago-skill.md) with a content digest. The [A2A agent card](/.well-known/agent-card.json) and [MCP server card](/.well-known/mcp/server-card.json) expose Lago's identity, documentation tools, and read-only skill resource at predictable URLs.
+
+Compatible agent clients can also load the repository as an [Agent Plugin](/plugin.json). Its [MCP configuration](/mcp.json) declares both Lago MCP surfaces, and its packaged billing skill is maintained in the [public Lago documentation repository](https://github.com/getlago/lago-doc/tree/main/skills/lago-billing).
+
+## SDKs and clients
+
+Lago maintains open-source clients for common server-side languages. Check each repository's README and release history before selecting a version.
+
+- [JavaScript client on npm](https://www.npmjs.com/package/lago-javascript-client) and [source](https://github.com/getlago/lago-javascript-client)
+- [Python client on PyPI](https://pypi.org/project/lago-python-client/) and [source](https://github.com/getlago/lago-python-client)
+- [Ruby client on RubyGems](https://rubygems.org/gems/lago-ruby-client) and [source](https://github.com/getlago/lago-ruby-client)
+- [Go module](https://pkg.go.dev/github.com/getlago/lago-go-client) and [source](https://github.com/getlago/lago-go-client)
+- [Java client](https://github.com/getlago/lago-java-client)
+- [PHP client](https://github.com/getlago/lago-php-client)
+- [C# client](https://github.com/getlago/lago-csharp-client)
+- [Rust client](https://github.com/getlago/lago-rust-client)
+- [Lago Agent SDK on PyPI](https://pypi.org/project/lago-agent-sdk/)
+
+## Webhooks and asynchronous processing
+
+Use [webhooks](/guide/webhooks) to react to customer, subscription, invoice, credit note, payment, wallet, and quote lifecycle changes. Consumers should verify authenticity, acknowledge delivery quickly, deduplicate retries, and move expensive work to a queue. Treat the API as the source of truth when a webhook payload and locally cached state disagree.
+
+## AI agents and MCP
+
+Lago exposes two distinct MCP surfaces:
+
+- The **Lago Docs MCP** at `/mcp` is a public, read-only Streamable HTTP server for documentation search and retrieval.
+- The **Lago Product MCP** is the open-source, Docker-distributed server documented in the [product MCP guide](/guide/ai-agents/mcp-server) and maintained in the [Lago Agent Toolkit repository](https://github.com/getlago/lago-agent-toolkit). It authenticates with a Lago API key and exposes live billing data and operations over stdio. Set `LAGO_API_URL` explicitly to the US, EU, or self-hosted base URL before starting it.
+
+Use the Docs MCP to learn and the Product MCP to act. Treat the product server as an authenticated operational integration: keep its API key in the client environment, verify the target Lago instance and organization, and keep financial mutations behind the same authorization and human-approval rules used by non-agent integrations. For application-level billing agents, also review the [agent SDK overview](/guide/ai-agents/agent-sdk/overview).
+
+## Examples and self-hosting
+
+- [Billing examples](https://github.com/getlago/lago-billing-examples)
+- [Main Lago repository](https://github.com/getlago/lago)
+- [Self-hosted overview](/guide/lago-self-hosted/overview)
+- [Docker deployment](/guide/lago-self-hosted/docker)
+- [Kubernetes Helm charts](https://github.com/getlago/lago-helm-charts)
+- [Integration testing](/guide/integration-testing)
+
+## Operations and support
+
+Check [Lago status](https://status.getlago.com/) for current service health. Use the [contact page](/contact) to find community, support, sales, and security routes. For automated discovery, start with [llms.txt](/llms.txt); for a complete text export, use [llms-full.txt](https://doc.getlago.com/llms-full.txt).
+
+For packaging and commercial availability, use the [pricing summary](/pricing) and verify decisions against the [current Lago pricing page](https://getlago.com/pricing).

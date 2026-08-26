@@ -1,0 +1,79 @@
+---
+openapi: "POST /quote_versions/{lago_id}/approve"
+authMethod: "bearer"
+title: "Approve a quote version"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+QUOTE_VERSION_ID="__QUOTE_VERSION_ID__"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/quote_versions/$QUOTE_VERSION_ID/approve" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "expires_at": "2026-06-30T23:59:59Z"
+  }'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import QuoteVersionApprove
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.quote_versions.approve(
+        '__QUOTE_VERSION_ID__',
+        QuoteVersionApprove(expires_at='2026-06-30T23:59:59Z'),
+    )
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.quote_versions.approve('__QUOTE_VERSION_ID__', expires_at: '2026-06-30T23:59:59Z')
+```
+
+```js Javascript
+await client.quoteVersions.approveQuoteVersion("__QUOTE_VERSION_ID__", {
+  expires_at: "2026-06-30T23:59:59Z",
+});
+```
+
+```go Go
+import (
+	"context"
+	"fmt"
+	"time"
+
+	lago "github.com/getlago/lago-go-client"
+)
+
+func main() {
+	lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+	ctx := context.Background()
+
+	expiresAt := time.Date(2026, time.June, 30, 23, 59, 59, 0, time.UTC)
+	quoteVersion, err := lagoClient.QuoteVersion().Approve(ctx, "__QUOTE_VERSION_ID__", &lago.QuoteVersionApproveInput{
+		ExpiresAt: &expiresAt,
+	})
+	if err != nil {
+		// Error is *lago.Error
+		panic(err)
+	}
+
+	// quoteVersion is *lago.QuoteVersion
+	fmt.Println(quoteVersion)
+}
+```
+
+</RequestExample>

@@ -33,3 +33,94 @@ html.ready {
 .dark .welcome-card p {
   color: #9ca3af !important;
 }
+
+/* Changelog month navigation (injected by changelog-month-nav.js into the
+   right rail, above Mintlify's Filters block). Mirrors the filter panel's
+   own spacing and type so the two read as one column. */
+#changelog-month-nav {
+  padding-left: 2.5rem;
+  width: 19rem;
+  box-sizing: border-box;
+  margin-bottom: 1.75rem;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+#changelog-month-nav .changelog-month-nav__year {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+  color: #364152;
+}
+
+#changelog-month-nav .changelog-month-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+#changelog-month-nav .changelog-month-nav__list a {
+  display: block;
+  padding: 0.25rem 0 0.25rem 0.75rem;
+  margin-left: -1px;
+  border-left: 1px solid transparent;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  color: #697586;
+  text-decoration: none;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+#changelog-month-nav .changelog-month-nav__list a:hover {
+  color: #121926;
+}
+
+#changelog-month-nav .changelog-month-nav__list a.is-active {
+  color: #006CFA;
+  border-left-color: #006CFA;
+  font-weight: 500;
+}
+
+.dark #changelog-month-nav .changelog-month-nav__year {
+  color: #cdd5df;
+}
+
+.dark #changelog-month-nav .changelog-month-nav__list {
+  border-left-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark #changelog-month-nav .changelog-month-nav__list a {
+  color: #9aa4b2;
+}
+
+.dark #changelog-month-nav .changelog-month-nav__list a:hover {
+  color: #ffffff;
+}
+
+.dark #changelog-month-nav .changelog-month-nav__list a.is-active {
+  color: #4d9bff;
+  border-left-color: #4d9bff;
+}
+
+/* Changelog: drop the per-update left column (month label, tag badges,
+   description) so the article body uses the full content width. The date and
+   the filters both live in the right rail instead.
+   display:none, not removal: the label anchor inside this column is what
+   changelog-month-nav.js reads to build the month list, and Mintlify still
+   derives the right-rail filters from the same tags. */
+.update-container > div:first-child {
+  display: none;
+}
+
+.update-container > div:nth-child(2) {
+  flex: 1 1 100%;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* the row gap only existed to separate the two columns */
+.update-container {
+  gap: 0;
+}
