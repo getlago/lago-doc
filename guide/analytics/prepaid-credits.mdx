@@ -1,130 +1,115 @@
 ---
 title: "Prepaid credits"
-description: "How Lago reports wallet credit inflows, consumption, voided credits and end-of-period balances."
+description: "Credits bought, granted, spent and expired, and what your customers still hold."
 ---
 
-The Credit ledgers dashboard reports prepaid wallet activity: credits bought, credits granted, credits spent, credits expired, and what is left on the books.
+What is happening in my customers' wallets? This report covers credits bought, credits given away, credits spent, credits expired, and what is left on the books.
 
 <Warning>
-**Selling credits is not revenue. Spending them is.** A wallet top-up is money received against future consumption. Revenue appears later, when the credits are consumed against an invoice, where it shows as gross revenue with an offsetting contra line. See [Revenue streams](/guide/analytics/revenue/revenue-streams).
+**A top-up is a prepayment, not a sale.** The customer pays you before you have delivered anything, so the cash sits as money you owe them in product. You earn it as they spend the credits on usage. That is why the top-up is kept out of [Revenue streams](/guide/analytics/revenue/revenue-streams): counting the top-up and the usage it later pays for would count the same money twice.
 </Warning>
 
-## Population
+{/* IMAGE: Credit ledgers tab, showing the ledger movements chart with inflows above zero and outflows below */}
 
-**Included** Settled wallet transactions only.
+## Money or credits: pick one first
 
-**Excluded** Pending and failed top-ups. A credit purchase that never settled is not in these reports, even though the customer may have been invoiced for it.
+Every chart here has two readings, controlled by the **Credits metric** filter.
 
-## The four credit types
+| Setting | You are looking at |
+| --- | --- |
+| **Amount** (the default) | 💰 Money, in the wallet's currency |
+| **No. of credits** | 🔢 Billing units, the number of credits moved |
+
+They are not interchangeable. A wallet priced at 1 credit for 2 USD reports the same movement as 50 credits or as 100 USD. Always say which one you are quoting.
+
+## What's on this dashboard
+
+| Chart | What it answers | Values | Add months? |
+| --- | --- | --- | --- |
+| Credit ledger movements | What went in and out of the wallets? | 💰 or 🔢 | ✅ |
+| Purchased credits | What did customers buy? | 💰 or 🔢 | ✅ |
+| Offered credits | What did I give away? | 💰 or 🔢 | ✅ |
+| Credit balances | What do customers still hold? | 🔢 Billing units | ❌ |
+| Prepaid credits details | The same movements as a table | 💰 or 🔢 | ✅ |
+
+Movements are **activity**, like a bank statement, so ✅ they add up. A balance is what is **left** at the end of the month, not what came in during it, so ❌ never sum balances across months.
+
+## The four kinds of movement
 
 | Type | Direction | What it is |
 | --- | --- | --- |
-| Purchased credits | Inflow | The customer bought credits. Money in, revenue later. |
-| Offered credits | Inflow | You granted credits, for a trial, a goodwill gesture or a commercial agreement. They cost you revenue when spent. |
-| Consumed credits | Outflow | Credits applied to an invoice. |
-| Voided credits | Outflow | Credits removed from the wallet, such as expiry or a manual void. |
+| Purchased credits | In | The customer prepaid. Cash now, earned as they spend it |
+| Offered credits | In | You granted credits: a trial, a goodwill gesture, a commercial deal. They cost you revenue when spent |
+| Consumed credits | Out | Credits spent on an invoice |
+| Voided credits | Out | Credits removed from the wallet, by expiry or by hand. Expiry never creates revenue |
 
-## Credits metric
+On the ledger chart, the two outflows are drawn below zero so it reads like a ledger.
 
-Every report on this dashboard has two readings, controlled by the **Credits metric** filter:
-
-- **Amount**, the default: the monetary value of the movement, in the wallet's currency.
-- **Credits**: the number of credit units moved.
-
-They are not interchangeable. One credit is worth whatever your wallet's rate says, so a wallet at 1 credit for 2 USD reports 50 credits and 100 USD for the same movement. Say which one you are quoting.
-
-<Warning>
-**Breaking credits down by plan or subscription is an allocation.** A wallet transaction belongs to a customer, not to a subscription. When one is tied to an invoice covering several subscriptions, its amount is split evenly across them. Customer-level and currency-level figures are exact. Per-plan and per-subscription figures are approximations.
-</Warning>
-
-## Credit ledger movements
-
-Everything that moved in or out of your wallets.
-
-**Included** All four credit types in the period. Inflows positive, consumed and voided credits negative, so the chart reads like a ledger.
-
-**Excluded** Unsettled transactions.
-
-**How it's calculated** Movements summed per period and credit type, with outflows negated.
-
-**Grain and timing** Flow, dated on the settlement date. Adds correctly across periods.
-
-**Currency** The wallet's currency, never converted. Switch to the Credits metric for credit units.
-
-## Purchased credits
-
-Credits your customers bought.
-
-**Included** Settled purchased-credit inflows.
-
-**Excluded** Offered credits, which are a separate line. Consumption and voids.
-
-**How it's calculated** Purchased inflows summed per period.
-
-**Grain and timing** Flow, dated on the settlement date.
-
-**Currency** The wallet's currency, never converted.
-
-## Offered credits
-
-Credits you gave away.
-
-**Included** Settled granted-credit inflows.
-
-**Excluded** Purchased credits. Consumption and voids.
-
-**How it's calculated** Granted inflows summed per period.
-
-**Grain and timing** Flow, dated on the settlement date.
-
-**Currency** The wallet's currency, never converted.
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| A wallet transaction that has settled | ✅ Yes | |
+| A wallet belonging to a partner account | ✅ Yes | |
+| A top-up still pending, or that failed | ❌ No | The wallet itself, see [Wallets and prepaid credits](/guide/wallet-and-prepaid-credits/overview) |
+| The revenue earned when credits are spent | ❌ No | [Revenue streams](/guide/analytics/revenue/revenue-streams) |
 
 ## Credit balances
 
-What your customers still hold.
-
-**Included** The end-of-period wallet balance per customer and currency. Periods with no transactions carry the previous balance forward, so a dormant wallet still shows its balance.
-
-**Excluded** Nothing: it is the running balance of all settled movements.
-
-**How it's calculated** Inflows less outflows, accumulated to the end of each period.
-
-**Grain and timing** **Stock.** One balance per customer, currency and period. Never add balances across periods.
-
-**Currency** The wallet's currency, never converted.
+What your customers still hold. A month with no activity carries the previous balance forward, so a dormant wallet still shows its balance.
 
 <Note>
-Outstanding credit balances are a liability: consumption you owe your customers. They are the mirror image of deferred revenue, and they are the number to watch when credits are sold in bulk and spent slowly.
+**A credit balance is a liability.** It is product you owe your customers, like a gift card that has not been spent. Watch it when credits are sold in bulk and spent slowly.
 </Note>
 
-## Prepaid credits details
+The newest month stays empty until the numbers update overnight.
 
-A pivot table of the same movements, by period, currency and credit type, with zeros filled in so an empty period reads as zero rather than blank. Newest period first.
+## Filters
 
-## Reconciliation and common questions
+| Filter | What it does |
+| --- | --- |
+| Date range | Sets the period. With nothing set, the movement and inflow charts show the current calendar year |
+| Granularity | Sets the bar width: day, week or month |
+| Credits metric | Switches every chart between 💰 Amount and 🔢 No. of credits |
+| Currency | Keeps one wallet currency |
+| Country | Keeps customers in one country |
+| Customers | Keeps one or more named customers |
+| Customer type | Keeps companies or individuals |
+| Plan code | Keeps credits linked to one plan |
+| Subscription ext. ID | Isolates a single subscription |
+| Customer has tax ID | Keeps customers with, or without, a tax ID on file |
+
+⚠️ **Prepaid credits details ignores every customer and plan filter.** Country, Customers, Customer type, Plan code, Subscription ext. ID and Customer has tax ID do not change it. Use the ledger movements chart when you need those cuts.
+
+<Warning>
+**Splitting credits by plan or subscription is an estimate.** A wallet belongs to a customer, not to a subscription. When a transaction is tied to an invoice covering several subscriptions, its value is divided evenly across them. Customer and currency figures are exact.
+</Warning>
+
+## What's not included (for now)
+
+- **Unsettled top-ups.** A purchase that never settled is invisible here, even if the customer was invoiced for it.
+- **Revenue.** Nothing on this page is revenue. See [Revenue streams](/guide/analytics/revenue/revenue-streams).
+- **The top-up invoice itself.** It appears as a credit-type invoice on [Invoices](/guide/analytics/invoices).
+- **Money for the Credit balances chart.** Balances are reported in credits only.
+
+## Common questions
 
 <AccordionGroup>
 <Accordion title="A customer bought 10,000 of credits. Why didn't revenue move?">
-Because a top-up is not revenue. It appears here as a purchased-credit inflow, and on the [Invoices](/guide/analytics/invoices) dashboard as a credit-type invoice. Revenue appears as the customer consumes the credits against invoices.
+Because the money is prepaid, not yet earned. It shows here as a purchased-credit inflow, and on [Invoices](/guide/analytics/invoices) as a credit-type invoice. You earn it as the customer spends the credits, which is where it reaches [Revenue streams](/guide/analytics/revenue/revenue-streams).
 </Accordion>
 
 <Accordion title="Why do prepaid credits show as contra revenue?">
-Because the invoice they paid for already reported the full amount as gross revenue. The credits consumed are deducted as a contra line so net revenue is not double counted. Without that line, revenue would be inflated by every credit-funded invoice.
+Because the invoice they paid for already reported the full amount as gross revenue. Deducting the credits spent stops the same money being counted twice.
 </Accordion>
 
-<Accordion title="What is the difference between offered and purchased credits, in accounting terms?">
-Purchased credits are cash received against a liability. Offered credits are a discount you have not yet given: they cost you nothing when granted and reduce revenue when consumed, which is why they land in contra revenue as free credits.
+<Accordion title="What is the difference between offered and purchased credits?">
+Purchased credits are cash you received against a liability. Offered credits are a discount you have not given yet: they cost you nothing when granted, and reduce revenue when spent.
 </Accordion>
 
-<Accordion title="Why don't twelve monthly credit balances add up?">
-Balances are stocks. December's balance is the year-end balance. To measure the year's activity, use the ledger movements, which are flows.
-</Accordion>
-
-<Accordion title="Credits expired. Where do they show?">
-As voided credits, an outflow on the ledger, reducing the balance. Expiry does not create revenue.
+<Accordion title="Why don't twelve monthly balances add up?">
+Because a balance is not an amount earned. December's balance is the year-end balance. To measure a year's activity, use the ledger movements.
 </Accordion>
 
 <Accordion title="Why is a top-up missing?">
-It is probably not settled yet. These reports cover settled transactions only. Check the wallet's transaction list in the app. See [Wallets and prepaid credits](/guide/wallet-and-prepaid-credits/overview).
+It has probably not settled yet. Only settled transactions appear here. Check the wallet's transaction list in the app.
 </Accordion>
 </AccordionGroup>

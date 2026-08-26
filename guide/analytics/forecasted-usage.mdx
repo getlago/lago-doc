@@ -1,72 +1,9 @@
 ---
 title: "Forecasted usage"
+description: "A projection of what your customers will consume, and pay, over the next 12 months."
 ---
 
-<Warning>
-**Minimum data requirements**
-
-Forecasted Usage relies on an ML model that requires sufficient historical data to produce reliable predictions. This feature is only available for customers with <u>at least 6 months of usage data</u>. Organizations with less history will not see forecasts until enough data has accumulated.
-</Warning>
-
-## Overview
-Forecasted Usage uses machine learning to predict future usage, so you can anticipate customer usage patterns and forecast revenue.
-
-The forecasting system uses a machine learning pipeline that trains multiple models on historical usage data and generates probabilistic predictions for future periods.
-
-<Frame caption="Forecasted usage dashboard">
-  <img src="/guide/analytics/images/forecasted-usage.png" />
-</Frame>
-
-## How forecasting works
-
-### Data-driven predictions
-The ML pipeline uses historical usage data, grouped by billable metric, subscription, charge, and charge filter to identify patterns and trends and train ML models.
-
-The target variable to forecast is future paid usage, as opposed to just invoiced usage which may or may not be eventually paid.
-
-The model generates forecasts for 12 months ahead at monthly granularity.
-
-As a rule of thumb, the forecasts are updated in the first 2 weeks of the month.
-
-### Forecasting methods
-The system supports two main forecasting approaches:
-
-#### 1. Trained ML models
-Advanced machine learning models that learn from historical patterns, including:
-- **LightGBM**: Gradient boosting model with quantile loss for probabilistic forecasting
-- **N-BEATS**: Deep learning neural network specialized for time series
-- **Ensemble**: Combines multiple models for improved accuracy
-
-These models generate three forecast scenarios (conservative, realistic, and optimistic) based on different probability quantiles.
-
-#### 2. Historical mean
-A simpler baseline method that uses historical average usage as the forecast. It is used whenever there is insufficient data to train ML models.
-
-### Probabilistic forecasting
-All trained model forecasts include three scenarios:
-- **Conservative**: Lower-bound estimate for cautious planning
-- **Realistic**: Median forecast representing the most likely outcome
-- **Optimistic**: Upper-bound estimate for best-case scenarios
-
-This probabilistic approach helps you understand the range of possible outcomes and plan accordingly.
-
-### Subscription growth
-We explicitly model the growth in the number of subscriptions using the historical data of your organization.
-
-### Limitations
-The models forecast future usage for a subset of potential revenue sources. They don't account for new products or features.
-Recently created and unused/deleted billable metrics and charges can be excluded from the forecasts.
-
-## Filtering options
-Filter forecasted usage data by:
-- Currency
-- Customer country
-- Customer external ID
-- Customer type
-- Customer has TaxID
-- Plan code
-- Subscription external ID
-- Billable metric
+What will our customers consume next year, and what is that worth? Forecasted usage projects both, month by month, from your own consumption history.
 
 <Info>
 **PREMIUM FEATURE** ✨
@@ -75,3 +12,82 @@ Forecasted Usage and advanced filtering options are only available to users with
 **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago
 Self-Hosted Premium.
 </Info>
+
+<Frame caption="Forecasted usage dashboard">
+  <img src="/guide/analytics/images/forecasted-usage.png" />
+</Frame>
+
+## What's on this dashboard
+
+Two charts. ✅ The months add up on both. The forecast runs **12 months ahead**, one value per month.
+
+| Chart | What it answers | Values |
+| --- | --- | --- |
+| Forecast units | How much will customers consume each month? | 🔢 Billing units |
+| Forecast amount | What is that consumption worth? | 💰 Money (excl. tax) |
+
+## The three scenarios
+
+Every forecast comes in three versions, so you can plan against a range rather than a single number.
+
+| Scenario | Use it for |
+| --- | --- |
+| **Conservative** | A cautious floor. Budgeting, covenant headroom, worst-case planning |
+| **Realistic** | The most likely outcome. Your default number |
+| **Optimistic** | An upper bound. Capacity planning and best-case modelling |
+
+## What is being forecast
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| Metered consumption you expect to be **paid** for | ✅ Yes | |
+| Expected growth in your subscription count | ✅ Yes | |
+| Consumption invoiced but never collected | ❌ No | [Invoices](/guide/analytics/invoices) |
+| Subscription fees and one-off charges | ❌ No | [MRR](/guide/analytics/revenue/mrr) |
+| Products and features you have not launched yet | ❌ No | Nothing can forecast these |
+
+<Warning>
+**The forecast only knows what has already happened.** It learns from your consumption history, so it cannot anticipate a new product, a new pricing model, or a customer you have not signed. Read it as a projection of the current business, not of your plans.
+</Warning>
+
+## Filters
+
+| Filter | What it does |
+| --- | --- |
+| Currency | Keeps one billing currency |
+| Country | Keeps customers in one country |
+| Customer external ID | Isolates a single customer |
+| Customer type | Keeps companies or individuals |
+| Customer has tax ID | Keeps customers with, or without, a tax ID on file |
+| Plan code | Keeps one plan |
+| Subscription ext. ID | Isolates a single subscription |
+| Billable metric | Keeps one metric. Do this before reading 🔢 units, or you are adding API calls to gigabytes |
+
+⚠️ There is no date range here. The horizon is always the next 12 months.
+
+## What's not included (for now)
+
+- **New products and features.** The forecast is built from what your customers already consume.
+- **Recently created metrics and charges.** They may be left out until they have enough history.
+- **Unused or deleted metrics and charges.** They may be left out too.
+- **Anything other than usage.** Subscription revenue is on [MRR](/guide/analytics/revenue/mrr), invoiced revenue on [Revenue streams](/guide/analytics/revenue/revenue-streams).
+
+## Common questions
+
+<AccordionGroup>
+<Accordion title="Why don't I see any forecast?">
+Forecasting needs at least six months of consumption history to produce something reliable. If your organization has less than that, forecasts appear once enough history has built up.
+</Accordion>
+
+<Accordion title="How often does the forecast change?">
+It is refreshed once a month, usually during the first two weeks. It does not move day to day like the other reports.
+</Accordion>
+
+<Accordion title="Which number should I put in the board pack?">
+The realistic scenario, and quote the conservative one next to it as your floor. Quoting the optimistic figure alone will overstate the case.
+</Accordion>
+
+<Accordion title="A big metric is missing from the forecast.">
+It is probably too new, or it has been unused or deleted. Metrics and charges without enough recent history can be left out. Check its consumption on [Usage](/guide/analytics/usage).
+</Accordion>
+</AccordionGroup>

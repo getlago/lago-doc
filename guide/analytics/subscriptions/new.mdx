@@ -3,60 +3,90 @@ title: "New subscriptions"
 description: "How Lago counts subscription starts, and why a plan change is not a new customer."
 ---
 
-Subscription starts in the period, dated on the start date and split into two lines that answer different questions.
+How many customers did we add this month? The answer is on this page, but only if you read the right line.
 
-Four charts: **New subscriptions**, split fresh against plan changes, **Day of new subscriptions**, **New subscriptions by plan**, and **New subscriptions details**, one row per start with the plan the customer came from.
+{/* IMAGE: New subscriptions tab, showing the fresh vs plan-change split and the weekday chart */}
+
+## What's on this dashboard
+
+Four charts. All of them count subscription starts, and ✅ the months add up.
+
+| Chart | What it answers |
+| --- | --- |
+| New subscriptions | How many starts, split fresh against plan changes? |
+| Day of new subscriptions | Which weekday do customers sign up on? |
+| New subscriptions by plan | Which plans are they starting on? |
+| New subscriptions details | Which exact starts, and where did they come from? |
+
+Everything here is dated on the subscription's start date.
 
 ## Fresh subscriptions
 
-Genuinely new subscription relationships.
+A start with nothing behind it. This is the line to quote when someone asks how many customers you added.
 
-**Included** Subscription starts with no previous subscription behind them.
-
-**Excluded** Starts that replace an existing subscription, which are plan changes.
-
-**How it's calculated** A count of subscription starts in the period with no predecessor.
-
-**Grain and timing** Flow, dated on the start date.
-
-**Currency** Grouped by the plan's currency.
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| A brand new subscription relationship | ✅ Yes | |
+| A customer who churned and came back | ✅ Yes | |
+| A start that replaces an existing subscription | ❌ No | Plan changes, below |
+| A subscription that has not started yet | ❌ No | It appears on its start date |
 
 ## Plan changes
 
-Movement inside your existing base.
+A start that replaces a subscription the customer already had: an upgrade, a downgrade, or a move at the same price.
 
-**Included** Subscription starts linked to a previous subscription: upgrades, downgrades and same-price moves.
-
-**Excluded** First-time starts.
-
-**How it's calculated** A count of subscription starts in the period that carry a predecessor.
-
-**Grain and timing** Flow, dated on the new subscription's start date.
-
-**Currency** Grouped by the plan's currency.
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| An upgrade, a downgrade or a same-price move | ✅ Yes | |
+| A first-time start | ❌ No | Fresh subscriptions, above |
 
 <Note>
-A plan change creates a **new subscription record**. It is not a new customer, and the count of fresh subscriptions is the number to quote when someone asks how many customers you added. The details table shows the plan the customer came from.
+**A plan change is not a new customer.** It creates a new subscription record, so it adds one to the total. The customer was already yours. The details table names the plan they came from.
 </Note>
 
-**Day of new subscriptions** plots the same starts by weekday, on a fixed Sunday to Saturday axis. It answers "when do customers sign up", not "how many".
+Upgrade or downgrade is decided on the **monthly equivalent** of each plan. A move from 100 per month to 1,200 per year is neither: both are worth 100 a month.
 
-## Reconciliation and common questions
+## Day of new subscriptions
+
+The same starts, plotted Sunday to Saturday. It answers "when do customers sign up", not "how many".
+
+## Filters
+
+| Filter | What it does |
+| --- | --- |
+| Date range | Keeps starts inside the period |
+| Currency | Keeps one billing currency |
+| Country | Keeps customers in one country |
+| Customers | Keeps one or more named customers |
+| Customer type | Keeps companies or individuals |
+| Plan code | Keeps starts on one plan |
+| Subscription ext. ID | Isolates a single subscription |
+| Customer has tax ID | Keeps customers with, or without, a tax ID on file |
+
+⚠️ There is no granularity selector here. The trend is always monthly.
+
+## What's not included (for now)
+
+- **Money.** This counts starts, never the revenue they bring. For that, read New and Expansion in [MRR](/guide/analytics/revenue/mrr).
+- **Future starts.** A subscription scheduled to begin later is counted on its start date, not before.
+- **Weekly or daily trends.** The trend chart is monthly only.
+
+## Common questions
 
 <AccordionGroup>
 <Accordion title="How many customers did we actually add?">
-Read fresh subscriptions, not the total. The total includes plan changes, which are existing customers moving between plans.
+Read fresh subscriptions, not the total. The total also contains plan changes, which are existing customers moving between plans.
 </Accordion>
 
 <Accordion title="Why does the by-plan chart show more starts than fresh subscriptions?">
-Because it counts every start for the plan, including plan changes into it. A customer upgrading into a plan is a start for that plan and not a new customer for you.
+Because it counts every start for that plan, including customers upgrading into it. An upgrade is a start for the plan but not a new customer for you.
 </Accordion>
 
-<Accordion title="A customer resubscribed after churning. Where does it show?">
-As a fresh subscription, since the new subscription has no predecessor. In [MRR](/guide/analytics/revenue/mrr) the same event is expansion rather than new, because the customer is not new to you.
+<Accordion title="A customer churned and resubscribed. Where does it show?">
+As a fresh subscription, because the new subscription has nothing behind it. In [MRR](/guide/analytics/revenue/mrr) the same event counts as expansion, since the customer is not new to you.
 </Accordion>
 
 <Accordion title="Does a trial count as a start?">
-It counts once the subscription starts. Subscriptions with a future start date are not counted until that date arrives.
+Yes, from the day the subscription starts. Subscriptions with a future start date are not counted until that date arrives.
 </Accordion>
 </AccordionGroup>

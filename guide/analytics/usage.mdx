@@ -1,85 +1,101 @@
 ---
 title: "Usage"
-description: "How Lago measures metered consumption and its cost, including usage that has not been invoiced yet."
+description: "What your customers consumed and what it is worth, including consumption not yet invoiced."
 ---
 
-Usage reports what your customers consumed and what that consumption is worth. It answers "who is using the product, on which metrics, and what is it priced at".
+Who is using the product, on which metrics, and what is it worth? This is the only revenue report that does not wait for an invoice. Consumption from the current, open billing period is already in it.
 
-This is the one revenue-adjacent dashboard that does not wait for an invoice. Consumption from the current, open billing period is already in it.
+{/* IMAGE: Usage tab, showing consumption revenue and total units consumed side by side */}
 
-## Population
+## What's on this dashboard
 
-**Included**
+Three charts. ✅ The months add up on all of them.
 
-- Metered consumption recorded against subscriptions, day by day, priced by the plan's charges.
-- Usage from open billing periods, so consumption that has no fee and no invoice yet.
-- Consumption broken down to the level of individual charges, charge filters and groups, then aggregated back up for these reports.
-
-**Excluded**
-
-- Subscription fees, one-off charges, commitment true-ups. This dashboard is metered consumption only. For all charged revenue, see [Revenue streams](/guide/analytics/revenue/revenue-streams).
-- Taxes.
+| Chart | What it answers | Values |
+| --- | --- | --- |
+| Consumption revenue | What is the consumption worth at plan prices? | 💰 Money (excl. tax) |
+| Total units consumed | How much was consumed, in my own units? | 🔢 Billing units |
+| Usage breakdown | The same two numbers as a table, cut how you like | 💰 and 🔢 |
 
 <Note>
-Usage is dated on the **usage date in the customer's timezone**, not in your organization's timezone. A customer in Tokyo and a customer in Los Angeles consuming at the same moment can land on different days.
+**Consumption lands on the usage date, in the customer's own timezone.** A customer in Tokyo and one in Los Angeles consuming at the same moment can land on different days.
 </Note>
 
-## Total usage cost
+## Consumption revenue
 
-What the consumption is worth at plan prices.
+What the consumption is worth, priced by the customer's plan.
 
-**Included** The priced amount of metered consumption in the period, including consumption not yet invoiced.
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| Metered consumption, day by day, at the plan's list price | ✅ Yes | |
+| Consumption from an open billing period, with no invoice yet | ✅ Yes | |
+| Subscription fees, one-off charges and commitment top-ups | ❌ No | [Revenue streams](/guide/analytics/revenue/revenue-streams) |
+| Coupons and credits. They apply when the invoice is raised | ❌ No | [Revenue streams](/guide/analytics/revenue/revenue-streams) |
+| Taxes | ❌ No | [Invoices](/guide/analytics/invoices) |
+| Partner accounts | ❌ No | [Revenue share](/guide/revenue-share) |
 
-**Excluded** Discounts, credits and commitment true-ups, which are applied at invoicing. The figure here is consumption at list price for the customer's plan.
-
-**How it's calculated** The sum of daily priced usage in the period.
-
-**Grain and timing** Flow, dated on the usage date. Adds correctly across periods.
-
-**Currency** Reported in the plan's currency, never converted.
+This is consumption at list price. It is what the usage is worth, not what the customer will pay.
 
 ## Total units consumed
 
-How much was consumed, in the units your metrics measure.
-
-**Included** The metered units recorded in the period, per billable metric.
-
-**Excluded** Nothing beyond the population rules. Units are raw consumption, before any pricing.
-
-**How it's calculated** The sum of daily units in the period.
-
-**Grain and timing** Flow, dated on the usage date.
-
-**Currency** Not applicable. Units are counts, not money.
+The raw units your billable metrics measure, before any pricing.
 
 <Warning>
-**Units are not comparable across billable metrics.** With no breakdown applied, this chart adds API calls to gigabytes to seats. Break down by billable metric, or filter to one, before quoting a number.
+**Units from different metrics cannot be added.** With no breakdown applied, this chart adds API calls to gigabytes to seats. Break the chart down by billable metric, or filter to one metric, before quoting a number.
 </Warning>
 
-## Usage breakdown
+## Filters
 
-A pivot table of the same two measures, cut by the dimensions you select. Use it to find which metric, customer or plan drove a spike, then confirm it against the day-level detail.
+| Filter | What it does |
+| --- | --- |
+| Date range | Sets the period. With nothing set, the charts show your full history |
+| Granularity | Sets the bar width: day, week or month |
+| Breakdown | Cuts the charts by Billable metric, Currency, Customer or Plan |
+| Billable metric | Narrows the whole page to one metric. The fastest way to make units mean something |
+| Currency | Keeps one plan currency |
+| Country | Keeps customers in one country |
+| Customers | Keeps one or more named customers |
+| Customer type | Keeps companies or individuals |
+| Plan code | Keeps consumption on one plan |
+| Subscription ext. ID | Isolates a single subscription |
+| Customer has tax ID | Keeps customers with, or without, a tax ID on file |
 
-## Breakdown and filters
+⚠️ Remove Currency from the Breakdown and dollars, euros and yen are added into one number. Filter to one currency before quoting a total.
 
-The Breakdown selector cuts the reports by **Billable metric**, **Currency**, **Customer** and **Plan**. A dedicated **Billable metric** filter narrows the whole dashboard to one metric, which is the fastest way to make units meaningful.
+## Explaining a disputed invoice
 
-## Reconciliation and common questions
+The fastest route when a customer questions their bill:
+
+1. Filter to their subscription with **Subscription ext. ID**.
+2. Filter to the metric they are disputing with **Billable metric**.
+3. Set **Granularity** to day.
+4. Set the **Date range** to the invoice's billing period.
+
+The day-by-day chart then shows exactly when consumption spiked and what it was worth. Your engineering team can pull the same breakdown through the [usage API](/guide/events/retrieve-usage).
+
+## What's not included (for now)
+
+- **Anything that is not metered consumption.** Subscription fees, add-ons and commitment top-ups live on [Revenue streams](/guide/analytics/revenue/revenue-streams).
+- **Discounts and credits.** They apply when the invoice is raised, so the figures here are before any reduction.
+- **Taxes**, and **partner accounts**.
+- **What the customer will actually pay.** For that, read the invoiced figures on [Revenue streams](/guide/analytics/revenue/revenue-streams) or [Invoices](/guide/analytics/invoices).
+
+## Common questions
 
 <AccordionGroup>
-<Accordion title="Why is usage cost higher than the usage-based revenue I invoiced?">
-Several reasons, and they compound. Consumption from an open billing period has no invoice yet. Usage absorbed by a minimum commitment is billed as a commitment fee, not as usage. Usage paid with prepaid credits shows full gross revenue and an offsetting contra line on the invoice. Coupons reduce the invoice, not the usage cost here.
-</Accordion>
-
-<Accordion title="Can I use this to explain an invoice a customer is disputing?">
-Yes, and it is the fastest route. Filter to that subscription and billable metric, set granularity to day, and set the date range to the invoice's billing period. The day-by-day series shows when consumption spiked and what it priced at. The [usage API](/guide/events/retrieve-usage) returns the same breakdown programmatically.
+<Accordion title="Why is consumption revenue higher than the usage revenue I invoiced?">
+Several reasons, and they stack. Consumption from an open period has no invoice yet. Usage absorbed by a minimum commitment is billed as a commitment fee. Coupons and credits reduce the invoice, not the figures here.
 </Accordion>
 
 <Accordion title="A customer says they consumed nothing yesterday, but the chart shows usage.">
-Check the timezone. Usage is dated in the customer's timezone, so late-evening consumption can land on the following day relative to your own clock. Also check the refresh: the analytical data updates daily, so today's consumption may be partial.
+Check the timezone. Consumption is dated in the customer's timezone, so late-evening usage can land on the next day relative to your clock. Today's figure is also partial until the numbers update overnight.
 </Accordion>
 
-<Accordion title="Does deleted or voided billing data change these numbers?">
-Usage is measured from consumption, not from invoices, so voiding an invoice does not change it. Terminating a subscription stops future usage but leaves past consumption in place.
+<Accordion title="Does voiding an invoice change these numbers?">
+No. Usage is measured from what was consumed, not from invoices. Ending a subscription stops future consumption but leaves the past in place.
+</Accordion>
+
+<Accordion title="Can I compare two customers on total units?">
+Only if they are on the same billable metric. Otherwise you are comparing gigabytes with API calls. Filter to one metric first.
 </Accordion>
 </AccordionGroup>
