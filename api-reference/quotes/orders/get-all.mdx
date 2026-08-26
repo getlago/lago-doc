@@ -1,0 +1,69 @@
+---
+openapi: "GET /orders"
+authMethod: "bearer"
+title: "List all orders"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v1/orders?per_page=20&page=1&status[]=created" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.orders.find_all({'per_page': 20, 'page': 1, 'status[]': ['created']})
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.orders.get_all({ per_page: 20, page: 1, 'status[]': ['created'] })
+```
+
+```js Javascript
+await client.orders.findAllOrders({ per_page: 20, page: 1, "status[]": ["created"] });
+```
+
+```go Go
+import (
+	"context"
+	"fmt"
+
+	lago "github.com/getlago/lago-go-client"
+)
+
+func main() {
+	lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+	ctx := context.Background()
+
+	page, perPage := 1, 20
+	orderResult, err := lagoClient.Order().GetList(ctx, &lago.OrderListInput{
+		Page:    &page,
+		PerPage: &perPage,
+		Status:  []lago.OrderStatus{lago.OrderStatusCreated},
+	})
+	if err != nil {
+		// Error is *lago.Error
+		panic(err)
+	}
+
+	// orderResult is *lago.OrderResult
+	fmt.Println(orderResult)
+}
+```
+
+</RequestExample>
