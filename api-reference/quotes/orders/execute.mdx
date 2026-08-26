@@ -1,0 +1,76 @@
+---
+openapi: "POST /orders/{lago_id}/execute"
+authMethod: "bearer"
+title: "Execute an order"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+ORDER_ID="__ORDER_ID__"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/orders/$ORDER_ID/execute" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "order": {
+      "execution_mode": "execute_in_lago"
+    }
+  }'
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+from lago_python_client.models import OrderExecute
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.orders.execute('__ORDER_ID__', OrderExecute(execution_mode='execute_in_lago'))
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.orders.execute('__ORDER_ID__', { execution_mode: 'execute_in_lago' })
+```
+
+```js Javascript
+await client.orders.executeOrder("__ORDER_ID__", {
+  order: { execution_mode: "execute_in_lago" },
+});
+```
+
+```go Go
+import (
+	"context"
+	"fmt"
+
+	lago "github.com/getlago/lago-go-client"
+)
+
+func main() {
+	lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+	ctx := context.Background()
+
+	order, err := lagoClient.Order().Execute(ctx, "__ORDER_ID__", &lago.OrderExecuteInput{
+		ExecutionMode: lago.OrderExecutionModeExecuteInLago,
+	})
+	if err != nil {
+		// Error is *lago.Error
+		panic(err)
+	}
+
+	// order is *lago.Order
+	fmt.Println(order)
+}
+```
+
+</RequestExample>

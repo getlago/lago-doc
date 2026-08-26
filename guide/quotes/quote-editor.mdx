@@ -1,0 +1,88 @@
+---
+title: "Writing the quote content"
+description: "Write the proposal in the rich text editor, personalize it with variables, and insert live billing blocks with commands."
+---
+
+The quote document is written in a rich text editor. It holds everything the customer will read: the proposal text, the terms, and the pricing. The pricing is not pasted in as text. It is inserted as billing blocks that Lago executes when the order runs.
+
+## Rich text and capabilities
+
+The editor works like a modern document editor. An empty line shows the hint **"Type / for commands..."**. The toolbar covers standard formatting: headings, bold and italic, colors, lists, alignment, links, tables, code blocks, and images (PNG, JPG, WEBP, GIF under 5MB). Markdown syntax is also accepted and converts as you type. Hover a block to move or delete it. Cmd+Z restores deleted blocks.
+
+The document saves automatically: a chip in the header shows **"Saving..."**, then **"Saved"**, or **"Save failed"** with a retry button.
+
+**"Preview"** renders the document as the customer will see it, in the customer's document language. **"Download PDF"** uses that same rendering: the preview is exactly what the customer receives.
+
+## Variables
+
+Type `@` to insert a variable: a dynamic value that fills in automatically, so one quote structure personalizes itself per customer.
+
+In the editor, a variable appears as a pill, for example `@Customer name`. In the preview and PDF, it is replaced by the actual value. A variable with no value renders as nothing.
+
+| Variable | Fills in with |
+| --- | --- |
+| Customer name | The customer's display name |
+| Customer email | The customer's email |
+| Organization name | Your organization's name |
+| Organization logo | Your organization's logo |
+| Billing entity name | The billing entity's name |
+| Billing entity legal name | The billing entity's legal name |
+| Billing entity address | The billing entity's address |
+| Billing entity tax ID | The billing entity's tax identification number |
+| Billing entity email | The billing entity's email |
+| Quote number | The quote's number |
+| Quote date | The quote's date |
+| Quote version | The version number |
+| Quote currency | The quote's currency |
+| Term duration | The duration between the start and end dates |
+| Start date | The deal's start date |
+| Payment terms | The applicable net payment term |
+
+Variable values are frozen at approval. If the customer's name changes afterwards, the order form keeps the value it was approved with.
+
+## Commands for structure
+
+Type `/` to insert document elements: `Heading 1`, `Heading 2`, `Heading 3`, `Bullet List`, `Table`, `Code Block`. Ordered lists, links, and images are inserted from the toolbar.
+
+## Commands for billing blocks
+
+Three more commands insert live billing blocks. Each opens a drawer where you configure the block, and that configuration is what Lago provisions at execution: the document and the billing configuration are the same thing.
+
+In the document, a billing block appears as a card. In the preview and PDF, it renders as a pricing table with the note "All prices exclude any applicable taxes". All blocks use the quote's currency. A partially configured block cannot be saved.
+
+### The `Pricing` command
+
+The pricing block. Type `/` and select `Pricing` to insert it.
+
+On subscription quotes (**"Pricing for a subscription"**):
+
+1. Select a **"Plan"** from your catalog. On an amendment, the subscription context is already set;
+2. Adjust the settings cards: **"Subscription settings"** (external ID, name, anniversary or calendar billing, start and end dates), **"Invoicing & payments settings"**, **"Plan settings"**, and the **"Subscription fee"**;
+3. Override prices where needed: subscription fee, fixed charges, usage charges, minimum commitment, progressive billing; and
+4. Click **"Save edits"**.
+
+Only changed fields are saved as overrides; everything else follows the catalog plan. Overrides follow the same rules as subscription overrides: you can only override what is already overridable.
+
+On one-off quotes (**"Pricing for one-off invoice"**):
+
+1. Click **"Add an add-on"** and select an add-on from your catalog;
+2. Set the **"Units"** and **"Unit price"** for each line;
+3. Optionally click **"Edit"** on a line to set billing period dates, invoice display name, and description, shown on the invoice PDF; and
+4. Click **"Save edits"**.
+
+### The `Discount` command
+
+Applies a coupon. Type `/` and select `Discount` to insert it. Subscription quotes only. Several discount blocks allowed.
+
+1. Select a **"Coupon"** (only active coupons are listed);
+2. Adjust the prefilled **"Amount"** or **"Percentage rate"**, and the **"Frequency"** (once, recurring, or forever); and
+3. Click **"Save edits"**.
+
+### The `Credits` command
+
+Adds prepaid credits. Type `/` and select `Credits` to insert it. Subscription quotes only. Each block configures one wallet, up to 5 per quote.
+
+1. Configure the wallet through its four cards: **"Credits and wallet settings"** (name, credit rate, priority, expiration, top-up limits, PO number), **"Wallet scope limitation"**, **"Free and paid credits"**, and **"Wallet recurring top-up rule"**; and
+2. Click **"Save edits"**.
+
+The settings are the same as when [creating a wallet](/guide/wallet-and-prepaid-credits/overview) directly on a customer. The difference is timing: the wallet is only created when the order is executed.
