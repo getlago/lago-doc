@@ -13,7 +13,33 @@
     "license": {
       "name": "AGPL-3.0",
       "identifier": "AGPL-3.0-only"
-    }
+    },
+    "x-official-sdks": [
+      {
+        "language": "JavaScript",
+        "package": "lago-javascript-client",
+        "registry": "https://registry.npmjs.org/lago-javascript-client/latest",
+        "source": "https://github.com/getlago/lago-javascript-client"
+      },
+      {
+        "language": "Python",
+        "package": "lago-python-client",
+        "registry": "https://pypi.org/project/lago-python-client/",
+        "source": "https://github.com/getlago/lago-python-client"
+      },
+      {
+        "language": "Ruby",
+        "package": "lago-ruby-client",
+        "registry": "https://rubygems.org/gems/lago-ruby-client",
+        "source": "https://github.com/getlago/lago-ruby-client"
+      },
+      {
+        "language": "Go",
+        "package": "github.com/getlago/lago-go-client",
+        "registry": "https://pkg.go.dev/github.com/getlago/lago-go-client",
+        "source": "https://github.com/getlago/lago-go-client"
+      }
+    ]
   },
   "externalDocs": {
     "description": "Complete Lago API specification and developer documentation",
@@ -22,7 +48,11 @@
   "servers": [
     {
       "url": "https://api.getlago.com",
-      "description": "Lago Cloud production API"
+      "description": "Lago Cloud US API"
+    },
+    {
+      "url": "https://api.eu.getlago.com",
+      "description": "Lago Cloud EU API"
     }
   ],
   "security": [
@@ -54,6 +84,38 @@
   ],
   "paths": {
     "/api/v1/events": {
+      "get": {
+        "operationId": "listUsageEvents",
+        "summary": "List usage events",
+        "description": "Returns a paginated list of usage events for the organization.",
+        "tags": ["Usage"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "$ref": "#/components/parameters/PerPage"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A paginated list of usage events.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
       "post": {
         "operationId": "ingestUsageEvent",
         "summary": "Ingest a usage event",
@@ -76,6 +138,48 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/v1/events/batch": {
+      "post": {
+        "operationId": "createBatchEvents",
+        "summary": "Batch multiple usage events",
+        "description": "Sends up to 100 usage records in one request. Each event must carry its own unique transaction_id.",
+        "tags": ["Usage"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The usage events were received for asynchronous processing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventBatchResponse"
                 }
               }
             }
@@ -316,8 +420,7 @@
         "schema": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 100,
-          "default": 20
+          "default": 100
         }
       }
     },
@@ -455,37 +558,40 @@
           }
         }
       },
+      "EventInput": {
+        "type": "object",
+        "required": ["transaction_id", "external_customer_id", "code"],
+        "properties": {
+          "transaction_id": {
+            "type": "string",
+            "description": "Unique idempotency identifier for the event."
+          },
+          "external_customer_id": {
+            "type": "string",
+            "description": "Customer identifier from your application."
+          },
+          "code": {
+            "type": "string",
+            "description": "Billable metric code."
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Time at which the usage occurred."
+          },
+          "properties": {
+            "type": "object",
+            "description": "Metric dimensions and numeric values used for aggregation.",
+            "additionalProperties": true
+          }
+        }
+      },
       "EventRequest": {
         "type": "object",
         "required": ["event"],
         "properties": {
           "event": {
-            "type": "object",
-            "required": ["transaction_id", "external_customer_id", "code"],
-            "properties": {
-              "transaction_id": {
-                "type": "string",
-                "description": "Unique idempotency identifier for the event."
-              },
-              "external_customer_id": {
-                "type": "string",
-                "description": "Customer identifier from your application."
-              },
-              "code": {
-                "type": "string",
-                "description": "Billable metric code."
-              },
-              "timestamp": {
-                "type": "string",
-                "format": "date-time",
-                "description": "Time at which the usage occurred."
-              },
-              "properties": {
-                "type": "object",
-                "description": "Metric dimensions and numeric values used for aggregation.",
-                "additionalProperties": true
-              }
-            }
+            "$ref": "#/components/schemas/EventInput"
           }
         }
       },
@@ -496,6 +602,58 @@
           "event": {
             "type": "object",
             "additionalProperties": true
+          }
+        }
+      },
+      "EventListResponse": {
+        "type": "object",
+        "required": ["events", "meta"],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "meta": {
+            "type": "object",
+            "required": ["current_page", "next_page", "prev_page", "total_pages", "total_count"],
+            "properties": {
+              "current_page": { "type": "integer" },
+              "next_page": { "type": ["integer", "null"] },
+              "prev_page": { "type": ["integer", "null"] },
+              "total_pages": { "type": "integer" },
+              "total_count": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "EventBatchRequest": {
+        "type": "object",
+        "required": ["events"],
+        "properties": {
+          "events": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/EventInput"
+            }
+          }
+        }
+      },
+      "EventBatchResponse": {
+        "type": "object",
+        "required": ["events"],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "An accepted event. Processing continues asynchronously after receipt.",
+              "additionalProperties": true
+            }
           }
         }
       },

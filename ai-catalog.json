@@ -18,7 +18,7 @@
       "url": "https://doc.getlago.com/.well-known/mcp/server-card.json",
       "description": "Read-only search and retrieval tools for Lago guides, API references, examples, and operational documentation.",
       "tags": ["billing", "documentation", "mcp", "usage-metering"],
-      "capabilities": ["search_lago", "query_docs_filesystem_lago"],
+      "capabilities": ["search_lago", "query_docs_filesystem_lago", "submit_feedback"],
       "representativeQueries": [
         "How do I send usage events to Lago?",
         "Which Lago API endpoint creates a customer?",
@@ -31,13 +31,32 @@
       }
     },
     {
+      "identifier": "urn:air:doc.getlago.com:mcp:billing-operations",
+      "displayName": "Lago Product MCP",
+      "type": "text/html",
+      "url": "https://github.com/getlago/lago-agent-toolkit",
+      "description": "Open-source Dockerized MCP server for authenticated access to Lago billing data and operations.",
+      "tags": ["billing", "docker", "mcp", "operations"],
+      "capabilities": ["billingData", "billingOperations", "customers", "events", "invoices", "payments"],
+      "representativeQueries": [
+        "Show pending Lago invoices",
+        "Find failed invoice payments",
+        "Retrieve Lago customers and usage events"
+      ],
+      "version": "1.0.0",
+      "trustManifest": {
+        "identity": "https://github.com/getlago/lago-agent-toolkit",
+        "identityType": "https"
+      }
+    },
+    {
       "identifier": "urn:air:doc.getlago.com:api:openapi",
       "displayName": "Lago REST API OpenAPI Contract",
       "type": "application/json",
       "url": "https://doc.getlago.com/openapi.json",
       "description": "OpenAPI 3.1 discovery profile for authentication, usage events, customers, subscriptions, plans, invoices, and typed errors.",
       "tags": ["api", "billing", "openapi", "rest"],
-      "capabilities": ["ingestUsageEvent", "createCustomer", "getCustomer", "createSubscription", "listPlans", "listInvoices"],
+      "capabilities": ["listUsageEvents", "ingestUsageEvent", "createBatchEvents", "createCustomer", "getCustomer", "createSubscription", "listPlans", "listInvoices"],
       "representativeQueries": [
         "Generate a Lago API client from OpenAPI",
         "What authentication scheme does the Lago API use?",
@@ -53,7 +72,7 @@
       "identifier": "urn:air:doc.getlago.com:skill:billing-integration",
       "displayName": "Lago Billing Integration Skill",
       "type": "text/markdown",
-      "url": "https://doc.getlago.com/.well-known/agent-skills/lago/skill.md",
+      "url": "https://doc.getlago.com/lago-skill.md",
       "description": "Instructions for agents building usage metering, pricing, subscriptions, invoicing, payments, and billing operations with Lago.",
       "tags": ["agent-skill", "billing", "invoicing", "pricing"],
       "capabilities": ["billingArchitecture", "eventIngestion", "pricingConfiguration", "invoiceOperations"],
@@ -64,7 +83,25 @@
       ],
       "version": "1.0.0",
       "trustManifest": {
-        "identity": "https://doc.getlago.com/.well-known/agent-skills/lago/skill.md",
+        "identity": "https://doc.getlago.com/lago-skill.md",
+        "identityType": "https"
+      }
+    },
+    {
+      "identifier": "urn:air:doc.getlago.com:plugin:lago-billing",
+      "displayName": "Lago Billing Agent Plugin",
+      "type": "application/json",
+      "url": "https://doc.getlago.com/plugin.json",
+      "description": "Portable Agent Plugin manifest for Lago billing guidance and the read-only Lago Docs MCP server.",
+      "tags": ["agent-plugin", "billing", "documentation", "mcp"],
+      "capabilities": ["billingGuidance", "documentationSearch", "documentationRetrieval"],
+      "representativeQueries": [
+        "Install Lago billing guidance in an agent client",
+        "Connect an agent to the Lago Docs MCP server"
+      ],
+      "version": "1.0.0",
+      "trustManifest": {
+        "identity": "https://doc.getlago.com/plugin.json",
         "identityType": "https"
       }
     }
