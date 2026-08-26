@@ -1,0 +1,69 @@
+---
+openapi: "GET /quotes"
+authMethod: "bearer"
+title: "List all quotes"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v1/quotes?per_page=20&page=1&status[]=draft" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.quotes.find_all({'per_page': 20, 'page': 1, 'status[]': ['draft']})
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.quotes.get_all({ per_page: 20, page: 1, 'status[]': ['draft'] })
+```
+
+```js Javascript
+await client.quotes.findAllQuotes({ per_page: 20, page: 1, "status[]": ["draft"] });
+```
+
+```go Go
+import (
+	"context"
+	"fmt"
+
+	lago "github.com/getlago/lago-go-client"
+)
+
+func main() {
+	lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+	ctx := context.Background()
+
+	page, perPage := 1, 20
+	quoteResult, err := lagoClient.Quote().GetList(ctx, &lago.QuoteListInput{
+		Page:    &page,
+		PerPage: &perPage,
+		Status:  []lago.QuoteVersionStatus{lago.QuoteVersionStatusDraft},
+	})
+	if err != nil {
+		// Error is *lago.Error
+		panic(err)
+	}
+
+	// quoteResult is *lago.QuoteResult
+	fmt.Println(quoteResult)
+}
+```
+
+</RequestExample>

@@ -1,0 +1,65 @@
+---
+openapi: "GET /orders/{lago_id}"
+authMethod: "bearer"
+title: "Retrieve an order"
+---
+
+<RequestExample>
+
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+ORDER_ID="__ORDER_ID__"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v1/orders/$ORDER_ID" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```python Python
+from lago_python_client.client import Client
+from lago_python_client.exceptions import LagoApiError
+
+client = Client(api_key='__YOUR_API_KEY__')
+
+try:
+    client.orders.find('__ORDER_ID__')
+except LagoApiError as e:
+    repair_broken_state(e)  # do something on error or raise your own exception
+```
+
+```ruby Ruby
+require 'lago-ruby-client'
+
+client = Lago::Api::Client.new(api_key: '__YOUR_API_KEY__')
+
+client.orders.get('__ORDER_ID__')
+```
+
+```js Javascript
+await client.orders.findOrder("__ORDER_ID__");
+```
+
+```go Go
+import (
+	"context"
+	"fmt"
+
+	lago "github.com/getlago/lago-go-client"
+)
+
+func main() {
+	lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+	ctx := context.Background()
+
+	order, err := lagoClient.Order().Get(ctx, "__ORDER_ID__")
+	if err != nil {
+		// Error is *lago.Error
+		panic(err)
+	}
+
+	// order is *lago.Order
+	fmt.Println(order)
+}
+```
+
+</RequestExample>
