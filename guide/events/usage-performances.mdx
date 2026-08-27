@@ -73,6 +73,15 @@ Under the hood, Lago's high-volume pipeline is built on **Kafka/Redpanda** for s
   </Tab>
   <Tab title="Self-hosted">
     Full control over scaling, retention, and tuning. Requires manual administration of ClickHouse and Redpanda in your infrastructure.
+
+    The event store is a per-organization setting, driven by two environment variables:
+
+    | Variable | Effect |
+    | --- | --- |
+    | `LAGO_CLICKHOUSE_ENABLED=true` | Opens the ClickHouse connection (also required for activity, API and security logs). On its own, it does not move any organization to the ClickHouse event store. |
+    | `LAGO_DEFAULT_EVENT_STORE=clickhouse` | Every organization **created afterwards** is created on the ClickHouse event store, with ClickHouse deduplication enabled. Existing organizations are unchanged. |
+
+    The store itself lives on the organization record (`organizations.clickhouse_events_store`), and the API returns it as the `events_store` field of the organization object. Organizations that already exist keep the store they were created with; moving one to ClickHouse means backfilling its events, then flipping the store with the `recipes:clickhouse:enable_clickhouse_events_store` rake task. See [Configuring the event store](/guide/lago-self-hosted/docker#configuring-the-event-store) for the full setup.
   </Tab>
 </Tabs>
 

@@ -119,9 +119,18 @@ application. You can override them to customise your setup.
 | `LAGO_AWS_S3_ENDPOINT`                |                                                | S3 compatible storage endpoint. Should be set only if you are using another storage provider than AWS S3                                                                                                                                                           |
 | `LAGO_AWS_S3_REGION`                  | us-east-1                                      | AWS S3 Region                                                                                                                                                                                                                                                      |
 | `LAGO_AWS_S3_SECRET_ACCESS_KEY`       | azerty123456                                   | AWS Secret Access Key that has access to S3                                                                                                                                                                                                                        |
+| `LAGO_CLICKHOUSE_DATABASE`            |                                                | Name of the ClickHouse database used by Lago |
+| `LAGO_CLICKHOUSE_ENABLED`             | false                                          | Enable the ClickHouse connection. Required for the ClickHouse event store and for activity, API and security logs. See [Configuring the event store](#configuring-the-event-store). |
+| `LAGO_CLICKHOUSE_HOST`                |                                                | Host name of the ClickHouse server |
+| `LAGO_CLICKHOUSE_MIGRATIONS_ENABLED`  | false                                          | Run the ClickHouse migrations together with the Postgres ones when executing `db:migrate` |
+| `LAGO_CLICKHOUSE_PASSWORD`            |                                                | Password of the ClickHouse user |
+| `LAGO_CLICKHOUSE_PORT`                | 8123                                           | Port the ClickHouse HTTP interface listens to |
+| `LAGO_CLICKHOUSE_SSL`                 | false                                          | Connect to ClickHouse over HTTPS |
+| `LAGO_CLICKHOUSE_USERNAME`            |                                                | User name used to connect to ClickHouse |
 | `LAGO_DATABASE_IDLE_TX_TIMEOUT`       |                                                | A transaction left idle past the time limit (in milliseconds) is terminated. Maps to `idle_in_transaction_session_timeout` in postgres                                                                                                                             |
 | `LAGO_DATABASE_LOCK_TIMEOUT`          |                                                | A statement waiting on a lock past the limit (in milliseconds) fails fast instead of blocking. Maps to `lock_timeout` in postgres                                                                                                                                  |
 | `LAGO_DATABASE_STATEMENT_TIMEOUT`     |                                                | Any single query exceeding the time limit (in milliseconds) is cancelled. Maps to `statement_timeout` in postgres                                                                                                                                                  |
+| `LAGO_DEFAULT_EVENT_STORE`            | postgres                                       | Event store assigned to **newly created organizations**. Set it to `clickhouse` (with `LAGO_CLICKHOUSE_ENABLED` set) to create every new organization on the ClickHouse event store. See [Configuring the event store](#configuring-the-event-store). |
 | `LAGO_DISABLE_PDF_GENERATION`         | false                                          | Disable automatic PDF generation for invoices, credit notes, and receipts. As a result, the corresponding download endpoints will be unavailable                                                                                                                   |
 | `LAGO_DISABLE_SIGNUP`                 |                                                | Disable Sign up when running Lago in self-hosted                                                                                                                                                                                                                   |
 | `LAGO_DISABLE_WALLET_REFRESH`         |                                                | Disable automatic refresh of wallet ongoing balance                                                                                                                                                                                                                |
@@ -313,6 +322,107 @@ For an exhaustive list of SSL parameters, refer to the [libpq documentation](htt
 - **Apply timeouts at the web tier first.** Roll out `LAGO_DATABASE_STATEMENT_TIMEOUT` on the API only, monitor cancellations for 24–48 h, then extend to other tiers with more generous values if needed.
 - **Encrypt connections.** Configure SSL with `verify-full` against a known CA. See [Enabling SSL](#enabling-ssl) above.
 - **Keep Postgres healthy.** Once Lago is connected, follow the [Database maintenance](/guide/lago-self-hosted/database-maintenance) guide for autovacuum, autoanalyze and slow-query monitoring.
+
+### Configuring the event store[](#configuring-the-event-store "Direct link to heading")
+
+Usage events are stored and aggregated in one of two event stores:
+
+- **Postgres** (default) - no extra infrastructure. Validated up to ~10K events/sec.
+- **ClickHouse** - columnar storage for high-volume ingestion and sub-second aggregation over billions of events. It runs on top of the [Kafka/Redpanda pipeline](/guide/events/ingesting-usage#kafka--redpanda-configuration), which it both requires and unlocks as an ingestion method. See [Performance & Optimization](/guide/events/usage-performances) for the architecture and benchmarks.
+
+The event store is a **per-organization** setting: a single Lago instance can run some organizations on Postgres and others on ClickHouse.
+
+#### The `clickhouse_events_store` column
+
+Which store an organization uses is persisted on the `organizations` table, not in the environment:
+
+| Column | Type | Role |
+| --- | --- | --- |
+| `clickhouse_events_store` | boolean, `false` by default | Source of truth for the organization's event store. `true` = ClickHouse, `false` = Postgres. |
+| `clickhouse_deduplication_enabled` | boolean, `false` by default | Deduplicates events on `transaction_id` + `timestamp` at aggregation time. Only read when `clickhouse_events_store` is `true`. |
+
+`LAGO_DEFAULT_EVENT_STORE` only decides the **initial value** of these two columns at organization creation; from then on the columns drive everything, and changing the environment variable does not rewrite them.
+
+The store actually used at runtime is `clickhouse_events_store` **and** `LAGO_CLICKHOUSE_ENABLED`. If the column is `true` but the connection is disabled, Lago silently falls back to reading and aggregating from Postgres, so keep `LAGO_CLICKHOUSE_ENABLED` set on every API, worker and clock instance.
+
+To check the store of an organization, call `GET /organizations` with its API key and read the `events_store` field of the [organization object](/api-reference/organizations/organization-object) (`"clickhouse"` or `"postgres"`), or read it from a Rails console:
+
+```ruby
+# In the rails console
+organization = Organization.find_by(name: "Hooli")
+organization.events_store                       # => "clickhouse" or "postgres"
+organization.clickhouse_deduplication_enabled?  # => true or false
+```
+
+Turning `clickhouse_events_store` on changes the whole event path for that organization:
+
+| | `false` (Postgres) | `true` (ClickHouse) |
+| --- | --- | --- |
+| Event persistence | Events written to the Postgres `events` table and post-processed by a background job | Events streamed to the ClickHouse pipeline; nothing is written to the Postgres `events` table |
+| Aggregation | Queries run on Postgres | Queries run on `events_enriched` / `events_enriched_expanded` |
+| Deduplication | `transaction_id` | `transaction_id` + `timestamp` (when `clickhouse_deduplication_enabled` is on) |
+| Ingestion pipeline | The API persists events itself; no streaming layer needed | Every event, REST calls included, is produced to Kafka/Redpanda and written to ClickHouse by the events processor |
+| `GET /events/enriched` | `403` with code `endpoint_not_available` | Available |
+
+<Warning>
+On the ClickHouse event store, events are **not** written to Postgres at all: the API only produces them to Kafka. An organization with `clickhouse_events_store = true` on an instance where `LAGO_KAFKA_BOOTSTRAP_SERVERS` or `LAGO_KAFKA_RAW_EVENTS_TOPIC` is unset silently drops every event it receives. Deploy the streaming pipeline before enabling the ClickHouse event store.
+</Warning>
+
+<Warning>
+Do not flip `clickhouse_events_store` by hand on an organization that already has events. Past events stay where they were written, so aggregation and invoicing would silently query a store that does not hold them. Use the migration recipe below instead.
+</Warning>
+
+#### Connecting ClickHouse
+
+Point the `api`, `api_worker` and `api_clock` containers to your ClickHouse cluster:
+
+```shell
+# .env
+LAGO_CLICKHOUSE_ENABLED=true
+LAGO_CLICKHOUSE_HOST=clickhouse
+LAGO_CLICKHOUSE_PORT=8123
+LAGO_CLICKHOUSE_DATABASE=lago
+LAGO_CLICKHOUSE_USERNAME=lago
+LAGO_CLICKHOUSE_PASSWORD=changeme
+LAGO_CLICKHOUSE_SSL=true
+LAGO_CLICKHOUSE_MIGRATIONS_ENABLED=true
+```
+
+`LAGO_CLICKHOUSE_ENABLED` opens the connection; it does not move any organization to the ClickHouse event store on its own. `LAGO_CLICKHOUSE_MIGRATIONS_ENABLED=true` makes `db:migrate` also run the ClickHouse migrations, which create the `events_raw`, `events_enriched` and `events_enriched_expanded` tables.
+
+<Info>
+The ClickHouse connection is also what powers activity logs, API logs and security logs. Those features stay unavailable while `LAGO_CLICKHOUSE_ENABLED` is unset, whatever the event store in use.
+</Info>
+
+#### Default event store for new organizations
+
+`LAGO_DEFAULT_EVENT_STORE` controls which store an organization gets **when it is created**:
+
+```shell
+# .env
+LAGO_CLICKHOUSE_ENABLED=true
+LAGO_DEFAULT_EVENT_STORE=clickhouse
+```
+
+With both variables set, every organization created from then on - through sign-up, Google SSO sign-up or the admin API - is created on the **ClickHouse event store**, with ClickHouse deduplication enabled. Any other value, or leaving the variable unset, creates new organizations on Postgres.
+
+<Warning>
+This setting only applies at creation time. Organizations that already exist keep the store they were created with; changing `LAGO_DEFAULT_EVENT_STORE` never migrates them.
+</Warning>
+
+<Note>
+Deduplication rules differ between the two stores: on ClickHouse, event uniqueness is based on `transaction_id` **and** `timestamp`. Review [Idempotency and deduplication](/guide/events/ingesting-usage#idempotency-and-deduplication) before switching.
+</Note>
+
+#### Moving an existing organization to ClickHouse
+
+Switching an existing organization means backfilling its events into ClickHouse first, then flipping the store. The API ships a guided recipe that compares Postgres and ClickHouse event counts, checks usage on a sample of active subscriptions, and only then enables the ClickHouse event store:
+
+```shell
+docker compose exec api bundle exec rake recipes:clickhouse:enable_clickhouse_events_store
+```
+
+The task is interactive: it asks for the organization and the sample size, and aborts if the organization is already on ClickHouse or if the comparison shows a discrepancy.
 
 ### Configuring Redis[](#configuring-redis "Direct link to heading")
 
