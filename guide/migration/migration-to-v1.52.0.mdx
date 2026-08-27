@@ -4,7 +4,7 @@ title: "Migration to v1.52.0"
 
 Dear Lago Community, 👋
 
-We're writing to inform you about important changes in Lago v1.52.0 that introduce **multi-billing-entity billing on a single customer**.
+We're writing to inform you about important changes in Lago v1.52.0 that introduce **multi-billing-entity billing on a single customer** and a **faster invoice search**.
 
 # What are the changes?
 
@@ -16,9 +16,17 @@ To keep accounting traceable, **wallet transactions now store their own `billing
 
 As a result, **existing wallet transactions must be backfilled** with the billing entity of their customer. This is done through a rake task that must be **triggered manually**.
 
+## Search terms on invoices
+
+Invoices now carry a denormalized **`search_terms` column**, backed by a GIN trigram index. It concatenates the invoice number, the purchase order number and the customer identifiers the invoice list searches on: name, first name, last name, legal name, external ID and email.
+
+Invoices created, finalized or regenerated from now on maintain their search terms automatically, and so do the invoices of a customer whose details change. However, **existing invoices must be backfilled**. This is done through a rake task that must be **triggered manually**.
+
 # Why are we doing this?
 
 Previously, the billing entity of a wallet transaction could only be inferred from its customer, which had exactly one entity. Now that a wallet can be moved between entities, inferring the entity would retroactively rewrite the history of past transactions. Storing the entity on each transaction keeps historical records accurate and entity-level accounting reliable.
+
+Searching the invoice list previously had to join and scan the `customers` table on every keystroke, which gets slower as the invoice table grows. Reading the terms from a single indexed column on `invoices` keeps the search fast whatever the volume.
 
 # What should self-hosted users do?
 
@@ -49,6 +57,28 @@ The backfill runs in a background job. The task reports the number of remaining 
 
 <Note>
 The backfill task is safe to run multiple times. It only targets wallet transactions without a billing entity, so already-migrated records are left untouched.
+</Note>
+
+### 3. Backfill invoice search terms
+
+From the same shell, run the second migration task:
+
+```bash
+bundle exec rails migrations:backfill_invoices_search_terms
+```
+
+Unlike the previous task, this one returns as soon as the job is enqueued. The backfill then walks the invoices in the background, on the `low_priority` queue, so make sure a Sidekiq worker is draining that queue. The job logs `Finished backfilling invoices.search_terms` once the walk is over.
+
+<Note>
+  If the backfill is interrupted, resume it from the last invoice ID it reported instead of starting over:
+
+  ```bash
+  START_AFTER=<invoice id> bundle exec rails migrations:backfill_invoices_search_terms
+  ```
+</Note>
+
+<Note>
+This task is also safe to run multiple times. It only rewrites the invoices whose search terms have changed, so already-migrated records are left untouched.
 </Note>
 
 # Get Involved
