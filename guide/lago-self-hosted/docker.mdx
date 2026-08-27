@@ -328,9 +328,49 @@ For an exhaustive list of SSL parameters, refer to the [libpq documentation](htt
 Usage events are stored and aggregated in one of two event stores:
 
 - **Postgres** (default) - no extra infrastructure. Validated up to ~10K events/sec.
-- **ClickHouse** - columnar storage for high-volume ingestion, sub-second aggregation over billions of events, and a prerequisite for [Kafka/Redpanda ingestion](/guide/events/ingesting-usage#kafka--redpanda-configuration). See [Performance & Optimization](/guide/events/usage-performances) for the architecture and benchmarks.
+- **ClickHouse** - columnar storage for high-volume ingestion and sub-second aggregation over billions of events. It runs on top of the [Kafka/Redpanda pipeline](/guide/events/ingesting-usage#kafka--redpanda-configuration), which it both requires and unlocks as an ingestion method. See [Performance & Optimization](/guide/events/usage-performances) for the architecture and benchmarks.
 
 The event store is a **per-organization** setting: a single Lago instance can run some organizations on Postgres and others on ClickHouse.
+
+#### The `clickhouse_events_store` column
+
+Which store an organization uses is persisted on the `organizations` table, not in the environment:
+
+| Column | Type | Role |
+| --- | --- | --- |
+| `clickhouse_events_store` | boolean, `false` by default | Source of truth for the organization's event store. `true` = ClickHouse, `false` = Postgres. |
+| `clickhouse_deduplication_enabled` | boolean, `false` by default | Deduplicates events on `transaction_id` + `timestamp` at aggregation time. Only read when `clickhouse_events_store` is `true`. |
+
+`LAGO_DEFAULT_EVENT_STORE` only decides the **initial value** of these two columns at organization creation; from then on the columns drive everything, and changing the environment variable does not rewrite them.
+
+The store actually used at runtime is `clickhouse_events_store` **and** `LAGO_CLICKHOUSE_ENABLED`. If the column is `true` but the connection is disabled, Lago silently falls back to reading and aggregating from Postgres, so keep `LAGO_CLICKHOUSE_ENABLED` set on every API, worker and clock instance.
+
+To check the store of an organization, call `GET /organizations` with its API key and read the `events_store` field of the [organization object](/api-reference/organizations/organization-object) (`"clickhouse"` or `"postgres"`), or read it from a Rails console:
+
+```ruby
+# In the rails console
+organization = Organization.find_by(name: "Hooli")
+organization.events_store                       # => "clickhouse" or "postgres"
+organization.clickhouse_deduplication_enabled?  # => true or false
+```
+
+Turning `clickhouse_events_store` on changes the whole event path for that organization:
+
+| | `false` (Postgres) | `true` (ClickHouse) |
+| --- | --- | --- |
+| Event persistence | Events written to the Postgres `events` table and post-processed by a background job | Events streamed to the ClickHouse pipeline; nothing is written to the Postgres `events` table |
+| Aggregation | Queries run on Postgres | Queries run on `events_enriched` / `events_enriched_expanded` |
+| Deduplication | `transaction_id` | `transaction_id` + `timestamp` (when `clickhouse_deduplication_enabled` is on) |
+| Ingestion pipeline | The API persists events itself; no streaming layer needed | Every event, REST calls included, is produced to Kafka/Redpanda and written to ClickHouse by the events processor |
+| `GET /events/enriched` | `403` with code `endpoint_not_available` | Available |
+
+<Warning>
+On the ClickHouse event store, events are **not** written to Postgres at all: the API only produces them to Kafka. An organization with `clickhouse_events_store = true` on an instance where `LAGO_KAFKA_BOOTSTRAP_SERVERS` or `LAGO_KAFKA_RAW_EVENTS_TOPIC` is unset silently drops every event it receives. Deploy the streaming pipeline before enabling the ClickHouse event store.
+</Warning>
+
+<Warning>
+Do not flip `clickhouse_events_store` by hand on an organization that already has events. Past events stay where they were written, so aggregation and invoicing would silently query a store that does not hold them. Use the migration recipe below instead.
+</Warning>
 
 #### Connecting ClickHouse
 
