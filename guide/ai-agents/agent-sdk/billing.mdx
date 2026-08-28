@@ -14,7 +14,7 @@ Both modes ship the same normalized usage. The difference is only where the arit
 | You bill in your own units — credits, requests, seats — and tokens are just the input | You resell LLM access at a margin and want the dollar cost to follow the rate card automatically |
 | You want billing to be independent of any third-party price source | You want your revenue to track your provider invoice without maintaining a price table |
 | Your workload is audio-heavy or very long-context (see [Known limits](#known-limits)) | Your workload is text, and the models you use are in the price sources |
-| You use Bedrock Claude or Databricks, where price data is missing or deliberately unmatched | You want the cost broken down by token type on the invoice |
+| You use Bedrock Claude, Databricks or Snowflake Cortex, where price data is missing or deliberately unmatched | You want the cost broken down by token type on the invoice |
 
 You can also mix: set one mode globally and override per call with `extra_lago={"mode": "price"}` in Python or `lago: { mode: "price" }` in TypeScript.
 
@@ -153,6 +153,8 @@ Set `markup` to resell at a profit — `1.2` means the customer pays your cost p
 </Warning>
 
 **Databricks-hosted models are always billed as token counts**, even in price mode. Their provider name is deliberately unmatched against the price sources, because the open-weight models Databricks hosts are listed elsewhere at a fraction of what Databricks charges. The SDK logs this once per model at info level rather than reporting an error. See [Databricks](/guide/ai-agents/agent-sdk/databricks).
+
+**Snowflake Cortex is always billed as token counts**, on both its REST and AI SQL function surfaces. Snowflake meters Cortex in credits at a per-credit rate that depends on edition, region and contract, published in no API and no view, so there is no rate card to look up and no later refresh that could supply one. A price-mode caller still gets token events for these rows, with no price-miss error, because a structural absence of a rate card is not a lookup failure. See [Snowflake Cortex](/guide/ai-agents/agent-sdk/snowflake).
 
 **AWS's public bulk price data omits the current Claude models.** It lists Titan, Llama, Mistral, Cohere and older Claude, but at time of writing not Claude 3.5/3.7/4. Bedrock calls for those fall back to token events. Native Anthropic clients are priced through OpenRouter and unaffected.
 
