@@ -1,0 +1,210 @@
+---
+title: "Snowflake Cortex"
+description: "Bill LLM usage on Snowflake Cortex. Live instrumentation on the wrapped REST client, or backfill the AI SQL functions from Snowflake's own ACCOUNT_USAGE views."
+---
+
+Snowflake serves Cortex two ways. The **REST API** at `/api/v2/cortex/v1` is OpenAI-wire compatible, so it is a client you can wrap. The **AI SQL functions** (`AI_COMPLETE`, `AI_EMBED`, `AI_SUMMARIZE` and the rest) run inside the warehouse, where there is no client to wrap at all.
+
+They need two different halves of the SDK, and this split is the thing to get right before anything else:
+
+<CardGroup cols={2}>
+  <Card title="Live path" icon="bolt">
+    Wrap an OpenAI client pointed at your Cortex REST endpoint. Bills as calls happen.
+  </Card>
+  <Card title="Backfill path" icon="clock-rotate-left">
+    Read Snowflake's own `ACCOUNT_USAGE` views. The only way to bill the AI SQL functions.
+  </Card>
+</CardGroup>
+
+<Warning>
+  **The backfill reads the functions view only, and that default is load-bearing.** `CORTEX_REST_API_USAGE_HISTORY` reports the calls the live path already billed. Pass `views=("rest",)` only for REST traffic no wrapped client ever saw.
+</Warning>
+
+## Live path
+
+There is no Cortex client to wrap. You wrap `OpenAI` pointed at your account's Cortex endpoint, and **the `base_url` is load-bearing**: an OpenAI-shaped endpoint says nothing about whose tokens these are, so the path is what marks the call as Snowflake.
+
+| Setting | Value |
+|---|---|
+| `base_url` | `https://<account>.snowflakecomputing.com/api/v2/cortex/v1` |
+| `api_key` | Your PAT, sent as `Authorization: Bearer <pat>` |
+| Output cap | `max_completion_tokens`. Cortex rejects `max_tokens` outright |
+
+The SDK matches the path `/api/v2/cortex/` and stamps those events `provider: "snowflake"`. It matches the path and not the `snowflakecomputing.com` host on purpose, because the same host serves `/api/v2/statements` and every other Snowflake API, none of which is model inference. Point the client anywhere else and the call ships as plain OpenAI.
+
+<CodeGroup>
+  ```python Python
+  import os
+  from openai import OpenAI
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(api_key="<YOUR_LAGO_API_KEY>", default_subscription_id="sub_acme")
+
+  client = sdk.wrap(OpenAI(
+      base_url=f"https://{os.environ['SNOWFLAKE_ACCOUNT']}.snowflakecomputing.com/api/v2/cortex/v1",
+      api_key=os.environ["SNOWFLAKE_PAT"],
+  ))
+
+  client.chat.completions.create(
+      model="claude-sonnet-4-5",
+      messages=[{"role": "user", "content": "Hello"}],
+      max_completion_tokens=400,   # `max_tokens` is rejected
+  )
+  sdk.flush()
+  ```
+
+  ```typescript TypeScript
+  import OpenAI from "openai";
+  import { LagoSDK } from "lago-agent-sdk";
+
+  const sdk = new LagoSDK({ apiKey: "<YOUR_LAGO_API_KEY>", defaultSubscriptionId: "sub_acme" });
+
+  const client = sdk.wrap(new OpenAI({
+    baseURL: `https://${process.env.SNOWFLAKE_ACCOUNT}.snowflakecomputing.com/api/v2/cortex/v1`,
+    apiKey: process.env.SNOWFLAKE_PAT,
+  }));
+
+  await client.chat.completions.create({
+    model: "claude-sonnet-4-5",
+    messages: [{ role: "user", content: "Hello" }],
+    max_completion_tokens: 400,   // `max_tokens` is rejected
+  });
+  await sdk.flush();
+  ```
+</CodeGroup>
+
+Everything on the [OpenAI](/guide/ai-agents/agent-sdk/openai) page still applies: streaming, async, per-call overrides.
+
+<Note>
+  **Cortex reports cached tokens additively**, the opposite of OpenAI's convention. A cached call reads `prompt_tokens: 7`, `cached_tokens: 8745`, `completion_tokens: 6`, `total_tokens: 8758`, so the cached block sits outside `prompt_tokens` rather than inside it. The SDK reconciles on Snowflake's convention, not OpenAI's. Caching only happens when you send an explicit `cache_control` content part.
+</Note>
+
+### Attribution
+
+The live path attributes like any other wrapper: `sdk.wrap(client, subscription="sub_acme")`, a per-call override, or the SDK's default subscription. Cortex has no request-tag header to carry it.
+
+## Backfill path
+
+For the AI SQL functions there is nothing to instrument, so read Snowflake's own views instead. This is the only path that bills them.
+
+<CodeGroup>
+  ```python Python
+  from lago_agent_sdk.gateway.snowflake import SnowflakeSource
+
+  source = SnowflakeSource(
+      account="<SNOWFLAKE_ACCOUNT>",
+      token="<SNOWFLAKE_PAT>",
+      warehouse="<WAREHOUSE>",
+  )
+  # ...or SnowflakeSource.from_env(), which reads SNOWFLAKE_ACCOUNT (or
+  # SNOWFLAKE_HOST), SNOWFLAKE_PAT, SNOWFLAKE_WAREHOUSE and SNOWFLAKE_ROLE.
+
+  counts = sdk.backfill_snowflake(source, "7 days", default_subscription="sub_acme")
+  assert sdk.flush(timeout=30.0)
+  print(counts)   # {'tokens': 47, 'skipped': 0}
+  ```
+
+  ```typescript TypeScript
+  import { SnowflakeSource } from "lago-agent-sdk/gateway";
+
+  const source = new SnowflakeSource(
+    "<SNOWFLAKE_ACCOUNT>",
+    process.env.SNOWFLAKE_PAT!,
+    { warehouse: "<WAREHOUSE>" },
+  );
+  // ...or SnowflakeSource.fromEnv(), which reads the same four variables.
+
+  const counts = await sdk.backfillSnowflake(source, "7 days", {
+    defaultSubscription: "sub_acme",
+  });
+  await sdk.flush(30_000);
+  console.log(counts);   // { tokens: 47, skipped: 0 }
+  ```
+</CodeGroup>
+
+<Note>
+  The Python import is `from lago_agent_sdk.gateway.snowflake import SnowflakeSource`, since the `gateway` package itself re-exports nothing. In JavaScript the subpath export does: `import { SnowflakeSource } from "lago-agent-sdk/gateway"`. The pure `extract_snowflake_functions_log`, `extract_snowflake_rest_log` and `resolve_snowflake_subscription` functions stay available from `lago_agent_sdk.gateway.adapters` if you already have rows from your own warehouse job.
+</Note>
+
+`backfill_snowflake` returns `{"tokens": n, "skipped": n}`, and there cannot be more counts than that. There is no `cost`: Snowflake meters Cortex in credits against a rate card that exists in no view, so **everything on this path bills as token counts**. `CREDITS` is read into the event's extras as evidence, never as a billing input.
+
+Options:
+
+| Argument | Default | What it does |
+|---|---|---|
+| `since` | `"1 day"` | A `datetime`, or an interval like `"7 days"`. Validated against a strict pattern, so it cannot carry SQL |
+| `default_subscription` | `None` | Billed when a row carries no tag of its own. Rows with neither are counted in `skipped` |
+| `unified` | `False` | Bill everything to `default_subscription`, ignoring per-row attribution. Right when one account serves one customer |
+| `dimensions` | `None` | Extra event properties, merged over the row's own and winning on collision |
+| `event_id_prefix` | `"sfc"` | Prefix for the idempotency key. Changing it disables the REST dedup below |
+| `views` | `("functions",)` | Add `"rest"` only for REST traffic no wrapped client billed |
+| `subscription_order` | `("query_tag",)` | Attribution sources to try, in order. `"role_names"` and `"user_id"` are opt-in |
+
+<Tip>
+  Attribution comes from `QUERY_TAG`, the only customer-injectable key on either view: `ALTER SESSION SET QUERY_TAG = '{"lago_subscription": "sub_123"}'` before the statement. A tag that is not JSON is ignored rather than used whole, because Snowflake writes its own tags too.
+</Tip>
+
+`role_names` and `user_id` stay out of the default deliberately, and the reason is measured rather than stylistic. Every live row carries both, so a default including them can never fall through: `default_subscription` becomes dead code and every untagged row bills to a Snowflake role name instead. Lago accepts events for a subscription that does not exist with a `200`, so the revenue parks under an id nobody bills and nothing anywhere reports it. A skip is counted and recoverable. A wrong subscription is neither.
+
+### Idempotency
+
+Every event id is `{prefix}_{kind}_{subscription}_{row_id}`, derived from the source row and **scoped by the subscription actually billed**, so re-running a window has Lago reject the duplicates rather than double-bill.
+
+The REST view gets one guarantee the functions view cannot: a live Cortex call's `x-snowflake-request-id` response header is byte-identical to the `REQUEST_ID` that call lands under in the view, and both paths build the key through the same helper. So a REST backfill of already-billed traffic dedups instead of double-reporting. That protection holds **only** with the default `event_id_prefix` and the same resolved subscription, and it does not cover a cache-creation call's cached block, which the wire reports as a read and the view reports as a write. The call's input and output still dedup.
+
+## What gets captured
+
+From `CORTEX_REST_API_USAGE_HISTORY`, tagged `api: "snowflake_cortex_rest"`:
+
+| Canonical field | Source column |
+|---|---|
+| `input` | `TOKENS_GRANULAR.input` |
+| `output` | `TOKENS_GRANULAR.output` |
+| `cache_read` | `TOKENS_GRANULAR.cache_read_input` |
+| `cache_write` | `TOKENS_GRANULAR.cache_write_input` |
+| `model` | `MODEL_NAME`, in the customer's own spelling |
+
+From `CORTEX_AI_FUNCTIONS_USAGE_HISTORY`, tagged `api: "snowflake_cortex_functions"`:
+
+| Canonical field | Source column |
+|---|---|
+| `input` | `METRICS[metric=input]`, or `METRICS[metric=total]` when that is the only figure |
+| `output` | `METRICS[metric=output]` |
+| `model` | `MODEL_NAME`, empty on the functions that take no model argument |
+
+Both are stamped `provider: "snowflake"`. `TOKENS` on the REST view is never mapped to a token field: it is the sum, so mapping it would bill 8,758 tokens for 7 real input tokens and re-bill the cached block a second time. Unmapped keys on either view land in `extras` under a dotted key rather than vanishing, so a new counter surfaces on its own.
+
+Each event also carries the grouping key of the view it came from, `FUNCTION_NAME` plus `MODEL_NAME` for functions rows and `INFERENCE_REGION` for REST, so a `GROUP BY` on the view and the same grouping in Lago line up for reconciliation.
+
+## Known limits
+
+**Everything bills as token counts, never priced.** `provider="snowflake"` is deliberately unmatchable against the price sources. Snowflake bills Cortex in credits at a per-credit rate that depends on edition, region and contract, published in no API and no view, and the credit tables that do exist are warehouse-level rather than per-request. You set the rate in Lago. A customer running `pricing_mode="price"` globally still gets token events here, with no price-miss error, because a structural absence of a rate card is not a lookup failure.
+
+**Five of the six AI SQL functions report one number.** `AI_COMPLETE` reports `input` and `output`. `AI_SUMMARIZE`, `AI_TRANSLATE`, `AI_SENTIMENT`, `AI_CLASSIFY` and `AI_EMBED` report `total` alone. The count is exact, but the split is not reported, so those rows bill their true total under `input` and carry a `metrics_total_only` marker. `input` was chosen over `output` because it is right by construction for `AI_EMBED`, close for the classifiers, and errs toward under-billing rather than over-billing on the two that genuinely generate.
+
+**The functions view has no cache and no reasoning metric at all**, across every row captured. Thinking tokens on the REST view sit inside `output`.
+
+**A query spanning more than one hour is deferred, not guessed at.** These views are hour-bucketed, and `IS_COMPLETED` means "did the query finish in *this* window", so a query running 5:30 to 8:30 writes four rows sharing one `QUERY_ID`. Whether each row's `METRICS` is incremental or cumulative is unmeasured, and guessing over-bills by 2.5x or under-bills by 76%. Those rows are counted in `skipped`, reported through `on_error`, and listed on `source.deferred_rows`. Every query yet observed on a real account finished inside one bucket.
+
+**The window is whole closed hours only, and the reader keeps no cursor.** Both bounds are floored to the hour and the current hour is excluded, because billing a bucket before it closes burns that row's idempotency key and the correction is then rejected as a duplicate. Pass a window comfortably wider than your run interval. The views also lag three to five minutes.
+
+**Events stamped before the subscription started are accepted and silently never billed.** Lago draws that boundary, not the SDK, so a window reaching back past a subscription's start reports its rows as billed while nothing lands in usage. Start backfills at the subscription's start date.
+
+**A SQL warehouse costs roughly 1,500x the model-serving usage it reports on.** Read one wide window per run. Never poll in a loop.
+
+**A failed Cortex call produces no row on either view**, measured with a same-batch control where a `403` and a `400` were driven alongside a success and only the success appeared.
+
+<Note>
+  Four things block a first-time account setup and none of them says so clearly. Model access moved to RBAC, so a role needs `GRANT APPLICATION ROLE SNOWFLAKE."CORTEX-MODEL-ROLE-ALL"` or it can call zero models. A PAT's `ROLE_RESTRICTION` is a quoted literal and therefore case-sensitive. A warehouse with `AUTO_RESUME = FALSE` fails every statement with "warehouse is suspended", which reads like a privilege error. And a PAT cannot authenticate without an active network policy. Error code `003001` covers four distinct causes, so it is not diagnostic on its own.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Billing" icon="dollar-sign" href="/guide/ai-agents/agent-sdk/billing">
+    Why Cortex bills in tokens, and how to set the rate in Lago.
+  </Card>
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
+    Every config knob, plus `emit()` and its idempotency arguments.
+  </Card>
+</CardGroup>
