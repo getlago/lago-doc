@@ -1,0 +1,100 @@
+---
+title: "Overview"
+description: "How to read Lago's billing reports: what the numbers mean, how to filter them, and when they update."
+---
+
+Lago's reports answer the everyday finance questions. What did we bill? What did we collect? What is still owed? What is our run rate?
+
+This page covers the rules that apply to every report. Each report then has its own page with the exact definition of every number on it.
+
+<Frame caption="Analytics reports in Lago">
+  <img src="/guide/analytics/images/analytics-dashboard.png" />
+</Frame>
+
+## The reports
+
+<CardGroup cols={2}>
+    <Card title="Subscriptions" href="/guide/analytics/subscriptions/active">
+        How many subscriptions you have, how many you added, how many you lost.
+    </Card>
+    <Card title="Revenue streams" href="/guide/analytics/revenue/revenue-streams">
+        What you charged, what you gave back, what you kept.
+    </Card>
+    <Card title="MRR" href="/guide/analytics/revenue/mrr">
+        Your recurring run rate, and what moved it up or down.
+    </Card>
+    <Card title="Credit ledgers" href="/guide/analytics/credit-ledgers">
+        Credits bought, granted, spent, and what customers still hold.
+    </Card>
+    <Card title="Usage" href="/guide/analytics/usage">
+        What customers consumed, including consumption not yet invoiced.
+    </Card>
+    <Card title="Cash collection" href="/guide/analytics/cash-collection/dunnings">
+        Payment attempts, why they fail, and what dunning recovers.
+    </Card>
+    <Card title="Invoices" href="/guide/analytics/invoices">
+        What you invoiced, what state it is in, and what is overdue.
+    </Card>
+    <Card title="Forecasted usage" href="/guide/analytics/forecasted-usage">
+        A projection of what your customers will consume next year.
+    </Card>
+</CardGroup>
+
+## How to read a number
+
+Every chart shows one of three kinds of value. Each report page labels its charts this way.
+
+| Label | What it is |
+| --- | --- |
+| 💰 **Money** | An amount of money, in the currency you billed in. Each page says whether tax is in or out. |
+| 🔢 **Billing units** | Usage or credit units: API calls, gigabytes, seats, credits. Not money. |
+| #️⃣ **Count** | A number of things: invoices, subscriptions, payment attempts. |
+
+Charts also behave in one of three ways. That tells you what a single point covers, and what changing the date range does to it.
+
+| Behaviour | Think of it as | What one point is | When you widen the date range |
+| --- | --- | --- | --- |
+| **Balance** | Your bank account | The whole total as it stood on that date, not what that period added | You get more history. Earlier points are older snapshots, and the last point is the total at the end of the range, so that is the point to read |
+| **Activity** | Your bank statement | What happened during that period | The chart covers a longer stretch, so the amounts it reports cover more |
+| **Photo of today** | A photo taken right now | The situation as it stands today | Nothing changes, on purpose |
+
+## Currency
+
+Lago reports every amount in the currency you billed in. It never converts one currency into another.
+
+<Warning>
+**Filter to one currency before quoting a total.** If a chart mixes currencies, or if you remove Currency from the Breakdown, dollars and euros are added into one number that means nothing. Filter to one currency, or break the chart down by currency.
+</Warning>
+
+## When the numbers update
+
+The numbers update once a day, overnight. An invoice you finalize today shows up tomorrow.
+
+For a same-day check, use the invoice and subscription views in the app instead.
+
+## Who is left out
+
+Two groups are excluded from the revenue reports, on purpose:
+
+- **Partner accounts** are left out of [Revenue streams](/guide/analytics/revenue/revenue-streams), [MRR](/guide/analytics/revenue/mrr) and [Usage](/guide/analytics/usage). They are still counted on Subscriptions, Credit ledgers, Cash collection and Invoices.
+- **Self-billed invoices**, the ones you issue on a partner's behalf, are left out of Revenue streams. They still appear on [Invoices](/guide/analytics/invoices).
+
+Both are reported separately under [Revenue share](/guide/revenue-share).
+
+## Exports and extensions
+
+Any chart or table exports to CSV, JSON or Excel, with your filters applied, so the file matches the screen.
+
+You can also add your own charts on top of the same numbers, for board reporting or a customer deep dive. And your engineering team can pull the same numbers through the [Lago API](/api-reference/intro).
+
+## Not the same as revenue recognition
+
+These reports show **billing activity**: what you invoiced, collected, consumed and committed. [Revenue recognition](/guide/revenue-recognition/overview) shows **earned revenue**, spread across the periods you actually deliver the service in.
+
+| | These reports | Revenue recognition |
+| --- | --- | --- |
+| The question it answers | What did I bill and collect? | What did I earn, and when? |
+| A yearly plan billed upfront | The full amount, in the month you invoiced it | Spread day by day across the year you deliver it |
+| Voiding an old invoice | The original month falls | Booked as a return on the day it happens, so the closed month stands |
+
+The two will not match line for line. That is expected, not a reconciliation problem.

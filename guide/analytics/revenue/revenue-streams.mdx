@@ -1,0 +1,114 @@
+---
+title: "Revenue streams"
+description: "What you charged, what you gave back, and what you kept."
+---
+
+Where does my revenue come from, and what am I giving away? This report is built like a small income statement: what you charged, minus what reduced it, equals what you kept.
+
+{/* IMAGE: Revenue streams overview, with gross revenue stacked above zero and contra revenue below it */}
+
+## What's on this dashboard
+
+Two charts. Both show 💰 money excluding tax, and both are **activity**: each value covers the period it sits in.
+
+| Chart | What it answers |
+| --- | --- |
+| Revenue streams overview | What did I charge and give back, month by month? |
+| Revenue streams details | The same numbers as a table, in three sections: gross, contra, net |
+
+Only **finalized invoices** count. Nothing else on this page moves until an invoice is finalized.
+
+<Note>
+**Each amount lands on the day the fee was created.** That is usually the invoice day, but not always. When it differs, this report and [Invoices](/guide/analytics/invoices) put the same money in different months.
+</Note>
+
+## Gross revenue
+
+Everything you charged for, before anything was taken off.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| **Subscription fee**: the recurring plan charge for the period | ✅ Yes | |
+| **Usage-based fee**: metered consumption, priced by the plan | ✅ Yes | |
+| **Commitment fee**: the top-up billed when usage falls short of a minimum | ✅ Yes | |
+| **One-off fee**: add-ons and one-off invoices | ✅ Yes | |
+| Taxes | ❌ No | [Invoices](/guide/analytics/invoices) |
+| Anything on a draft, voided, failed or pending invoice | ❌ No | [Invoices](/guide/analytics/invoices) |
+| Wallet top-ups. They are prepaid, and counted as the credits get spent | ❌ No | [Credit ledgers](/guide/analytics/credit-ledgers) |
+| Partner accounts and self-billed invoices | ❌ No | [Revenue share](/guide/revenue-share) |
+
+## Contra revenue
+
+Contra revenue = everything that reduced what you charged. It is drawn below zero, so the chart reads like a statement: charged, minus given back, equals kept.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| **Coupons**: discounts applied to the invoice | ✅ Yes | |
+| **Credit notes** applied against the invoice | ✅ Yes | |
+| **Prepaid credits**: bought credits spent on the invoice | ✅ Yes | |
+| **Free credits**: granted credits spent on the invoice | ✅ Yes | |
+| **Progressive billing**: amounts already invoiced earlier in the period | ✅ Yes | |
+| Failed payments and unpaid invoices. This is what you charged, not what you collected | ❌ No | [Payments](/guide/analytics/cash-collection/payments) |
+
+## Net revenue
+
+Gross revenue minus contra revenue.
+
+It appears only in the details table, as a single line. It is deliberately kept out of the stacked chart, because stacking it next to gross and contra would count the same money twice.
+
+<Note>
+**Net revenue is what you newly billed, which is not always what you earned.** Coupons, credit notes and free credits reduce what you earned: you gave value away. Prepaid credits and progressive billing do not: that money was already paid, or already invoiced earlier in the period. On an invoice paid entirely with credits, gross revenue is what you earned and net revenue is zero.
+</Note>
+
+<Warning>
+**Splitting contra revenue by plan or customer is an estimate.** Coupons, credit notes, credits and progressive billing sit on the invoice, not on the subscription. When one invoice covers several subscriptions, those amounts are divided evenly across them. Gross revenue is exact, because a fee belongs to one subscription.
+</Warning>
+
+## Filters
+
+| Filter | What it does |
+| --- | --- |
+| Date range | Sets the period. With nothing set, the report shows the last 12 months |
+| Granularity | Sets the bar width: day, week or month |
+| Breakdown | Cuts the report by Revenue type, Revenue stream, Currency, Customer or Plan |
+| Currency | Keeps one billing currency |
+| Country | Keeps customers in one country |
+| Customers | Keeps one or more named customers |
+| Customer type | Keeps companies or individuals |
+| Plan code | Keeps revenue from one plan |
+| Subscription ext. ID | Isolates a single subscription |
+| Customer has tax ID | Keeps customers with, or without, a tax ID on file |
+
+⚠️ Remove Currency from the Breakdown and dollars, euros and yen are added into one number. Filter to one currency before quoting a total.
+
+## What's not included (for now)
+
+- **Taxes.** Every line is net of tax. Invoice totals with tax are on [Invoices](/guide/analytics/invoices).
+- **Draft, voided, failed and pending invoices.** Only finalized invoices count. Voiding an old invoice removes it, so a closed month can fall later.
+- **Wallet top-ups.** The customer prepaid, so the money is counted as they spend the credits on usage. Counting the top-up too would count it twice. See [Credit ledgers](/guide/analytics/credit-ledgers).
+- **Partner accounts and self-billed invoices.** See [Revenue share](/guide/revenue-share).
+- **Usage that has not been invoiced.** It has no fee yet. See [Usage](/guide/analytics/usage).
+
+## Common questions
+
+<AccordionGroup>
+<Accordion title="Why doesn't this match the invoiced amount on the Invoices dashboard?">
+Three reasons. The dates differ: here each amount lands on the day the fee was created, there on the invoice's issuing date. Tax differs: this page is net of tax, invoice totals include it. And reductions differ: here coupons and credits are separate lines, an invoice total already has them applied.
+</Accordion>
+
+<Accordion title="A customer paid with prepaid credits. Where is the revenue?">
+In gross revenue, on the day the usage was invoiced. The credits they spent appear as contra revenue on the same invoice, because that part was paid for earlier. The top-up itself is left out so the same money is not counted twice.
+</Accordion>
+
+<Accordion title="We voided an invoice from last quarter. What happens?">
+It leaves the report, so last quarter's gross, contra and net all fall overnight. These charts always show today's state of the invoice. For periods that stay fixed once closed, use [Revenue recognition](/guide/revenue-recognition/overview).
+</Accordion>
+
+<Accordion title="Why is a credit note contra revenue instead of reducing gross?">
+So you can see both figures. Gross stays as charged, the credit note gets its own line, and net is what remains. A credit note issued later lands in the later month, not in the month of the original invoice.
+</Accordion>
+
+<Accordion title="Why is usage revenue here lower than the usage cost on the Usage dashboard?">
+Because [Usage](/guide/analytics/usage) counts consumption whether or not it has been invoiced. Consumption from an open billing period has no fee yet, and usage absorbed by a minimum commitment is billed as a commitment fee instead.
+</Accordion>
+</AccordionGroup>

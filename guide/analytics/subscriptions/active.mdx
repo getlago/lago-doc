@@ -1,0 +1,112 @@
+---
+title: "Active subscriptions"
+description: "How many subscriptions are live right now, or were live at a past date."
+---
+
+How big is my subscription base? This report answers it for today, or for any date in the past.
+
+{/* IMAGE: Active subscriptions tab, showing the monthly trend chart above the by-plan and by-currency charts */}
+
+## What's on this dashboard
+
+Four charts. All of them count subscriptions, and all of them behave as a **balance**.
+
+| Chart | What it answers |
+| --- | --- |
+| Active subscriptions over time | How big is my base, month by month? |
+| Active subscriptions by plan | Which plans is it in? |
+| Active subscriptions by currency | Which currencies is it in? |
+| Active subscriptions details | Which exact subscriptions? |
+
+Each point is your **whole base** on that day, not what that month added. The line climbs as the base grows, exactly like a bank balance climbs as you save.
+
+Widen the date range and you get more history: the last point is your base at the end of the range, so that is the point to read. For what a month added or lost, read net subscription change below.
+
+## Active subscriptions
+
+Subscriptions that have started and have not ended.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| Started, still running | ✅ Yes | |
+| On a plan you have since deleted | ✅ Yes | |
+| Belongs to a partner account | ✅ Yes | |
+| Ended already | ❌ No | [Churn](/guide/analytics/subscriptions/churn) |
+| Starts next month | ❌ No | It appears on its start date |
+
+<Warning>
+**A date range gives you a photo, not a period.** Set the range to last quarter and you get the base as it stood on the **last day** of that quarter. The start of the range is ignored, because a photo only has one instant. To see movement instead, read [New subscriptions](/guide/analytics/subscriptions/new) and [Churn](/guide/analytics/subscriptions/churn).
+</Warning>
+
+## Net subscription change
+
+Did the base grow or shrink? Starts in the period minus endings in the period.
+
+This is **activity**: each value covers the period it sits in.
+
+## Active customers
+
+<Note>
+**Active customers is not a chart or a table on the Active subscriptions tab yet.** The metric is defined on the same data as the by-plan and by-currency charts, so you can surface it in a chart of your own, but there is nothing built in to open.
+</Note>
+
+How many customers those subscriptions represent, counted once per plan and currency.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| Has at least one live subscription | ✅ Yes | |
+| Has three live subscriptions | ✅ Yes, once | |
+| All their subscriptions have ended | ❌ No | [Churn](/guide/analytics/subscriptions/churn) |
+
+This is a **balance**, like active subscriptions: each value is the customer count on that date, not what the period added.
+
+## Reading the plan and currency charts
+
+The by-plan charts group child plans under their **parent plan**, so a plan family reads as one line instead of one line per override. The details table lists each subscription separately.
+
+The by-currency chart leaves out subscriptions that have no plan, because they have no currency. Those subscriptions are still in the overall count.
+
+## Filters
+
+| Filter | What it does |
+| --- | --- |
+| Date range | Picks the date you want the photo taken on. Only the end of the range is used |
+| Currency | Keeps one billing currency |
+| Country | Keeps customers in one country |
+| Customers | Keeps one or more named customers |
+| Customer type | Keeps companies or individuals |
+| Plan code | Keeps subscriptions on one plan |
+| Subscription ext. ID | Isolates a single subscription |
+| Customer has tax ID | Keeps customers with, or without, a tax ID on file |
+
+⚠️ There is no granularity selector here. The trend is always monthly.
+
+## What's not included (for now)
+
+- **Money.** This report counts subscriptions, never revenue. For the money your base commits to, see [MRR](/guide/analytics/revenue/mrr).
+- **Weekly or daily trends.** The trend chart is monthly only.
+- **Future starts.** A subscription scheduled to begin later is invisible until its start date arrives.
+
+## Common questions
+
+<AccordionGroup>
+<Accordion title="I set the range to last quarter and the count barely moved. Why?">
+Because this is a photo, not a period count. You are seeing the base as it stood on the last day of that quarter. Read net subscription change, or the New and Churn pages, to see what happened during the quarter.
+</Accordion>
+
+<Accordion title="Does this count customers or subscriptions?">
+Subscriptions, unless you read active customers. A customer with three subscriptions adds three to the subscription count and one to the customer count.
+</Accordion>
+
+<Accordion title="Why does a plan I deleted still show subscriptions?">
+Subscriptions are grouped on the plan they were sold on, even if that plan no longer exists. Child plans roll up to their parent plan.
+</Accordion>
+
+<Accordion title="A subscription is scheduled to start next month. Is it counted?">
+No. It appears once its start date arrives.
+</Accordion>
+
+<Accordion title="The line climbs every month. Isn't that the months adding up?">
+The line climbs because your base is growing, the way a bank balance climbs as you save. Each point is still the whole base on that day, so December's value is your year-end base, not December's additions. Summing the twelve points would count the same subscription twelve times.
+</Accordion>
+</AccordionGroup>

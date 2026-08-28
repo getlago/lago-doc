@@ -1,0 +1,101 @@
+---
+title: "Usage"
+description: "What your customers consumed and what it is worth, including consumption not yet invoiced."
+---
+
+Who is using the product, on which metrics, and what is it worth? This is the only revenue report that does not wait for an invoice. Consumption from the current, open billing period is already in it.
+
+{/* IMAGE: Usage tab, showing consumption revenue and total units consumed side by side */}
+
+## What's on this dashboard
+
+Three charts. All three are **activity**: each value covers the period it sits in.
+
+| Chart | What it answers | Values |
+| --- | --- | --- |
+| Consumption revenue | What is the consumption worth at plan prices? | 💰 Money (excl. tax) |
+| Total units consumed | How much was consumed, in my own units? | 🔢 Billing units |
+| Usage breakdown | The same two numbers as a table, cut how you like | 💰 and 🔢 |
+
+<Note>
+**Consumption lands on the usage date, in the customer's own timezone.** A customer in Tokyo and one in Los Angeles consuming at the same moment can land on different days.
+</Note>
+
+## Consumption revenue
+
+What the consumption is worth, priced by the customer's plan.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| Metered consumption, day by day, at the plan's list price | ✅ Yes | |
+| Consumption from an open billing period, with no invoice yet | ✅ Yes | |
+| Subscription fees, one-off charges and commitment top-ups | ❌ No | [Revenue streams](/guide/analytics/revenue/revenue-streams) |
+| Coupons and credits. They apply when the invoice is raised | ❌ No | [Revenue streams](/guide/analytics/revenue/revenue-streams) |
+| Taxes | ❌ No | [Invoices](/guide/analytics/invoices) |
+| Partner accounts | ❌ No | [Revenue share](/guide/revenue-share) |
+
+This is consumption at list price. It is what the usage is worth, not what the customer will pay.
+
+## Total units consumed
+
+The raw units your billable metrics measure, before any pricing.
+
+<Warning>
+**Units from different metrics cannot be added.** With no breakdown applied, this chart adds API calls to gigabytes to seats. Break the chart down by billable metric, or filter to one metric, before quoting a number.
+</Warning>
+
+## Filters
+
+| Filter | What it does |
+| --- | --- |
+| Date range | Sets the period. With nothing set, the charts show your full history |
+| Granularity | Sets the bar width: day, week or month |
+| Breakdown | Cuts the charts by Billable metric, Currency, Customer or Plan |
+| Billable metric | Narrows the whole page to one metric. The fastest way to make units mean something |
+| Currency | Keeps one plan currency |
+| Country | Keeps customers in one country |
+| Customers | Keeps one or more named customers |
+| Customer type | Keeps companies or individuals |
+| Plan code | Keeps consumption on one plan |
+| Subscription ext. ID | Isolates a single subscription |
+| Customer has tax ID | Keeps customers with, or without, a tax ID on file |
+
+⚠️ Remove Currency from the Breakdown and dollars, euros and yen are added into one number. Filter to one currency before quoting a total.
+
+## Explaining a disputed invoice
+
+The fastest route when a customer questions their bill:
+
+1. Filter to their subscription with **Subscription ext. ID**.
+2. Filter to the metric they are disputing with **Billable metric**.
+3. Set **Granularity** to day.
+4. Set the **Date range** to the invoice's billing period.
+
+The day-by-day chart then shows exactly when consumption spiked and what it was worth. Your engineering team can pull the same breakdown through the [usage API](/guide/events/retrieve-usage).
+
+## What's not included (for now)
+
+- **Anything that is not metered consumption.** Subscription fees, add-ons and commitment top-ups live on [Revenue streams](/guide/analytics/revenue/revenue-streams).
+- **Discounts and credits.** They apply when the invoice is raised, so the figures here are before any reduction.
+- **Taxes**, and **partner accounts**.
+- **What the customer will actually pay.** For that, read the invoiced figures on [Revenue streams](/guide/analytics/revenue/revenue-streams) or [Invoices](/guide/analytics/invoices).
+
+## Common questions
+
+<AccordionGroup>
+<Accordion title="Why is consumption revenue higher than the usage revenue I invoiced?">
+Several reasons, and they stack. Consumption from an open period has no invoice yet. Usage absorbed by a minimum commitment is billed as a commitment fee. Coupons and credits reduce the invoice, not the figures here.
+</Accordion>
+
+<Accordion title="A customer says they consumed nothing yesterday, but the chart shows usage.">
+Check the timezone. Consumption is dated in the customer's timezone, so late-evening usage can land on the next day relative to your clock. Today's figure is also partial until the numbers update overnight.
+</Accordion>
+
+<Accordion title="Does voiding an invoice change these numbers?">
+No. Usage is measured from what was consumed, not from invoices. Ending a subscription stops future consumption but leaves the past in place.
+</Accordion>
+
+<Accordion title="Can I compare two customers on total units?">
+Only if they are on the same billable metric. Otherwise you are comparing gigabytes with API calls. Filter to one metric first.
+</Accordion>
+</AccordionGroup>

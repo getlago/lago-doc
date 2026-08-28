@@ -1,0 +1,125 @@
+---
+title: "Invoices"
+description: "What you invoiced, what state it is in, and what is still owed to you."
+---
+
+How much did we invoice, and what is overdue? This page reports billing documents rather than revenue, so the amounts here include tax.
+
+{/* IMAGE: Invoices tab, showing invoiced amount by type above the AR aging buckets */}
+
+## What's on this dashboard
+
+Every amount here is an invoice total, so **tax is included**.
+
+| Chart | What it answers | Values | Behaviour |
+| --- | --- | --- | --- |
+| Invoiced amount by type | What did I invoice, by invoice type? | 💰 Money (incl. tax) | Activity |
+| Invoice status | How many invoices sit in each stage? | #️⃣ Count | Activity |
+| Finalized invoice payment status | Did finalized invoices get paid? | #️⃣ Count | Activity |
+| AR aging | How overdue is what I am owed? | 💰 Money (incl. tax) | Photo of today |
+| Outstanding revenue exposure | How much am I owed in total? | 💰 Money (incl. tax) | Photo of today |
+| Invoice list | Which exact invoices? | 💰 Money (incl. tax) | Activity |
+
+AR aging and outstanding revenue exposure are a **photo of today**: they show what you are owed right now. The rest is **activity**, dated on the invoice's issuing date, so each value covers the period it sits in.
+
+<Note>
+**This will not match [Revenue streams](/guide/analytics/revenue/revenue-streams).** Tax, dates and discounts all work differently there. See the last question below.
+</Note>
+
+## Invoiced amount by type
+
+Finalized invoices only, at their full total.
+
+| Invoice type | What it is |
+| --- | --- |
+| Subscription | The regular billing-period invoice for a subscription |
+| One-off | An invoice raised outside the billing cycle |
+| Add-on | An invoice for an add-on charge |
+| Credit | A prepaid credit purchase. Cash up front, earned as the credits get spent, see [Credit ledgers](/guide/analytics/credit-ledgers) |
+| Advance charges | An invoice issued ahead of the period, for charges billed upfront |
+| Progressive billing | An interim invoice raised mid-period as usage builds up |
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| A finalized invoice, at its full total with tax | ✅ Yes | |
+| An invoice for a partner account, or a self-billed one | ✅ Yes | |
+| A draft, voided, failed or pending invoice | ❌ No | The invoice status chart, below |
+| The same revenue without tax, fee by fee | ❌ No | [Revenue streams](/guide/analytics/revenue/revenue-streams) |
+
+## Invoice status and payment status
+
+Invoice status is the one chart that counts **every** invoice: draft, finalized, voided, failed and pending. Payment status covers finalized invoices only, split pending, paid and failed. Deleting a draft removes it from both.
+
+<Warning>
+**Both read today's state, not the state at the time.** An invoice issued in March and voided in June is counted as voided in March's bar. That is why a closed month can change after you close it. For periods that stay fixed, use [Revenue recognition](/guide/revenue-recognition/overview).
+</Warning>
+
+## AR aging and outstanding revenue exposure
+
+Both answer "what is owed to me right now". Same population, two views: aging splits it by how overdue it is, exposure totals it per currency.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| A finalized **subscription** invoice with money still owed | ✅ Yes | |
+| A partly paid invoice, at the amount still owed | ✅ Yes | |
+| A one-off, add-on, credit, advance-charge or progressive-billing invoice | ❌ No, for now | The invoice list, filtered on outstanding or overdue |
+| A fully paid invoice | ❌ No | Nothing is owed on it |
+| An invoice not yet finalized | ❌ No | The invoice status chart, above |
+
+| Bucket | Meaning |
+| --- | --- |
+| Not yet due | The due date has not passed. Shown last |
+| 1-30 days past due | Overdue by up to a month |
+| 31-60 days past due | Overdue by one to two months |
+| 61-90 days past due | Overdue by two to three months |
+| 91-120 days past due | Overdue by three to four months |
+| More than 120 days past due | Overdue by more than four months |
+
+## Filters
+
+| Filter | What it does |
+| --- | --- |
+| Date range | Sets the period. With nothing set, the charts show your full history |
+| Granularity | Sets the bar width: day, week or month |
+| Invoice number | Isolates a single invoice across the whole page |
+| Currency | Keeps one invoice currency |
+| Country | Keeps customers in one country |
+| Customers | Keeps one or more named customers |
+| Customer type | Keeps companies or individuals |
+| Plan code | Keeps invoices containing one plan |
+| Subscription ext. ID | Keeps invoices containing one subscription |
+| Customer has tax ID | Keeps customers with, or without, a tax ID on file |
+
+⚠️ **AR aging and outstanding revenue exposure ignore the date range and granularity.** They are a photo of today, on purpose.
+
+⚠️ Plan code and Subscription ext. ID keep an invoice if **any** subscription on it matches. An invoice covering several subscriptions will still show up, with its other plans included.
+
+## What's not included (for now)
+
+- **Unpaid one-off, add-on and credit invoices, in AR aging and exposure.** Both views count subscription invoices only. The invoice list has no such limit: it carries an outstanding amount and an overdue flag for every invoice type.
+- **Deleted drafts.** Deleting a draft removes it everywhere. See [Draft invoices](/guide/invoicing/draft-invoices).
+- **Revenue without tax.** Every amount here is an invoice total. See [Revenue streams](/guide/analytics/revenue/revenue-streams).
+
+## Common questions
+
+<AccordionGroup>
+<Accordion title="An unpaid one-off invoice is missing from AR aging.">
+That is expected for now. AR aging and outstanding revenue exposure count subscription invoices only, so a one-off, add-on or credit invoice never reaches them however overdue it is. The invoice list covers every type: filter it on outstanding or overdue and read the outstanding amount column.
+</Accordion>
+
+<Accordion title="I set a date range and AR aging didn't change.">
+It never does. AR aging and outstanding revenue exposure are a photo of today's receivables, so they ignore the date range on purpose. Every other chart on the page respects it.
+</Accordion>
+
+<Accordion title="We voided an invoice from March. Why did March's finalized total drop?">
+Because status is read as it stands today. A voided invoice is no longer finalized, so it leaves the finalized figures for the month it was issued.
+</Accordion>
+
+<Accordion title="Why is a partly paid invoice still in AR aging?">
+Because aging tracks the balance, not the invoice. It appears at the amount still owed, in the bucket matching its due date.
+</Accordion>
+
+<Accordion title="Why doesn't invoiced amount match revenue streams?">
+Three differences. Tax is included here and excluded there. Amounts land on the issuing date here, and on the day the fee was created there. And an invoice total already has coupons and credits applied, while [Revenue streams](/guide/analytics/revenue/revenue-streams) shows them as separate lines.
+</Accordion>
+</AccordionGroup>

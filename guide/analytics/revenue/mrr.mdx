@@ -1,0 +1,122 @@
+---
+title: "MRR"
+description: "Your recurring run rate, and the movements that changed it."
+---
+
+What is my recurring run rate, and what moved it? MRR is what your customers' plans promise to pay per month.
+
+<Warning>
+**MRR is not what you invoiced.** It is built from plan prices, not from invoices. A usage-heavy customer can pay you five times their MRR. For invoiced revenue, read [Revenue streams](/guide/analytics/revenue/revenue-streams).
+</Warning>
+
+{/* IMAGE: MRR overview stacked movement bars next to the MRR details table, showing the Summary and Movements sections */}
+
+## What's on this dashboard
+
+Everything here is 💰 money excluding tax. The details table has two sections that behave differently.
+
+| Chart | What it answers | Behaviour |
+| --- | --- | --- |
+| MRR overview | What moved my run rate, month by month? | Activity |
+| MRR details, Summary section | Starting MRR, Change, Ending MRR | Balance |
+| MRR details, Movements section | New, Expansion, Contraction, Churn | Activity |
+
+Starting and Ending MRR are **balances**, like your bank account on a given date: each one is the whole run rate at that moment, not what the period added. Widen the date range and you get more history: the last Ending MRR is the run rate at the end of the range, so that is the figure to quote. The movements are **activity**, like a bank statement: each one covers the period it sits in. Change is the four movements combined, and once a month is complete it also equals Ending minus Starting MRR.
+
+## What counts as one month of MRR
+
+Every live subscription contributes its **subscription fee**, the recurring price set on the plan, converted to a monthly figure. Only that fee counts. [Fixed charges](/guide/plans/charges/fixed-charges) are not part of MRR, even though they are billed every period, and neither are usage-based charges.
+
+| Plan interval | Counts as |
+| --- | --- |
+| Weekly | Plan price x 52 / 12 |
+| Monthly | Plan price |
+| Quarterly | Plan price / 3 |
+| Semiannual | Plan price / 6 |
+| Yearly | Plan price / 12 |
+
+A plan at 1,200 per year is worth 100 of MRR. That same conversion decides whether a plan change is an upgrade or a downgrade.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| The plan price of every live subscription, on any interval | ✅ Yes | |
+| The full plan price, even for a discounted customer | ✅ Yes | |
+| Metered usage. MRR does not move when a customer consumes more | ❌ No | [Usage](/guide/analytics/usage) |
+| One-off charges, add-ons and commitment top-ups | ❌ No | [Revenue streams](/guide/analytics/revenue/revenue-streams) |
+| Coupons. MRR is measured before discounts | ❌ No | [Revenue streams](/guide/analytics/revenue/revenue-streams) |
+| Wallet top-ups | ❌ No | [Credit ledgers](/guide/analytics/credit-ledgers) |
+| Taxes | ❌ No | [Invoices](/guide/analytics/invoices) |
+| Partner accounts | ❌ No | [Revenue share](/guide/revenue-share) |
+
+## The four movements
+
+Each one is dated on the day the subscription started or ended.
+
+| Movement | What triggers it | How much counts |
+| --- | --- | --- |
+| **New** | A customer's first subscription in that currency | The full monthly amount, positive |
+| **Expansion** | An upgrade, a second subscription alongside an existing one, or a customer coming back | An upgrade counts the **difference** only. A second subscription or a return counts the full amount |
+| **Contraction** | A downgrade, or an ending where the customer keeps another live subscription | A downgrade counts the **difference** only. A partial ending counts the full amount, negative |
+| **Churn** | An ending that leaves the customer with nothing in that currency | The full monthly amount, negative |
+
+<Note>
+**An upgrade is never churn plus new.** Lago knows the new subscription replaced the old one, so a plan change produces one movement on the difference. Churn only fires when a customer's recurring revenue in that currency reaches zero.
+</Note>
+
+## Worked example
+
+A customer on 100 per month upgrades to 200 per month on 15 March, then leaves on 10 April with nothing else running.
+
+| Month | Starting MRR | New | Expansion | Contraction | Churn | Change | Ending MRR |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| March | 100 | 0 | 100 | 0 | 0 | 100 | 200 |
+| April | 200 | 0 | 0 | 0 | -200 | -200 | 0 |
+
+Had they moved to a 1,200 per year plan instead, nothing would have moved: 100 a month against 100 a month.
+## Filters
+
+| Filter | What it does |
+| --- | --- |
+| Date range | Sets the period. With nothing set, the report shows the last 12 months |
+| Granularity | Sets the bar width: day, week or month |
+| Breakdown | Cuts the report by Type, Currency, Customer or Plan |
+| Currency | Keeps one billing currency |
+| Country | Keeps customers in one country |
+| Customers | Keeps one or more named customers |
+| Customer type | Keeps companies or individuals |
+| Plan code | Keeps one plan |
+| Subscription ext. ID | Isolates a single subscription |
+| Customer has tax ID | Keeps customers with, or without, a tax ID on file |
+
+⚠️ Remove Currency from the Breakdown and dollars, euros and yen are added into one number. Filter to one currency before quoting a total.
+
+## What's not included (for now)
+
+- **Usage, one-offs and commitment top-ups.** None of them are recurring. See [Revenue streams](/guide/analytics/revenue/revenue-streams).
+- **Fixed charges.** MRR counts the plan's subscription fee only, so a fixed charge does not move it even though it is billed every period.
+- **Discounts.** MRR shows the full plan price, so a customer on a 50 percent coupon still counts at 100 percent.
+- **Partner accounts** and **taxes**.
+
+## Common questions
+
+<AccordionGroup>
+<Accordion title="Why doesn't MRR match my invoiced revenue?">
+It is not meant to. MRR is the plan price of live subscriptions, before discounts and before any usage. Invoiced revenue adds usage, one-offs and top-ups, and takes off coupons and credits. The closest comparison is the subscription fee line in [Revenue streams](/guide/analytics/revenue/revenue-streams).
+</Accordion>
+
+<Accordion title="Why don't twelve months of Ending MRR add up to a yearly figure?">
+Because Ending MRR is a balance, not an amount earned. December's value is the year-end run rate. To measure a year's growth, add the twelve Change values instead.
+</Accordion>
+
+<Accordion title="A customer upgraded. Why is there no churn?">
+Lago links the new subscription to the one it replaced, so only the difference is reported, as expansion or as contraction. A yearly plan can be cheaper than a monthly one once converted to a monthly figure.
+</Accordion>
+
+<Accordion title="A customer ended one of three subscriptions. Where does it show?">
+As contraction, not churn. Churn only fires when the customer has nothing left running in that currency. Note that [Churn](/guide/analytics/subscriptions/churn) counts the same event as a termination.
+</Accordion>
+
+<Accordion title="Why is this month's MRR lower than expected?">
+The month is not finished. Its movements only cover the days so far, and the numbers update once a day overnight, so a subscription created today shows tomorrow.
+</Accordion>
+</AccordionGroup>

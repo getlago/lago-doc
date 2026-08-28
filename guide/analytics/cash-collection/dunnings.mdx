@@ -1,0 +1,97 @@
+---
+title: "Dunnings"
+description: "What happened to the invoices you chased: how many came back, worth how much, and how fast."
+---
+
+Is chasing unpaid invoices working? This page counts the invoices that went into dunning, splits them paid against unpaid, and shows how long recovery took.
+
+{/* IMAGE: Dunnings tab, showing the paid vs unpaid outcome chart next to the recovery time buckets */}
+
+## What's on this dashboard
+
+| Chart | What it answers | Values | Behaviour |
+| --- | --- | --- | --- |
+| Dunning outcome | How many chased invoices got paid? | #️⃣ Count | Activity |
+| Dunning revenue recovered by currency | How much came back, per currency? | 💰 (incl. tax) and #️⃣ | Photo of today |
+| Dunning recovery time | How fast did it come back? | #️⃣ Count | Photo of today |
+| Dunning attempt summary per invoice | What happened to one specific invoice? | 💰 (incl. tax) and #️⃣ | Photo of today |
+
+Dunning outcome is the only monthly series here. The other three are a **photo of today**: they cover everything recovered so far, with no month-by-month split.
+
+## Dunning outcome
+
+Chased invoices, split by whether they were eventually paid. An invoice counts as paid whether the cash came through a dunning request or through a direct payment.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| An invoice that entered dunning, counted once however often it was chased | ✅ Yes | |
+| An invoice that never entered dunning | ❌ No | [Invoices](/guide/analytics/invoices) |
+
+<Warning>
+**This is dated on the day the invoice was created, not the day it was recovered.** An invoice created in March and recovered in May is counted in March. So last month's paid split keeps improving as cash lands. That is expected, not a bug.
+</Warning>
+
+## Dunning revenue recovered by currency
+
+Chased invoices that reached a successful payment: how many, and what they were worth, per currency.
+
+The amount is the **full invoice total, tax included**, not the cash actually collected. A partly paid invoice that reached a successful payment contributes its whole total.
+
+## Dunning recovery time
+
+Recovered invoices, bucketed by how long they took: same day, 1 to 7 days, 8 to 30 days, more than 30 days. The clock starts at the **first dunning attempt**, not at the invoice date.
+
+<Note>
+**This measures speed, never success.** It only contains invoices that came back, so it can never tell you what share of chased invoices you recovered. For that, read dunning outcome: paid invoices over total chased invoices.
+</Note>
+
+## Dunning attempt summary per invoice
+
+One row per chased invoice, with the columns you need to explain a single case.
+
+| Column | What it tells you |
+| --- | --- |
+| Invoice number and amount | Which invoice, and what it was worth |
+| Dunning attempts | How many times it was chased |
+| Paid | Whether it came back |
+| Paid through a dunning request | Whether the dunning did the work, or the customer paid directly |
+| First attempt, first payment, days between | When the chase started, when it landed, and how long it took |
+
+## Filters
+
+| Filter | What it does |
+| --- | --- |
+| Date range | Sets the period. Recovered revenue and the attempt summary start on 1 January 2025 when nothing is set |
+| Granularity | Sets the bar width: day, week or month |
+| Invoice number | Isolates one chased invoice. Only invoices that went into dunning are offered |
+
+⚠️ **Granularity only affects dunning outcome.** The other three charts have no time axis to reshape.
+
+⚠️ **Invoice number only affects the attempt summary and recovered revenue.** Dunning outcome and recovery time ignore it.
+
+## What's not included (for now)
+
+- **Invoices that never entered dunning.** See [Invoices](/guide/analytics/invoices) for every unpaid invoice, chased or not.
+- **The cash actually collected.** Recovered revenue counts full invoice totals. For attempt-level amounts, see [Payments](/guide/analytics/cash-collection/payments).
+- **A success rate on the recovery time chart.** It only holds invoices that came back.
+- **Customer, plan and currency filters.** Only date, granularity and invoice number are available.
+
+## Common questions
+
+<AccordionGroup>
+<Accordion title="Why is last month's dunning outcome still moving?">
+Because outcome is dated on the day the invoice was created, and recovery happens later. An invoice created last month and recovered this month improves last month's paid split when the numbers update overnight.
+</Accordion>
+
+<Accordion title="How do I get the dunning success rate?">
+Read dunning outcome: paid invoices over total chased invoices for the period. Recovery time only covers invoices that were recovered, so it cannot give you a rate.
+</Accordion>
+
+<Accordion title="Does recovered revenue mean cash in the bank?">
+No. It is the full total of the invoices that reached a successful payment, tax included. Read it next to outstanding revenue exposure on [Invoices](/guide/analytics/invoices) for what is still owed.
+</Accordion>
+
+<Accordion title="What puts an invoice into dunning in the first place?">
+Your dunning campaigns and their retry schedules, which are set up outside these reports. See [Automatic dunning](/guide/dunning/automatic-dunning) and [Manual dunning](/guide/dunning/manual-dunning).
+</Accordion>
+</AccordionGroup>

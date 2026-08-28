@@ -1,0 +1,99 @@
+---
+title: "Churn"
+description: "How Lago counts subscriptions that ended, and why an upgrade is never churn."
+---
+
+How many subscriptions did we lose? Endings are split the same way as starts: real churn on one side, plan changes on the other.
+
+{/* IMAGE: Churn tab, showing terminations split churn vs plan changes, and the churn details table */}
+
+## What's on this dashboard
+
+Four charts. All of them count subscriptions that ended, and all are **activity**: each value covers the period it sits in.
+
+| Chart | What it answers |
+| --- | --- |
+| Subscription terminations | How many ended, split churn against plan changes? |
+| Day of terminations | Which weekday do subscriptions end on? |
+| Churn subscriptions by plan | Which plans am I losing? Plan changes are left out |
+| Churn details | Which exact subscriptions, and why? |
+
+Everything here is dated on the termination date.
+
+## Terminations
+
+A subscription that ended and was not replaced. This is real churn.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| The customer cancelled it | ✅ Yes | |
+| It reached its planned end date | ✅ Yes | |
+| It ended because a new subscription replaced it | ❌ No | Plan changes, below |
+
+## Plan changes
+
+The old half of an upgrade or a downgrade: the subscription ended because a new one took its place.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| An ending with a live replacement behind it | ✅ Yes | |
+| An ending with nothing after it | ❌ No | Terminations, above |
+
+## Churned customers
+
+How many customers the churn represents, counted once per plan and currency. Customers whose only endings were plan changes are not in it.
+
+<Warning>
+**Losing a subscription is not losing a customer.** A customer who ends one of three subscriptions appears in terminations and is still your customer. The details table has a column for exactly this: whether the customer kept another live subscription.
+</Warning>
+
+## Reading the churn details table
+
+| Column | What it tells you |
+| --- | --- |
+| Days alive | How long the subscription ran, start to end |
+| Termination category | Churn, or a plan change labelled upgrade, downgrade or same price. Plans on different intervals are compared on their monthly equivalent, so a move to a cheaper yearly plan reads as a downgrade |
+| Churn type | For churn only: a scheduled end, meaning the subscription reached its planned end date, or a manual termination |
+| Customer still active | For churn only: whether the customer kept another subscription |
+| Next plan | The plan the customer moved to, for plan changes |
+
+## Filters
+
+| Filter | What it does |
+| --- | --- |
+| Date range | Keeps endings inside the period |
+| Currency | Keeps one billing currency |
+| Country | Keeps customers in one country |
+| Customers | Keeps one or more named customers |
+| Customer type | Keeps companies or individuals |
+| Plan code | Keeps endings on one plan |
+| Subscription ext. ID | Isolates a single subscription |
+| Customer has tax ID | Keeps customers with, or without, a tax ID on file |
+
+⚠️ There is no granularity selector here. The trend is always monthly.
+
+## What's not included (for now)
+
+- **Money.** This counts subscriptions, never the revenue lost. For that, read Churn and Contraction in [MRR](/guide/analytics/revenue/mrr).
+- **A customer churn rate.** The report counts subscriptions. Use the customer-still-active column to work out how many customers you truly lost.
+- **Weekly or daily trends.** The trend chart is monthly only.
+
+## Common questions
+
+<AccordionGroup>
+<Accordion title="A customer upgraded. Does that show as churn?">
+No. It adds one to plan changes here and one to plan changes on [New subscriptions](/guide/analytics/subscriptions/new). The by-plan churn chart leaves plan changes out entirely.
+</Accordion>
+
+<Accordion title="Does this match MRR churn?">
+Not line for line. This page counts subscriptions, MRR measures money. They also classify one case differently: an ending that leaves the customer with other live subscriptions is a termination here, but contraction in [MRR](/guide/analytics/revenue/mrr).
+</Accordion>
+
+<Accordion title="How many customers did we actually lose?">
+Read churned customers, then check the customer-still-active column. A customer who ended one of several subscriptions is not a lost customer.
+</Accordion>
+
+<Accordion title="A subscription reached its end date. Is that churn?">
+Yes. The details table labels it a scheduled end rather than a manual termination. Both reduce your base.
+</Accordion>
+</AccordionGroup>

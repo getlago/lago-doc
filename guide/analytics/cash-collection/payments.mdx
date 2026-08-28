@@ -1,0 +1,92 @@
+---
+title: "Payments"
+description: "Every attempt to collect on an invoice, and how it went."
+---
+
+Are we getting paid, and when we are not, why? This page counts collection attempts and tells you what your payment provider said.
+
+<Note>
+**The Payments view is coming soon.** Cash collection currently shows [Dunnings](/guide/analytics/cash-collection/dunnings) only, so nothing on this page is in the Analytics UI yet.
+</Note>
+
+<Warning>
+**The unit here is the payment attempt, not the invoice.** One invoice can produce several attempts: a first charge, a retry, then a successful dunning attempt. Counting attempts and counting invoices give different answers. Both are right for their own question.
+</Warning>
+
+{/* IMAGE: Payments tab, showing payment intents by status next to failed payment reasons */}
+
+## What's on this dashboard
+
+Four charts. All of them are **activity**: each value covers the period it sits in, and everything is dated on the day of the attempt.
+
+| Chart | What it answers | Values |
+| --- | --- | --- |
+| Payment intents by status | How many attempts succeeded, how many failed? | #️⃣ Count |
+| Failed payment reasons | Why is collection failing? | #️⃣ Count |
+| Successful payments by method | How do my customers actually pay? | #️⃣ Count |
+| Payment list | Which exact attempts, and for how much? | 💰 Money (incl. tax) |
+
+## Payment intents by status
+
+Attempts that reached an outcome, split succeeded against failed.
+
+| | Counted? | If not, where is it? |
+| --- | --- | --- |
+| An attempt against an invoice | ✅ Yes | |
+| An attempt against a [dunning](/guide/analytics/cash-collection/dunnings) request | ✅ Yes | |
+| Every retry, counted separately | ✅ Yes | |
+| An attempt still pending | ❌ No | The payment list, below. It joins the charts once it resolves |
+
+## Failed payment reasons
+
+Failed attempts grouped by the error code your payment provider returned. The ten most frequent codes are shown, everything else is grouped together, and attempts with no code appear as unknown.
+
+<Note>
+**These are your payment provider's own words, passed through unchanged.** Two providers describe the same failure differently, so if you use more than one you will see overlapping vocabularies for the same problem.
+</Note>
+
+## Successful payments by method
+
+Successful attempts grouped by the method your provider reports. Payments you recorded by hand appear as **manual**. Successful payments whose method the provider does not report appear as unknown.
+
+## Payment list
+
+One row per attempt, with the customer, the invoice, the amount, the method and the failure reason when there is one. Unlike the charts, it lists attempts in **every** state, pending included. This is the report to use when one specific payment needs explaining.
+
+Amounts are cash, so tax is included.
+
+## Filters
+
+| Filter | What it does |
+| --- | --- |
+| Date range | Sets the period. With nothing set, the charts show your full history |
+| Granularity | Sets the bar width: day, week or month |
+| Invoice number | Isolates the attempts made against one invoice |
+
+⚠️ There are no customer, plan or currency filters here for now. To narrow by customer, find the invoice on [Invoices](/guide/analytics/invoices) and filter by its number.
+
+## What's not included (for now)
+
+- **Pending attempts**, in the charts. They appear in the payment list, and join the charts once they resolve.
+- **Customer, plan and currency filters.** Only date, granularity and invoice number are available.
+- **Whether the invoice is settled.** A successful attempt can still leave a balance. See the payment statuses and AR aging on [Invoices](/guide/analytics/invoices).
+
+## Common questions
+
+<AccordionGroup>
+<Accordion title="Why are there more payment attempts than invoices?">
+Because every retry and every dunning attempt counts. One invoice can fail twice and succeed on the third try: that is three attempts and one paid invoice. See [Payment retries](/guide/payments/payment-retries).
+</Accordion>
+
+<Accordion title="Does a successful payment mean the invoice is settled?">
+Not necessarily. A partial payment succeeds as an attempt while leaving a balance. For settlement, read the payment status and AR aging on [Invoices](/guide/analytics/invoices).
+</Accordion>
+
+<Accordion title="A manual payment doesn't show a payment method.">
+Payments you record by hand have no provider method, so they are labelled manual. See [Record manual payments](/guide/payments/record-manual-payments).
+</Accordion>
+
+<Accordion title="Two providers report the same failure differently. Why?">
+Error codes come straight from your payment provider. Lago does not translate them, so two providers describing the same failure will show two different codes.
+</Accordion>
+</AccordionGroup>
