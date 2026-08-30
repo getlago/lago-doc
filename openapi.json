@@ -468,7 +468,7 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ApiError"
+              "$ref": "#/components/schemas/LagoError"
             }
           }
         }
@@ -478,7 +478,7 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ApiError"
+              "$ref": "#/components/schemas/LagoError"
             },
             "example": {
               "status": 401,
@@ -493,7 +493,7 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ApiError"
+              "$ref": "#/components/schemas/LagoError"
             },
             "example": {
               "status": 404,
@@ -508,7 +508,7 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ApiError"
+              "$ref": "#/components/schemas/LagoError"
             },
             "example": {
               "status": 422,
@@ -549,7 +549,7 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ApiError"
+              "$ref": "#/components/schemas/LagoError"
             }
           }
         }
@@ -559,7 +559,7 @@
         "content": {
           "application/json": {
             "schema": {
-              "$ref": "#/components/schemas/ServerError"
+              "$ref": "#/components/schemas/LagoError"
             },
             "example": {
               "errors": [
@@ -574,6 +574,17 @@
       }
     },
     "schemas": {
+      "LagoError": {
+        "description": "The two structured error envelopes returned by Lago REST endpoints. Client errors use ApiError; unexpected server failures use ServerError.",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ApiError"
+          },
+          {
+            "$ref": "#/components/schemas/ServerError"
+          }
+        ]
+      },
       "ApiError": {
         "type": "object",
         "description": "Structured Lago API error returned with a non-2xx status.",
@@ -688,15 +699,7 @@
             }
           },
           "meta": {
-            "type": "object",
-            "required": ["current_page", "next_page", "prev_page", "total_pages", "total_count"],
-            "properties": {
-              "current_page": { "type": "integer" },
-              "next_page": { "type": ["integer", "null"] },
-              "prev_page": { "type": ["integer", "null"] },
-              "total_pages": { "type": "integer" },
-              "total_count": { "type": "integer" }
-            }
+            "$ref": "#/components/schemas/PaginationMeta"
           }
         }
       },
@@ -822,7 +825,7 @@
       },
       "PlanListResponse": {
         "type": "object",
-        "required": ["plans"],
+        "required": ["plans", "meta"],
         "properties": {
           "plans": {
             "type": "array",
@@ -850,7 +853,7 @@
       },
       "InvoiceListResponse": {
         "type": "object",
-        "required": ["invoices"],
+        "required": ["invoices", "meta"],
         "properties": {
           "invoices": {
             "type": "array",
