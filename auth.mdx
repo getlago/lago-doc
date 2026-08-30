@@ -37,6 +37,14 @@ Content-Type: application/json
 
 Keep production and non-production credentials separate. Before a financial mutation, verify the target organization, environment, customer and subscription identifiers, currency, effective date, and intended amount. Require explicit human approval wherever the calling application or organization policy requires it.
 
+### API key permissions
+
+Lago Premium organizations with the enterprise API-permissions add-on can restrict an API key by resource and mode. Permission identifiers use the machine-readable `<resource>:<mode>` format, where the mode is `read` or `write`. For example, a workload that only retrieves invoices can use `invoice:read`, while event ingestion requires `event:write`.
+
+The [same-origin OpenAPI discovery profile](/openapi.json) declares the required permission for each representative operation in `x-lago-required-api-key-permissions` and describes the permission model on `components.securitySchemes.bearerAuth`. These are API-key permissions, not OAuth scopes, and they do not create a delegated-authorization flow.
+
+Configure permissions when creating or editing a key under **Developers > API keys**. See [API key permissions](/guide/security/api-keys#set-api-key-permissions) for availability and operator instructions.
+
 ## 6. Errors
 
 - `401 Unauthorized` means the key is missing, invalid, expired, or no longer accepted.

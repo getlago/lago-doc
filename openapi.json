@@ -86,6 +86,7 @@
     "/api/v1/events": {
       "get": {
         "operationId": "listUsageEvents",
+        "x-lago-required-api-key-permissions": ["event:read"],
         "summary": "List usage events",
         "description": "Returns a paginated list of usage events for the organization.",
         "tags": ["Usage"],
@@ -111,6 +112,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
           }
@@ -118,6 +122,7 @@
       },
       "post": {
         "operationId": "ingestUsageEvent",
+        "x-lago-required-api-key-permissions": ["event:write"],
         "summary": "Ingest a usage event",
         "description": "Records an idempotent product-usage event for aggregation and billing. Supply a unique transaction_id for every event.",
         "tags": ["Usage"],
@@ -151,6 +156,9 @@
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
           }
@@ -160,6 +168,7 @@
     "/api/v1/events/batch": {
       "post": {
         "operationId": "createBatchEvents",
+        "x-lago-required-api-key-permissions": ["event:write"],
         "summary": "Batch multiple usage events",
         "description": "Sends up to 100 usage records in one request. Each event must carry its own unique transaction_id.",
         "tags": ["Usage"],
@@ -193,6 +202,9 @@
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
           }
@@ -202,6 +214,7 @@
     "/api/v1/customers": {
       "post": {
         "operationId": "createCustomer",
+        "x-lago-required-api-key-permissions": ["customer:write"],
         "summary": "Create a customer",
         "description": "Creates or updates the billing customer identified by external_id.",
         "tags": ["Customers"],
@@ -232,6 +245,9 @@
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
           }
@@ -241,6 +257,7 @@
     "/api/v1/customers/{external_id}": {
       "get": {
         "operationId": "getCustomer",
+        "x-lago-required-api-key-permissions": ["customer:read"],
         "summary": "Retrieve a customer",
         "description": "Returns the customer whose external identifier matches the supplied value.",
         "tags": ["Customers"],
@@ -266,6 +283,9 @@
           "404": {
             "$ref": "#/components/responses/NotFound"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
           }
@@ -275,6 +295,7 @@
     "/api/v1/subscriptions": {
       "post": {
         "operationId": "createSubscription",
+        "x-lago-required-api-key-permissions": ["subscription:write"],
         "summary": "Create a subscription",
         "description": "Subscribes a customer to a Lago plan using stable external identifiers.",
         "tags": ["Subscriptions"],
@@ -308,6 +329,9 @@
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
           }
@@ -317,6 +341,7 @@
     "/api/v1/plans": {
       "get": {
         "operationId": "listPlans",
+        "x-lago-required-api-key-permissions": ["plan:read"],
         "summary": "List plans",
         "description": "Returns a paginated list of pricing plans available in the organization.",
         "tags": ["Plans"],
@@ -342,6 +367,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
           }
@@ -351,6 +379,7 @@
     "/api/v1/invoices": {
       "get": {
         "operationId": "listInvoices",
+        "x-lago-required-api-key-permissions": ["invoice:read"],
         "summary": "List invoices",
         "description": "Returns invoices for the organization, optionally filtered and paginated.",
         "tags": ["Invoices"],
@@ -376,6 +405,9 @@
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
           }
@@ -389,7 +421,13 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "Lago API key",
-        "description": "Use Authorization: Bearer <api_key>."
+        "description": "Use Authorization: Bearer <api_key>. Lago Premium organizations with the enterprise API-permissions add-on can restrict keys by resource and read/write mode.",
+        "x-lago-api-key-permission-model": {
+          "format": "<resource>:<mode>",
+          "modes": ["read", "write"],
+          "availability": "Lago Premium enterprise add-on",
+          "documentationUrl": "https://doc.getlago.com/guide/security/api-keys#set-api-key-permissions"
+        }
       }
     },
     "parameters": {
@@ -479,6 +517,39 @@
               "error_details": {
                 "external_id": ["value_is_mandatory"]
               }
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "The organization exceeded its REST API rate limit.",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "description": "Maximum requests permitted in the current window.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "description": "Requests remaining in the current window.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "X-RateLimit-Reset": {
+            "description": "Seconds until the current rate-limit window resets.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
             }
           }
         }

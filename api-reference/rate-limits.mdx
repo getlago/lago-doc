@@ -14,13 +14,13 @@ Rate limits apply per organization, so all of your API keys share the same budge
 
 ## When you are rate limited
 
-You receive a `429 Too Many Requests` response. Every response includes headers to help you manage your rate:
+You receive a `429 Too Many Requests` response. Lago exposes the following headers with rate-limit metadata on authenticated REST traffic; authentication failures and other responses that cannot be associated with an organization may omit them:
 
 - `X-RateLimit-Limit`: maximum requests for the current window
 - `X-RateLimit-Remaining`: requests left in the current window
 - `X-RateLimit-Reset`: seconds until the window resets
 
-Retrying after a `429` is safe. Event ingestion is deduplicated by `transaction_id`, so a replayed event is never billed twice. Back off until `X-RateLimit-Reset` reaches zero before retrying.
+Retrying after a `429` is safe. Event ingestion is deduplicated by `transaction_id`, so a replayed event is never billed twice. When `X-RateLimit-Reset` is present, back off for the indicated number of seconds before retrying. Otherwise, use bounded exponential backoff with jitter and stop after a finite number of attempts.
 
 <Info>
   Kafka, Kinesis, and S3 connectors are not subject to REST API rate limits. Their throughput is bounded by your broker or infrastructure capacity.
