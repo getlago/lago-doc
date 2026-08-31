@@ -89,4 +89,4 @@ You can see the details of a specific event by clicking on it. Depending on the 
 Your webhook server should respond with a `200`, `201`, `202`, or `204` status code to acknowledge receipt of the event. Lago marks any other response as failed.
 If your server does not acknowledge an event, Lago displays an error status in the webhook logs.
 
-Lago retries failed deliveries up to 3 times. On self-hosted instances, set the retry count with `LAGO_WEBHOOK_ATTEMPTS` and the request timeout with `LAGO_WEBHOOK_TIMEOUT_SECONDS` (default: 30 seconds).
+Lago makes up to 3 delivery attempts per event: the initial call plus 2 retries. On self-hosted instances, set the total number of attempts with `LAGO_WEBHOOK_ATTEMPTS` (default: 3) and the request timeout with `LAGO_WEBHOOK_TIMEOUT_SECONDS` (default: 30 seconds).
