@@ -11,6 +11,26 @@ description: "Below is a list of the event types we currently send. Please note 
 </ParamField>
 
 
+## Billable metrics
+<ParamField path="billable_metric.created" type="data.object">
+  Sent when a billable metric is created.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/billableMetricCreated)
+</ParamField>
+
+<ParamField path="billable_metric.updated" type="data.object">
+  Sent when a billable metric is updated.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/billableMetricUpdated)
+</ParamField>
+
+<ParamField path="billable_metric.deleted" type="data.object">
+  Sent when a billable metric is deleted. The message carries the billable metric payload at the moment of deletion, as the alerts and charges attached to the metric are deleted along with it.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/billableMetricDeleted)
+</ParamField>
+
+
 ## Credit notes and refunds
 <ParamField path="credit_note.created" type="data.object">
   Sent when a new credit note has been issued for a customer. This will allow your application to proceed with the refund.
@@ -107,6 +127,14 @@ description: "Below is a list of the event types we currently send. Please note 
   Sent when a VIES VAT number has been checked for a customer
 
   [Schema example](https://swagger.getlago.com/#/webhooks/customerViesCheck)
+</ParamField>
+
+## Dunning campaigns
+
+<ParamField path="dunning_campaign.finished" type="data.object">
+  Sent when the dunning campaign applied to a customer has reached its maximum number of attempts for every overdue currency, meaning no further automated payment attempt will be made. The payload carries the campaign's `dunning_campaign_code`, the customer's `external_customer_id` and the remaining `overdue_balances`, broken down per currency.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/dunningCampaignFinished)
 </ParamField>
 
 ## Event ingestion
@@ -232,6 +260,12 @@ description: "Below is a list of the event types we currently send. Please note 
   The `url` field contains the checkout link that initiates 3D Secure (3DS) validation for your customers. The `return_url` is the page displayed once the 3DS process is completed.
 
   [Schema example](https://swagger.getlago.com/#/webhooks/paymentRequiresAction)
+</ParamField>
+
+<ParamField path="payment.succeeded" type="data.object">
+  Sent when a payment provider confirms that a payment collected for an invoice has succeeded. The payload carries the payment object, along with the payment method used.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/paymentSucceeded)
 </ParamField>
 
 <ParamField path="payment_provider.error" type="data.object">
@@ -371,6 +405,12 @@ description: "Below is a list of the event types we currently send. Please note 
   Sent when a subscription starts. The `previous_plan_code` argument is filled if the subscription has been upgraded or downgraded.
 
   [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionStarted)
+</ParamField>
+
+<ParamField path="subscription.updated" type="data.object">
+  Sent when a subscription is updated. It also covers the cases where a downgrade is scheduled for the end of the current period, where a pending subscription is canceled (the message then carries the previous subscription) and where the subscription's entitlements are changed. The payload carries the subscription along with its plan, customer and entitlements.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionUpdated)
 </ParamField>
 
 <ParamField path="subscription.termination_alert" type="data.object">
