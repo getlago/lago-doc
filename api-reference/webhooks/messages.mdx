@@ -4,10 +4,30 @@ description: "Below is a list of the event types we currently send. Please note 
 ---
 
 ## Alerts
-<ParamField path="alerts.triggered" type="data.object">
+<ParamField path="alert.triggered" type="data.object">
   Sent when a new usage alert threshold has been crossed.
   
   [Schema example](https://swagger.getlago.com/#/webhooks/alertTriggered)
+</ParamField>
+
+
+## Billable metrics
+<ParamField path="billable_metric.created" type="data.object">
+  Sent when a billable metric is created.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/billableMetricCreated)
+</ParamField>
+
+<ParamField path="billable_metric.updated" type="data.object">
+  Sent when a billable metric is updated.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/billableMetricUpdated)
+</ParamField>
+
+<ParamField path="billable_metric.deleted" type="data.object">
+  Sent when a billable metric is deleted. The message carries the billable metric payload at the moment of deletion, as the alerts and charges attached to the metric are deleted along with it.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/billableMetricDeleted)
 </ParamField>
 
 
@@ -27,7 +47,7 @@ description: "Below is a list of the event types we currently send. Please note 
 <ParamField path="credit_note.refund_failure" type="data.object">
   Sent when there is an error related to the refund process (i.e. the payment provider cannot refund the customer).
 
-  [Schema example](https://swagger.getlago.com/#/webhooks/creditNoteRefundFailure)
+  [Schema example](https://swagger.getlago.com/#/webhooks/creditNoteProviderRefundFailure)
 </ParamField>
 
 ## Customers
@@ -61,12 +81,6 @@ description: "Below is a list of the event types we currently send. Please note 
   Sent when there is an error related to the creation of a customer in the payment provider's system.
 
   [Schema example](https://swagger.getlago.com/#/webhooks/customerPaymentProviderError)
-</ParamField>
-
-<ParamField path="customer.checkout_url_generated" type="data.object">
-  Sent when a checkout link is issued for a customer.
-
-  [Schema example](https://swagger.getlago.com/#/webhooks/customerCheckoutUrlGenerated)
 </ParamField>
 
 <ParamField path="customer.checkout_url_generated" type="data.object">
@@ -115,6 +129,14 @@ description: "Below is a list of the event types we currently send. Please note 
   [Schema example](https://swagger.getlago.com/#/webhooks/customerViesCheck)
 </ParamField>
 
+## Dunning campaigns
+
+<ParamField path="dunning_campaign.finished" type="data.object">
+  Sent when the dunning campaign applied to a customer has reached its maximum number of attempts for every overdue currency, meaning no further automated payment attempt will be made. The payload carries the campaign's `dunning_campaign_code`, the customer's `external_customer_id` and the remaining `overdue_balances`, broken down per currency.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/dunningCampaignFinished)
+</ParamField>
+
 ## Event ingestion
 
 <ParamField path="events.errors" type="data.object" deprecated="true">
@@ -124,7 +146,7 @@ description: "Below is a list of the event types we currently send. Please note 
   [Schema example](https://swagger.getlago.com/#/webhooks/eventsErrors)
 </ParamField>
 
-<ParamField path="events.error" type="data.object" deprecated="true">
+<ParamField path="event.error" type="data.object" deprecated="true">
   This webhook is deprecated and no longer sent in Lago `v0.50.0-beta` and above. It was sent when there was an error related to the creation of an event.
 
   [Schema example](https://swagger.getlago.com/#/webhooks/eventError)
@@ -240,8 +262,14 @@ description: "Below is a list of the event types we currently send. Please note 
   [Schema example](https://swagger.getlago.com/#/webhooks/paymentRequiresAction)
 </ParamField>
 
-<ParamField path="payment.requires_action" type="data.object">
-  This message is triggered when a an error was raised by a payment provider.
+<ParamField path="payment.succeeded" type="data.object">
+  Sent when a payment provider confirms that a payment collected for an invoice has succeeded. The payload carries the payment object, along with the payment method used.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/paymentSucceeded)
+</ParamField>
+
+<ParamField path="payment_provider.error" type="data.object">
+  This message is triggered when an error was raised by a payment provider.
 
   [Schema example](https://swagger.getlago.com/#/webhooks/paymentProviderError)
 </ParamField>
@@ -377,6 +405,12 @@ description: "Below is a list of the event types we currently send. Please note 
   Sent when a subscription starts. The `previous_plan_code` argument is filled if the subscription has been upgraded or downgraded.
 
   [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionStarted)
+</ParamField>
+
+<ParamField path="subscription.updated" type="data.object">
+  Sent when a subscription is updated. It also covers the cases where a downgrade is scheduled for the end of the current period, where a pending subscription is canceled (the message then carries the previous subscription) and where the subscription's entitlements are changed. The payload carries the subscription along with its plan, customer and entitlements.
+
+  [Schema example](https://swagger.getlago.com/#/webhooks/subscriptionUpdated)
 </ParamField>
 
 <ParamField path="subscription.termination_alert" type="data.object">

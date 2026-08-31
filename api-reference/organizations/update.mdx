@@ -38,8 +38,7 @@ curl --location --request PUT "$LAGO_URL/api/v1/organizations" \
       "billing_configuration": {
         "invoice_footer": "This is my customer footer",
         "invoice_grace_period": 3,
-        "document_locale": "en",
-        "vat_rate": 12.5
+        "document_locale": "en"
       }
     }
   }'
@@ -63,8 +62,7 @@ params = Organization(
   billing_configuration=OrganizationBillingConfiguration(
     invoice_footer="This is my customer footer",
     invoice_grace_period=3,
-    document_locale="en",
-    vat_rate=12.5
+    document_locale="en"
   )
 )
 
@@ -88,10 +86,9 @@ update_params = {
   document_numbering: 'per_customer',
   document_number_prefix: 'LAGO-INV',
   billing_configuration: {
-    invoice_footer="This is my customer footer",
-    invoice_grace_period=3,
-    document_locale: "en",
-    vat_rate: 12.5
+    invoice_footer: "This is my customer footer",
+    invoice_grace_period: 3,
+    document_locale: "en"
   }
 }
 client.organizations.update(update_params)
@@ -111,43 +108,47 @@ await client.organizations.updateOrganization({
       invoice_footer: "This is my customer footer",
       invoice_grace_period: 3,
       document_locale: "en",
-      vat_rate: 12.5,
     },
   },
 });
 ```
 
 ```go Go
-  import "fmt"
-  import "github.com/getlago/lago-go-client"
+import (
+	"context"
+	"fmt"
 
-  func main() {
-    lagoClient := lago.New().
-      SetApiKey("__YOUR_API_KEY__")
+	lago "github.com/getlago/lago-go-client"
+)
 
-    organizationInput := &lago.OrganizationInput{
-      LegalName:              "Legal Name",
-      Timezone:               "America/New_York",
-      EmailSettings:          ["invoice.finalized"],
-      TaxIdentificationNumber: "US123456789",
-      DefaultCurrency: "USD",
-      BillingConfiguration: &OrganizationBillingConfigurationInput{
-        InvoiceFooter: "This is my customer foote",
-        InvoiceGracePeriod: 3,
-        DocumentLocale: "en",
-        VatRate: 12.5,
-      }
-    }
+func main() {
+	lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+	ctx := context.Background()
 
-    organization, err := lagoClient.Organization().Update(organizationInput)
-    if err != nil {
-      // Error is *lago.Error
-      panic(err)
-    }
+	organizationInput := &lago.OrganizationInput{
+		LegalName:               "Legal Name",
+		Timezone:                "America/New_York",
+		EmailSettings:           []string{"invoice.finalized"},
+		TaxIdentificationNumber: "US123456789",
+		DefaultCurrency:         lago.USD,
+		DocumentNumbering:       lago.DocumentNumberingPerCustomer,
+		DocumentNumberPrefix:    "LAGO-INV",
+		BillingConfiguration: lago.OrganizationBillingConfigurationInput{
+			InvoiceFooter:      "This is my customer footer",
+			InvoiceGracePeriod: 3,
+			DocumentLocale:     "en",
+		},
+	}
 
-    // organization is *lago.Organization
-    fmt.Println(organization)
-  }
+	organization, err := lagoClient.Organization().Update(ctx, organizationInput)
+	if err != nil {
+		// Error is *lago.Error
+		panic(err)
+	}
+
+	// organization is *lago.Organization
+	fmt.Println(organization)
+}
 ```
 
 </RequestExample>

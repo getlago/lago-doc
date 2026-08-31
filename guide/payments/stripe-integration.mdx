@@ -380,7 +380,7 @@ Navigate to **Settings \> Integrations \> Stripe** and enable **3DS Support** in
 **Without 3DS Support (disabled):**
 
 - Payment fails if 3DS is required by Stripe or the card issuer
-- You must manually retry using the [payment URL endpoint](/api-reference/invoices/payment-url#generate-a-payment-url)
+- You must manually retry using the [payment URL endpoint](/api-reference/invoices/payment-url)
 
 **With 3DS Support (enabled):**
 
@@ -390,7 +390,7 @@ Lago automatically handles 3DS in two steps:
    - If 3DS is required → Payment fails
 2. **Automatic retry** (within seconds): New payment attempt with 3DS enabled
    - Invoice payment_status : `pending`
-   - Lago sends `payment.requires_action` [webhook](/api-reference/webhooks/messages#param-payment-requires-action-1)  containing the 3DS authentication URL
+   - Lago sends `payment.requires_action` [webhook](/api-reference/webhooks/messages#param-payment-requires-action)  containing the 3DS authentication URL
    - **You must redirect your customer to this URL** for authentication
    - After successful authentication → Payment succeeds and Invoice payment_status becomes `succeeded`
 

@@ -5,7 +5,7 @@ description:
   Lago."
 ---
 
-## Requirements[](#requirements "Direct link to heading")
+## Requirements
 
 1. Install [Docker](https://docs.docker.com/get-docker/) on your machine;
 2. Make sure [Docker Compose](https://docs.docker.com/compose/install/) is
@@ -58,7 +58,7 @@ connect to the application. Just after
 [signing up](#signing-up), Lago's API is exposed
 at [http://localhost:3000](http://localhost:3000).
 
-## Signing up[](#signing-up "Direct link to heading")
+## Signing up
 
 It's mandatory to create your organization by signing up to Lago. This
 organization is the core object of your biller as it's used to invoice your
@@ -72,7 +72,7 @@ You will be able to **invite other email addresses within the application**. If
 you already have an account, you can also log in. Once you are able to access
 the app, you can retrieve your API key.
 
-## Find your API Key[](#find-your-api-key "Direct link to heading")
+## Find your API Key
 
 Your API Key can be found directly in the UI:
 
@@ -80,9 +80,9 @@ Your API Key can be found directly in the UI:
 2. The first tab of this section is related to your **API keys**; and
 3. Click the **Copy** button to copy it to clipboard.
 
-## Configuration[](#configuration "Direct link to heading")
+## Configuration
 
-### Version[](#version "Direct link to heading")
+### Version
 
 Docker images are always updated to the last stable version in the
 `docker-compose.yml` file. You can use a different tag if needed by checking the
@@ -98,7 +98,7 @@ Docker images are always updated to the last stable version in the
 - lago-front :
   [https://hub.docker.com/repository/docker/getlago/front](https://hub.docker.com/repository/docker/getlago/front)
 
-### Environment variables[](#environment-variables "Direct link to heading")
+### Environment variables
 
 Lago uses the following environment variables to configure the components of the
 application. You can override them to customise your setup.
@@ -186,7 +186,7 @@ improve the security of your Lago instance:
   `cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1` command.
 </Warning>
 
-### Components[](#components "Direct link to heading")
+### Components
 
 Lago uses the following containers:
 
@@ -204,7 +204,7 @@ You can also use your own Postgres or Redis server. To do so, remove the `db`
 and `redis` configurations from the `docker-compose.yml` file and update the
 environment variables accordingly.
 
-### Configuring the database[](#configuring-the-database "Direct link to heading")
+### Configuring the database
 
 #### Connection
 
@@ -285,7 +285,7 @@ DATABASE_URL="postgresql://user:password@host:port/database?statement_timeout=15
 
 We recommend to set the timeouts lower than your HTTP-layer timeout so Postgres cancels the query before the client gives up.
 
-#### Enabling SSL[](#enabling-ssl "Direct link to heading")
+#### Enabling SSL
 
 If your PostgreSQL server requires SSL connections (e.g., using a PEM certificate for `verify-full` mode),
 you can configure the connection using either [**libpq environment variables**](https://www.postgresql.org/docs/current/libpq-envars.html)
@@ -323,7 +323,7 @@ For an exhaustive list of SSL parameters, refer to the [libpq documentation](htt
 - **Encrypt connections.** Configure SSL with `verify-full` against a known CA. See [Enabling SSL](#enabling-ssl) above.
 - **Keep Postgres healthy.** Once Lago is connected, follow the [Database maintenance](/guide/lago-self-hosted/database-maintenance) guide for autovacuum, autoanalyze and slow-query monitoring.
 
-### Configuring the event store[](#configuring-the-event-store "Direct link to heading")
+### Configuring the event store
 
 Usage events are stored and aggregated in one of two event stores:
 
@@ -424,7 +424,7 @@ docker compose exec api bundle exec rake recipes:clickhouse:enable_clickhouse_ev
 
 The task is interactive: it asks for the organization and the sample size, and aborts if the organization is already on ClickHouse or if the comparison shows a discrepancy.
 
-### Configuring Redis[](#configuring-redis "Direct link to heading")
+### Configuring Redis
 
 Lago uses Redis for two independent purposes:
 
@@ -498,13 +498,13 @@ REDIS_URL=rediss://{host}:{port}/{database}
 LAGO_REDIS_CACHE_URL=rediss://{host}:{port}/{database}
 ```
 
-#### Managed Redis services[](#managed-redis-services "Direct link to heading")
+#### Managed Redis services
 
 We recommend using Lago with managed Redis providers, such as Amazon ElastiCache. These services handle replication, automatic failover, backups, and monitoring on your behalf, providing a highly available Redis setup with minimal operational overhead.
 
 Point Lago at the provider's primary endpoint via the standard URL variable. Failover is transparent: when the provider promotes a replica, the endpoint stays the same, and the next reconnect lands on the new master.
 
-#### High availability with Redis Sentinel[](#high-availability-with-sentinel "Direct link to heading")
+#### High availability with Redis Sentinel
 
 When using a dedicated Redis setup that you manage yourself, you can achieve high availability with [Redis Sentinel](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/). Sentinel is Redis's built-in monitoring and failover mechanism: a small cluster of Sentinel processes watches the Redis nodes, agrees by quorum when the master is unreachable, and promotes one of the existing replicas. Lago connects to the Sentinels instead of directly to a Redis node, and automatically reconnects to the new master if a failover occurs - no restart or operator action required.
 
@@ -549,7 +549,7 @@ If `LAGO_REDIS_CACHE_URL` is also set, Lago only reuses its connection options, 
 - **Encrypt connections.** Use the `rediss://` scheme in `REDIS_URL` / `LAGO_REDIS_CACHE_URL` to enable TLS to your Redis nodes.
 
 <a id="ssl-support"></a> { /* Old anchor kept to avoid breaking existing links */ }
-### Enabling SSL on the Frontend[](#enabling-ssl-on-the-frontend "Direct link to heading")
+### Enabling SSL on the Frontend
 
 Lago Front application can be configured to support SSL certificates. You have
 two options to achieve this:
@@ -557,7 +557,7 @@ two options to achieve this:
 - by using a self-signed certificate
 - by using a signed certificate generated by Let's Encrypt
 
-#### Self Signed Certificate[](#self-signed-certificate "Direct link to heading")
+#### Self Signed Certificate
 
 - Run the script to generate the certificates
 
@@ -586,7 +586,7 @@ volumes:
 docker-compose up front
 ```
 
-#### Let's Encrypt Certificate[](#lets-encrypt-certificate "Direct link to heading")
+#### Let's Encrypt Certificate
 
 - Edit the file `extra/init-letsencrypt.sh`
   - You must replace `lago.example` with your domain name
@@ -624,7 +624,7 @@ volumes:
 docker-compose up front
 ```
 
-### Storage[](#storage "Direct link to heading")
+### Storage
 
 By default, Lago uses the internal storage of the container. You can customize
 it by defining different environment variables.
@@ -640,7 +640,7 @@ We currently support :
   to a default value (e.g., `us-east-1`), it is required to work properly!
 </Warning>
 
-#### AWS S3[](#aws-s3 "Direct link to heading")
+#### AWS S3
 
 You have to set these variables to use AWS S3.
 
@@ -652,7 +652,7 @@ You have to set these variables to use AWS S3.
 | `LAGO_AWS_S3_REGION`            | AWS S3 Region                           |
 | `LAGO_AWS_S3_BUCKET`            | AWS S3 Bucket                           |
 
-#### AWS S3 Compatible Endpoints[](#aws-s3-compatible-endpoints "Direct link to heading")
+#### AWS S3 Compatible Endpoints
 
 You have to set these variables to use AWS S3 Compatible Endpoints.
 
@@ -665,7 +665,7 @@ You have to set these variables to use AWS S3 Compatible Endpoints.
 | `LAGO_AWS_S3_BUCKET`            | AWS S3 Bucket                                                |
 | `LAGO_AWS_S3_REGION`            | Not used but required by the AWS SDK                         |
 
-#### Google Cloud Service Cloud Storage[](#google-cloud-service-cloud-storage "Direct link to heading")
+#### Google Cloud Service Cloud Storage
 
 You have to set those variables to use GCS Cloud Storage.
 

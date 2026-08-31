@@ -8,7 +8,7 @@ description:
 ## Watch the demo video
 <iframe width="100%" height="400" src="https://www.youtube.com/embed/NH8MCMaHeFM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
-## Integration setup[](#integration-setup "Direct link to heading")
+## Integration setup
 
 To set up the integration with Stripe through the user interface:
 
@@ -25,7 +25,7 @@ To set up the integration with Stripe through the user interface:
   this option ([learn more](#new-customer)).
 </Info>
 
-## Redirect url after checkout[](#checkout-redirect-url "Direct link to heading")
+## Redirect url after checkout
 After establishing the connection with Stripe, set a success URL where your end customer will be directed after completing the checkout.
 Please note that if it's not defined, your end customer will be redirected to Stripe's website.
 
@@ -35,12 +35,12 @@ Please note that you can edit or delete the redirect URL, and this will only aff
   URL defined should always begin with `http://` or `https://`.
 </Warning>
 
-## Customer information[](#customer-information "Direct link to heading")
+## Customer information
 
 To collect payments automatically, the customer must exist in both the Lago and
 Stripe databases.
 
-### New customer[](#new-customer "Direct link to heading")
+### New customer
 
 If the customer does not already exist in Stripe, you can first create them in
 Lago, either via the user interface or [the API](/api-reference/customers/create).
@@ -58,7 +58,7 @@ customer ID, which will be stored in Lago.
   <img src="/guide/payments/images/stripe-customer-new.png" />
 </Frame>
 
-### Existing customer[](#existing-customer "Direct link to heading")
+### Existing customer
 
 If the customer already exists in Stripe but not in Lago, you should create the
 customer record, either via the user interface or
@@ -439,7 +439,7 @@ This guarantees that Lago uses the latest payment method for a customer. However
 multiple payment methods as the default, Lago will use it for payments instead the most recent one.
 
 
-## Payment intents[](#payment-intents "Direct link to heading")
+## Payment intents
 Once Stripe is connected and the customer exists in both databases, you can
 start collecting payments.
 
@@ -455,7 +455,7 @@ If the payment fails, the status of the payment will switch from `pending` to
 [webhook](/api-reference/webhooks/messages).
 
 ### Payments requiring validation
-When a payment requires multi-step authentication, such as 3D Secure (3DS), Lago triggers a `payment.requires_action` [webhook](/api-reference/webhooks/messages#payment-requires-action).
+When a payment requires multi-step authentication, such as 3D Secure (3DS), Lago triggers a `payment.requires_action` [webhook](/api-reference/webhooks/messages#param-payment-requires-action).
 This webhook provides the details for completing the 3DS process. Depending on your integration, you'll get a Stripe Checkout URL or details
 to use in your integration (like with Stripe Link).
 

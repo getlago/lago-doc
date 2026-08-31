@@ -303,7 +303,7 @@ Browse: [Latest](/changelog/product) · [2025](/changelog/product-2025) · **202
   - Step-based threshold: invoices are generated when the lifetime usage of a subscription reaches a defined threshold. You can set an unlimited number of thresholds, each with a specific amount and a unique name
   - Recurring threshold: this threshold determines what happens after the final step-based threshold is reached. (For example, after the last threshold, Lago will automatically bill \$100 each time the lifetime usage increments by that amount)
 
-  [Learn more](/guide/plans/progressive-billing#progressive-billing)
+  [Learn more](/guide/plans/progressive-billing)
 
   ## Skip empty invoices generation
 
@@ -313,7 +313,7 @@ Browse: [Latest](/changelog/product) · [2025](/changelog/product-2025) · **202
 
   However, you can decide to override this information for a specific customer. Why? You might have customers who need to receive an invoice each month, even if the total amount is 0.
 
-  [Learn more](/guide/invoicing/overview#finalize-empty-invoices)
+  [Learn more](/guide/invoicing/invoicing-settings/empty-invoices)
 
   <Frame>
     <img src="/changelog/images/20240901-skip-empty-invoices-generation.webp" alt="Lago setting that skips generating invoices with no amount." loading="lazy" />
@@ -377,7 +377,7 @@ Browse: [Latest](/changelog/product) · [2025](/changelog/product-2025) · **202
 
   **`2. Marking external­_subscription­_id as mandatory for events`**
 
-  Events that only include `external­_customer­_id` are no longer taken into account when aggregating usage ([learn more](/guide/migration/migration-to-v1.2.0#2-mandatory-external-subscription-id-field-in-event-payloads)). This change will streamline the event validation process and enable real-time billing capabilities.
+  Events that only include `external­_customer­_id` are no longer taken into account when aggregating usage ([learn more](/guide/migration/migration-to-v1.2.0#2-mandatory-external_subscription_id-field-in-event-payloads)). This change will streamline the event validation process and enable real-time billing capabilities.
 
   **3. Removing deprecated API fields**
 
@@ -473,7 +473,7 @@ Browse: [Latest](/changelog/product) · [2025](/changelog/product-2025) · **202
 
   If an invoice is not marked as paid once its due date has passed, it is considered to be overdue. The billing system will then send a webhook message to notify the organization that issued the invoice (see `invoice.payment_overdue`).
 
-  [Learn more](/api-reference/webhooks/messages#payment-overdue)
+  [Learn more](/api-reference/webhooks/messages#param-invoice-payment-overdue)
 
   <Frame>
     <img src="/changelog/images/20240701-overdue-invoices.webp" alt="Lago invoice list showing overdue invoices past their due date." loading="lazy" />
@@ -554,7 +554,7 @@ Browse: [Latest](/changelog/product) · [2025](/changelog/product-2025) · **202
   - The status of a wallet transaction is updated (e.g. when a pending transaction is settled - see `wallet_transaction.updated`)
   - When the ongoing balance of the wallet is zero or less than zero (see `wallet.depleted_ongoing_balance`)
 
-  [Learn more](/api-reference/webhooks/messages#wallets)
+  [Learn more](/api-reference/webhooks/messages#wallets-and-prepaid-credits)
 
   ## Void wallet credits
 
@@ -623,7 +623,7 @@ Browse: [Latest](/changelog/product) · [2025](/changelog/product-2025) · **202
 
   In order to develop real-time billing capabilities, we need to streamline our validation process. We have therefore decided to make `external_subscription_id` mandatory when sending events via the Lago API.
 
-  Events that only include `external_customer_id` will no longer be taken into account when aggregating usage ([learn more](/guide/migration/migration-to-v1.2.0#2-mandatory-external-subscription-id-field-in-event-payloads)).
+  Events that only include `external_customer_id` will no longer be taken into account when aggregating usage ([learn more](/guide/migration/migration-to-v1.2.0#2-mandatory-external_subscription_id-field-in-event-payloads)).
 
   **3. Deprecation of API fields**
 
@@ -675,7 +675,7 @@ Browse: [Latest](/changelog/product) · [2025](/changelog/product-2025) · **202
 
   For a customer who has sent thousands of API requests, for instance, we could display the breakdown of usage based on the `workspace_id` to which each request is linked.
 
-  [Learn more](/guide/invoicing/overview#custom-invoice-grouping)
+  [Learn more](/guide/plans/charges/grouping#presentation-group-keys)
 
   <Frame>
     <img src="/changelog/images/20240301-grouping-of-charges.webp" alt="Lago invoice with charges grouped by a custom attribute." loading="lazy" />
@@ -735,7 +735,7 @@ Browse: [Latest](/changelog/product) · [2025](/changelog/product-2025) · **202
   - Overwrite the total number of units, in which case Lago will automatically recalculate the fee based on the pricing model associated with the charge
   - Overwrite the number of units and unit price, in which case Lago will automatically recalculate the fee based on this information
 
-  [Learn more](/guide/invoicing/draft-invoices#edit-a-specific-fee)
+  [Learn more](/guide/invoicing/draft-invoices#edit-an-existing-fee)
 
   <Frame>
     <img src="/changelog/images/20240101-edit-draft-invoices.webp" alt="Lago draft invoice being edited before finalization." loading="lazy" />
