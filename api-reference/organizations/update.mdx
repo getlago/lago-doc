@@ -114,35 +114,41 @@ await client.organizations.updateOrganization({
 ```
 
 ```go Go
-  import "fmt"
-  import "github.com/getlago/lago-go-client"
+import (
+	"context"
+	"fmt"
 
-  func main() {
-    lagoClient := lago.New().
-      SetApiKey("__YOUR_API_KEY__")
+	lago "github.com/getlago/lago-go-client"
+)
 
-    organizationInput := &lago.OrganizationInput{
-      LegalName:              "Legal Name",
-      Timezone:               "America/New_York",
-      EmailSettings:          ["invoice.finalized"],
-      TaxIdentificationNumber: "US123456789",
-      DefaultCurrency: "USD",
-      BillingConfiguration: &OrganizationBillingConfigurationInput{
-        InvoiceFooter: "This is my customer footer",
-        InvoiceGracePeriod: 3,
-        DocumentLocale: "en",
-      }
-    }
+func main() {
+	lagoClient := lago.New().SetApiKey("__YOUR_API_KEY__")
+	ctx := context.Background()
 
-    organization, err := lagoClient.Organization().Update(organizationInput)
-    if err != nil {
-      // Error is *lago.Error
-      panic(err)
-    }
+	organizationInput := &lago.OrganizationInput{
+		LegalName:               "Legal Name",
+		Timezone:                "America/New_York",
+		EmailSettings:           []string{"invoice.finalized"},
+		TaxIdentificationNumber: "US123456789",
+		DefaultCurrency:         lago.USD,
+		DocumentNumbering:       lago.DocumentNumberingPerCustomer,
+		DocumentNumberPrefix:    "LAGO-INV",
+		BillingConfiguration: lago.OrganizationBillingConfigurationInput{
+			InvoiceFooter:      "This is my customer footer",
+			InvoiceGracePeriod: 3,
+			DocumentLocale:     "en",
+		},
+	}
 
-    // organization is *lago.Organization
-    fmt.Println(organization)
-  }
+	organization, err := lagoClient.Organization().Update(ctx, organizationInput)
+	if err != nil {
+		// Error is *lago.Error
+		panic(err)
+	}
+
+	// organization is *lago.Organization
+	fmt.Println(organization)
+}
 ```
 
 </RequestExample>
