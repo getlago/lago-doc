@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import { runInNewContext } from "node:vm";
 
 const mirroredFiles = [
   ["lago-skill.md", "skills/lago-billing/SKILL.md"],
@@ -49,6 +50,21 @@ for (const [responseName, schemaName] of Object.entries(
   }
 }
 
+for (const [path, pathItem] of Object.entries(openapi.paths)) {
+  for (const [method, operation] of Object.entries(pathItem)) {
+    if (!new Set(["get", "post", "put", "patch", "delete"]).has(method)) {
+      continue;
+    }
+
+    if (
+      operation.responses?.default?.$ref !==
+      "#/components/responses/UnexpectedError"
+    ) {
+      throw new Error(`${method.toUpperCase()} ${path} has no typed default error`);
+    }
+  }
+}
+
 if (openapi.components.schemas.LagoError || openapi.components.schemas.ServerError) {
   throw new Error(
     "The public REST contract must not expose a union or development-only server error envelope",
@@ -87,6 +103,36 @@ if (
   throw new Error(
     "PaginationMeta has drifted from the recorded production OpenAPI shape",
   );
+}
+
+const appendedElements = [];
+const registeredTools = [];
+runInNewContext(await readFile("webmcp.js", "utf8"), {
+  document: {
+    createElement: () => ({ dataset: {} }),
+    head: { append: (element) => appendedElements.push(element) },
+    modelContext: {
+      registerTool: (tool) => {
+        registeredTools.push(tool);
+        return Promise.resolve();
+      },
+    },
+    querySelector: () => null,
+  },
+  URL,
+  window: {},
+});
+
+const organization = JSON.parse(appendedElements[0]?.textContent ?? "null");
+if (
+  organization?.contactPoint?.email !== "hello@getlago.com" ||
+  organization?.address?.addressCountry !== "US"
+) {
+  throw new Error("The agent-facing Organization data is incomplete");
+}
+
+if (registeredTools[0]?.name !== "search_lago_documentation") {
+  throw new Error("The Lago documentation WebMCP tool did not register");
 }
 
 console.log(
