@@ -1,0 +1,104 @@
+---
+title: "Features and entitlements"
+description: "Define features and their privileges, attach them to plans, override them per subscription."
+---
+
+Features describe what a plan grants. Privileges are typed values on a feature: an integer limit, a boolean, a select. Entitlements attach features to a plan, and can be overridden per subscription.
+
+## Features
+
+| Command | Description |
+| --- | --- |
+| `features create`, `get <code>`, `list`, `update <code>`, `delete <code>` | Features and their privileges. |
+| `features delete-feature-privilege <code> <privilege_code>` | Remove a privilege. |
+
+## Plan entitlements
+
+| Command | Description |
+| --- | --- |
+| `entitlements create <code>` | Attach features to plan `code`. |
+| `entitlements list <code>`, `get <code> <feature_code>`, `update <code>` | Plan entitlements. |
+| `entitlements destroy <code> <feature_code>` | Remove a feature from a plan. Confirmation-gated. |
+| `entitlements remove-entitlement-privilege <code> <feature_code> <privilege_code>` | Remove one privilege override. |
+
+## Subscription overrides
+
+| Command | Description |
+| --- | --- |
+| `entitlements list-subscription <external_id>`, `update-subscription <external_id>` | Subscription-level overrides. |
+| `entitlements destroy-subscription <external_id> <feature_code>` | Remove an override. Confirmation-gated. |
+
+<RequestExample>
+
+```bash features
+lago features create --code sso --name "Single sign-on" \
+  --privileges '[{"code":"max_connections","name":"Max connections","value_type":"integer"}]'
+lago features list
+```
+
+```bash entitlements
+lago entitlements create pro --input '{"entitlements":[{"feature_code":"sso","privileges":{"max_connections":5}}]}'
+lago entitlements list pro
+lago entitlements list-subscription acme_001_pro
+lago entitlements update-subscription acme_001_pro \
+  --input '{"entitlements":[{"feature_code":"sso","privileges":{"max_connections":20}}]}'
+lago entitlements destroy pro sso --confirm sso
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text features create
+CODE  sso
+NAME  Single sign-on
+```
+
+```json entitlements list
+{
+  "entitlements": [
+    {
+      "code": "seats",
+      "name": "Number of seats",
+      "description": "Number of users of the account",
+      "privileges": [
+        {
+          "code": "max",
+          "name": "Maximum",
+          "value_type": "integer",
+          "config": {},
+          "value": 10
+        },
+        {
+          "code": "max_admins",
+          "name": "Max Admins",
+          "value_type": "integer",
+          "config": {},
+          "value": 5
+        },
+        {
+          "code": "root",
+          "name": "Allow root user",
+          "value_type": "boolean",
+          "config": {},
+          "value": true
+        },
+        {
+          "code": "provider",
+          "name": "SSO Provider",
+          "value_type": "select",
+          "value": "google",
+          "config": {
+            "select_options": [
+              "google",
+              "okta"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+</ResponseExample>
