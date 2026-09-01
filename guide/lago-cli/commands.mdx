@@ -1,0 +1,1017 @@
+---
+title: "Command reference"
+description: "Every Lago CLI command group, with the flags that matter and worked examples you can paste."
+---
+
+Commands follow one shape:
+
+```bash
+lago <resource> <action> [identifier] [flags]
+```
+
+Every command answers `--help` with its full flag list. The rules that apply everywhere:
+
+- **Flags are API fields.** A `snake_case` field becomes a `--kebab-case` flag. Nested fields are prefixed with their parent: `billing_configuration.payment_provider` is `--billing-configuration-payment-provider`.
+- **Objects and arrays take JSON.** `--metadata '[{"key":"tier","value":"gold","display_in_invoice":false}]'`.
+- **`--input` takes the whole body.** Inline JSON or `@file.json`. It is the right tool for deeply nested payloads such as plan charges. The body is wrapped exactly as the API expects it.
+- **Identifiers are positional**, and their kind depends on the resource. Mixing kinds produces a not-found error that names the resource type and exits 4.
+
+| Resource | Positional identifier |
+| --- | --- |
+| customers, wallets `*-customer`, payment methods | `external_customer_id` (yours) |
+| subscriptions | `external_id` (yours) |
+| billable metrics, plans, coupons, add-ons, taxes, features, billing entities | `code` |
+| invoices, credit notes, fees, payments, payment requests, wallets, webhook endpoints, quotes, orders | `lago_id` (Lago's UUID) |
+| events | `transaction_id` |
+
+The [overview](/guide/lago-cli/overview) covers the global flags (`--output`, `--query`, `--dry-run`, `--confirm`, `--profile`), output contracts, and exit codes. This page is about the commands.
+
+## Setup and diagnostics
+
+| Command | Description |
+| --- | --- |
+| `lago init` | Configure a profile. Validates the key before saving. |
+| `lago whoami` | Show the active profile, organization, and resolved API host. |
+| `lago doctor` | Check configuration, permissions, network, and authentication. |
+| `lago version` | Show the CLI version and the embedded OpenAPI spec version. |
+| `lago upgrade` | Print the upgrade command for how the binary was installed. |
+| `lago completion <shell>` | Print a completion script for `bash`, `zsh`, `fish`, or `powershell`. |
+
+<CodeGroup>
+
+```bash init
+# Cloud US, test profile
+lago init --api-key "$LAGO_API_KEY" --region us --mode test
+
+# Cloud EU, named profile
+lago init --profile eu-prod --api-key "$LAGO_API_KEY" --region eu --mode live
+
+# Self-hosted, base URL without /api/v1
+lago init --api-key "$LAGO_API_KEY" --region self-hosted --api-url https://lago.example.com --mode test
+
+# Opt in to a once-daily anonymous release check
+lago init --api-key "$LAGO_API_KEY" --region us --mode test --update-check
+```
+
+```bash whoami
+lago whoami
+lago whoami --profile eu-prod --output json
+lago whoami --output json --query 'resolved_api_url'
+```
+
+```bash doctor
+lago doctor
+lago doctor --output json --query 'checks[].{check: name, detail: detail}'
+
+# Sanitized archive to attach to a support ticket
+lago doctor --bundle
+lago doctor --bundle-path ./lago-doctor.tar.gz
+```
+
+```bash version
+lago version
+lago version --check            # also report whether a newer release exists
+lago version --check --channel beta
+```
+
+```bash upgrade
+lago upgrade
+lago upgrade --channel beta
+```
+
+</CodeGroup>
+
+## Helpers
+
+### Raw API requests
+
+`lago api METHOD PATH` calls any endpoint with the active profile's credentials, redaction, retries, and output handling. The `/api/v1` prefix is optional and never doubled.
+
+```bash
+lago api GET /customers?page=2
+lago api GET /api/v1/customers                       # same request
+lago api POST /events --data @event.json --idempotency-key event-42
+printf '{"event":{"code":"api_calls","external_subscription_id":"sub_1"}}' | lago api POST /events --data -
+lago api PUT /invoices/4d904d90-4d90-4d90-4d90-4d904d904d90/finalize --confirm 4d904d90-4d90-4d90-4d90-4d904d904d90
+lago api GET /customers -H "X-Trace: qa-run-12"
+```
+
+| Flag | Description |
+| --- | --- |
+| `--data`, `-d` | Request body: inline JSON, `@file`, or `-` for stdin. |
+| `--header`, `-H` | Additional request header. Repeatable. |
+| `--idempotency-key` | Sets the `Idempotency-Key` header and makes the request retry-safe. |
+
+### Documentation
+
+`lago docs <resource>` opens the API reference for a resource in your browser.
+
+```bash
+lago docs customers
+lago docs billable-metrics
+```
+
+### Aliases
+
+Aliases are stored in the config file under `[aliases]`.
+
+```bash
+lago alias set cust "customers"
+lago alias set inv-open "invoices list --statuses finalized --payment-statuses pending"
+lago alias list
+lago alias delete cust
+
+lago cust list --limit 5          # expands to: lago customers list --limit 5
+```
+
+### Seed and fixtures
+
+`lago seed demo` creates a metric, a plan, a customer, a subscription, one event, and an invoice preview, all prefixed so they are easy to find and delete.
+
+```bash
+lago seed demo
+lago seed demo --prefix local-demo --output json
+```
+
+`lago fixtures run FILE` executes a YAML scenario: ordered API steps, variable interpolation, values captured from one response and reused in the next. Every step carries its own idempotency key, so a re-run is safe.
+
+<CodeGroup>
+
+```bash Run
+lago fixtures run scenario.yaml
+lago fixtures run scenario.yaml --var prefix=qa --var currency=EUR
+lago fixtures run scenario.yaml --var prefix=qa --dry-run   # print every request, send none
+```
+
+```yaml scenario.yaml
+version: 1
+name: usage-plan
+vars:
+  prefix: demo
+steps:
+  - id: metric
+    method: POST
+    path: /billable_metrics
+    idempotency_key: ${prefix}-metric
+    body:
+      billable_metric:
+        name: Demo requests
+        code: ${prefix}-requests
+        aggregation_type: count_agg
+    capture:
+      metric_id: billable_metric.lago_id
+  - id: plan
+    method: POST
+    path: /plans
+    idempotency_key: ${prefix}-plan
+    body:
+      plan:
+        name: Demo usage plan
+        code: ${prefix}-plan
+        interval: monthly
+        amount_cents: 0
+        amount_currency: USD
+        pay_in_advance: false
+        charges:
+          - billable_metric_id: ${metric_id}
+            charge_model: standard
+            properties:
+              amount: "1"
+    capture:
+      plan_code: plan.code
+  - id: customer
+    method: POST
+    path: /customers
+    idempotency_key: ${prefix}-customer
+    body:
+      customer:
+        external_id: ${prefix}-customer
+        name: Demo Customer
+        currency: USD
+    capture:
+      customer_id: customer.external_id
+  - id: subscription
+    method: POST
+    path: /subscriptions
+    idempotency_key: ${prefix}-subscription
+    body:
+      subscription:
+        external_customer_id: ${customer_id}
+        external_id: ${prefix}-subscription
+        plan_code: ${plan_code}
+```
+
+</CodeGroup>
+
+### API log tail
+
+```bash
+lago logs tail
+lago logs tail --status 4xx --resource /customers --method POST
+lago logs tail --status 500 --status 502 --interval 5s
+```
+
+## Billable metrics
+
+| Command | Description |
+| --- | --- |
+| `billable-metrics create` | Create a metric. |
+| `billable-metrics get <code>` | Retrieve a metric. |
+| `billable-metrics list` | List metrics. |
+| `billable-metrics update <code>` | Update a metric. |
+| `billable-metrics delete <code>` | Delete a metric. Confirmation-gated. |
+| `billable-metrics evaluate-expression` | Evaluate a custom expression against a sample event. |
+
+<CodeGroup>
+
+```bash Create
+# Count every event
+lago billable-metrics create --name Requests --code api_requests --aggregation-type count_agg
+
+# Sum a property, with a filter dimension
+lago billable-metrics create \
+  --name "Tokens" --code llm_tokens \
+  --aggregation-type sum_agg --field-name tokens \
+  --filters '[{"key":"model","values":["gpt-4o","claude-sonnet"]}]'
+
+# Persist units across periods (seats, storage)
+lago billable-metrics create --name Seats --code seats --aggregation-type unique_count_agg --field-name user_id --recurring true
+
+# Derive units from event properties
+lago billable-metrics create \
+  --name "Compute hours" --code compute_hours \
+  --aggregation-type sum_agg --field-name hours \
+  --expression 'round(event.properties.seconds / 3600, 2)'
+```
+
+```bash Read
+lago billable-metrics get api_requests
+lago billable-metrics get api_requests --output json --query 'billable_metric.aggregation_type'
+lago billable-metrics list --limit 20
+lago billable-metrics list --all --output json | jq -r '.billable_metrics[].code'
+```
+
+```bash Update and delete
+lago billable-metrics update api_requests --name "API requests"
+lago billable-metrics delete api_requests --confirm api_requests
+```
+
+```bash Evaluate expression
+lago billable-metrics evaluate-expression --input '{"expression":"round(event.properties.seconds / 3600, 2)","event":{"code":"compute_hours","timestamp":1756684800,"properties":{"seconds":"5400"}}}'
+```
+
+</CodeGroup>
+
+## Plans
+
+| Command | Description |
+| --- | --- |
+| `plans create` | Create a plan with charges. |
+| `plans get <code>` | Retrieve a plan. |
+| `plans list` | List plans. |
+| `plans update <code>` | Update a plan. |
+| `plans delete <code>` | Delete a plan. Confirmation-gated. |
+| `plans import FILE` | Create plans from a file. |
+| `plans charges <code>` | List a plan's usage charges. |
+| `plans create-plan-charge <code>` | Add a usage charge to a plan. |
+| `plans get-plan-charge`, `update-plan-charge`, `destroy-plan-charge <code> <charge_code>` | Manage one charge. |
+| `plans filters <code> <charge_code>` | List a charge's filters. |
+| `plans create-plan-charge-filter <code> <charge_code>` | Add a filter to a charge. |
+| `plans get-plan-charge-filter`, `update-plan-charge-filter`, `destroy-plan-charge-filter <code> <charge_code> <filter_id>` | Manage one filter. |
+| `plans fixed-charges <code>` | List a plan's fixed charges. |
+| `plans create-plan-fixed-charge <code>` | Add a fixed charge. |
+| `plans get-plan-fixed-charge`, `update-plan-fixed-charge`, `destroy-plan-fixed-charge <code> <fixed_charge_code>` | Manage one fixed charge. |
+| `plans metadata <code>` | Read plan metadata. |
+| `plans merge-plan-metadata <code>` | Merge keys into plan metadata. |
+| `plans delete-plan-metadata-key <code> <key>` | Remove one metadata key. |
+| `plans delete-all-plan-metadata <code>` | Clear plan metadata. |
+
+Plan payloads nest charges, properties, and filters. Write them as a file and pass `--input @plan.json`.
+
+<CodeGroup>
+
+```bash Create
+lago plans create --input @plan.json
+lago plans create --input @plan.json --output json --query 'plan.charges[].{metric: billable_metric_code, model: charge_model}'
+
+# Flat plan without charges: flags are enough
+lago plans create --name Starter --code starter --interval monthly --amount-cents 4900 --amount-currency USD --pay-in-advance true --trial-period 14
+```
+
+```json plan.json
+{
+  "plan": {
+    "name": "Pro",
+    "code": "pro",
+    "interval": "monthly",
+    "amount_cents": 9900,
+    "amount_currency": "USD",
+    "pay_in_advance": true,
+    "bill_charges_monthly": true,
+    "charges": [
+      {
+        "billable_metric_id": "0b8a1e70-1a90-4b2c-9f3d-5e6a7b8c9d01",
+        "charge_model": "graduated",
+        "properties": {
+          "graduated_ranges": [
+            { "from_value": 0, "to_value": 10000, "per_unit_amount": "0", "flat_amount": "0" },
+            { "from_value": 10001, "to_value": null, "per_unit_amount": "0.002", "flat_amount": "0" }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+```bash Read
+lago plans get pro
+lago plans list --limit 50
+lago plans charges pro
+lago plans fixed-charges pro
+lago plans get pro --output json --query 'plan.charges[?charge_model==`"graduated"`].billable_metric_code'
+```
+
+```bash Charges
+lago plans create-plan-charge pro --input '{"charge":{"billable_metric_id":"0b8a1e70-...","charge_model":"standard","properties":{"amount":"0.10"}}}'
+lago plans update-plan-charge pro api_requests --input '{"charge":{"properties":{"amount":"0.08"}}}'
+lago plans destroy-plan-charge pro api_requests --confirm api_requests
+```
+
+```bash Metadata
+lago plans metadata pro
+lago plans merge-plan-metadata pro --input '{"metadata":[{"key":"tier","value":"gold"}]}'
+lago plans delete-plan-metadata-key pro tier --confirm tier
+```
+
+```bash Update and delete
+lago plans update pro --description "Pro plan, graduated API pricing"
+lago plans delete pro --confirm pro
+```
+
+</CodeGroup>
+
+## Customers
+
+| Command | Description |
+| --- | --- |
+| `customers create` | Create or update a customer. The API upserts on `external_id`. |
+| `customers get <external_customer_id>` | Retrieve a customer. |
+| `customers list` | List customers with filters. |
+| `customers delete <external_customer_id>` | Delete a customer. Confirmation-gated. |
+| `customers export` | Trigger a customers export. |
+| `customers current-usage <external_customer_id>` | Usage for the open billing period. |
+| `customers past-usage <external_customer_id>` | Usage for closed periods. |
+| `customers projected-usage <external_customer_id>` | Projected usage for the open period. |
+| `customers subscriptions <external_customer_id>` | The customer's subscriptions. |
+| `customers invoices <external_customer_id>` | The customer's invoices. |
+| `customers credit-notes <external_customer_id>` | The customer's credit notes. |
+| `customers applied-coupons <external_customer_id>` | Coupons applied to the customer. |
+| `customers payments <external_customer_id>` | The customer's payments. |
+| `customers payment-requests <external_customer_id>` | The customer's payment requests. |
+| `customers portal-url <external_customer_id>` | Generate a customer portal URL. |
+| `customers checkout-url <external_customer_id>` | Generate a payment-provider checkout URL. |
+
+<CodeGroup>
+
+```bash Create
+lago customers create \
+  --external-id acme_001 \
+  --name "Acme Inc." \
+  --email billing@acme.example \
+  --currency USD \
+  --country US --timezone America/New_York \
+  --net-payment-term 30
+
+# Attach to a payment provider connection
+lago customers create --external-id acme_001 --name "Acme Inc." \
+  --billing-configuration-payment-provider stripe \
+  --billing-configuration-payment-provider-code stripe_prod \
+  --billing-configuration-sync-with-provider true \
+  --billing-configuration-provider-payment-methods '["card","sepa_debit"]'
+
+# Tag test data so it is identifiable in the dashboard and kept off invoices
+lago customers create --external-id qa_cust_001 --name "QA Test Company" --currency USD \
+  --metadata '[{"key":"mode","value":"test","display_in_invoice":false}]'
+```
+
+```bash Read
+lago customers get acme_001
+lago customers get acme_001 --output json --query 'customer.email'
+lago customers get acme_001 --output json --query 'customer.metadata'
+
+lago customers list --limit 5
+lago customers list --search-term acme
+lago customers list --countries US,CA --currencies USD
+lago customers list --metadata[mode] test
+lago customers list --output json --query "customers[?starts_with(external_id, 'qa_')].external_id"
+lago customers list --all --output json | jq -r '.customers[] | select(.external_id | startswith("qa_")) | .external_id'
+```
+
+```bash Usage
+# Usage hangs off the customer, keyed by the subscription's external ID
+lago customers current-usage acme_001 --external-subscription-id acme_001_pro
+
+lago customers current-usage acme_001 --external-subscription-id acme_001_pro \
+  --output json --query 'customer_usage.total_amount_cents'
+
+lago customers current-usage acme_001 --external-subscription-id acme_001_pro \
+  --output json --query 'customer_usage.charges_usage[].{metric: billable_metric.code, units: units, amount: amount_cents}'
+
+# One charge, since subscription start
+lago customers current-usage acme_001 --external-subscription-id acme_001_pro --charge-code api_requests --full-usage true
+
+# Closed periods
+lago customers past-usage acme_001 --external-subscription-id acme_001_pro --periods-count 3
+
+# Projection to period end
+lago customers projected-usage acme_001 --external-subscription-id acme_001_pro
+```
+
+```bash Related resources
+lago customers subscriptions acme_001
+lago customers invoices acme_001
+lago customers credit-notes acme_001
+lago customers applied-coupons acme_001
+lago customers payments acme_001
+lago customers portal-url acme_001 --output json --query 'customer.portal_url'
+lago customers checkout-url acme_001
+```
+
+```bash Delete
+# Non-interactive: --confirm must equal the identifier
+lago customers delete qa_cust_001 --confirm qa_cust_001
+```
+
+</CodeGroup>
+
+If you only have a subscription's external ID, find its owner first:
+
+```bash
+lago subscriptions get acme_001_pro --output json --query 'subscription.external_customer_id'
+```
+
+## Subscriptions
+
+| Command | Description |
+| --- | --- |
+| `subscriptions create` | Assign a plan to a customer. Also upgrades or downgrades an existing subscription with the same `external_id`. |
+| `subscriptions get <external_id>` | Retrieve a subscription. |
+| `subscriptions list` | List subscriptions. |
+| `subscriptions update <external_id>` | Update name, dates, or plan overrides. |
+| `subscriptions terminate <external_id>` | Terminate a subscription. Confirmation-gated. |
+| `subscriptions lifetime-usage <external_id>` | Lifetime usage for progressive billing. |
+| `subscriptions update-subscription-lifetime-usage <external_id>` | Set an external lifetime usage amount. |
+| `subscriptions charges <external_id>` | Charges as applied to this subscription, overrides included. |
+| `subscriptions get-subscription-charge <external_id> <charge_code>` | One charge. |
+| `subscriptions override-subscription-charge <external_id> <charge_code>` | Override a charge for this subscription only. |
+| `subscriptions fixed-charges <external_id>` | Fixed charges as applied to this subscription. |
+| `subscriptions get-subscription-fixed-charge`, `override-subscription-fixed-charge <external_id> <fixed_charge_code>` | Manage one fixed charge. |
+| `subscriptions filters <external_id> <charge_code>` | Charge filters for this subscription. |
+| `subscriptions create-subscription-charge-filter <external_id> <charge_code>` | Add a filter. |
+| `subscriptions get-subscription-charge-filter`, `update-subscription-charge-filter`, `destroy-subscription-charge-filter <external_id> <charge_code> <filter_id>` | Manage one filter. |
+| `subscriptions alerts <external_id>` | List usage alerts. |
+| `subscriptions create-subscription-alert <external_id>` | Create a usage alert. |
+| `subscriptions get-subscription-alert`, `update-subscription-alert`, `delete-subscription-alert <external_id> <code>` | Manage one alert. |
+| `subscriptions delete-all-subscription-alerts <external_id>` | Remove every alert. |
+
+<CodeGroup>
+
+```bash Create
+lago subscriptions create \
+  --subscription-external-customer-id acme_001 \
+  --subscription-external-id acme_001_pro \
+  --subscription-plan-code pro
+
+# Anniversary billing, starting on a given date
+lago subscriptions create \
+  --subscription-external-customer-id acme_001 \
+  --subscription-external-id acme_001_pro \
+  --subscription-plan-code pro \
+  --subscription-billing-time anniversary \
+  --subscription-subscription-at 2026-10-01T00:00:00Z
+
+# Negotiated price: override the plan for this customer only
+lago subscriptions create \
+  --subscription-external-customer-id acme_001 \
+  --subscription-external-id acme_001_pro \
+  --subscription-plan-code pro \
+  --subscription-plan-overrides-amount-cents 7900
+
+# Upgrade: same external_id, new plan code
+lago subscriptions create \
+  --subscription-external-customer-id acme_001 \
+  --subscription-external-id acme_001_pro \
+  --subscription-plan-code enterprise
+```
+
+```bash Read
+lago subscriptions get acme_001_pro
+lago subscriptions list --external-customer-id acme_001
+lago subscriptions list --plan-code pro --status active --all --output json | jq -r '.subscriptions[].external_id'
+lago subscriptions charges acme_001_pro
+lago subscriptions lifetime-usage acme_001_pro
+```
+
+```bash Update
+lago subscriptions update acme_001_pro --subscription-name "Acme Pro (annual commit)"
+lago subscriptions update acme_001_pro --subscription-ending-at 2027-09-30T23:59:59Z
+lago subscriptions override-subscription-charge acme_001_pro api_requests --input '{"charge":{"properties":{"amount":"0.05"}}}'
+```
+
+```bash Alerts
+lago subscriptions create-subscription-alert acme_001_pro --input '{"alert":{"alert_type":"current_usage_amount","code":"usage_80","name":"80% of budget","thresholds":[{"code":"warn","value":"80000"}]}}'
+lago subscriptions alerts acme_001_pro
+lago subscriptions delete-subscription-alert acme_001_pro usage_80 --confirm usage_80
+```
+
+```bash Terminate
+lago subscriptions terminate acme_001_pro --confirm acme_001_pro
+
+# Control the final invoice and any pay-in-advance credit note
+lago subscriptions terminate acme_001_pro --on-termination-invoice generate --on-termination-credit-note credit --confirm acme_001_pro
+
+# When an active and a pending subscription share the external_id
+lago subscriptions terminate acme_001_pro --status pending --confirm acme_001_pro
+```
+
+</CodeGroup>
+
+## Events
+
+| Command | Description |
+| --- | --- |
+| `events send` | Send one usage event, or stream many from NDJSON with `--file`. |
+| `events batch` | Send up to 100 events in one request. |
+| `events get <transaction_id>` | Retrieve an event. |
+| `events list` | List events. |
+| `events estimate-fees` | Estimate the fee for a pay-in-advance charge without recording the event. |
+| `events estimate-instant-fees` | Estimate fees for instant charges. |
+| `events batch-estimate-instant-fees` | Estimate instant fees for a batch. |
+
+Events are idempotent on `transaction_id`. Sending the same transaction twice records one event, so retries never double-bill. The CLI generates a transaction ID when you omit one and reuses it as the idempotency key.
+
+<CodeGroup>
+
+```bash Send one
+lago events send --external-subscription-id acme_001_pro --code api_requests
+
+lago events send \
+  --external-subscription-id acme_001_pro \
+  --code llm_tokens \
+  --transaction-id req_01J8X2Y3Z4 \
+  --timestamp 1756684800 \
+  --properties '{"tokens":"1523","model":"gpt-4o"}'
+
+# Dynamic pricing: pass the amount your system computed
+lago events send --external-subscription-id acme_001_pro --code payments_volume \
+  --properties '{"amount":"12000"}' --precise-total-amount-cents 12000.0
+```
+
+```bash Stream NDJSON
+# One JSON event per line. Missing transaction_ids are generated. Nothing is loaded into memory.
+lago events send --file events.ndjson --concurrency 8
+cat events.ndjson | lago events send --file -
+```
+
+```json events.ndjson
+{"external_subscription_id":"acme_001_pro","code":"api_requests","transaction_id":"req_0001","timestamp":1756684800}
+{"external_subscription_id":"acme_001_pro","code":"api_requests","transaction_id":"req_0002","timestamp":1756684801}
+{"external_subscription_id":"acme_001_pro","code":"llm_tokens","transaction_id":"req_0003","properties":{"tokens":"812","model":"gpt-4o"}}
+```
+
+```bash Batch
+lago events batch --input @batch.json
+lago events batch --events '[{"external_subscription_id":"acme_001_pro","code":"api_requests","transaction_id":"req_0004"},{"external_subscription_id":"acme_001_pro","code":"api_requests","transaction_id":"req_0005"}]'
+```
+
+```bash Read
+lago events get req_01J8X2Y3Z4
+lago events list --external-subscription-id acme_001_pro --code api_requests --timestamp-from 2026-09-01T00:00:00Z --limit 100
+```
+
+```bash Estimate
+# What would this event cost under a pay-in-advance charge? Nothing is recorded.
+lago events estimate-fees --external-subscription-id acme_001_pro --code seats --output json --query 'fees[].amount_cents'
+```
+
+</CodeGroup>
+
+## Invoices
+
+| Command | Description |
+| --- | --- |
+| `invoices list` | List invoices with filters. |
+| `invoices get <lago_id>` | Retrieve an invoice. |
+| `invoices create` | Create a one-off invoice from add-ons. |
+| `invoices preview` | Preview an invoice without creating it. |
+| `invoices update <lago_id>` | Update payment status or metadata. |
+| `invoices download <lago_id>` | Trigger the PDF download. |
+| `invoices refresh <lago_id>` | Recompute a draft invoice. |
+| `invoices finalize <lago_id>` | Finalize a draft. Confirmation-gated, irreversible. |
+| `invoices void <lago_id>` | Void a finalized invoice. Confirmation-gated. |
+| `invoices retry <lago_id>` | Retry finalization of a failed invoice. Confirmation-gated. |
+| `invoices retry-payment <lago_id>` | Retry the payment. Confirmation-gated, charges the customer. |
+| `invoices payment-url <lago_id>` | Generate a payment URL. |
+| `invoices lose-dispute <lago_id>` | Mark a payment dispute as lost. |
+| `invoices delete <lago_id>` | Delete a draft invoice. Confirmation-gated. |
+
+<CodeGroup>
+
+```bash List
+lago invoices list --limit 20
+lago invoices list --external-customer-id acme_001 --statuses finalized
+lago invoices list --payment-statuses pending --payment-overdue true
+lago invoices list --issuing-date-from 2026-09-01 --issuing-date-to 2026-09-30 --currency USD
+lago invoices list --invoice-type one_off --amount-from 100000
+
+# Finalized invoices, id and total only
+lago invoices list --output json --query 'invoices[?status==`"finalized"`].{id: lago_id, number: number, total: total_amount_cents}'
+
+# Everything, page by page
+lago invoices list --all --output json | jq -r '.invoices[] | "\(.number)\t\(.total_amount_cents)"'
+```
+
+```bash Get
+lago invoices get 4d904d90-4d90-4d90-4d90-4d904d904d90
+lago invoices get 4d904d90-4d90-4d90-4d90-4d904d904d90 --output json --query 'invoice.fees[].{item: item.code, units: units, amount: amount_cents}'
+lago invoices get 4d904d90-4d90-4d90-4d90-4d904d904d90 --watch    # re-render as payment status changes
+```
+
+```bash Preview
+lago invoices preview --input '{"customer":{"external_id":"acme_001"},"subscriptions":{"external_ids":["acme_001_pro"]}}'
+
+# Preview a plan for a prospect who is not a customer yet
+lago invoices preview --customer-name "Prospect Co" --customer-currency USD --plan-code pro --billing-time calendar
+```
+
+```bash One-off invoice
+lago invoices create --input '{"invoice":{"external_customer_id":"acme_001","currency":"USD","fees":[{"add_on_code":"setup_fee","units":1}]}}'
+```
+
+```bash Lifecycle
+lago invoices refresh 4d904d90-4d90-4d90-4d90-4d904d904d90
+lago invoices finalize 4d904d90-4d90-4d90-4d90-4d904d904d90 --confirm 4d904d90-4d90-4d90-4d90-4d904d904d90
+lago invoices update 4d904d90-4d90-4d90-4d90-4d904d904d90 --input '{"invoice":{"payment_status":"succeeded"}}'
+lago invoices download 4d904d90-4d90-4d90-4d90-4d904d904d90
+lago invoices payment-url 4d904d90-4d90-4d90-4d90-4d904d904d90
+
+# Void and issue a credit note for the amount already paid
+lago invoices void 4d904d90-4d90-4d90-4d90-4d904d904d90 --generate-credit-note true --refund-amount 150000 --confirm 4d904d90-4d90-4d90-4d90-4d904d904d90
+```
+
+</CodeGroup>
+
+## Credit notes
+
+| Command | Description |
+| --- | --- |
+| `credit-notes create` | Issue a credit note against an invoice. |
+| `credit-notes estimate` | Estimate a credit note without issuing it. |
+| `credit-notes get <lago_id>` | Retrieve a credit note. |
+| `credit-notes list` | List credit notes. |
+| `credit-notes update <lago_id>` | Update refund status. |
+| `credit-notes download <lago_id>` | Trigger the PDF download. |
+| `credit-notes void <lago_id>` | Void a credit note. Confirmation-gated. |
+| `credit-notes metadata <lago_id>` | Read metadata. |
+| `credit-notes merge-credit-note-metadata <lago_id>` | Merge metadata keys. |
+| `credit-notes delete-credit-note-metadata-key <lago_id> <key>` | Remove one key. |
+| `credit-notes delete-all-credit-note-metadata <lago_id>` | Clear metadata. |
+
+<CodeGroup>
+
+```bash Estimate then create
+lago credit-notes estimate --input '{"credit_note":{"invoice_id":"4d904d90-...","items":[{"fee_id":"6f906f90-...","amount_cents":5000}]}}'
+
+lago credit-notes create \
+  --invoice-id 4d904d90-4d90-4d90-4d90-4d904d904d90 \
+  --reason duplicated_charge \
+  --credit-amount-cents 5000 --refund-amount-cents 0 \
+  --items '[{"fee_id":"6f906f90-6f90-6f90-6f90-6f906f906f90","amount_cents":5000}]'
+```
+
+```bash Read
+lago credit-notes list --limit 20
+lago credit-notes get 7a907a90-7a90-7a90-7a90-7a907a907a90 --output json --query 'credit_note.{status: credit_status, total: total_amount_cents}'
+lago credit-notes download 7a907a90-7a90-7a90-7a90-7a907a907a90
+```
+
+```bash Void
+lago credit-notes void 7a907a90-7a90-7a90-7a90-7a907a907a90 --confirm 7a907a90-7a90-7a90-7a90-7a907a907a90
+```
+
+</CodeGroup>
+
+## Coupons
+
+| Command | Description |
+| --- | --- |
+| `coupons create` | Create a coupon. |
+| `coupons get <code>` | Retrieve a coupon. |
+| `coupons list` | List coupons. |
+| `coupons update <code>` | Update a coupon. |
+| `coupons delete <code>` | Delete a coupon. Confirmation-gated. |
+| `coupons apply` | Apply a coupon to a customer. |
+| `coupons list-applied` | List applied coupons across customers. |
+| `coupons delete-applied <external_customer_id> <applied_coupon_id>` | Remove an applied coupon. Confirmation-gated. |
+
+<CodeGroup>
+
+```bash Create
+lago coupons create --name "Launch 20%" --code launch20 --coupon-type percentage --percentage-rate 20 --frequency recurring --frequency-duration 3 --reusable true --expiration no_expiration
+lago coupons create --name "Credit 50" --code credit50 --coupon-type fixed_amount --amount-cents 5000 --amount-currency USD --frequency once --applies-to-plan-codes '["pro"]'
+```
+
+```bash Apply
+lago coupons apply --coupon-code launch20 --external-customer-id acme_001
+lago coupons list-applied --output json --query 'applied_coupons[?external_customer_id==`"acme_001"`].{id: lago_id, code: coupon_code}'
+lago coupons delete-applied acme_001 8b908b90-8b90-8b90-8b90-8b908b908b90 --confirm 8b908b90-8b90-8b90-8b90-8b908b908b90
+```
+
+</CodeGroup>
+
+## Add-ons
+
+| Command | Description |
+| --- | --- |
+| `add-ons create` | Create an add-on for one-off invoices. |
+| `add-ons get <code>` | Retrieve an add-on. |
+| `add-ons list` | List add-ons. |
+| `add-ons update <code>` | Update an add-on. |
+| `add-ons delete <code>` | Delete an add-on. Confirmation-gated. |
+
+```bash
+lago add-ons create --name "Onboarding" --code setup_fee --amount-cents 50000 --amount-currency USD --invoice-display-name "Onboarding package"
+lago add-ons list
+lago add-ons update setup_fee --amount-cents 45000
+lago add-ons delete setup_fee --confirm setup_fee
+```
+
+## Wallets and prepaid credits
+
+Two identifier styles coexist. Organization-level commands take the wallet's `lago_id`. Customer-scoped commands (`*-customer`) take `external_customer_id` and the wallet `code`.
+
+| Command | Description |
+| --- | --- |
+| `wallets create` | Create a wallet for a customer. |
+| `wallets get <lago_id>` | Retrieve a wallet. |
+| `wallets list` | List wallets. |
+| `wallets update <lago_id>` | Update a wallet. |
+| `wallets terminate <lago_id>` | Terminate a wallet. Confirmation-gated. |
+| `wallets create-wallet-transaction` | Top up, grant, or void credits. |
+| `wallets wallet-transactions <lago_id>` | List a wallet's transactions. |
+| `wallets get-wallet-transaction <lago_id>` | Retrieve a transaction. |
+| `wallets wallet-transaction-payment-url <lago_id>` | Payment URL for a paid top-up. |
+| `wallets list-wallet-transaction-fundings <lago_id>`, `list-wallet-transaction-consumptions <lago_id>` | Funding and consumption detail. |
+| `wallets create-customer`, `list-customer <external_customer_id>` | Customer-scoped create and list. |
+| `wallets get-customer`, `update-customer`, `destroy-customer <external_customer_id> <code>` | Customer-scoped by wallet code. |
+| `wallets *-customer-wallet-alert <external_customer_id> <wallet_code> [code]` | Balance alerts on a customer wallet. |
+| `wallets metadata`, `merge-wallet-metadata`, `delete-wallet-metadata-key`, `delete-all-wallet-metadata <lago_id> [key]` | Wallet metadata. |
+| `wallets *-customer-wallet-metadata <external_customer_id> <wallet_code> [key]` | Customer-scoped metadata. |
+
+<CodeGroup>
+
+```bash Create
+lago wallets create \
+  --external-customer-id acme_001 \
+  --name "Prepaid credits" --code prepaid \
+  --currency USD --rate-amount 1.0 \
+  --paid-credits 1000 --granted-credits 100 \
+  --invoice-requires-successful-payment true
+
+# Recurring monthly top-up when the balance drops
+lago wallets create --external-customer-id acme_001 --name Autofill --code autofill --currency USD --rate-amount 1.0 \
+  --recurring-transaction-rules '[{"trigger":"threshold","threshold_credits":"100","paid_credits":"500"}]'
+```
+
+```bash Top up
+lago wallets create-wallet-transaction --wallet-id 9c909c90-9c90-9c90-9c90-9c909c909c90 --paid-credits 500 --name "September top-up"
+lago wallets create-wallet-transaction --wallet-id 9c909c90-9c90-9c90-9c90-9c909c909c90 --granted-credits 50 --name "Goodwill credit"
+lago wallets create-wallet-transaction --wallet-id 9c909c90-9c90-9c90-9c90-9c909c909c90 --voided-credits 25
+```
+
+```bash Read
+lago wallets list --external-customer-id acme_001
+lago wallets get 9c909c90-9c90-9c90-9c90-9c909c909c90 --output json --query 'wallet.{balance: balance_cents, credits: credits_balance, status: status}'
+lago wallets wallet-transactions 9c909c90-9c90-9c90-9c90-9c909c909c90
+lago wallets get-customer acme_001 prepaid
+```
+
+```bash Terminate
+lago wallets terminate 9c909c90-9c90-9c90-9c90-9c909c909c90 --confirm 9c909c90-9c90-9c90-9c90-9c909c909c90
+```
+
+</CodeGroup>
+
+## Taxes
+
+| Command | Description |
+| --- | --- |
+| `taxes create` | Create a tax rate. |
+| `taxes get <code>` | Retrieve a tax. |
+| `taxes list` | List taxes. |
+| `taxes update <code>` | Update a tax. |
+| `taxes delete <code>` | Delete a tax. Confirmation-gated. |
+
+```bash
+lago taxes create --name "VAT FR" --code vat_fr --rate 20.0 --description "French standard rate"
+lago taxes create --name "Sales tax" --code sales_tax_default --rate 8.875 --applied-to-organization true
+lago taxes list
+lago taxes update vat_fr --rate 20.0
+lago taxes delete vat_fr --confirm vat_fr
+```
+
+## Fees
+
+| Command | Description |
+| --- | --- |
+| `fees list` | List fees with filters on type, status, dates, customer, subscription, and event. |
+| `fees get <lago_id>` | Retrieve a fee. |
+| `fees update <lago_id>` | Update the payment status of a pay-in-advance fee. |
+| `fees delete <lago_id>` | Delete a fee. Confirmation-gated. |
+
+```bash
+lago fees list --external-customer-id acme_001 --fee-type charge --created-at-from 2026-09-01
+lago fees list --payment-status failed --all --output json | jq -r '.fees[] | "\(.lago_id)\t\(.amount_cents)"'
+lago fees list --event-transaction-id req_01J8X2Y3Z4
+lago fees get 6f906f90-6f90-6f90-6f90-6f906f906f90
+lago fees update 6f906f90-6f90-6f90-6f90-6f906f906f90 --input '{"fee":{"payment_status":"succeeded"}}'
+```
+
+## Payments
+
+| Command | Description |
+| --- | --- |
+| `payments create` | Record a manual payment against an invoice. |
+| `payments get <lago_id>` | Retrieve a payment. |
+| `payments list` | List payments. |
+| `payment-requests create` | Request payment for one or more invoices. |
+| `payment-requests get <lago_id>`, `list` | Read payment requests. |
+| `payment-receipts get <lago_id>`, `list` | Read payment receipts. |
+| `payment-methods list-customers <external_customer_id>` | List a customer's stored payment methods. |
+| `payment-methods payment-method-set-as-default <lago_id> <external_customer_id>` | Set the default payment method. |
+| `payment-methods destroy <lago_id> <external_customer_id>` | Remove a payment method. Confirmation-gated. |
+
+<CodeGroup>
+
+```bash Manual payment
+lago payments create \
+  --invoice-id 4d904d90-4d90-4d90-4d90-4d904d904d90 \
+  --amount-cents 150000 \
+  --reference "Wire 2026-09-15" \
+  --paid-at 2026-09-15T10:00:00Z \
+  --idempotency-key wire-2026-09-15-acme
+lago payments list --limit 20
+```
+
+```bash Payment request
+lago payment-requests create --external-customer-id acme_001 --email ap@acme.example \
+  --lago-invoice-ids '["4d904d90-4d90-4d90-4d90-4d904d904d90"]'
+lago payment-requests list
+```
+
+```bash Payment methods
+lago payment-methods list-customers acme_001
+lago payment-methods payment-method-set-as-default ab90ab90-ab90-ab90-ab90-ab90ab90ab90 acme_001
+lago payment-methods destroy ab90ab90-ab90-ab90-ab90-ab90ab90ab90 acme_001 --confirm acme_001
+```
+
+```bash Receipts
+lago payment-receipts list --invoice-id 4d904d90-4d90-4d90-4d90-4d904d904d90
+```
+
+</CodeGroup>
+
+## Webhooks
+
+| Command | Description |
+| --- | --- |
+| `webhook-endpoints create` | Register an endpoint. |
+| `webhook-endpoints get <lago_id>`, `list` | Read endpoints. |
+| `webhook-endpoints update <lago_id>` | Update URL, signature, or event types. |
+| `webhook-endpoints delete <lago_id>` | Remove an endpoint. Confirmation-gated. |
+| `webhooks public-key` | The public key used to verify JWT signatures. |
+| `webhooks json-public-key` | The same key as JSON. |
+
+```bash
+lago webhook-endpoints create --webhook-url https://billing.acme.example/lago --signature-algo hmac --name "Billing service"
+lago webhook-endpoints create --webhook-url https://ops.acme.example/lago --event-types '["invoice.created","invoice.payment_failure"]'
+lago webhook-endpoints list
+lago webhook-endpoints update cd90cd90-cd90-cd90-cd90-cd90cd90cd90 --webhook-url https://billing.acme.example/lago/v2
+lago webhook-endpoints delete cd90cd90-cd90-cd90-cd90-cd90cd90cd90 --confirm cd90cd90-cd90-cd90-cd90-cd90cd90cd90
+lago webhooks public-key
+```
+
+## Analytics
+
+Read-only aggregates. Each command exposes the same filters as its endpoint.
+
+| Command | Description |
+| --- | --- |
+| `analytics mrr` | Monthly recurring revenue. |
+| `analytics gross-revenue` | Gross revenue by month. |
+| `analytics invoiced-usage` | Invoiced usage by month. |
+| `analytics invoice-collection` | Invoice collection by payment status. |
+| `analytics overdue-balance` | Overdue balance by month. |
+| `analytics usage` | Usage analytics with metric, plan, customer, and time-granularity filters. |
+
+```bash
+lago analytics mrr --currency USD --months 12
+lago analytics gross-revenue --currency USD --external-customer-id acme_001
+lago analytics overdue-balance --currency USD --months 3
+lago analytics usage --billable-metric-code api_requests --from-date 2026-06-01 --to-date 2026-09-01 --time-granularity monthly
+lago analytics mrr --currency USD --watch --watch-interval 60s
+```
+
+## Activity and API logs
+
+| Command | Description |
+| --- | --- |
+| `activity-logs list` | Audit trail of changes, filtered by type, source, resource, user, customer, or date. |
+| `activity-logs get <activity_id>` | One audit entry. |
+| `api-logs list` | API request logs, filtered by method, status, path, or date. |
+| `api-logs get <request_id>` | One request with its payload. |
+
+```bash
+lago activity-logs list --external-customer-id acme_001 --from-date 2026-09-01
+lago activity-logs list --activity-types invoice.finalized,invoice.voided --user-emails finance@acme.example
+lago api-logs list --http-statuses 422 --request-paths /api/v1/events --from-date 2026-09-01
+lago api-logs get 1e901e90-1e90-1e90-1e90-1e901e901e90 --output json --query 'api_log.request_body'
+```
+
+## Organization and billing entities
+
+| Command | Description |
+| --- | --- |
+| `organizations get` | Retrieve the organization. |
+| `organizations update` | Update organization settings. |
+| `billing-entities create` | Create a billing entity. |
+| `billing-entities get <code>`, `list` | Read billing entities. |
+| `billing-entities update <code>` | Update a billing entity. |
+
+```bash
+lago organizations get --output json --query 'organization.{name: name, currency: default_currency, tz: timezone}'
+lago organizations update --billing-configuration-invoice-grace-period 3 --net-payment-term 30
+lago billing-entities create --code acme_eu --name "Acme EU" --legal-name "Acme Europe BV" --default-currency EUR --country NL --timezone Europe/Amsterdam --document-number-prefix ACME-EU
+lago billing-entities list
+```
+
+## Features and entitlements
+
+| Command | Description |
+| --- | --- |
+| `features create`, `get <code>`, `list`, `update <code>`, `delete <code>` | Manage features and their privileges. |
+| `features delete-feature-privilege <code> <privilege_code>` | Remove a privilege from a feature. |
+| `entitlements create <code>` | Attach features to a plan. `code` is the plan code. |
+| `entitlements list <code>`, `get <code> <feature_code>`, `update <code>` | Read and update plan entitlements. |
+| `entitlements destroy <code> <feature_code>` | Remove a feature from a plan. Confirmation-gated. |
+| `entitlements remove-entitlement-privilege <code> <feature_code> <privilege_code>` | Remove one privilege override. |
+| `entitlements list-subscription <external_id>`, `update-subscription <external_id>` | Subscription-level overrides. |
+| `entitlements destroy-subscription <external_id> <feature_code>` | Remove a subscription override. Confirmation-gated. |
+
+```bash
+lago features create --code sso --name "Single sign-on" --privileges '[{"code":"max_connections","name":"Max connections","value_type":"integer"}]'
+lago entitlements create pro --input '{"entitlements":[{"feature_code":"sso","privileges":{"max_connections":5}}]}'
+lago entitlements list pro
+lago entitlements list-subscription acme_001_pro
+lago entitlements update-subscription acme_001_pro --input '{"entitlements":[{"feature_code":"sso","privileges":{"max_connections":20}}]}'
+```
+
+## Quotes, order forms, and orders
+
+| Command | Description |
+| --- | --- |
+| `quotes list`, `get <lago_id>` | Read quotes. |
+| `quotes versions <lago_id>`, `get-quote-version <lago_id>` | Quote versions. |
+| `quotes approve-quote-version <lago_id>` | Approve a version. |
+| `quotes clone-quote-version <lago_id>` | Clone a version for editing. |
+| `quotes void-quote-version <lago_id>` | Void a version. Confirmation-gated. |
+| `order-forms list`, `get <lago_id>` | Read order forms. |
+| `order-forms mark-as-signed <lago_id>` | Record a signature. |
+| `order-forms void <lago_id>` | Void an order form. Confirmation-gated. |
+| `orders list`, `get <lago_id>` | Read orders. |
+| `orders execute <lago_id>` | Execute an order, creating its subscriptions. |
+
+```bash
+lago quotes list --external-customer-id acme_001 --status draft
+lago quotes versions ef90ef90-ef90-ef90-ef90-ef90ef90ef90
+lago order-forms list --status sent
+lago order-forms mark-as-signed fa90fa90-fa90-fa90-fa90-fa90fa90fa90
+lago orders list --status pending
+lago orders execute 0b900b90-0b90-0b90-0b90-0b900b900b90
+```
+
+## A QA pattern that transfers
+
+Six shapes cover every resource. Swap the noun and the identifier kind:
+
+```bash
+lago customers create --external-id qa_cust_001 --name "QA Test Company" --currency USD       # 1. create: identifiers back
+lago customers create --external-id qa_cust_001 --name "QA Test Company" --currency USD       # 2. repeat: upsert or clean API error, never a crash
+lago customers get qa_cust_001 --output json --query 'customer.email'                         # 3. read + wrapper-aware query
+lago customers list --limit 5                                                                  # 4. list
+lago customers get does_not_exist_123; echo $?                                                 # 5. 404 names the resource, exit 4
+lago customers create --external-id qa_dry_001 --name "Dry Run Co" --currency USD --dry-run   # 6. dry run: exact request, nothing sent
+```
+
+Clean up in reverse dependency order: subscriptions, then customers, then plans, then billable metrics. Every delete is confirmation-gated, so a cleanup script passes `--confirm` with the identifier it is deleting.
