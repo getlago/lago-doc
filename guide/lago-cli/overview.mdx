@@ -1,19 +1,11 @@
 ---
-title: "Lago CLI"
-description: "Drive the Lago API from your terminal. One static binary, every endpoint, exact money, confirmation gates on anything irreversible."
+title: "Overview"
+description: "The Lago API from your terminal. One binary, every endpoint, safe defaults."
 ---
 
-The [Lago CLI](https://github.com/getlago/lago-cli) is the official command-line interface for Lago. It is generated from the Lago OpenAPI specification, so every resource in the [API reference](/api-reference/intro) has a command, and it ships as one static Go binary with no runtime dependencies.
-
-It works against Lago Cloud US, Lago Cloud EU, and self-hosted instances.
-
-<Note>
-  The CLI is under active development. Until the first signed release, use a test profile (`--mode test`) rather than a live one.
-</Note>
+The [Lago CLI](https://github.com/getlago/lago-cli) is generated from the Lago OpenAPI spec. Every endpoint is a command, every API field is a flag. It works with Lago Cloud US, Lago Cloud EU, and self-hosted Lago.
 
 ## Install
-
-Two channels are supported. Both are smoke-tested on every release.
 
 <CodeGroup>
 
@@ -22,74 +14,16 @@ brew install getlago/tap/lago
 ```
 
 ```bash Go
-# Requires Go 1.27 or newer
 go install github.com/getlago/lago-cli/cmd/lago@latest
-export PATH="$(go env GOPATH)/bin:$PATH"
 ```
 
 </CodeGroup>
 
-Release archives are built for macOS, Linux, and Windows on amd64 and arm64. `go install` works anywhere Go runs, Windows included.
-
-Check the install:
-
-```console
-$ lago version
-GO_VERSION    go1.27.0
-PLATFORM      darwin/arm64
-SPEC_SHA256   852e7331acfc080d1af9bda9d1663a50a7fa5b4a2aea22a89fb16787ee75b671
-SPEC_VERSION  1.52.1
-VERSION       1.0.0
-```
-
-`SPEC_VERSION` is the Lago OpenAPI version the binary was generated from. It tells you which API fields and endpoints the CLI knows about.
-
-<Tip>
-  If `type -a lago` reports an alias or a shell function, that definition shadows the binary. Lago contributors often have a `lago` alias pointing at a Docker Compose helper. Remove it or rename it to `lago-dev` before using the CLI.
-</Tip>
-
-### Shell completion
-
-```bash
-# zsh
-lago completion zsh > ~/.zfunc/_lago
-
-# bash
-lago completion bash > /etc/bash_completion.d/lago
-
-# fish
-lago completion fish > ~/.config/fish/completions/lago.fish
-
-# PowerShell
-lago completion powershell | Out-String | Invoke-Expression
-```
-
-### Upgrade
-
-The CLI never replaces itself. `lago upgrade` checks for a newer release and prints the command that matches how the binary was installed:
-
-```console
-$ lago upgrade
-Lago CLI 1.1.0 is available (installed: 1.0.0).
-
-    brew upgrade getlago/tap/lago
-```
-
-For a `go install` binary it prints the `go install ...@latest` command instead.
+`lago version` prints the CLI version and the API spec version it was built from. `lago upgrade` tells you the upgrade command for your install method.
 
 ## Configure
 
-Create an API key in the Lago app under **Developers > API keys**, then point the CLI at the API host for your deployment.
-
-| Deployment | Dashboard | `--api-url` | `--region` |
-| --- | --- | --- | --- |
-| Lago Cloud US | `https://app.getlago.com` | `https://api.getlago.com` | `us` |
-| Lago Cloud EU | `https://app.eu.getlago.com` | `https://api.eu.getlago.com` | `eu` |
-| Self-hosted | your host | your API base URL, for example `https://lago.example.com` | `self-hosted` |
-
-### Create a profile
-
-`lago init` validates the key against `GET /api/v1/organizations` before writing anything. A saved profile is a validated profile.
+Get an API key from **Developers > API keys** in the Lago app, then:
 
 <CodeGroup>
 
@@ -105,339 +39,93 @@ lago init --api-key "$LAGO_API_KEY" --region eu --mode test
 lago init --api-key "$LAGO_API_KEY" --region self-hosted --api-url https://lago.example.com --mode test
 ```
 
-```bash Named profile
-lago init --profile staging --api-key "$LAGO_API_KEY" --region eu --mode test
-lago --profile staging customers list
-```
-
 </CodeGroup>
 
-```console
-$ lago init --api-key "$LAGO_API_KEY" --region us --mode test
-Connected to Lago as Example Organization.
-Saved us profile "default" to ~/.config/lago/config.toml (mode: test).
-```
+`init` checks the key against the API before saving anything to `~/.config/lago/config.toml`. Pass the base URL only: the CLI adds `/api/v1`. The dashboard URL (`app.getlago.com`) is refused, because it is not the API.
 
-A wrong key persists nothing and exits with code 3.
+`lago whoami` shows the profile and the exact host requests go to. `lago doctor` checks configuration, network, and authentication.
 
-The config file lives at `~/.config/lago/config.toml` on macOS and Linux and `%AppData%\lago\config.toml` on Windows. It is written with mode `0600` and is the only place the CLI persists an API key. Override the location with `LAGO_CONFIG_FILE`.
-
-### Pass the base URL
-
-Configure the **base** URL. The CLI appends `/api/v1` itself. These inputs all normalize to the same host:
-
-- `https://api.getlago.com`
-- `https://api.getlago.com/api/v1` (the full path pasted from the API reference)
-- `https://api.getlago.com/` (trailing slash)
-- `https://lago.example.com:8443` (custom port, preserved)
-- `https://tools.example.com/lago` (sub-path behind a proxy, preserved)
-
-The app URL is refused by name. `https://app.getlago.com` is the dashboard, not the API. It answers HTTP requests, which is what makes the mistake confusing, so the CLI stops before sending your key anywhere:
-
-```console
-$ lago init --api-key "$LAGO_API_KEY" --api-url https://app.eu.getlago.com
-Error: app.eu.getlago.com is the Lago dashboard, not the Lago API
-Suggestion: Use https://api.eu.getlago.com instead. The API and the app are different hosts, and an API key sent to the app host will not authenticate.
-```
-
-Plain HTTP requires `--insecure` and always prints a warning. Use it for `http://localhost:3000` during development, not against an instance that holds real money.
-
-### Check what you are hitting
-
-`whoami` shows the profile and the resolved host. `API_URL` is what the profile holds. `RESOLVED_API_URL` is the base URL requests go to.
-
-```console
-$ lago whoami
-API_URL           https://api.eu.getlago.com
-MODE              test
-ORGANIZATION      {"organization":{"lago_id":"org_...","name":"Example Organization"}}
-PROFILE           default
-REGION            eu
-RESOLVED_API_URL  https://api.eu.getlago.com/api/v1
-```
-
-`lago doctor` runs configuration, permission, network, and authentication checks and reports the same resolved URL. It separates "wrong credentials" from "right credentials, wrong host", and it is the first thing to paste into a support ticket.
+## First commands
 
 ```bash
-lago doctor
-lago doctor --output json --query 'checks[].{check: name, detail: detail}'
-lago doctor --bundle   # writes a sanitized diagnostic archive
+lago billable-metrics create --name Requests --code api_requests --aggregation-type count_agg
+lago customers create --external-id acme_001 --name "Acme Inc." --currency USD
+lago customers get acme_001
+lago customers list --limit 5
+lago customers get acme_001 --output json --query 'customer.email'
 ```
 
-### Precedence
+`lago seed demo` creates a full chain (metric, plan, customer, subscription, event, invoice preview) in one command.
 
-Configuration resolves flags, then environment variables, then the selected profile.
+## How it works
 
-| Setting | Flag | Environment variable |
-| --- | --- | --- |
-| API URL | `--api-url` | `LAGO_API_URL` |
-| API key | `--api-key` | `LAGO_API_KEY` |
-| Mode | `--mode` | `LAGO_MODE` |
-| Profile | `--profile` | `LAGO_PROFILE` |
-| Timeout | `--timeout` | `LAGO_TIMEOUT` |
-| Config file | | `LAGO_CONFIG_FILE` |
-| Update check | | `LAGO_NO_UPDATE_CHECK=1` disables it |
+**Flags are API fields.** `external_id` is `--external-id`. Nested fields carry their parent as a prefix. Objects and arrays take JSON. `--input @body.json` sends a whole request body.
 
-Environment variables suit CI and one-off shells:
-
-```bash
-export LAGO_API_KEY="..." LAGO_API_URL="https://api.getlago.com" LAGO_MODE="test"
-lago customers list
-```
-
-### Live and test mode
-
-Mode is a CLI-side safety declaration. Lago has no server-side sandbox, so `--mode test` does not make data synthetic. It changes how the CLI behaves:
-
-- **Live** commands print `[LIVE]` on stderr.
-- **Live** destructive operations require the resource identifier via `--confirm`, or a typed confirmation in an interactive terminal.
-
-**Mode defaults to live.** A credential override (`--api-key`, `--api-url`, `LAGO_API_KEY`, `LAGO_API_URL`) without an explicit mode resolves to live, not test. A script that forgets `--mode` gets the confirmation gates rather than a silent write to production.
-
-<Warning>
-  Your organization on Lago Cloud is real. Before running anything from this page against it, confirm it holds no production customers, or use a dedicated test organization. Prefix everything you create (`qa_`, `demo_`) so you can find and delete it afterwards.
-</Warning>
-
-## Output
-
-Three formats, selected with `--output` or `-o`: `table` (default), `json`, `yaml`.
-
-### Creates and updates print identifiers
-
-Every `create` and `update` prints a terse identifier block by default: `lago_id`, `external_id`, `code`, and `name`, whichever the resource carries. After a create, the one thing you do not already have is the ID Lago minted.
-
-`--output json` returns the complete resource, and that is the form to script against:
+**Creates print identifiers.** A `create` or `update` prints `lago_id`, `external_id`, `code`, and `name`. Add `--output json` for the full resource.
 
 ```console
-$ lago customers create --external-id quickstart_customer --name "Quickstart Customer" --output json
-{
-  "customer": {
-    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-    "external_id": "quickstart_customer",
-    "name": "Quickstart Customer",
-    "currency": "USD",
-    "created_at": "2026-09-01T10:00:00Z"
-  }
-}
+$ lago customers create --external-id acme_001 --name "Acme Inc." --currency USD
+LAGO_ID      1a901a90-1a90-1a90-1a90-1a901a901a90
+EXTERNAL_ID  acme_001
+NAME         Acme Inc.
 ```
 
-Reads (`get`, `list`) print every column. Read-shaped mutations (`invoices preview`, `credit-notes estimate`), state transitions (`invoices finalize`, `invoices void`), and bulk ingestion (`events send --file`) are not reduced either.
+**Responses are wrapped.** The API returns `{"customer": {...}}` and `{"customers": [...], "meta": {...}}`. A `--query` starts with the wrapper: `customer.email`, `customers[].external_id`. A query that matches nothing prints `null` and names the available keys on stderr.
 
-### Money is exact
+**Destructive operations ask first.** `delete`, `void`, `finalize`, `terminate`, `retry-payment`. In a script, pass `--confirm <identifier>`.
 
-Amounts in minor units (`*_amount_cents`) are integers. Fractional values such as `units` are decimal strings (`"42.0"`). The CLI never emits a floating-point monetary field. Compare `total_amount_cents` from the CLI with the dashboard and they match.
+**Mode defaults to live.** `--mode test` is a safety declaration, not a sandbox. Live mode prints `[LIVE]` and gates destructive operations. Without an explicit mode, credentials passed by flag or environment run live.
 
-## Query responses with `--query`
+**Nothing is sent on `--dry-run`.** It prints the method, URL, redacted headers, and exact body. No connection is opened.
 
-`--query` takes a [JMESPath](https://jmespath.org) expression and applies it to the response.
+## Scripting
 
-**Lago wraps every response**, and the wrapper is part of the path. A query written against the unwrapped resource matches nothing.
-
-| Command | Response shape | Query starts with |
-| --- | --- | --- |
-| `customers get` | `{"customer": {...}}` | `customer.` |
-| `customers list` | `{"customers": [...], "meta": {...}}` | `customers[` |
-| `subscriptions get` | `{"subscription": {...}}` | `subscription.` |
-| `invoices list` | `{"invoices": [...], "meta": {...}}` | `invoices[` |
-| `customers current-usage` | `{"customer_usage": {...}}` | `customer_usage.` |
-
-```console
-$ lago customers get quickstart_customer --output json --query 'customer.email'
-"billing@example.com"
-
-$ lago invoices list --output json --query 'invoices[?status==`"finalized"`].{id: lago_id, total: total_amount_cents}'
-[
-  {
-    "id": "4d904d90-4d90-4d90-4d90-4d904d904d90",
-    "total": 150000
-  }
-]
-```
-
-A JMESPath backtick literal holds JSON, so a string comparison needs inner double quotes: `` `"finalized"` `` works, bare `` `finalized` `` is rejected as an invalid query. The alternative is the raw-string form with single quotes, which means double-quoting the whole expression for your shell:
-
-```bash
-lago invoices list --output json --query "invoices[?status=='finalized'].[lago_id]"
-```
-
-When a query matches nothing, stdout still prints `null` so script parsing does not change, and stderr names the keys that were available:
-
-```console
-$ lago customers list --output json --query 'lago_id'
-query matched nothing; top-level keys: customers, meta
-null
-```
-
-`--query` without `--output` switches to JSON and says so. An explicit `--output` always wins, `--output table` included.
-
-```console
-$ lago customers list --query 'customers[].external_id'
---query implies --output json; pass --output table explicitly to render the result as a table.
-[
-  "quickstart_customer"
-]
-```
-
-## Pagination and filters
-
-Every `list` command exposes the endpoint's query parameters as flags. Filter flags map one-to-one to the API's query parameters, so the [API reference](/api-reference/intro) for an endpoint is the reference for its `list` flags.
-
-```bash
-lago invoices list --statuses finalized --payment-statuses pending --external-customer-id quickstart_customer
-lago customers list --search-term acme --countries FR,DE
-lago events list --external-subscription-id quickstart_subscription --timestamp-from 2026-09-01T00:00:00Z
-lago fees list --fee-type charge --created-at-from 2026-09-01
-```
-
-| Flag | Effect |
+| Flag | Use |
 | --- | --- |
-| `--limit N` | Sets `per_page`. Returns one page of at most N records. |
-| `--page N` | Requests page N. |
-| `--per-page N` | Same as `--limit`, matching the API parameter name. |
-| `--all` | Fetches every page from `--page` (default 1) onwards, 100 records per page, and renders each page as it arrives. |
-| `--watch` | Re-runs the request every `--watch-interval` (default `2s`, minimum `500ms`) and re-renders when the response changes. |
-
-`--all` streams pages without buffering the whole collection, so it is the scale-safe form. Each page is one wrapped JSON document, which is what to feed `jq`:
-
-```bash
-lago customers list --all --output json \
-  | jq -r '.customers[] | select(.external_id | startswith("qa_")) | .external_id'
-```
-
-`--all` and `--query` are mutually exclusive. A whole-collection JMESPath expression has nothing to evaluate against when pages stream. Use a per-page `--query` without `--all`, or the `jq` form above.
-
-## Dry run
-
-`--dry-run` prints the request a mutating command would send, and sends nothing. No connection is opened, so it works with a dead API URL.
-
-```console
-$ lago customers create --external-id qa_dry_001 --name "Dry Run Co" --currency USD --dry-run
-BODY     {"customer":{"currency":"USD","external_id":"qa_dry_001","name":"Dry Run Co"}}
-HEADERS  {"Accept":["application/json"],"Authorization":["Bearer [REDACTED]"],"Content-Type":["application/json"],"User-Agent":["lago-cli/1.0.0"]}
-METHOD   POST
-URL      https://api.getlago.com/api/v1/customers
-```
-
-The API key is redacted from dry runs, error output, and `--verbose` logs. The body is the exact wrapped payload the API receives, so a dry run is the fastest way to check how flags map to the request schema before touching real data.
-
-## Safety gates
-
-Danger is derived from the API path, not the HTTP verb. `PUT /invoices/{id}/finalize` is idempotent by RFC but irreversible by accounting. Any operation matching the destructive vocabulary (`void`, `finalize`, `retry`, `terminate`, `delete`, `destroy`, `refund`) or using `DELETE` is confirmation-gated.
-
-In a terminal you type the identifier. In a script, pass it with `--confirm`:
-
-```console
-$ lago customers delete qa_cust_001 < /dev/null
-Error: confirmation required for qa_cust_001
-Suggestion: Pass --confirm "qa_cust_001" or rerun in an interactive terminal.
-$ echo $?
-2
-
-$ lago customers delete qa_cust_001 --confirm qa_cust_001
-```
-
-A wrong value in `--confirm` is refused the same way. The identifier has to match.
-
-### Retries and idempotency
-
-Retries apply only to network errors, HTTP 429, and 5xx responses. They run only for idempotent methods (`GET`, `HEAD`, `OPTIONS`) or when a request carries an idempotency key. `Retry-After` is honored, then exponential backoff with jitter. `--no-retry` disables them.
-
-Every mutation accepts `--idempotency-key`, which sets the `Idempotency-Key` header and makes the request safe to retry:
+| `--output json` | Full resource. Also `yaml`. Default is `table`. |
+| `--query <jmespath>` | Select from the response. Implies `--output json`. |
+| `--all` | Every page of a `list`, streamed 100 at a time. Pipe to `jq`. Not combinable with `--query`. |
+| `--limit`, `--page` | One page. |
+| `--dry-run` | Print the request, send nothing. |
+| `--confirm <id>` | Confirm a destructive operation non-interactively. |
+| `--idempotency-key <key>` | Safe retries on any mutation. |
+| `--profile <name>` | Switch organization or region. |
 
 ```bash
-lago payments create --invoice-id 4d904d90-... --amount-cents 150000 --reference wire-2026-09 --idempotency-key wire-2026-09
+lago customers list --all --output json | jq -r '.customers[].external_id'
+lago invoices list --output json --query 'invoices[?status==`"finalized"`].total_amount_cents'
+lago api GET /customers?page=2        # any endpoint, same auth and output handling
 ```
 
-For bulk events, each NDJSON line gets a transaction ID if it lacks one, and is sent with a matching idempotency key. The input file is streamed, never loaded into memory.
+Precedence is flags, then environment, then profile.
 
-```bash
-lago events send --file events.ndjson --concurrency 8
-cat events.ndjson | lago events send --file -
-```
-
-## Raw API access
-
-`lago api` sends an authenticated request to any endpoint, with the same profile, redaction, retries, and output handling as the generated commands. Use it for endpoints newer than the CLI's embedded spec.
-
-```bash
-lago api GET /customers?page=2
-lago api POST /events --data @event.json --idempotency-key event-42
-printf '{"event":{...}}' | lago api POST /events --data -
-lago api GET /api/v1/customers   # the /api/v1 prefix is stripped, not doubled
-```
-
-## Diagnostics
-
-| Flag | What it does |
+| Environment variable | Sets |
 | --- | --- |
-| `--verbose` | Prints request and response details with the key redacted. |
-| `--timing` | Prints a latency breakdown: API round-trip, retry wait, CLI overhead. |
-| `--timeout 30s` | Total request budget. Connect and TLS have a separate five-second budget. |
-| `--no-retry` | Disables automatic retries. |
-
-`lago logs tail` polls the API request logs and re-renders when they change, with filters on method, status class, and path:
-
-```bash
-lago logs tail --status 4xx --resource /customers --method POST
-```
+| `LAGO_API_KEY` | API key |
+| `LAGO_API_URL` | API base URL |
+| `LAGO_MODE` | `live` or `test` |
+| `LAGO_PROFILE` | Profile name |
 
 ## Exit codes
-
-Exit codes are stable. Changing this table is a breaking change.
 
 | Code | Meaning |
 | ---: | --- |
 | 0 | Success |
-| 1 | Generic error |
-| 2 | Usage error (bad flag, missing confirmation, refused URL) |
-| 3 | Authentication or authorization error |
-| 4 | Not found |
-| 5 | Validation or other API 4xx error |
+| 2 | Usage error, including a missing `--confirm` |
+| 3 | Authentication |
+| 4 | Not found. The error names the resource type and value. |
+| 5 | Validation or other 4xx |
 | 6 | Rate limited |
-| 7 | Lago server 5xx error |
-| 8 | Network or timeout error |
+| 7 | Server 5xx |
+| 8 | Network or timeout |
 
-Errors are structured. A 404 names the resource type and the value that was not found, which matters when an identifier is the wrong kind: a plan code passed where a subscription external ID was expected is not "no usage", it is "no such subscription".
-
-```console
-$ lago events send --external-subscription-id ai_plan_gpt4_tokens --code api_calls
-Error: no subscription "ai_plan_gpt4_tokens" exists in this organization
-Suggestion: Check that each identifier is the right kind for the flag it was passed to: a plan code is not a subscription external ID, and a Lago ID is not an external ID.
-$ echo $?
-4
-```
-
-## Global flags
-
-Available on every command.
-
-| Flag | Description |
-| --- | --- |
-| `--api-key` | Override the API key. |
-| `--api-url` | Override the API base URL. |
-| `--profile` | Named profile from the config file. |
-| `--mode live\|test` | Environment mode. Defaults to live when credentials are overridden. |
-| `--confirm <identifier>` | Confirm a dangerous operation with its resource identifier. |
-| `--dry-run` | Print the request without sending it. |
-| `--output`, `-o table\|json\|yaml` | Output format. |
-| `--query <jmespath>` | JMESPath expression applied to the response. |
-| `--insecure` | Allow plain HTTP or disabled TLS verification for self-hosted Lago. |
-| `--timeout <duration>` | Total request timeout. Default `30s`. |
-| `--no-retry` | Disable automatic retries. |
-| `--timing` | Print the request latency breakdown. |
-| `--verbose` | Print redacted request and response details. |
-
-## Privacy
-
-The CLI sends no product telemetry. With explicit consent given at `lago init --update-check`, it makes at most one anonymous release-metadata request per 24 hours. `LAGO_NO_UPDATE_CHECK=1` disables it.
-
-## Next
+Money is exact: `*_amount_cents` are integers, `units` are decimal strings. The CLI sends no telemetry.
 
 <CardGroup cols={2}>
   <Card title="Command reference" icon="terminal" href="/guide/lago-cli/commands/overview">
-    Every command group with worked examples and output.
+    One page per command group, with commands and their output side by side.
   </Card>
   <Card title="API reference" icon="code" href="/api-reference/intro">
-    The request and response schemas the CLI is generated from.
+    The schemas the CLI is generated from.
   </Card>
 </CardGroup>
