@@ -59,9 +59,18 @@ lago customers get acme_001 --output json --query 'customer.email'
 
 ## How it works
 
-**Flags are API fields.** `external_id` is `--external-id`. Nested fields carry their parent as a prefix. Objects and arrays take JSON. `--input @body.json` sends a whole request body.
+### Flags are API fields
 
-**Creates print identifiers.** A `create` or `update` prints `lago_id`, `external_id`, `code`, and `name`. Add `--output json` for the full resource.
+A `snake_case` field is a `--kebab-case` flag. Nested fields carry their parent as a prefix. Objects and arrays take JSON. `--input` sends a whole request body.
+
+```bash
+lago customers create --external-id acme_001 --billing-configuration-payment-provider stripe
+lago customers create --input @customer.json
+```
+
+### Creates print identifiers
+
+A `create` or `update` prints the identifier block. Add `--output json` for the full resource.
 
 ```console
 $ lago customers create --external-id acme_001 --name "Acme Inc." --currency USD
@@ -70,13 +79,34 @@ EXTERNAL_ID  acme_001
 NAME         Acme Inc.
 ```
 
-**Responses are wrapped.** The API returns `{"customer": {...}}` and `{"customers": [...], "meta": {...}}`. A `--query` starts with the wrapper: `customer.email`, `customers[].external_id`. A query that matches nothing prints `null` and names the available keys on stderr.
+### Responses are wrapped
 
-**Destructive operations ask first.** `delete`, `void`, `finalize`, `terminate`, `retry-payment`. In a script, pass `--confirm <identifier>`.
+The API wraps every response in its resource name. A `--query` starts with that wrapper. A query that matches nothing prints `null` and lists the available keys on stderr.
 
-**Mode defaults to live.** `--mode test` is a safety declaration, not a sandbox. Live mode prints `[LIVE]` and gates destructive operations. Without an explicit mode, credentials passed by flag or environment run live.
+```bash
+lago customers get acme_001 --query 'customer.email'
+lago customers list --query 'customers[].external_id'
+```
 
-**Nothing is sent on `--dry-run`.** It prints the method, URL, redacted headers, and exact body. No connection is opened.
+### Destructive operations ask first
+
+`delete`, `void`, `finalize`, `terminate`, and `retry-payment` prompt for the identifier. In a script, pass it with `--confirm`.
+
+```bash
+lago invoices void 1a901a90-1a90-1a90-1a90-1a901a901a90 --confirm 1a901a90-1a90-1a90-1a90-1a901a901a90
+```
+
+### Live is the default mode
+
+`--mode test` is a safety declaration, not a sandbox. Live mode prints `[LIVE]` and gates destructive operations. Credentials passed by flag or environment run live unless you set a mode.
+
+### Nothing is sent on `--dry-run`
+
+The CLI prints the method, URL, redacted headers, and exact body. No connection is opened.
+
+```bash
+lago customers create --external-id acme_001 --name "Acme Inc." --dry-run
+```
 
 ## Scripting
 
@@ -109,7 +139,7 @@ Precedence is flags, then environment, then profile.
 ## Exit codes
 
 | Code | Meaning |
-| ---: | --- |
+| --- | --- |
 | 0 | Success |
 | 2 | Usage error, including a missing `--confirm` |
 | 3 | Authentication |
