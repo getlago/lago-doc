@@ -1,0 +1,115 @@
+---
+title: "Setup and diagnostics"
+description: "Configure a profile, see which host you are hitting, and diagnose a failing setup."
+---
+
+| Command | Description |
+| --- | --- |
+| `lago init` | Configure a profile. Validates the key against `GET /organizations` before saving. |
+| `lago whoami` | Show the active profile, organization, and resolved API host. |
+| `lago doctor` | Check configuration, permissions, network, and authentication. |
+| `lago version` | Show the CLI version and the embedded OpenAPI spec version. |
+| `lago upgrade` | Print the upgrade command for how the binary was installed. |
+| `lago completion <shell>` | Print a completion script for `bash`, `zsh`, `fish`, or `powershell`. |
+
+## init
+
+| Flag | Description |
+| --- | --- |
+| `--region us\|eu\|self-hosted` | Picks the API host. `self-hosted` requires `--api-url`. |
+| `--api-url` | Base URL. The CLI appends `/api/v1`. A pasted `/api/v1` is normalized, an `app.` host is refused. |
+| `--api-key` | The key from **Developers > API keys**. Never persisted before validation succeeds. |
+| `--mode live\|test` | Safety declaration. Defaults to live. |
+| `--profile` | Name of the profile to write. Default `default`. |
+| `--update-check` | Consent to one anonymous release check per 24 hours. |
+
+A wrong key writes nothing and exits 3. `--region us --api-url https://api.eu.getlago.com` is a usage error, exit 2, not a silent override.
+
+## whoami and doctor
+
+`API_URL` is what the profile holds. `RESOLVED_API_URL` is where requests go. When they differ, that difference is the bug. `doctor` reports the same value as one of its checks, next to permissions and authentication, and `--bundle` writes a sanitized archive to attach to a support ticket.
+
+## version and upgrade
+
+`SPEC_VERSION` is the Lago OpenAPI version the binary was generated from. Neither channel self-updates: `upgrade` prints `brew upgrade getlago/tap/lago` or the matching `go install` command.
+
+<RequestExample>
+
+```bash init
+# Cloud US, test profile
+lago init --api-key "$LAGO_API_KEY" --region us --mode test
+
+# Cloud EU, named live profile
+lago init --profile eu-prod --api-key "$LAGO_API_KEY" --region eu --mode live
+
+# Self-hosted: base URL, no /api/v1
+lago init --api-key "$LAGO_API_KEY" --region self-hosted \
+  --api-url https://lago.example.com --mode test
+```
+
+```bash whoami
+lago whoami
+lago whoami --profile eu-prod --output json
+lago whoami --output json --query 'resolved_api_url'
+```
+
+```bash doctor
+lago doctor
+lago doctor --output json --query 'checks[].{check: name, detail: detail}'
+lago doctor --bundle-path ./lago-doctor.tar.gz
+```
+
+```bash version
+lago version
+lago version --check
+```
+
+```bash upgrade
+lago upgrade
+```
+
+```bash completion
+lago completion zsh > ~/.zfunc/_lago
+lago completion bash > /etc/bash_completion.d/lago
+lago completion fish > ~/.config/fish/completions/lago.fish
+lago completion powershell | Out-String | Invoke-Expression
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text init
+Connected to Lago as Example Organization.
+Saved us profile "default" to ~/.config/lago/config.toml (mode: test).
+```
+
+```text init (app URL refused)
+Error: app.eu.getlago.com is the Lago dashboard, not the Lago API
+Suggestion: Use https://api.eu.getlago.com instead. The API and the app are different hosts, and an API key sent to the app host will not authenticate.
+```
+
+```text whoami
+API_URL           https://api.eu.getlago.com
+MODE              test
+ORGANIZATION      {"organization":{"lago_id":"1a901a90-1a90-1a90-1a90-1a901a901a90","name":"Example Organization"}}
+PROFILE           default
+REGION            eu
+RESOLVED_API_URL  https://api.eu.getlago.com/api/v1
+```
+
+```text version
+GO_VERSION    go1.27.0
+PLATFORM      darwin/arm64
+SPEC_SHA256   852e7331acfc080d1af9bda9d1663a50a7fa5b4a2aea22a89fb16787ee75b671
+SPEC_VERSION  1.52.1
+VERSION       1.0.0
+```
+
+```text upgrade
+Lago CLI 1.1.0 is available (installed: 1.0.0).
+
+    brew upgrade getlago/tap/lago
+```
+
+</ResponseExample>

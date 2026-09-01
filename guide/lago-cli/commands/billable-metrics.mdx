@@ -1,0 +1,156 @@
+---
+title: "Billable metrics"
+description: "Define what you meter: aggregation, field, filters, expressions."
+---
+
+| Command | Description |
+| --- | --- |
+| `billable-metrics create` | Create a metric. |
+| `billable-metrics get <code>` | Retrieve a metric. |
+| `billable-metrics list` | List metrics. |
+| `billable-metrics update <code>` | Update a metric. |
+| `billable-metrics delete <code>` | Delete a metric. Confirmation-gated. |
+| `billable-metrics evaluate-expression` | Evaluate a custom expression against a sample event. Nothing is recorded. |
+
+## create
+
+| Flag | Description |
+| --- | --- |
+| `--name`, `--code` | Display name and the code events reference. |
+| `--aggregation-type` | `count_agg`, `sum_agg`, `max_agg`, `unique_count_agg`, `latest_agg`, `weighted_sum_agg`, `custom_agg`. |
+| `--field-name` | Event property to aggregate. Required for every type except `count_agg`. |
+| `--recurring true` | Carry units across billing periods (seats, storage). |
+| `--filters` | JSON array of `{"key","values"}` dimensions for per-value pricing. |
+| `--expression` | Compute units from event properties before aggregation. `round`, `ceil`, `concat`, arithmetic. |
+| `--rounding-function`, `--rounding-precision` | Round aggregated units. |
+| `--weighted-interval seconds` | For `weighted_sum_agg`. |
+
+Deleting a metric that a plan charges is refused by the API with a 422, exit 5.
+
+<RequestExample>
+
+```bash create
+# Count every event
+lago billable-metrics create --name Requests --code api_requests --aggregation-type count_agg
+
+# Sum a property, with a filter dimension
+lago billable-metrics create \
+  --name Tokens --code llm_tokens \
+  --aggregation-type sum_agg --field-name tokens \
+  --filters '[{"key":"model","values":["gpt-4o","claude-sonnet"]}]'
+
+# Persist units across periods
+lago billable-metrics create --name Seats --code seats \
+  --aggregation-type unique_count_agg --field-name user_id --recurring true
+
+# Derive units from event properties
+lago billable-metrics create --name "Compute hours" --code compute_hours \
+  --aggregation-type sum_agg --field-name hours \
+  --expression 'round(event.properties.seconds / 3600, 2)'
+```
+
+```bash get
+lago billable-metrics get api_requests
+lago billable-metrics get api_requests --output json --query 'billable_metric.aggregation_type'
+```
+
+```bash list
+lago billable-metrics list --limit 20
+lago billable-metrics list --all --output json | jq -r '.billable_metrics[].code'
+```
+
+```bash update
+lago billable-metrics update api_requests --name "API requests"
+```
+
+```bash delete
+lago billable-metrics delete api_requests --confirm api_requests
+```
+
+```bash evaluate-expression
+lago billable-metrics evaluate-expression --input '{
+  "expression": "round(event.properties.seconds / 3600, 2)",
+  "event": {"code": "compute_hours", "timestamp": 1756684800, "properties": {"seconds": "5400"}}
+}'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text create
+LAGO_ID  1a901a90-1a90-1a90-1a90-1a901a901a90
+CODE     api_requests
+NAME     Requests
+```
+
+```json get
+{
+  "billable_metric": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "name": "Requests",
+    "code": "api_requests",
+    "description": "GB of storage used in my application",
+    "recurring": false,
+    "rounding_function": "round",
+    "rounding_precision": 2,
+    "created_at": "2022-09-14T16:35:31Z",
+    "expression": "round((ended_at - started_at) * units)",
+    "field_name": "gb",
+    "aggregation_type": "count_agg",
+    "weighted_interval": "seconds",
+    "filters": [
+      {
+        "key": "region",
+        "values": [
+          "us-east-1"
+        ]
+      }
+    ]
+  }
+}
+```
+
+```json list
+{
+  "billable_metrics": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "name": "Requests",
+      "code": "api_requests",
+      "description": "GB of storage used in my application",
+      "recurring": false,
+      "rounding_function": "round",
+      "rounding_precision": 2,
+      "created_at": "2022-09-14T16:35:31Z",
+      "expression": "round((ended_at - started_at) * units)",
+      "field_name": "gb",
+      "aggregation_type": "count_agg",
+      "weighted_interval": "seconds",
+      "filters": [
+        {
+          "key": "region",
+          "values": []
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+```json evaluate-expression
+{
+  "expression_result": {
+    "value": 1
+  }
+}
+```
+
+</ResponseExample>

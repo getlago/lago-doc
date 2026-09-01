@@ -1,0 +1,697 @@
+---
+title: "Subscriptions"
+description: "Assign plans, override charges for one customer, set usage alerts, terminate."
+---
+
+| Command | Description |
+| --- | --- |
+| `subscriptions create` | Assign a plan. With an existing `external_id`, upgrades or downgrades. |
+| `subscriptions get <external_id>` | Retrieve a subscription. |
+| `subscriptions list` | List subscriptions. |
+| `subscriptions update <external_id>` | Update name, dates, or plan overrides. |
+| `subscriptions terminate <external_id>` | Terminate. Confirmation-gated. |
+| `subscriptions lifetime-usage <external_id>` | Lifetime usage for progressive billing. |
+| `subscriptions update-subscription-lifetime-usage <external_id>` | Set an external lifetime usage amount. |
+| `subscriptions charges <external_id>` | Charges as applied to this subscription, overrides included. |
+| `subscriptions get-subscription-charge`, `override-subscription-charge <external_id> <charge_code>` | One charge. |
+| `subscriptions fixed-charges <external_id>` | Fixed charges as applied. |
+| `subscriptions get-subscription-fixed-charge`, `override-subscription-fixed-charge <external_id> <fixed_charge_code>` | One fixed charge. |
+| `subscriptions filters <external_id> <charge_code>` | Charge filters. |
+| `subscriptions create-subscription-charge-filter <external_id> <charge_code>` | Add a filter. |
+| `subscriptions get-subscription-charge-filter`, `update-subscription-charge-filter`, `destroy-subscription-charge-filter <external_id> <charge_code> <filter_id>` | One filter. |
+| `subscriptions alerts <external_id>` | List usage alerts. |
+| `subscriptions create-subscription-alert <external_id>` | Create a usage alert. |
+| `subscriptions get-subscription-alert`, `update-subscription-alert`, `delete-subscription-alert <external_id> <code>` | One alert. |
+| `subscriptions delete-all-subscription-alerts <external_id>` | Remove every alert. |
+
+## create
+
+Every body field sits under `subscription`, so every flag carries the `--subscription-` prefix.
+
+| Flag | Description |
+| --- | --- |
+| `--subscription-external-customer-id` | The customer. |
+| `--subscription-external-id` | Your subscription identifier. Reusing it changes the plan. |
+| `--subscription-plan-code` | The plan. |
+| `--subscription-billing-time calendar\|anniversary` | Period alignment. |
+| `--subscription-subscription-at`, `--subscription-ending-at` | Start and end, ISO 8601. |
+| `--subscription-plan-overrides-*` | Negotiated terms for this customer only: `amount-cents`, `charges`, `trial-period`, `minimum-commitment-amount-cents`. |
+| `--subscription-name` | Display name. |
+
+## terminate
+
+| Flag | Description |
+| --- | --- |
+| `--on-termination-invoice generate\|skip` | Whether to issue the final usage invoice. |
+| `--on-termination-credit-note credit\|refund\|skip` | Pay-in-advance plans: what to do with the unused period. |
+| `--status active\|pending` | Which subscription to terminate when both share the `external_id`. |
+
+<RequestExample>
+
+```bash create
+lago subscriptions create \
+  --subscription-external-customer-id acme_001 \
+  --subscription-external-id acme_001_pro \
+  --subscription-plan-code pro
+
+# Anniversary billing from a given date
+lago subscriptions create \
+  --subscription-external-customer-id acme_001 \
+  --subscription-external-id acme_001_pro \
+  --subscription-plan-code pro \
+  --subscription-billing-time anniversary \
+  --subscription-subscription-at 2026-10-01T00:00:00Z
+
+# Negotiated price for this customer only
+lago subscriptions create \
+  --subscription-external-customer-id acme_001 \
+  --subscription-external-id acme_001_pro \
+  --subscription-plan-code pro \
+  --subscription-plan-overrides-amount-cents 7900
+
+# Upgrade: same external_id, new plan
+lago subscriptions create \
+  --subscription-external-customer-id acme_001 \
+  --subscription-external-id acme_001_pro \
+  --subscription-plan-code enterprise
+```
+
+```bash get
+lago subscriptions get acme_001_pro
+lago subscriptions get acme_001_pro --output json --query 'subscription.{plan: plan_code, status: status, next: next_plan_code}'
+```
+
+```bash list
+lago subscriptions list --external-customer-id acme_001
+lago subscriptions list --plan-code pro --status active --all --output json \
+  | jq -r '.subscriptions[].external_id'
+```
+
+```bash update
+lago subscriptions update acme_001_pro --subscription-name "Acme Pro (annual commit)"
+lago subscriptions update acme_001_pro --subscription-ending-at 2027-09-30T23:59:59Z
+```
+
+```bash charges
+lago subscriptions charges acme_001_pro
+lago subscriptions override-subscription-charge acme_001_pro api_requests \
+  --input '{"charge":{"properties":{"amount":"0.05"}}}'
+lago subscriptions lifetime-usage acme_001_pro
+```
+
+```bash alerts
+lago subscriptions create-subscription-alert acme_001_pro --input '{
+  "alert": {
+    "alert_type": "current_usage_amount",
+    "code": "usage_80",
+    "name": "80% of budget",
+    "thresholds": [{"code": "warn", "value": "80000"}]
+  }
+}'
+lago subscriptions alerts acme_001_pro
+lago subscriptions delete-subscription-alert acme_001_pro usage_80 --confirm usage_80
+```
+
+```bash terminate
+lago subscriptions terminate acme_001_pro --confirm acme_001_pro
+
+lago subscriptions terminate acme_001_pro \
+  --on-termination-invoice generate --on-termination-credit-note credit \
+  --confirm acme_001_pro
+
+lago subscriptions terminate acme_001_pro --status pending --confirm acme_001_pro
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text create
+LAGO_ID      1a901a90-1a90-1a90-1a90-1a901a901a90
+EXTERNAL_ID  acme_001_pro
+NAME         Acme Pro
+```
+
+```json get
+{
+  "subscription": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_id": "acme_001_pro",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_customer_id": "acme_001",
+    "billing_entity_code": "default",
+    "billing_time": "anniversary",
+    "name": "Acme Pro",
+    "plan_code": "pro",
+    "plan_amount_cents": 10000,
+    "plan_amount_currency": "USD",
+    "status": "active",
+    "created_at": "2022-08-08T00:00:00Z",
+    "canceled_at": "2022-09-14T16:35:31Z",
+    "started_at": "2022-08-08T00:00:00Z",
+    "ending_at": "2022-10-08T00:00:00Z",
+    "subscription_at": "2022-08-08T00:00:00Z",
+    "terminated_at": "2022-09-14T16:35:31Z",
+    "previous_plan_code": null,
+    "next_plan_code": null,
+    "downgrade_plan_date": "2022-04-30",
+    "trial_ended_at": "2022-08-08T00:00:00Z",
+    "current_billing_period_started_at": "2022-08-08T00:00:00Z",
+    "current_billing_period_ending_at": "2022-09-08T00:00:00Z",
+    "on_termination_credit_note": "credit",
+    "on_termination_invoice": "generate",
+    "applied_invoice_custom_sections": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "created_at": "2023-07-06T14:35:58Z",
+        "invoice_custom_section_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "invoice_custom_section": {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "name": "EU Bank Details",
+          "code": "eu_bank_details",
+          "description": "This section contains the bank details for EU customers.",
+          "details": "Bank Name: Lago Bank, IBAN: FR7630004000031234567890143",
+          "display_name": "Bank Details:",
+          "applied_to_organization": true,
+          "organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "created_at": "2023-07-06T14:35:58Z"
+        }
+      }
+    ],
+    "payment_method": {
+      "payment_method_type": "provider",
+      "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+    },
+    "consolidate_invoice": true,
+    "cancellation_reason": "payment_failed",
+    "activated_at": "2022-08-08T00:00:00Z",
+    "activation_rules": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "type": "payment",
+        "timeout_hours": 48,
+        "status": "pending",
+        "expires_at": "2022-08-10T00:00:00Z",
+        "created_at": "2022-08-08T00:00:00Z",
+        "updated_at": "2022-08-08T00:00:00Z"
+      }
+    ],
+    "purchase_order_number": "PO-123",
+    "plan": {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "name": "Startup",
+      "invoice_display_name": "Startup plan",
+      "created_at": "2023-06-27T19:43:42Z",
+      "code": "startup",
+      "interval": "monthly",
+      "description": "",
+      "amount_cents": 10000,
+      "amount_currency": "USD",
+      "trial_period": 5,
+      "pay_in_advance": true,
+      "bill_charges_monthly": null,
+      "bill_fixed_charges_monthly": null,
+      "minimum_commitment": {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "plan_code": "premium",
+        "amount_cents": 100000,
+        "invoice_display_name": "Minimum Commitment (C1)",
+        "interval": "monthly",
+        "created_at": "2022-04-29T08:59:51Z",
+        "updated_at": "2022-04-29T08:59:51Z",
+        "taxes": [
+          {}
+        ]
+      },
+      "charges": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a91",
+          "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a91",
+          "billable_metric_code": "requests",
+          "created_at": "2023-06-27T19:43:42Z",
+          "charge_model": "package",
+          "invoiceable": true,
+          "invoice_display_name": "Setup",
+          "pay_in_advance": false,
+          "regroup_paid_fees": null,
+          "prorated": false,
+          "min_amount_cents": 3000,
+          "properties": {
+            "amount": "30",
+            "free_units": 100,
+            "package_size": 1000
+          },
+          "filters": []
+        },
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a92",
+          "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a92",
+          "billable_metric_code": "cpu",
+          "created_at": "2023-06-27T19:43:42Z",
+          "charge_model": "graduated",
+          "invoiceable": true,
+          "invoice_display_name": "Setup",
+          "pay_in_advance": false,
+          "regroup_paid_fees": null,
+          "prorated": false,
+          "min_amount_cents": 0,
+          "properties": {
+            "graduated_ranges": [
+              {
+                "from_value": 0,
+                "to_value": 10,
+                "flat_amount": "10",
+                "per_unit_amount": "0.5"
+              },
+              {
+                "from_value": 11,
+                "to_value": null,
+                "flat_amount": "0",
+                "per_unit_amount": "0.4"
+              }
+            ]
+          },
+          "filters": []
+        },
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a93",
+          "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a93",
+          "billable_metric_code": "seats",
+          "created_at": "2023-06-27T19:43:42Z",
+          "charge_model": "standard",
+          "invoiceable": true,
+          "invoice_display_name": "Setup",
+          "pay_in_advance": true,
+          "regroup_paid_fees": null,
+          "prorated": false,
+          "min_amount_cents": 0,
+          "properties": {},
+          "filters": [
+            {
+              "invoice_display_name": "Europe",
+              "properties": {
+                "amount": "10"
+              },
+              "values": {
+                "region": [
+                  "Europe"
+                ]
+              }
+            },
+            {
+              "invoice_display_name": "USA",
+              "properties": {
+                "amount": "5"
+              },
+              "values": {
+                "region": [
+                  "USA"
+                ]
+              }
+            },
+            {
+              "invoice_display_name": "Africa",
+              "properties": {
+                "amount": "8"
+              },
+              "values": {
+                "region": [
+                  "Africa"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a94",
+          "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a94",
+          "billable_metric_code": "storage",
+          "created_at": "2023-06-27T19:43:42Z",
+          "charge_model": "volume",
+          "invoiceable": true,
+          "invoice_display_name": "Setup",
+          "pay_in_advance": false,
+          "regroup_paid_fees": null,
+          "prorated": false,
+          "min_amount_cents": 0,
+          "properties": {
+            "volume_ranges": [
+              {
+                "from_value": 0,
+                "to_value": 100,
+                "flat_amount": "0",
+                "per_unit_amount": "0"
+              },
+              {
+                "from_value": 101,
+                "to_value": null,
+                "flat_amount": "0",
+                "per_unit_amount": "0.5"
+              }
+            ]
+          },
+          "filters": []
+        },
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a95",
+          "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a95",
+          "billable_metric_code": "payments",
+          "created_at": "2023-06-27T19:43:42Z",
+          "charge_model": "percentage",
+          "invoiceable": false,
+          "invoice_display_name": "Setup",
+          "pay_in_advance": true,
+          "regroup_paid_fees": "invoice",
+          "prorated": false,
+          "min_amount_cents": 0,
+          "properties": {
+            "rate": "1",
+            "fixed_amount": "0.5",
+            "free_units_per_events": 5,
+            "free_units_per_total_aggregation": "500"
+          },
+          "filters": []
+        }
+      ],
+      "fixed_charges": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "lago_add_on_id": "2b802b80-2b80-2b80-2b80-2b802b802b80",
+          "code": "setup_fee",
+          "invoice_display_name": "Setup Fee",
+          "add_on_code": "setup",
+          "created_at": "2026-01-15T10:30:00Z",
+          "charge_model": "standard",
+          "pay_in_advance": true,
+          "prorated": false,
+          "properties": {
+            "amount": "500"
+          },
+          "units": 1,
+          "lago_parent_id": null,
+          "taxes": [
+            {
+              "lago_id": "3c703c70-3c70-3c70-3c70-3c703c703c70",
+              "name": "VAT",
+              "code": "vat_20",
+              "rate": 20,
+              "description": "Standard VAT rate",
+              "applied_to_organization": true,
+              "created_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        },
+        {
+          "lago_id": "4d604d60-4d60-4d60-4d60-4d604d604d60",
+          "lago_add_on_id": "5e505e50-5e50-5e50-5e50-5e505e505e50",
+          "code": "support_tier",
+          "invoice_display_name": "Support Tier",
+          "add_on_code": "premium_support",
+          "created_at": "2026-01-15T10:30:00Z",
+          "charge_model": "graduated",
+          "pay_in_advance": false,
+          "prorated": true,
+          "properties": {
+            "graduated_ranges": [
+              {
+                "from_value": 0,
+                "to_value": 10,
+                "per_unit_amount": "5",
+                "flat_amount": "200"
+              },
+              {
+                "from_value": 11,
+                "to_value": null,
+                "per_unit_amount": "1",
+                "flat_amount": "300"
+              }
+            ]
+          },
+          "units": 1,
+          "lago_parent_id": null,
+          "taxes": []
+        },
+        {
+          "lago_id": "6f406f40-6f40-6f40-6f40-6f406f406f40",
+          "lago_add_on_id": "7a307a30-7a30-7a30-7a30-7a307a307a30",
+          "code": "storage",
+          "invoice_display_name": "Storage Allocation",
+          "add_on_code": "cloud_storage",
+          "created_at": "2026-01-15T10:30:00Z",
+          "charge_model": "volume",
+          "pay_in_advance": false,
+          "prorated": false,
+          "properties": {
+            "volume_ranges": [
+              {
+                "from_value": 0,
+                "to_value": 100,
+                "per_unit_amount": "2",
+                "flat_amount": "1"
+              },
+              {
+                "from_value": 101,
+                "to_value": null,
+                "per_unit_amount": "1",
+                "flat_amount": "0"
+              }
+            ]
+          },
+          "units": 50,
+          "lago_parent_id": null,
+          "taxes": []
+        }
+      ],
+      "taxes": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "name": "TVA",
+          "code": "french_standard_vat",
+          "description": "French standard VAT",
+          "rate": 20,
+          "applied_to_organization": true,
+          "created_at": "2023-07-06T14:35:58Z"
+        }
+      ],
+      "usage_thresholds": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "threshold_display_name": "Threshold 1",
+          "amount_cents": 10000,
+          "recurring": true,
+          "created_at": "2023-06-27T19:43:42Z",
+          "updated_at": "2023-06-27T19:43:42Z"
+        }
+      ],
+      "entitlements": [
+        {
+          "entitlement": {}
+        }
+      ],
+      "metadata": {
+        "external_id": "ext-123",
+        "synced_at": "2024-01-15",
+        "source": null
+      }
+    },
+    "applicable_usage_thresholds": [
+      {
+        "threshold_display_name": "Threshold 1",
+        "amount_cents": 10000,
+        "recurring": true
+      }
+    ]
+  }
+}
+```
+
+```json list
+{
+  "subscriptions": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "external_id": "acme_001_pro",
+      "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "external_customer_id": "acme_001",
+      "billing_entity_code": "default",
+      "billing_time": "anniversary",
+      "name": "Acme Pro",
+      "plan_code": "pro",
+      "plan_amount_cents": 10000,
+      "plan_amount_currency": "USD",
+      "status": "active",
+      "created_at": "2022-08-08T00:00:00Z",
+      "canceled_at": "2022-09-14T16:35:31Z",
+      "started_at": "2022-08-08T00:00:00Z",
+      "ending_at": "2022-10-08T00:00:00Z",
+      "subscription_at": "2022-08-08T00:00:00Z",
+      "terminated_at": "2022-09-14T16:35:31Z",
+      "previous_plan_code": null,
+      "next_plan_code": null,
+      "downgrade_plan_date": "2022-04-30",
+      "trial_ended_at": "2022-08-08T00:00:00Z",
+      "current_billing_period_started_at": "2022-08-08T00:00:00Z",
+      "current_billing_period_ending_at": "2022-09-08T00:00:00Z",
+      "on_termination_credit_note": "credit",
+      "on_termination_invoice": "generate",
+      "applied_invoice_custom_sections": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "created_at": "2023-07-06T14:35:58Z",
+          "invoice_custom_section_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "invoice_custom_section": {}
+        }
+      ],
+      "payment_method": {
+        "payment_method_type": "provider",
+        "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+      },
+      "consolidate_invoice": true,
+      "cancellation_reason": "payment_failed",
+      "activated_at": "2022-08-08T00:00:00Z",
+      "activation_rules": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "type": "payment",
+          "timeout_hours": 48,
+          "status": "pending",
+          "expires_at": "2022-08-10T00:00:00Z",
+          "created_at": "2022-08-08T00:00:00Z",
+          "updated_at": "2022-08-08T00:00:00Z"
+        }
+      ],
+      "purchase_order_number": "PO-123"
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+```json alerts
+{
+  "alerts": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "external_subscription_id": "sub_1234567890",
+      "lago_wallet_id": null,
+      "wallet_code": null,
+      "billable_metric": {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "name": "Storage",
+        "code": "storage",
+        "description": "GB of storage used in my application",
+        "recurring": false,
+        "rounding_function": "round",
+        "rounding_precision": 2,
+        "created_at": "2022-09-14T16:35:31Z",
+        "expression": "round((ended_at - started_at) * units)",
+        "field_name": "gb",
+        "aggregation_type": "sum_agg",
+        "weighted_interval": "seconds",
+        "filters": [
+          {}
+        ]
+      },
+      "alert_type": "billable_metric_current_usage_amount",
+      "code": "storage_threshold_alert",
+      "name": "Acme Pro",
+      "direction": "increasing",
+      "previous_value": 1000,
+      "last_processed_at": "2025-05-19T10:04:21Z",
+      "thresholds": [
+        {
+          "code": "warn",
+          "recurring": false,
+          "value": "99.0"
+        }
+      ],
+      "created_at": "2025-03-20T10:00:00Z"
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+```json terminate
+{
+  "subscription": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_id": "acme_001_pro",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_customer_id": "acme_001",
+    "billing_entity_code": "default",
+    "billing_time": "anniversary",
+    "name": "Acme Pro",
+    "plan_code": "pro",
+    "plan_amount_cents": 10000,
+    "plan_amount_currency": "USD",
+    "status": "active",
+    "created_at": "2022-08-08T00:00:00Z",
+    "canceled_at": "2022-09-14T16:35:31Z",
+    "started_at": "2022-08-08T00:00:00Z",
+    "ending_at": "2022-10-08T00:00:00Z",
+    "subscription_at": "2022-08-08T00:00:00Z",
+    "terminated_at": "2022-09-14T16:35:31Z",
+    "previous_plan_code": null,
+    "next_plan_code": null,
+    "downgrade_plan_date": "2022-04-30",
+    "trial_ended_at": "2022-08-08T00:00:00Z",
+    "current_billing_period_started_at": "2022-08-08T00:00:00Z",
+    "current_billing_period_ending_at": "2022-09-08T00:00:00Z",
+    "on_termination_credit_note": "credit",
+    "on_termination_invoice": "generate",
+    "applied_invoice_custom_sections": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "created_at": "2023-07-06T14:35:58Z",
+        "invoice_custom_section_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "invoice_custom_section": {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "name": "EU Bank Details",
+          "code": "eu_bank_details",
+          "description": "This section contains the bank details for EU customers.",
+          "details": "Bank Name: Lago Bank, IBAN: FR7630004000031234567890143",
+          "display_name": "Bank Details:",
+          "applied_to_organization": true,
+          "organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "created_at": "2023-07-06T14:35:58Z"
+        }
+      }
+    ],
+    "payment_method": {
+      "payment_method_type": "provider",
+      "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+    },
+    "consolidate_invoice": true,
+    "cancellation_reason": "payment_failed",
+    "activated_at": "2022-08-08T00:00:00Z",
+    "activation_rules": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "type": "payment",
+        "timeout_hours": 48,
+        "status": "pending",
+        "expires_at": "2022-08-10T00:00:00Z",
+        "created_at": "2022-08-08T00:00:00Z",
+        "updated_at": "2022-08-08T00:00:00Z"
+      }
+    ],
+    "purchase_order_number": "PO-123"
+  }
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,177 @@
+---
+title: "Organization"
+description: "Organization settings, billing entities, and the feature and entitlement model."
+---
+
+## Organization and billing entities
+
+| Command | Description |
+| --- | --- |
+| `organizations get` | Retrieve the organization. |
+| `organizations update` | Update settings: address, default currency, invoice numbering, grace period, payment term. |
+| `billing-entities create` | Create a billing entity. |
+| `billing-entities get <code>`, `list` | Read billing entities. |
+| `billing-entities update <code>` | Update. |
+
+A billing entity is a legal entity that issues invoices: its own name, address, tax ID, document numbering, and currency. Customers attach to one with `--billing-entity-code`.
+
+## Features and entitlements
+
+Features describe what a plan grants. Privileges are typed values on a feature (an integer limit, a boolean, a select). Entitlements attach features to a plan, and can be overridden per subscription.
+
+| Command | Description |
+| --- | --- |
+| `features create`, `get <code>`, `list`, `update <code>`, `delete <code>` | Features and their privileges. |
+| `features delete-feature-privilege <code> <privilege_code>` | Remove a privilege. |
+| `entitlements create <code>` | Attach features to plan `code`. |
+| `entitlements list <code>`, `get <code> <feature_code>`, `update <code>` | Plan entitlements. |
+| `entitlements destroy <code> <feature_code>` | Remove a feature from a plan. Confirmation-gated. |
+| `entitlements remove-entitlement-privilege <code> <feature_code> <privilege_code>` | Remove one privilege override. |
+| `entitlements list-subscription <external_id>`, `update-subscription <external_id>` | Subscription-level overrides. |
+| `entitlements destroy-subscription <external_id> <feature_code>` | Remove an override. Confirmation-gated. |
+
+<RequestExample>
+
+```bash organizations
+lago organizations get --output json --query 'organization.{name: name, currency: default_currency, tz: timezone}'
+lago organizations update --billing-configuration-invoice-grace-period 3 --net-payment-term 30
+```
+
+```bash billing-entities
+lago billing-entities create --code acme_eu --name "Acme EU" --legal-name "Acme Europe BV" \
+  --default-currency EUR --country NL --timezone Europe/Amsterdam --document-number-prefix ACME-EU
+lago billing-entities list
+lago billing-entities get acme_eu
+```
+
+```bash features
+lago features create --code sso --name "Single sign-on" \
+  --privileges '[{"code":"max_connections","name":"Max connections","value_type":"integer"}]'
+lago features list
+```
+
+```bash entitlements
+lago entitlements create pro --input '{"entitlements":[{"feature_code":"sso","privileges":{"max_connections":5}}]}'
+lago entitlements list pro
+lago entitlements list-subscription acme_001_pro
+lago entitlements update-subscription acme_001_pro \
+  --input '{"entitlements":[{"feature_code":"sso","privileges":{"max_connections":20}}]}'
+lago entitlements destroy pro sso --confirm sso
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json organizations get
+{
+  "organization": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "name": "Name1",
+    "slug": "NAME1-1234",
+    "created_at": "2022-05-02T13:04:09Z",
+    "webhook_url": "https://webhook.brex.com",
+    "webhook_urls": [
+      "https://webhook.brex.com",
+      "https://webhook2.brex.com"
+    ],
+    "country": "US",
+    "default_currency": "USD",
+    "address_line1": "100 Brex Street",
+    "address_line2": null,
+    "state": "NYC",
+    "zipcode": "10000",
+    "email": "brex@brex.com",
+    "city": "New York",
+    "legal_name": null,
+    "legal_number": null,
+    "document_numbering": "per_customer",
+    "document_number_prefix": "ORG-1234",
+    "net_payment_term": 30,
+    "tax_identification_number": "US123456789",
+    "timezone": "America/Los_Angeles",
+    "email_settings": [
+      "invoice.finalized",
+      "credit_note.created"
+    ],
+    "billing_configuration": {
+      "invoice_footer": "This is my customer footer",
+      "invoice_grace_period": 3,
+      "document_locale": "en"
+    },
+    "taxes": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "name": "TVA",
+        "code": "french_standard_vat",
+        "description": "French standard VAT",
+        "rate": 20,
+        "applied_to_organization": true,
+        "created_at": "2023-07-06T14:35:58Z"
+      }
+    ],
+    "finalize_zero_amount_invoice": false,
+    "events_store": "clickhouse"
+  }
+}
+```
+
+```text billing-entities create
+LAGO_ID  1a901a90-1a90-1a90-1a90-1a901a901a90
+CODE     acme_eu
+NAME     Acme EU
+```
+
+```text features create
+CODE  sso
+NAME  Single sign-on
+```
+
+```json entitlements list
+{
+  "entitlements": [
+    {
+      "code": "seats",
+      "name": "Number of seats",
+      "description": "Number of users of the account",
+      "privileges": [
+        {
+          "code": "max",
+          "name": "Maximum",
+          "value_type": "integer",
+          "config": {},
+          "value": 10
+        },
+        {
+          "code": "max_admins",
+          "name": "Max Admins",
+          "value_type": "integer",
+          "config": {},
+          "value": 5
+        },
+        {
+          "code": "root",
+          "name": "Allow root user",
+          "value_type": "boolean",
+          "config": {},
+          "value": true
+        },
+        {
+          "code": "provider",
+          "name": "SSO Provider",
+          "value_type": "select",
+          "value": "google",
+          "config": {
+            "select_options": [
+              "google",
+              "okta"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+
+</ResponseExample>

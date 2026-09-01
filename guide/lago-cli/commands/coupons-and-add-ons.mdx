@@ -1,0 +1,170 @@
+---
+title: "Coupons and add-ons"
+description: "Discounts applied to customers, and one-off items for one-off invoices."
+---
+
+## Coupons
+
+| Command | Description |
+| --- | --- |
+| `coupons create` | Create a coupon. |
+| `coupons get <code>`, `list` | Read coupons. |
+| `coupons update <code>` | Update a coupon. |
+| `coupons delete <code>` | Delete. Confirmation-gated. |
+| `coupons apply` | Apply a coupon to a customer. |
+| `coupons list-applied` | Applied coupons across customers. |
+| `coupons delete-applied <external_customer_id> <applied_coupon_id>` | Remove an applied coupon. Confirmation-gated. |
+
+| Flag | Description |
+| --- | --- |
+| `--coupon-type fixed_amount\|percentage` | With `--amount-cents` and `--amount-currency`, or `--percentage-rate`. |
+| `--frequency once\|recurring\|forever` | `recurring` takes `--frequency-duration` in billing periods. |
+| `--reusable true` | The same coupon can be applied to a customer more than once. |
+| `--expiration no_expiration\|time_limit` | `time_limit` takes `--expiration-at`. |
+| `--applies-to-plan-codes`, `--applies-to-billable-metric-codes` | JSON arrays. Limit the discount's scope. |
+
+`apply` can override the amount or percentage for one customer. The applied coupon's `lago_id` is what `delete-applied` takes.
+
+## Add-ons
+
+| Command | Description |
+| --- | --- |
+| `add-ons create` | Create an add-on. |
+| `add-ons get <code>`, `list` | Read add-ons. |
+| `add-ons update <code>` | Update. |
+| `add-ons delete <code>` | Delete. Confirmation-gated. |
+
+Add-ons are the line items of a one-off invoice. See `invoices create` on the [invoices page](/guide/lago-cli/commands/invoices).
+
+<RequestExample>
+
+```bash coupons create
+lago coupons create --name "Launch 20%" --code launch20 \
+  --coupon-type percentage --percentage-rate 20 \
+  --frequency recurring --frequency-duration 3 \
+  --reusable true --expiration no_expiration
+
+lago coupons create --name "Credit 50" --code credit50 \
+  --coupon-type fixed_amount --amount-cents 5000 --amount-currency USD \
+  --frequency once --applies-to-plan-codes '["pro"]'
+```
+
+```bash coupons apply
+lago coupons apply --coupon-code launch20 --external-customer-id acme_001
+lago coupons list-applied --output json \
+  --query 'applied_coupons[?external_customer_id==`"acme_001"`].{id: lago_id, code: coupon_code}'
+lago coupons delete-applied acme_001 8b908b90-8b90-8b90-8b90-8b908b908b90 \
+  --confirm 8b908b90-8b90-8b90-8b90-8b908b908b90
+```
+
+```bash coupons read
+lago coupons get launch20
+lago coupons list
+lago coupons delete launch20 --confirm launch20
+```
+
+```bash add-ons
+lago add-ons create --name Onboarding --code setup_fee \
+  --amount-cents 50000 --amount-currency USD --invoice-display-name "Onboarding package"
+lago add-ons list
+lago add-ons update setup_fee --amount-cents 45000
+lago add-ons delete setup_fee --confirm setup_fee
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text coupons create
+LAGO_ID  1a901a90-1a90-1a90-1a90-1a901a901a90
+CODE     launch20
+NAME     Launch 20%
+```
+
+```json coupons apply
+{
+  "applied_coupon": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_coupon_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "coupon_code": "startup_deal",
+    "coupon_name": "Startup Deal",
+    "coupon_status": "active",
+    "coupon_deleted_at": "2022-04-29T08:59:51Z",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+    "status": "active",
+    "amount_cents": 2000,
+    "amount_cents_remaining": 50,
+    "amount_currency": "USD",
+    "percentage_rate": "20.0",
+    "frequency": "recurring",
+    "frequency_duration": 3,
+    "frequency_duration_remaining": 1,
+    "expiration_at": "2022-04-29T08:59:51Z",
+    "created_at": "2022-04-29T08:59:51Z",
+    "terminated_at": "2022-04-29T08:59:51Z"
+  }
+}
+```
+
+```json coupons get
+{
+  "coupon": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "name": "Launch 20%",
+    "code": "launch20",
+    "description": "I am a coupon description",
+    "coupon_type": "percentage",
+    "amount_cents": 5000,
+    "amount_currency": "USD",
+    "reusable": true,
+    "limited_plans": true,
+    "plan_codes": [
+      "startup_plan"
+    ],
+    "limited_billable_metrics": false,
+    "billable_metric_codes": [],
+    "percentage_rate": "20.0",
+    "frequency": "recurring",
+    "frequency_duration": 6,
+    "expiration": "time_limit",
+    "expiration_at": "2022-08-08T23:59:59Z",
+    "created_at": "2022-04-29T08:59:51Z",
+    "terminated_at": "2022-08-08T23:59:59Z"
+  }
+}
+```
+
+```text add-ons create
+LAGO_ID  1a901a90-1a90-1a90-1a90-1a901a901a90
+CODE     setup_fee
+NAME     Onboarding
+```
+
+```json add-ons get
+{
+  "add_on": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "name": "Onboarding",
+    "invoice_display_name": "Setup Fee (SF1)",
+    "code": "setup_fee",
+    "amount_cents": 50000,
+    "amount_currency": "USD",
+    "description": "Implementation fee for new customers.",
+    "created_at": "2022-04-29T08:59:51Z",
+    "taxes": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "name": "TVA",
+        "code": "french_standard_vat",
+        "description": "French standard VAT",
+        "rate": 20,
+        "applied_to_organization": true,
+        "created_at": "2023-07-06T14:35:58Z"
+      }
+    ]
+  }
+}
+```
+
+</ResponseExample>

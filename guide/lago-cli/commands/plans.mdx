@@ -1,0 +1,575 @@
+---
+title: "Plans"
+description: "Plans, usage charges, fixed charges, charge filters, and plan metadata."
+---
+
+| Command | Description |
+| --- | --- |
+| `plans create` | Create a plan with charges. |
+| `plans get <code>` | Retrieve a plan. |
+| `plans list` | List plans. |
+| `plans update <code>` | Update a plan. |
+| `plans delete <code>` | Delete a plan. Confirmation-gated. |
+| `plans import FILE` | Create plans from a file. |
+| `plans charges <code>` | List a plan's usage charges. |
+| `plans create-plan-charge <code>` | Add a usage charge. |
+| `plans get-plan-charge`, `update-plan-charge`, `destroy-plan-charge <code> <charge_code>` | One charge. |
+| `plans filters <code> <charge_code>` | List a charge's filters. |
+| `plans create-plan-charge-filter <code> <charge_code>` | Add a filter. |
+| `plans get-plan-charge-filter`, `update-plan-charge-filter`, `destroy-plan-charge-filter <code> <charge_code> <filter_id>` | One filter. |
+| `plans fixed-charges <code>` | List fixed charges. |
+| `plans create-plan-fixed-charge <code>` | Add a fixed charge. |
+| `plans get-plan-fixed-charge`, `update-plan-fixed-charge`, `destroy-plan-fixed-charge <code> <fixed_charge_code>` | One fixed charge. |
+| `plans metadata <code>` | Read plan metadata. |
+| `plans merge-plan-metadata <code>` | Merge keys into metadata. |
+| `plans delete-plan-metadata-key <code> <key>` | Remove one key. |
+| `plans delete-all-plan-metadata <code>` | Clear metadata. |
+
+## create
+
+A flat plan fits in flags. Charges nest a `billable_metric_id`, a `charge_model`, and model-specific `properties`, so write them as a file and pass `--input @plan.json`. The `billable_metric_id` is the `LAGO_ID` that `billable-metrics create` printed, not the code.
+
+| Flag | Description |
+| --- | --- |
+| `--interval` | `weekly`, `monthly`, `quarterly`, `semiannual`, `yearly`. |
+| `--amount-cents`, `--amount-currency` | Base subscription fee. |
+| `--pay-in-advance true` | Bill the base fee at period start. |
+| `--bill-charges-monthly true` | Invoice usage monthly on a yearly plan. |
+| `--trial-period days` | Free days on the base fee. |
+| `--minimum-commitment-amount-cents` | Minimum invoice amount per period. |
+| `--charges`, `--fixed-charges`, `--usage-thresholds` | JSON arrays. |
+
+## Charges on a live plan
+
+`create-plan-charge` and `update-plan-charge` change the plan for every subscription on it. To change one customer, override the charge on the [subscription](/guide/lago-cli/commands/subscriptions) instead.
+
+<RequestExample>
+
+```bash create
+lago plans create --input @plan.json
+lago plans create --input @plan.json --output json \
+  --query 'plan.charges[].{metric: billable_metric_code, model: charge_model}'
+
+# Flat plan without charges
+lago plans create --name Starter --code starter --interval monthly \
+  --amount-cents 4900 --amount-currency USD --pay-in-advance true --trial-period 14
+```
+
+```bash plan.json
+cat > plan.json <<'JSON'
+{
+  "plan": {
+    "name": "Pro",
+    "code": "pro",
+    "interval": "monthly",
+    "amount_cents": 9900,
+    "amount_currency": "USD",
+    "pay_in_advance": true,
+    "charges": [
+      {
+        "billable_metric_id": "0b8a1e70-1a90-4b2c-9f3d-5e6a7b8c9d01",
+        "charge_model": "graduated",
+        "properties": {
+          "graduated_ranges": [
+            {"from_value": 0, "to_value": 10000, "per_unit_amount": "0", "flat_amount": "0"},
+            {"from_value": 10001, "to_value": null, "per_unit_amount": "0.002", "flat_amount": "0"}
+          ]
+        }
+      }
+    ]
+  }
+}
+JSON
+```
+
+```bash get
+lago plans get pro
+lago plans get pro --output json --query 'plan.charges[?charge_model==`"graduated"`].billable_metric_code'
+```
+
+```bash list
+lago plans list --limit 50
+lago plans list --all --output json | jq -r '.plans[] | "\(.code)\t\(.amount_cents)"'
+```
+
+```bash charges
+lago plans charges pro
+lago plans create-plan-charge pro --input '{"charge":{"billable_metric_id":"0b8a1e70-1a90-4b2c-9f3d-5e6a7b8c9d01","charge_model":"standard","properties":{"amount":"0.10"}}}'
+lago plans update-plan-charge pro api_requests --input '{"charge":{"properties":{"amount":"0.08"}}}'
+lago plans destroy-plan-charge pro api_requests --confirm api_requests
+```
+
+```bash metadata
+lago plans metadata pro
+lago plans merge-plan-metadata pro --input '{"metadata":[{"key":"tier","value":"gold"}]}'
+lago plans delete-plan-metadata-key pro tier --confirm tier
+```
+
+```bash update
+lago plans update pro --description "Pro plan, graduated API pricing"
+```
+
+```bash delete
+lago plans delete pro --confirm pro
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text create
+LAGO_ID  1a901a90-1a90-1a90-1a90-1a901a901a90
+CODE     pro
+NAME     Pro
+```
+
+```json get
+{
+  "plan": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "name": "Pro",
+    "invoice_display_name": "Startup plan",
+    "created_at": "2023-06-27T19:43:42Z",
+    "code": "pro",
+    "interval": "monthly",
+    "description": "",
+    "amount_cents": 9900,
+    "amount_currency": "USD",
+    "trial_period": 5,
+    "pay_in_advance": true,
+    "bill_charges_monthly": null,
+    "bill_fixed_charges_monthly": null,
+    "minimum_commitment": {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "plan_code": "premium",
+      "amount_cents": 100000,
+      "invoice_display_name": "Minimum Commitment (C1)",
+      "interval": "monthly",
+      "created_at": "2022-04-29T08:59:51Z",
+      "updated_at": "2022-04-29T08:59:51Z",
+      "taxes": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "name": "TVA",
+          "code": "french_standard_vat",
+          "description": "French standard VAT",
+          "rate": 20,
+          "applied_to_organization": true,
+          "created_at": "2023-07-06T14:35:58Z"
+        }
+      ]
+    },
+    "charges": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a91",
+        "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a91",
+        "billable_metric_code": "requests",
+        "created_at": "2023-06-27T19:43:42Z",
+        "charge_model": "package",
+        "invoiceable": true,
+        "invoice_display_name": "Setup",
+        "pay_in_advance": false,
+        "regroup_paid_fees": null,
+        "prorated": false,
+        "min_amount_cents": 3000,
+        "properties": {
+          "amount": "30",
+          "free_units": 100,
+          "package_size": 1000
+        },
+        "filters": []
+      },
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a92",
+        "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a92",
+        "billable_metric_code": "cpu",
+        "created_at": "2023-06-27T19:43:42Z",
+        "charge_model": "graduated",
+        "invoiceable": true,
+        "invoice_display_name": "Setup",
+        "pay_in_advance": false,
+        "regroup_paid_fees": null,
+        "prorated": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "graduated_ranges": [
+            {
+              "from_value": 0,
+              "to_value": 10,
+              "flat_amount": "10",
+              "per_unit_amount": "0.5"
+            },
+            {
+              "from_value": 11,
+              "to_value": null,
+              "flat_amount": "0",
+              "per_unit_amount": "0.4"
+            }
+          ]
+        },
+        "filters": []
+      },
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a93",
+        "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a93",
+        "billable_metric_code": "seats",
+        "created_at": "2023-06-27T19:43:42Z",
+        "charge_model": "standard",
+        "invoiceable": true,
+        "invoice_display_name": "Setup",
+        "pay_in_advance": true,
+        "regroup_paid_fees": null,
+        "prorated": false,
+        "min_amount_cents": 0,
+        "properties": {},
+        "filters": [
+          {
+            "invoice_display_name": "Europe",
+            "properties": {
+              "amount": "10"
+            },
+            "values": {
+              "region": [
+                "Europe"
+              ]
+            }
+          },
+          {
+            "invoice_display_name": "USA",
+            "properties": {
+              "amount": "5"
+            },
+            "values": {
+              "region": [
+                "USA"
+              ]
+            }
+          },
+          {
+            "invoice_display_name": "Africa",
+            "properties": {
+              "amount": "8"
+            },
+            "values": {
+              "region": [
+                "Africa"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a94",
+        "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a94",
+        "billable_metric_code": "storage",
+        "created_at": "2023-06-27T19:43:42Z",
+        "charge_model": "volume",
+        "invoiceable": true,
+        "invoice_display_name": "Setup",
+        "pay_in_advance": false,
+        "regroup_paid_fees": null,
+        "prorated": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "volume_ranges": [
+            {
+              "from_value": 0,
+              "to_value": 100,
+              "flat_amount": "0",
+              "per_unit_amount": "0"
+            },
+            {
+              "from_value": 101,
+              "to_value": null,
+              "flat_amount": "0",
+              "per_unit_amount": "0.5"
+            }
+          ]
+        },
+        "filters": []
+      },
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a95",
+        "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a95",
+        "billable_metric_code": "payments",
+        "created_at": "2023-06-27T19:43:42Z",
+        "charge_model": "percentage",
+        "invoiceable": false,
+        "invoice_display_name": "Setup",
+        "pay_in_advance": true,
+        "regroup_paid_fees": "invoice",
+        "prorated": false,
+        "min_amount_cents": 0,
+        "properties": {
+          "rate": "1",
+          "fixed_amount": "0.5",
+          "free_units_per_events": 5,
+          "free_units_per_total_aggregation": "500"
+        },
+        "filters": []
+      }
+    ],
+    "fixed_charges": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_add_on_id": "2b802b80-2b80-2b80-2b80-2b802b802b80",
+        "code": "setup_fee",
+        "invoice_display_name": "Setup Fee",
+        "add_on_code": "setup",
+        "created_at": "2026-01-15T10:30:00Z",
+        "charge_model": "standard",
+        "pay_in_advance": true,
+        "prorated": false,
+        "properties": {
+          "amount": "500"
+        },
+        "units": 1,
+        "lago_parent_id": null,
+        "taxes": [
+          {
+            "lago_id": "3c703c70-3c70-3c70-3c70-3c703c703c70",
+            "name": "VAT",
+            "code": "vat_20",
+            "rate": 20,
+            "description": "Standard VAT rate",
+            "applied_to_organization": true,
+            "created_at": "2026-01-01T00:00:00Z"
+          }
+        ]
+      },
+      {
+        "lago_id": "4d604d60-4d60-4d60-4d60-4d604d604d60",
+        "lago_add_on_id": "5e505e50-5e50-5e50-5e50-5e505e505e50",
+        "code": "support_tier",
+        "invoice_display_name": "Support Tier",
+        "add_on_code": "premium_support",
+        "created_at": "2026-01-15T10:30:00Z",
+        "charge_model": "graduated",
+        "pay_in_advance": false,
+        "prorated": true,
+        "properties": {
+          "graduated_ranges": [
+            {
+              "from_value": 0,
+              "to_value": 10,
+              "per_unit_amount": "5",
+              "flat_amount": "200"
+            },
+            {
+              "from_value": 11,
+              "to_value": null,
+              "per_unit_amount": "1",
+              "flat_amount": "300"
+            }
+          ]
+        },
+        "units": 1,
+        "lago_parent_id": null,
+        "taxes": []
+      },
+      {
+        "lago_id": "6f406f40-6f40-6f40-6f40-6f406f406f40",
+        "lago_add_on_id": "7a307a30-7a30-7a30-7a30-7a307a307a30",
+        "code": "storage",
+        "invoice_display_name": "Storage Allocation",
+        "add_on_code": "cloud_storage",
+        "created_at": "2026-01-15T10:30:00Z",
+        "charge_model": "volume",
+        "pay_in_advance": false,
+        "prorated": false,
+        "properties": {
+          "volume_ranges": [
+            {
+              "from_value": 0,
+              "to_value": 100,
+              "per_unit_amount": "2",
+              "flat_amount": "1"
+            },
+            {
+              "from_value": 101,
+              "to_value": null,
+              "per_unit_amount": "1",
+              "flat_amount": "0"
+            }
+          ]
+        },
+        "units": 50,
+        "lago_parent_id": null,
+        "taxes": []
+      }
+    ],
+    "taxes": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "name": "TVA",
+        "code": "french_standard_vat",
+        "description": "French standard VAT",
+        "rate": 20,
+        "applied_to_organization": true,
+        "created_at": "2023-07-06T14:35:58Z"
+      }
+    ],
+    "usage_thresholds": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "threshold_display_name": "Threshold 1",
+        "amount_cents": 10000,
+        "recurring": true,
+        "created_at": "2023-06-27T19:43:42Z",
+        "updated_at": "2023-06-27T19:43:42Z"
+      }
+    ],
+    "entitlements": [
+      {
+        "entitlement": {
+          "code": "seats",
+          "name": "Number of seats",
+          "description": "Number of users of the account",
+          "privileges": [
+            {
+              "code": "max",
+              "name": "Maximum",
+              "value_type": "integer",
+              "config": {},
+              "value": 10
+            },
+            {
+              "code": "max_admins",
+              "name": "Max Admins",
+              "value_type": "integer",
+              "config": {},
+              "value": 5
+            },
+            {
+              "code": "root",
+              "name": "Allow root user",
+              "value_type": "boolean",
+              "config": {},
+              "value": true
+            },
+            {
+              "code": "provider",
+              "name": "SSO Provider",
+              "value_type": "select",
+              "value": "google",
+              "config": {
+                "select_options": [
+                  "google",
+                  "okta"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "metadata": {
+      "external_id": "ext-123",
+      "synced_at": "2024-01-15",
+      "source": null
+    }
+  }
+}
+```
+
+```json charges
+{
+  "charges": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "code": "pro",
+      "billable_metric_code": "requests",
+      "invoice_display_name": "Setup",
+      "created_at": "2022-09-14T16:35:31Z",
+      "charge_model": "dynamic",
+      "pay_in_advance": true,
+      "invoiceable": true,
+      "regroup_paid_fees": "invoice",
+      "prorated": false,
+      "min_amount_cents": 1200,
+      "properties": {
+        "grouped_by": [
+          "agent_name"
+        ],
+        "pricing_group_keys": [
+          "agent_name"
+        ],
+        "graduated_ranges": [
+          {}
+        ],
+        "graduated_percentage_ranges": [
+          {}
+        ],
+        "amount": "30",
+        "free_units": 100,
+        "package_size": 1000,
+        "rate": "1",
+        "fixed_amount": "0.5",
+        "free_units_per_events": 5,
+        "free_units_per_total_aggregation": "500",
+        "per_transaction_max_amount": "3.75",
+        "per_transaction_min_amount": "1.75",
+        "volume_ranges": [
+          {}
+        ],
+        "presentation_group_keys": [
+          {
+            "value": "region",
+            "options": {
+              "display_in_invoice": true
+            }
+          }
+        ]
+      },
+      "filters": [
+        {
+          "invoice_display_name": "AWS",
+          "properties": {},
+          "values": {
+            "region": [
+              "us-east-1"
+            ]
+          }
+        }
+      ],
+      "taxes": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "name": "TVA",
+          "code": "french_standard_vat",
+          "description": "French standard VAT",
+          "rate": 20,
+          "applied_to_organization": true,
+          "created_at": "2023-07-06T14:35:58Z"
+        }
+      ],
+      "applied_pricing_unit": {
+        "code": "unit_code",
+        "conversion_rate": "0.5"
+      },
+      "accepts_target_wallet": false,
+      "lago_parent_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+```json metadata
+{
+  "metadata": {
+    "external_id": "ext-123",
+    "synced_at": "2024-01-15",
+    "source": null
+  }
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,459 @@
+---
+title: "Customers"
+description: "Create and inspect customers, read current and past usage, generate portal and checkout URLs."
+---
+
+| Command | Description |
+| --- | --- |
+| `customers create` | Create or update a customer. The API upserts on `external_id`. |
+| `customers get <external_customer_id>` | Retrieve a customer. |
+| `customers list` | List customers with filters. |
+| `customers delete <external_customer_id>` | Delete a customer. Confirmation-gated. |
+| `customers export` | Trigger a customers export. |
+| `customers current-usage <external_customer_id>` | Usage for the open billing period. |
+| `customers past-usage <external_customer_id>` | Usage for closed periods. |
+| `customers projected-usage <external_customer_id>` | Projected usage to period end. |
+| `customers subscriptions <external_customer_id>` | The customer's subscriptions. |
+| `customers invoices <external_customer_id>` | The customer's invoices. |
+| `customers credit-notes <external_customer_id>` | The customer's credit notes. |
+| `customers applied-coupons <external_customer_id>` | Coupons applied to the customer. |
+| `customers payments`, `payment-requests <external_customer_id>` | Payments and payment requests. |
+| `customers portal-url <external_customer_id>` | Generate a customer portal URL. |
+| `customers checkout-url <external_customer_id>` | Generate a payment-provider checkout URL. |
+
+## create
+
+`external_id` is your identifier and the one every other command uses to address the customer. Running `create` again with the same `external_id` updates the customer.
+
+| Flag | Description |
+| --- | --- |
+| `--external-id`, `--name`, `--email`, `--currency` | The essentials. Currency is locked once the customer has an invoice. |
+| `--country`, `--timezone`, `--net-payment-term` | Billing address, local time for billing, days to pay. |
+| `--billing-configuration-payment-provider`, `-payment-provider-code`, `-provider-customer-id`, `-sync-with-provider` | Link to a payment provider connection, or let Lago create the provider customer. |
+| `--billing-configuration-provider-payment-methods` | JSON array, Stripe only: `["card","sepa_debit"]`. |
+| `--billing-entity-code` | Attach to a billing entity other than the default. |
+| `--metadata` | JSON array of `{"key","value","display_in_invoice"}`. |
+| `--tax-codes`, `--invoice-custom-section-codes` | JSON arrays of codes. |
+
+## Usage
+
+Usage hangs off the customer and takes the subscription's external ID as a flag. Three identifiers, three kinds: passing a plan code as `--external-subscription-id` is a not-found error, exit 4, not an empty usage report.
+
+| Flag | Description |
+| --- | --- |
+| `--external-subscription-id` | Required. |
+| `--charge-code`, `--charge-id`, `--billable-metric-code` | Narrow to one charge or metric. |
+| `--full-usage true` | Since subscription start instead of the current period. Requires a charge filter. |
+| `--group` | Filter by pricing group, `group[cloud]=aws`. |
+| `--apply-taxes false` | Exclude taxes from the amounts. |
+| `--periods-count N` | `past-usage` only: how many closed periods. |
+
+In the response, `units` is a decimal string and every `*_amount_cents` is an integer. Compare `total_amount_cents` with the dashboard and they match.
+
+## delete
+
+Deletion is confirmation-gated. Non-interactive scripts pass `--confirm` with the same `external_customer_id`. A mismatch is refused, exit 2.
+
+<RequestExample>
+
+```bash create
+lago customers create \
+  --external-id acme_001 \
+  --name "Acme Inc." \
+  --email billing@acme.example \
+  --currency USD \
+  --country US --timezone America/New_York \
+  --net-payment-term 30
+
+# Attach to a payment provider connection
+lago customers create --external-id acme_001 --name "Acme Inc." \
+  --billing-configuration-payment-provider stripe \
+  --billing-configuration-payment-provider-code stripe_prod \
+  --billing-configuration-sync-with-provider true \
+  --billing-configuration-provider-payment-methods '["card","sepa_debit"]'
+
+# Tag test data: visible in the dashboard, kept off invoices
+lago customers create --external-id qa_cust_001 --name "QA Test Company" --currency USD \
+  --metadata '[{"key":"mode","value":"test","display_in_invoice":false}]'
+```
+
+```bash get
+lago customers get acme_001
+lago customers get acme_001 --output json --query 'customer.email'
+lago customers get acme_001 --output json --query 'customer.metadata'
+```
+
+```bash list
+lago customers list --limit 5
+lago customers list --search-term acme
+lago customers list --countries US,CA --currencies USD
+lago customers list --metadata[mode] test
+lago customers list --output json --query "customers[?starts_with(external_id, 'qa_')].external_id"
+lago customers list --all --output json \
+  | jq -r '.customers[] | select(.external_id | startswith("qa_")) | .external_id'
+```
+
+```bash current-usage
+lago customers current-usage acme_001 --external-subscription-id acme_001_pro
+
+lago customers current-usage acme_001 --external-subscription-id acme_001_pro \
+  --output json --query 'customer_usage.total_amount_cents'
+
+lago customers current-usage acme_001 --external-subscription-id acme_001_pro \
+  --output json --query 'customer_usage.charges_usage[].{metric: billable_metric.code, units: units, amount: amount_cents}'
+
+# One charge, since subscription start
+lago customers current-usage acme_001 --external-subscription-id acme_001_pro \
+  --charge-code api_requests --full-usage true
+```
+
+```bash past-usage
+lago customers past-usage acme_001 --external-subscription-id acme_001_pro --periods-count 3
+lago customers projected-usage acme_001 --external-subscription-id acme_001_pro
+```
+
+```bash related
+lago customers subscriptions acme_001
+lago customers invoices acme_001
+lago customers credit-notes acme_001
+lago customers applied-coupons acme_001
+lago customers payments acme_001
+lago customers portal-url acme_001 --output json --query 'customer.portal_url'
+lago customers checkout-url acme_001
+
+# Find the owner when you only have the subscription
+lago subscriptions get acme_001_pro --output json --query 'subscription.external_customer_id'
+```
+
+```bash delete
+lago customers delete qa_cust_001 --confirm qa_cust_001
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text create
+LAGO_ID      1a901a90-1a90-1a90-1a90-1a901a901a90
+EXTERNAL_ID  acme_001
+NAME         Acme Inc.
+```
+
+```json get
+{
+  "customer": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "sequential_id": 1,
+    "slug": "LAG-1234-001",
+    "external_id": "acme_001",
+    "billing_entity_code": "acme_corp",
+    "address_line1": "5230 Penfield Ave",
+    "address_line2": null,
+    "applicable_timezone": "America/Los_Angeles",
+    "city": "Woodland Hills",
+    "country": "US",
+    "currency": "USD",
+    "email": "billing@acme.example",
+    "legal_name": "Coleman-Blair",
+    "legal_number": "49-008-2965",
+    "logo_url": "http://hooli.com/logo.png",
+    "name": "Acme Inc.",
+    "firstname": "Gavin",
+    "lastname": "Belson",
+    "account_type": "customer",
+    "customer_type": "company",
+    "phone": "1-171-883-3711 x245",
+    "state": "CA",
+    "tax_identification_number": "EU123456789",
+    "timezone": "America/New_York",
+    "url": "http://hooli.com",
+    "zipcode": "91364",
+    "net_payment_term": 30,
+    "external_salesforce_id": "0015p00001JQx1QAAT",
+    "created_at": "2022-04-29T08:59:51Z",
+    "updated_at": "2022-04-29T08:59:51Z",
+    "finalize_zero_amount_invoice": "inherit",
+    "skip_invoice_custom_sections": false,
+    "billing_configuration": {
+      "invoice_grace_period": 3,
+      "subscription_invoice_issuing_date_anchor": "next_period_start",
+      "subscription_invoice_issuing_date_adjustment": "keep_anchor",
+      "payment_provider": "stripe",
+      "payment_provider_code": "stripe-eu-1",
+      "provider_customer_id": "cus_12345",
+      "sync": true,
+      "sync_with_provider": true,
+      "document_locale": "fr",
+      "provider_payment_methods": [
+        "card",
+        "sepa_debit",
+        "us_bank_account",
+        "bacs_debit",
+        "link",
+        "boleto",
+        "crypto",
+        "customer_balance"
+      ]
+    },
+    "shipping_address": {
+      "address_line1": "5230 Penfield Ave",
+      "address_line2": null,
+      "city": "Woodland Hills",
+      "country": "US",
+      "state": "CA",
+      "zipcode": "91364"
+    },
+    "metadata": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "key": "Purchase Order",
+        "value": "123456789",
+        "display_in_invoice": true,
+        "created_at": "2022-04-29T08:59:51Z"
+      }
+    ],
+    "integration_customers": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "type": "netsuite",
+        "integration_code": "netsuite-eu-1",
+        "external_customer_id": "cus_12345",
+        "sync_with_provider": true,
+        "subsidiary_id": "2",
+        "targeted_object": "contacts",
+        "email": "dinesh@piedpiper.test"
+      }
+    ],
+    "taxes": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "name": "TVA",
+        "code": "french_standard_vat",
+        "description": "French standard VAT",
+        "rate": 20,
+        "applied_to_organization": true,
+        "created_at": "2023-07-06T14:35:58Z"
+      }
+    ],
+    "applicable_invoice_custom_sections": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "name": "EU Bank Details",
+        "code": "eu_bank_details",
+        "description": "This section contains the bank details for EU customers.",
+        "details": "Bank Name: Lago Bank, IBAN: FR7630004000031234567890143",
+        "display_name": "Bank Details:",
+        "applied_to_organization": true,
+        "organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "created_at": "2023-07-06T14:35:58Z"
+      }
+    ],
+    "error_details": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "error_code": "tax_error",
+        "details": {
+          "tax_error": "taxDateTooFarInFuture"
+        }
+      }
+    ]
+  }
+}
+```
+
+```json list
+{
+  "customers": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "sequential_id": 1,
+      "slug": "LAG-1234-001",
+      "external_id": "acme_001",
+      "billing_entity_code": "acme_corp",
+      "address_line1": "5230 Penfield Ave",
+      "address_line2": null,
+      "applicable_timezone": "America/Los_Angeles",
+      "city": "Woodland Hills",
+      "country": "US",
+      "currency": "USD",
+      "email": "billing@acme.example",
+      "legal_name": "Coleman-Blair",
+      "legal_number": "49-008-2965",
+      "logo_url": "http://hooli.com/logo.png",
+      "name": "Acme Inc.",
+      "firstname": "Gavin",
+      "lastname": "Belson",
+      "account_type": "customer",
+      "customer_type": "company",
+      "phone": "1-171-883-3711 x245",
+      "state": "CA",
+      "tax_identification_number": "EU123456789",
+      "timezone": "America/New_York",
+      "url": "http://hooli.com",
+      "zipcode": "91364",
+      "net_payment_term": 30,
+      "external_salesforce_id": "0015p00001JQx1QAAT",
+      "created_at": "2022-04-29T08:59:51Z",
+      "updated_at": "2022-04-29T08:59:51Z",
+      "finalize_zero_amount_invoice": "inherit",
+      "skip_invoice_custom_sections": false,
+      "billing_configuration": {
+        "invoice_grace_period": 3,
+        "subscription_invoice_issuing_date_anchor": "next_period_start",
+        "subscription_invoice_issuing_date_adjustment": "keep_anchor",
+        "payment_provider": "stripe",
+        "payment_provider_code": "stripe-eu-1",
+        "provider_customer_id": "cus_12345",
+        "sync": true,
+        "sync_with_provider": true,
+        "document_locale": "fr",
+        "provider_payment_methods": [
+          "card",
+          "sepa_debit",
+          "us_bank_account",
+          "bacs_debit",
+          "link",
+          "boleto",
+          "crypto",
+          "customer_balance"
+        ]
+      },
+      "shipping_address": {
+        "address_line1": "5230 Penfield Ave",
+        "address_line2": null,
+        "city": "Woodland Hills",
+        "country": "US",
+        "state": "CA",
+        "zipcode": "91364"
+      },
+      "metadata": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "key": "Purchase Order",
+          "value": "123456789",
+          "display_in_invoice": true,
+          "created_at": "2022-04-29T08:59:51Z"
+        }
+      ],
+      "integration_customers": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "type": "netsuite",
+          "integration_code": "netsuite-eu-1",
+          "external_customer_id": "cus_12345",
+          "sync_with_provider": true,
+          "subsidiary_id": "2",
+          "targeted_object": "contacts",
+          "email": "dinesh@piedpiper.test"
+        }
+      ],
+      "taxes": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "name": "TVA",
+          "code": "french_standard_vat",
+          "description": "French standard VAT",
+          "rate": 20,
+          "applied_to_organization": true,
+          "created_at": "2023-07-06T14:35:58Z"
+        }
+      ],
+      "applicable_invoice_custom_sections": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "name": "EU Bank Details",
+          "code": "eu_bank_details",
+          "description": "This section contains the bank details for EU customers.",
+          "details": "Bank Name: Lago Bank, IBAN: FR7630004000031234567890143",
+          "display_name": "Bank Details:",
+          "applied_to_organization": true,
+          "organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "created_at": "2023-07-06T14:35:58Z"
+        }
+      ],
+      "error_details": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "error_code": "tax_error",
+          "details": {
+            "tax_error": "taxDateTooFarInFuture"
+          }
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+```json current-usage
+{
+  "customer_usage": {
+    "from_datetime": "2022-07-01T00:00:00Z",
+    "to_datetime": "2022-07-31T23:59:59Z",
+    "issuing_date": "2022-08-01",
+    "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "currency": "USD",
+    "amount_cents": 123,
+    "taxes_amount_cents": 200,
+    "total_amount_cents": 123,
+    "charges_usage": [
+      {
+        "units": "1.0",
+        "total_aggregated_units": "1.0",
+        "events_count": 10,
+        "amount_cents": 123,
+        "amount_currency": "USD",
+        "pricing_unit_details": {
+          "amount_cents": 200,
+          "short_name": "CR",
+          "conversion_rate": "0.5"
+        },
+        "charge": {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "charge_model": "graduated",
+          "invoice_display_name": "Setup"
+        },
+        "billable_metric": {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "name": "Storage",
+          "code": "storage",
+          "aggregation_type": "sum_agg"
+        },
+        "filters": [
+          {}
+        ],
+        "grouped_usage": [
+          {}
+        ],
+        "presentation_breakdowns": [
+          {}
+        ]
+      }
+    ]
+  }
+}
+```
+
+```json portal-url
+{
+  "customer": {
+    "portal_url": "https://app.lago.com/customer-portal/1234567890"
+  }
+}
+```
+
+```text delete (no --confirm)
+Error: confirmation required for qa_cust_001
+Suggestion: Pass --confirm "qa_cust_001" or rerun in an interactive terminal.
+$ echo $?
+2
+```
+
+</ResponseExample>
