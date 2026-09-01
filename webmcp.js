@@ -1,4 +1,7 @@
 (function registerLagoDocsTool() {
+  // WebMCP's current imperative API is document.modelContext. The former
+  // navigator.modelContext surface is deprecated, so this tool does not fall
+  // back to it. Validation uses a document.modelContext-compatible client stub.
   if (!document.modelContext?.registerTool || window.__lagoDocsWebMcpRegistered) {
     return;
   }

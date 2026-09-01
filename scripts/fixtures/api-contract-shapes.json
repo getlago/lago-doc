@@ -1,0 +1,38 @@
+{
+  "recorded_at": "2026-09-01",
+  "sources": {
+    "full_openapi": {
+      "url": "https://swagger.getlago.com/openapi.yaml",
+      "sha256": "852e7331acfc080d1af9bda9d1663a50a7fa5b4a2aea22a89fb16787ee75b671"
+    },
+    "lago_api": {
+      "repository": "https://github.com/getlago/lago-api",
+      "commit": "c849452530229bd368ff870c21a1f437b811abe4",
+      "evidence": [
+        "Gemfile.lock: Rails 8.0.5.1",
+        "config/environments/production.rb: consider_all_requests_local = false"
+      ]
+    },
+    "rails_public_exceptions": {
+      "version": "8.0.5.1",
+      "url": "https://github.com/rails/rails/blob/v8.0.5.1/actionpack/lib/action_dispatch/middleware/public_exceptions.rb"
+    }
+  },
+  "error_response_schemas": {
+    "BadRequest": "ApiError",
+    "Unauthorized": "ApiError",
+    "NotFound": "ApiError",
+    "UnprocessableEntity": "ApiError",
+    "TooManyRequests": "ApiError",
+    "InternalServerError": "ApiError"
+  },
+  "api_error_required": ["status", "error"],
+  "internal_server_error_example": {
+    "status": 500,
+    "error": "Internal Server Error"
+  },
+  "pagination_meta": {
+    "required": ["current_page", "total_pages", "total_count"],
+    "properties": ["current_page", "next_page", "prev_page", "total_pages", "total_count"]
+  }
+}
