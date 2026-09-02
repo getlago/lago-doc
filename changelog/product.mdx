@@ -14,22 +14,27 @@ Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024
     description: "Negotiate a usage-based deal and bill exactly what was signed, chase collections that read the account first, and build accrual revenue from your billing data."
   }}
 >
-  ## Bill on top of Ramp Router
+  <a id="bill-on-top-of-ramp-router"></a> { /* Old anchor kept to avoid breaking existing links */ }
+
+  ## Turn Ramp Router usage into customer billing
 
   <Frame>
     <img src="/changelog/images/20260829-ramp-router-gateway.webp" alt="The Lago and Ramp Router logos, ringed by the AI provider logos the Lago Agent SDK bills." loading="lazy" />
   </Frame>
 
-  You route your AI through Ramp Router so you are never locked to one provider. Then you have to charge your customers for it, and a gateway dashboard is not an invoice.
+  If your product uses Ramp Router to power AI features, you still need to charge each customer for the requests they make.
 
-  The **Lago Agent SDK** now bills Ramp Router usage.
+  That gets harder when Router can switch models behind the scenes. The model requested is not always the model that answers, and different models can have different economics.
 
-  - **One line of setup.** Point your OpenAI client at Router and wrap it. Nothing else in your code changes.
-  - **You charge for what actually ran.** Router decides which model answers. Lago bills that one, not the one you asked for.
-  - **Every call finds its customer.** The same attribution key as Cloudflare, Databricks and Snowflake, so usage lands on the right subscription.
-  - **Your price, your margin.** Lago meters the tokens and your plan sets the rate. What your customers pay is your call.
+  The **Lago Agent SDK** captures what actually happened, assigns the usage to the right customer and sends it to Lago, where your plan determines what the customer is charged.
 
-  Billing starts the moment you wrap the client, and follows Router to whichever provider serves the call.
+  - **Keep Router's flexibility.** Lago reads the model from the response, so fallbacks and Switchyard substitutions are billed against the model that actually served the request.
+  - **Connect usage to the right customer.** Set the Lago subscription when wrapping the client or override it for an individual call.
+  - **Avoid building token-metering infrastructure.** The SDK captures input, output, cached-input and reasoning tokens as calls happen.
+  - **Control your pricing and margin.** Ramp Router usage arrives in Lago as token counts. Your Lago plan sets what the customer pays.
+  - **Keep your call sites unchanged.** Point an OpenAI Responses client at Ramp Router and wrap it with the Lago Agent SDK.
+
+  The current integration supports live calls made through the OpenAI Responses client. Ramp Router does not expose a programmatic usage API, so calls the SDK did not observe cannot be backfilled.
 
   Available in both the [**Python**](https://github.com/getlago/lago-agent-sdk-python) and [**JavaScript / TypeScript**](https://github.com/getlago/lago-agent-sdk-js) SDKs. Both fully open source.
 
