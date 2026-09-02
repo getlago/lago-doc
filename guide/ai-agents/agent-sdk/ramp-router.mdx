@@ -1,0 +1,185 @@
+---
+title: "Ramp Router"
+description: "Bill LLM usage routed through Ramp Router. Live instrumentation on the wrapped OpenAI client, billed on the model that actually answered."
+---
+
+[Ramp Router](https://router.com) is an OpenAI-Responses-compatible gateway in front of OpenAI, Anthropic and xAI, plus open models like DeepSeek, Qwen and Kimi served through Fireworks. Point an OpenAI client at it and `wrap()` detects it from the client's base URL. No other code change.
+
+Two things about Router change how it bills. The model you asked for is not necessarily the model that answered, so the request is not a source of truth. And Router's own rate card cannot be looked up, so there is nothing to price against.
+
+<CardGroup cols={2}>
+  <Card title="Live path" icon="bolt">
+    Wrap an OpenAI client pointed at `api.router.com`. Bills as calls happen.
+  </Card>
+  <Card title="No backfill path" icon="ban">
+    Router exposes no programmatic usage surface. Usage lives in its dashboard Logs view only.
+  </Card>
+</CardGroup>
+
+<Warning>
+  **There is no backfill for Router traffic.** Every other gateway in this section pairs live instrumentation with a reader for the gateway's own usage records. Router publishes none, so the live path is the whole integration. A call the wrapped client never saw cannot be recovered later.
+</Warning>
+
+## Live path
+
+There is no Ramp Router client to wrap. You wrap `OpenAI` pointed at Router, and the endpoint is what marks the call as Router-served.
+
+| Setting | Value |
+|---|---|
+| **Client** | **`OpenAI` only. See [Known limits](#known-limits)** |
+| `base_url` | `https://api.router.com/v1` |
+| `api_key` | Your Router key, read here from `RAMP_ROUTER_API_KEY` |
+| Surface | `client.responses.create`. Router serves Responses, not Chat Completions |
+| Model ids | From `GET /v1/models`, and account-specific |
+
+<CodeGroup>
+  ```python Python
+  import os
+  from openai import OpenAI
+  from lago_agent_sdk import LagoSDK
+
+  sdk = LagoSDK(api_key="<YOUR_LAGO_API_KEY>")
+
+  client = sdk.wrap(
+      OpenAI(
+          api_key=os.environ["RAMP_ROUTER_API_KEY"],
+          base_url="https://api.router.com/v1",
+      ),
+      subscription="sub_acme",
+  )
+
+  # A model id from GET /v1/models. Router's ids are account-specific.
+  client.responses.create(model=os.environ["RAMP_ROUTER_MODEL"], input="Summarize this invoice.")
+  sdk.flush()
+  ```
+
+  ```typescript TypeScript
+  import OpenAI from "openai";
+  import { LagoSDK } from "lago-agent-sdk";
+
+  const sdk = new LagoSDK({ apiKey: "<YOUR_LAGO_API_KEY>" });
+
+  const client = sdk.wrap(
+    new OpenAI({
+      apiKey: process.env.RAMP_ROUTER_API_KEY!,
+      baseURL: "https://api.router.com/v1",
+    }),
+    { subscription: "sub_acme" },
+  );
+
+  // A model id from GET /v1/models. Router's ids are account-specific.
+  await client.responses.create({ model: process.env.RAMP_ROUTER_MODEL!, input: "Summarize this invoice." });
+  await sdk.flush();
+  ```
+</CodeGroup>
+
+Detection is by host, and by the **parsed** host rather than a substring: `api.router.com`, or any `.router.com` suffix for a regional or staging endpoint. A substring test would also match `https://evil.example.com/api.router.com/v1` and stamp an unrelated endpoint's traffic as Router-served. The base-URL path table that identifies Databricks and Snowflake still runs first, so those keep their own provider.
+
+Everything on the [OpenAI](/guide/ai-agents/agent-sdk/openai) page still applies: streaming, async, per-call overrides.
+
+### The served model is the one billed
+
+Router does not always answer with the model you named. A `models` fallback list sends no `model` field at all, and Switchyard routing can substitute one model for another. So the SDK bills the model the **response** reports, which means Router-served traffic rolls up in Lago against the same model name a direct call would report.
+
+A fallback list replaces `model` rather than accompanying it. Sending both is a `400`.
+
+```python
+# The typed Python client rejects the non-standard `models` kwarg,
+# so a candidate list goes through extra_body.
+extra_body={"models": ["openai:gpt-5.4-nano", "anthropic:claude-haiku-4-5"]}
+```
+
+In JavaScript the fallback list goes on the request body unmodified.
+
+<Note>
+  Candidates are the catalog's `provider:model` ids, the `router.catalog_id` on each `GET /v1/models` entry, not the id you would pass to `model`. A bare model name is rejected with `models entry 0 must be a provider:model string`.
+</Note>
+
+### Attribution
+
+Attribution works as it does anywhere else in the SDK: `subscription` at wrap time, `extra_lago={"subscription": "sub_acme"}` per call in Python, or `lago: { subscription: "sub_acme" }` in TypeScript.
+
+Separately, put the same id in Router's own `metadata` field. Router stores it with its usage record and shows it in the request detail.
+
+<CodeGroup>
+  ```python Python
+  client.responses.create(
+      model=os.environ["RAMP_ROUTER_MODEL"],
+      input="Summarize this invoice.",
+      # Router stores this with its usage record. The SDK does not send it for you.
+      metadata={"lago_subscription": "sub_acme"},
+  )
+  ```
+
+  ```typescript TypeScript
+  await client.responses.create({
+    model: process.env.RAMP_ROUTER_MODEL!,
+    input: "Summarize this invoice.",
+    // Router stores this with its usage record. The SDK does not send it for you.
+    metadata: { lago_subscription: "sub_acme" },
+  });
+  ```
+</CodeGroup>
+
+<Tip>
+  Setting it costs nothing today. It is what a backfill would key off if Router publishes a usage API later, and it cannot be added retroactively to calls already made.
+</Tip>
+
+Streaming bills once, from the terminal usage event.
+
+## What gets captured
+
+Events are stamped `provider: "ramp_router"`, read from the Responses `usage` object:
+
+| Canonical field | Source |
+|---|---|
+| `input` | `input_tokens` |
+| `output` | `output_tokens` |
+| `cache_read` | `input_tokens_details.cached_tokens`, counted inside `input_tokens` |
+| `reasoning` | `output_tokens_details.reasoning_tokens`, counted inside `output_tokens` |
+| `model` | `response.model`, the model that answered |
+
+Audio and tool-call fields map as they do on any Responses call. See [OpenAI](/guide/ai-agents/agent-sdk/openai#what-gets-captured) for the full table.
+
+<Note>
+  **There is no separate cache-write charge on Router.** When a call writes to a provider's prompt cache, those tokens are already counted inside `input_tokens`, so they arrive in your `llm_input_tokens` count and your plan's input rate applies to them. Lago deliberately does not also emit `llm_cache_creation_tokens` for Router traffic, which would charge the same tokens twice.
+</Note>
+
+Three keys land in `extras`:
+
+| Key | When |
+|---|---|
+| `router_surface` | Every Router call. The OpenAI-shaped surface that answered |
+| `service_tier` | Every call. Read from the tier Router reports on the response: `flex`, `default`, and so on |
+| `router_provider` | Rarely. Only if the response names the provider alongside the model, which Router normally resolves away before answering |
+
+<Note>
+  **`extras` is diagnostic and is not sent to Lago.** These keys are visible to a debug or error hook, but they do not appear on your events and cannot be used to split a charge. To bill differently by service tier, set that up in your Lago plan.
+</Note>
+
+## Known limits
+
+**Everything bills as token counts, never priced.** `provider="ramp_router"` is deliberately unmatchable against the price sources, because Router's effective rate cannot be read from a response: a call served with your own provider key costs $0 through Router, and a non-default service tier bills at a rate Router's own catalog says may differ from the one it publishes. You set the rate in Lago. Running `pricing_mode="price"` globally still gets token events here, with no price-miss error, because a structural absence of a rate card is not a lookup failure. This is why we recommend the `OpenAI` client: it is what lets Lago recognise the call as Router traffic and fall back to token counts instead of pricing it as something else. See [Billing](/guide/ai-agents/agent-sdk/billing) for the full reasoning.
+
+**Only the OpenAI client is supported.** Router also accepts Anthropic's `/v1/messages` format, and pointing a wrapped `Anthropic` client at Router will look like it works, but Lago cannot tell those calls went through Router. It bills them as direct Anthropic usage at Anthropic's public prices, which may be nothing like what Router charged you. If Router served the call with your own provider key, Router charged you nothing and Lago would still bill full price. Use the `OpenAI` client shown above.
+
+**There is no backfill path.** Router's only routes are `GET /v1/models`, `POST /v1/responses`, `POST /v1/messages` and `POST /v1/messages/count_tokens`. Usage lives in the dashboard's Logs view, which displays tokens, cost, service tier and metadata without offering any way to fetch them. An analytics API is referenced once in Router's limits table with no path, no auth and no record shape, which is not enough to build against. Traffic the wrapped client never saw is not recoverable.
+
+**Nothing is skipped as a gateway cache hit**, because Router has no response cache. Provider prompt caching does pass through. Cache reads bill on `llm_cached_input_tokens` as they would on a direct call, and cache writes bill inside `llm_input_tokens` at the plain input rate.
+
+**A proxy in front of Router is not detected.** Reaching Router through your own hostname bills as plain OpenAI, with the wrong provider and an unparsed model id. Point the wrapped client at Router directly.
+
+**`api.router.com` sits behind bot management.** A rejected client can get an HTML challenge page rather than Router's documented JSON error envelope. The SDK degrades to zero usage rather than throwing, either way.
+
+**Failures never bill.** Every documented Router status emits nothing, including `402 insufficient_credits`, `429 rate_limit_exceeded` and `502 all_candidates_failed`, as does a response reporting zero usage.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Billing" icon="dollar-sign" href="/guide/ai-agents/agent-sdk/billing">
+    Why Router bills in tokens, and how to set the rate in Lago.
+  </Card>
+  <Card title="Configuration reference" icon="sliders" href="/guide/ai-agents/agent-sdk/reference">
+    Every config knob, in both SDKs.
+  </Card>
+</CardGroup>
