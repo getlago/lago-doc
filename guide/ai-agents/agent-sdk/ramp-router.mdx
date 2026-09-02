@@ -26,6 +26,7 @@ There is no Ramp Router client to wrap. You wrap `OpenAI` pointed at Router, and
 
 | Setting | Value |
 |---|---|
+| **Client** | **`OpenAI` only. See [Known limits](#known-limits)** |
 | `base_url` | `https://api.router.com/v1` |
 | `api_key` | Your Router key, read here from `RAMP_ROUTER_API_KEY` |
 | Surface | `client.responses.create`. Router serves Responses, not Chat Completions |
@@ -78,9 +79,7 @@ Everything on the [OpenAI](/guide/ai-agents/agent-sdk/openai) page still applies
 
 ### The served model is the one billed
 
-Router answers with a model other than the one you named in two ways. A `models` fallback list sends no `model` field at all, and Switchyard routing can substitute one model for another. Either way the request tells you nothing about what to bill.
-
-So the SDK bills the model the **response** reports, and records the served provider and any pinned service tier in `extras`. A `provider:model[:service-tier]` candidate is parsed apart: `openai:gpt-5.4-mini:flex` bills as model `gpt-5.4-mini` with `service_tier: "flex"`, so Router-served traffic rolls up in Lago against the same model name a direct call reports.
+Router does not always answer with the model you named. A `models` fallback list sends no `model` field at all, and Switchyard routing can substitute one model for another. So the SDK bills the model the **response** reports, which means Router-served traffic rolls up in Lago against the same model name a direct call would report.
 
 A fallback list replaces `model` rather than accompanying it. Sending both is a `400`.
 
@@ -93,7 +92,7 @@ extra_body={"models": ["openai:gpt-5.4-nano", "anthropic:claude-haiku-4-5"]}
 In JavaScript the fallback list goes on the request body unmodified.
 
 <Note>
-  Candidates are the catalog's `provider:model` ids, the `router.catalog_id` on each `GET /v1/models` entry, not the display id you would pass to `model`. A bare display name is rejected with `models entry 0 must be a provider:model string`.
+  Candidates are the catalog's `provider:model` ids, the `router.catalog_id` on each `GET /v1/models` entry, not the id you would pass to `model`. A bare model name is rejected with `models entry 0 must be a provider:model string`.
 </Note>
 
 ### Attribution
@@ -128,18 +127,6 @@ Separately, put the same id in Router's own `metadata` field. Router stores it w
 
 Streaming bills once, from the terminal usage event.
 
-## Price mode falls back to token events
-
-Set `pricing_mode="price"` and Router traffic still emits token events rather than `llm_cost`. That is deliberate. `provider="ramp_router"` matches no vendor price table on purpose, for three reasons that point the same way.
-
-**A BYOK-served request costs $0 through Router.** When a request is served with your own provider key, that provider bills you directly and Router charges nothing for the usage. Nothing in the response says which key served it, so pricing at list rate would bill your customer full freight for usage Router never charged for.
-
-**A non-default service tier does not bill at the base rate.** Router's catalog says outright that service tiers, long contexts and caching may use rates other than the ones it publishes. Pricing a flex call at the standard rate over-bills.
-
-**The token-overlap semantics are Router's, not the served vendor's.** OpenAI counts cached tokens inside `input_tokens` and reasoning inside `output_tokens`. Anthropic counts both additively. Router normalizes the numbers to OpenAI's convention no matter who served the call, measured on an Anthropic-served model where a warm cache read sat inside an unchanged `input_tokens`. Stamping the served vendor as the provider would de-overlap those counts with the wrong rules.
-
-Token mode, the default, is exact and unaffected. It emits the counts Router reported, as the same per-field `llm_*` events a direct provider call produces. Price mode takes a clean miss and falls back to those same events, with no error on your call path. Bill Router traffic in token mode and set the rate in your Lago plan.
-
 ## What gets captured
 
 Events are stamped `provider: "ramp_router"`, read from the Responses `usage` object:
@@ -155,7 +142,7 @@ Events are stamped `provider: "ramp_router"`, read from the Responses `usage` ob
 Audio and tool-call fields map as they do on any Responses call. See [OpenAI](/guide/ai-agents/agent-sdk/openai#what-gets-captured) for the full table.
 
 <Note>
-  **`cache_write_tokens` is reported but deliberately not mapped to `cache_write`.** On an OpenAI-shaped response those tokens sit inside `input_tokens` and already bill at the plain input rate, so mapping them would charge the same tokens twice. They surface in `extras` as `input_tokens_details.cache_write_tokens`, visible without touching the money. Anthropic's native `cache_creation_input_tokens` sits outside `input_tokens`, which is why mapping is right there and wrong here.
+  **There is no separate cache-write charge on Router.** When a call writes to a provider's prompt cache, those tokens are already counted inside `input_tokens`, so they arrive in your `llm_input_tokens` count and your plan's input rate applies to them. Lago deliberately does not also emit `llm_cache_creation_tokens` for Router traffic, which would charge the same tokens twice.
 </Note>
 
 Three keys land in `extras`:
@@ -163,18 +150,22 @@ Three keys land in `extras`:
 | Key | When |
 |---|---|
 | `router_surface` | Every Router call. The OpenAI-shaped surface that answered |
-| `router_provider` | Only when the response model is a `provider:model` candidate |
-| `service_tier` | Only when that candidate carries a trailing tier |
+| `service_tier` | Every call. Read from the tier Router reports on the response: `flex`, `default`, and so on |
+| `router_provider` | Rarely. Only if the response names the provider alongside the model, which Router normally resolves away before answering |
+
+<Note>
+  **`extras` is diagnostic and is not sent to Lago.** These keys are visible to a debug or error hook, but they do not appear on your events and cannot be used to split a charge. To bill differently by service tier, set that up in your Lago plan.
+</Note>
 
 ## Known limits
+
+**Everything bills as token counts, never priced.** `provider="ramp_router"` is deliberately unmatchable against the price sources, because Router's effective rate cannot be read from a response: a call served with your own provider key costs $0 through Router, and a non-default service tier bills at a rate Router's own catalog says may differ from the one it publishes. You set the rate in Lago. Running `pricing_mode="price"` globally still gets token events here, with no price-miss error, because a structural absence of a rate card is not a lookup failure. This is why we recommend the `OpenAI` client: it is what lets Lago recognise the call as Router traffic and fall back to token counts instead of pricing it as something else. See [Billing](/guide/ai-agents/agent-sdk/billing) for the full reasoning.
+
+**Only the OpenAI client is supported.** Router also accepts Anthropic's `/v1/messages` format, and pointing a wrapped `Anthropic` client at Router will look like it works, but Lago cannot tell those calls went through Router. It bills them as direct Anthropic usage at Anthropic's public prices, which may be nothing like what Router charged you. If Router served the call with your own provider key, Router charged you nothing and Lago would still bill full price. Use the `OpenAI` client shown above.
 
 **There is no backfill path.** Router's only routes are `GET /v1/models`, `POST /v1/responses`, `POST /v1/messages` and `POST /v1/messages/count_tokens`. Usage lives in the dashboard's Logs view, which displays tokens, cost, service tier and metadata without offering any way to fetch them. An analytics API is referenced once in Router's limits table with no path, no auth and no record shape, which is not enough to build against. Traffic the wrapped client never saw is not recoverable.
 
 **Nothing is skipped as a gateway cache hit**, because Router has no response cache. Provider prompt caching does pass through. Cache reads bill on `llm_cached_input_tokens` as they would on a direct call, and cache writes bill inside `llm_input_tokens` at the plain input rate.
-
-**Router's Anthropic Messages surface is not instrumented.** `POST /v1/messages` exists and routes to the same providers, so a wrapped `Anthropic` client pointed at `https://api.router.com/v1` works as an LLM client and bills nothing. Use the Responses surface until that lands.
-
-**The service tier is read from the model id, not from the response.** `extras.service_tier` is populated from the trailing segment of a `provider:model:tier` candidate. Router also reports a top-level `service_tier` on the response, which the adapter does not read, so a tier pinned any other way does not reach Lago. If you bill differently by tier, pin it in the candidate id.
 
 **A proxy in front of Router is not detected.** Reaching Router through your own hostname bills as plain OpenAI, with the wrong provider and an unparsed model id. Point the wrapped client at Router directly.
 
