@@ -26,17 +26,15 @@ description: "Assign plans, override charges for one customer, set usage alerts,
 
 ## create
 
-Every body field sits under `subscription`, so every flag carries the `--subscription-` prefix.
-
 | Flag | Description |
 | --- | --- |
-| `--subscription-external-customer-id` | The customer. |
-| `--subscription-external-id` | Your subscription identifier. Reusing it changes the plan. |
-| `--subscription-plan-code` | The plan. |
-| `--subscription-billing-time calendar\|anniversary` | Period alignment. |
-| `--subscription-subscription-at`, `--subscription-ending-at` | Start and end, ISO 8601. |
-| `--subscription-plan-overrides-*` | Negotiated terms for this customer only: `amount-cents`, `charges`, `trial-period`, `minimum-commitment-amount-cents`. |
-| `--subscription-name` | Display name. |
+| `--external-customer-id` | The customer. |
+| `--external-id` | Your subscription identifier. Reusing it changes the plan. |
+| `--plan-code` | The plan. |
+| `--billing-time calendar\|anniversary` | Period alignment. |
+| `--subscription-at`, `--ending-at` | Start and end, ISO 8601. |
+| `--plan-overrides-*` | Negotiated terms for this customer only: `amount-cents`, `charges`, `trial-period`, `minimum-commitment-amount-cents`. |
+| `--name` | Display name. |
 
 ## terminate
 
@@ -50,30 +48,30 @@ Every body field sits under `subscription`, so every flag carries the `--subscri
 
 ```bash create
 lago subscriptions create \
-  --subscription-external-customer-id acme_001 \
-  --subscription-external-id acme_001_pro \
-  --subscription-plan-code pro
+  --external-customer-id acme_001 \
+  --external-id acme_001_pro \
+  --plan-code pro
 
 # Anniversary billing from a given date
 lago subscriptions create \
-  --subscription-external-customer-id acme_001 \
-  --subscription-external-id acme_001_pro \
-  --subscription-plan-code pro \
-  --subscription-billing-time anniversary \
-  --subscription-subscription-at 2026-10-01T00:00:00Z
+  --external-customer-id acme_001 \
+  --external-id acme_001_pro \
+  --plan-code pro \
+  --billing-time anniversary \
+  --subscription-at 2026-10-01T00:00:00Z
 
 # Negotiated price for this customer only
 lago subscriptions create \
-  --subscription-external-customer-id acme_001 \
-  --subscription-external-id acme_001_pro \
-  --subscription-plan-code pro \
-  --subscription-plan-overrides-amount-cents 7900
+  --external-customer-id acme_001 \
+  --external-id acme_001_pro \
+  --plan-code pro \
+  --plan-overrides-amount-cents 7900
 
 # Upgrade: same external_id, new plan
 lago subscriptions create \
-  --subscription-external-customer-id acme_001 \
-  --subscription-external-id acme_001_pro \
-  --subscription-plan-code enterprise
+  --external-customer-id acme_001 \
+  --external-id acme_001_pro \
+  --plan-code enterprise
 ```
 
 ```bash get
@@ -88,8 +86,8 @@ lago subscriptions list --plan-code pro --status active --all --output json \
 ```
 
 ```bash update
-lago subscriptions update acme_001_pro --subscription-name "Acme Pro (annual commit)"
-lago subscriptions update acme_001_pro --subscription-ending-at 2027-09-30T23:59:59Z
+lago subscriptions update acme_001_pro --name "Acme Pro (annual commit)"
+lago subscriptions update acme_001_pro --ending-at 2027-09-30T23:59:59Z
 ```
 
 ```bash charges

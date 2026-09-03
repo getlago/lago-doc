@@ -87,7 +87,7 @@ lago customers get acme_001 --output json --query 'customer.metadata'
 lago customers list --limit 5
 lago customers list --search-term acme
 lago customers list --countries US,CA --currencies USD
-lago customers list --metadata[mode] test
+lago api GET '/customers?metadata[mode]=test'   # metadata filters take the raw query form
 lago customers list --output json --query "customers[?starts_with(external_id, 'qa_')].external_id"
 lago customers list --all --output json \
   | jq -r '.customers[] | select(.external_id | startswith("qa_")) | .external_id'

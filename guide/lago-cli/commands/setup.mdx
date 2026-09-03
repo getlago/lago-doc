@@ -27,11 +27,11 @@ A wrong key writes nothing and exits 3. `--region us --api-url https://api.eu.ge
 
 ## whoami and doctor
 
-`API_URL` is what the profile holds. `RESOLVED_API_URL` is where requests go. When they differ, that difference is the bug. `doctor` reports the same value as one of its checks, next to permissions and authentication, and `--bundle` writes a sanitized archive to attach to a support ticket.
+`whoami` prints the organization (name, id, default currency, timezone), the profile, the mode, and `RESOLVED_API_URL`, the host requests actually go to. `--output json` adds `api_url` (what the profile holds) and `region`. `doctor` reports the same value as one of its checks, next to permissions and authentication, and `--bundle` writes a sanitized archive to attach to a support ticket.
 
 ## version and upgrade
 
-`SPEC_VERSION` is the Lago OpenAPI version the binary was generated from. The binary does not self-update: `upgrade` prints the `go install` command for the latest release.
+`SPEC_VERSION` is the Lago OpenAPI version the binary was generated from. The binary does not self-update: `upgrade` prints the `brew upgrade` or `go install` command for the latest release, matching how the binary was installed.
 
 <RequestExample>
 
@@ -90,11 +90,12 @@ Suggestion: Use https://api.eu.getlago.com instead. The API and the app are diff
 ```
 
 ```text whoami
-API_URL           https://api.eu.getlago.com
-MODE              test
-ORGANIZATION      {"organization":{"lago_id":"1a901a90-1a90-1a90-1a90-1a901a901a90","name":"Example Organization"}}
+NAME              Example Organization
+LAGO_ID           1a901a90-1a90-1a90-1a90-1a901a901a90
+DEFAULT_CURRENCY  EUR
+TIMEZONE          Europe/Paris
 PROFILE           default
-REGION            eu
+MODE              test
 RESOLVED_API_URL  https://api.eu.getlago.com/api/v1
 ```
 
@@ -109,7 +110,7 @@ VERSION       1.0.0
 ```text upgrade
 Lago CLI 1.1.0 is available (installed: 1.0.0).
 
-    go install github.com/getlago/lago-cli/cmd/lago@latest
+    brew upgrade getlago/tap/lago
 ```
 
 </ResponseExample>

@@ -23,7 +23,7 @@ Events are idempotent on `transaction_id`. Sending the same transaction twice re
 | `--external-subscription-id` | Which subscription the usage belongs to. |
 | `--code` | The billable metric code. |
 | `--transaction-id` | Your unique event identifier. Generated when omitted. |
-| `--timestamp` | Unix seconds when the usage happened. Defaults to receipt time. |
+| `--timestamp` | When the usage happened, Unix seconds or RFC 3339 (`2026-09-01T10:00:00Z`, converted for you). Defaults to receipt time. Always set it together with `--transaction-id`: the API deduplicates on both, so a resend without a timestamp is recorded as a new event. |
 | `--properties` | JSON object. Required when the metric aggregates a field or has filters. Numeric values as strings keep precision. |
 | `--precise-total-amount-cents` | For the `dynamic` charge model: the amount your system computed. |
 | `--file`, `--concurrency` | Stream NDJSON from a file or `-`. 1 to 64 workers, default 4. The file is never loaded into memory. |
