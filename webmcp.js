@@ -1,4 +1,42 @@
-(function registerLagoDocsTool() {
+(function registerLagoDocsAgentFeatures() {
+  const organizationId = "https://getlago.com/#organization";
+  if (!document.querySelector(`script[data-lago-organization="${organizationId}"]`)) {
+    const structuredData = document.createElement("script");
+    structuredData.type = "application/ld+json";
+    structuredData.dataset.lagoOrganization = organizationId;
+    structuredData.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": organizationId,
+      name: "Lago",
+      legalName: "Get Lago Corp.",
+      description:
+        "Lago builds open-source, API-first billing infrastructure for usage metering, subscriptions, invoicing, payments, and revenue operations.",
+      url: "https://getlago.com/",
+      logo: "https://doc.getlago.com/logo/light.svg",
+      sameAs: [
+        "https://github.com/getlago",
+        "https://www.linkedin.com/company/getlago",
+        "https://x.com/GetLago",
+      ],
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "sales and support",
+        email: "hello@getlago.com",
+        url: "https://doc.getlago.com/contact",
+      },
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "1111B S Governors Ave #7455",
+        addressLocality: "Dover",
+        addressRegion: "DE",
+        postalCode: "19904",
+        addressCountry: "US",
+      },
+    });
+    document.head.append(structuredData);
+  }
+
   // WebMCP's current imperative API is document.modelContext. The former
   // navigator.modelContext surface is deprecated, so this tool does not fall
   // back to it. Validation uses a document.modelContext-compatible client stub.
