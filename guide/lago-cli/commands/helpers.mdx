@@ -1,0 +1,171 @@
+---
+title: "Helpers"
+description: "Raw API access, aliases, demo data, scripted fixtures, and a live tail of API logs."
+---
+
+| Command | Description |
+| --- | --- |
+| `lago api METHOD PATH` | Authenticated request to any endpoint. |
+| `lago docs <resource>` | Open the API reference for a resource in the browser. |
+| `lago alias set\|list\|delete` | User-defined command shortcuts, stored in the config file. |
+| `lago seed demo` | Create a metric, plan, customer, subscription, event, and invoice preview. |
+| `lago fixtures run FILE` | Run a YAML scenario with variable capture between steps. |
+| `lago logs tail` | Poll API request logs and re-render on change. |
+
+## api
+
+Same profile, redaction, retries, and output handling as the generated commands. Use it for endpoints newer than the CLI's embedded spec. The `/api/v1` prefix is optional and never doubled. Destructive paths are confirmation-gated here too.
+
+| Flag | Description |
+| --- | --- |
+| `--data`, `-d` | Body: inline JSON, `@file`, or `-` for stdin. |
+| `--header`, `-H` | Extra header. Repeatable. |
+
+## alias
+
+An alias expands in place, so any flags after it pass through.
+
+## seed and fixtures
+
+`seed demo` prefixes everything it creates (`demo` by default) so the data is easy to find and delete. `fixtures run` executes ordered API steps from YAML: `${var}` interpolation, `capture` to lift a value from one response into the next. Give events a `transaction_id` so a re-run does not double count. `--dry-run` prints every request and sends none.
+
+## logs tail
+
+Filters are `--method` (repeatable), `--status` (a code or a class such as `4xx`, repeatable), `--resource` (path prefix), and `--interval`.
+
+<RequestExample>
+
+```bash api
+lago api GET /customers?page=2
+lago api GET /api/v1/customers                    # same request
+lago api POST /events --data @event.json
+printf '{"event":{"code":"api_calls","external_subscription_id":"sub_1"}}' \
+  | lago api POST /events --data -
+lago api GET /customers -H "X-Trace: qa-run-12"
+```
+
+```bash docs
+lago docs customers
+lago docs billable-metrics
+```
+
+```bash alias
+lago alias set cust "customers"
+lago alias set inv-open "invoices list --statuses finalized --payment-statuses pending"
+lago alias list
+lago alias delete cust
+
+lago cust list --limit 5    # expands to: lago customers list --limit 5
+```
+
+```bash seed
+lago seed demo
+lago seed demo --prefix local-demo --output json
+```
+
+```bash fixtures
+lago fixtures run scenario.yaml
+lago fixtures run scenario.yaml --var prefix=qa --var currency=EUR
+lago fixtures run scenario.yaml --var prefix=qa --dry-run
+```
+
+```bash logs tail
+lago logs tail
+lago logs tail --status 4xx --resource /customers --method POST
+lago logs tail --status 500 --status 502 --interval 5s
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text api (dry run)
+BODY     {"event":{"code":"api_calls","external_subscription_id":"sub_1"}}
+HEADERS  {"Accept":["application/json"],"Authorization":["Bearer [REDACTED]"],"Content-Type":["application/json"],"Idempotency-Key":["event-42"],"User-Agent":["lago-cli/1.0.0"]}
+METHOD   POST
+URL      https://api.getlago.com/api/v1/events
+```
+
+```yaml scenario.yaml
+version: 1
+name: lago-demo
+vars:
+  prefix: demo
+steps:
+  - id: metric
+    method: POST
+    path: /billable_metrics
+    body:
+      billable_metric:
+        name: Demo requests
+        code: ${prefix}-requests
+        aggregation_type: count_agg
+    capture:
+      metric_id: billable_metric.lago_id
+  - id: plan
+    method: POST
+    path: /plans
+    body:
+      plan:
+        name: Demo usage plan
+        code: ${prefix}-plan
+        interval: monthly
+        amount_cents: 0
+        amount_currency: USD
+        pay_in_advance: false
+        charges:
+          - billable_metric_id: ${metric_id}
+            charge_model: standard
+            properties:
+              amount: "1"
+    capture:
+      plan_code: plan.code
+  - id: customer
+    method: POST
+    path: /customers
+    body:
+      customer:
+        external_id: ${prefix}-customer
+        name: Demo Customer
+        currency: USD
+    capture:
+      customer_id: customer.external_id
+  - id: subscription
+    method: POST
+    path: /subscriptions
+    body:
+      subscription:
+        external_customer_id: ${customer_id}
+        external_id: ${prefix}-subscription
+        plan_code: ${plan_code}
+    capture:
+      subscription_id: subscription.external_id
+  - id: event
+    method: POST
+    path: /events
+    body:
+      event:
+        transaction_id: ${prefix}-event-1
+        external_subscription_id: ${subscription_id}
+        code: ${prefix}-requests
+  - id: invoice-preview
+    method: POST
+    path: /invoices/preview
+    body:
+      customer:
+        external_id: ${customer_id}
+      subscriptions:
+        external_ids:
+          - ${subscription_id}
+    capture:
+      invoice_total_cents: invoice.total_amount_cents
+      invoice_currency: invoice.currency
+```
+
+```toml config.toml aliases
+[aliases]
+cust = ["customers"]
+inv-open = ["invoices", "list", "--statuses", "finalized", "--payment-statuses", "pending"]
+```
+
+</ResponseExample>

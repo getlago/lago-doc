@@ -1,0 +1,612 @@
+---
+title: "Invoices"
+description: "List and inspect invoices, preview before creating, finalize, void, download, and collect."
+---
+
+| Command | Description |
+| --- | --- |
+| `invoices list` | List invoices with filters. |
+| `invoices get <lago_id>` | Retrieve an invoice. |
+| `invoices create` | One-off invoice from add-ons. |
+| `invoices preview` | Preview without creating. |
+| `invoices update <lago_id>` | Update payment status or metadata. |
+| `invoices download <lago_id>` | Trigger the PDF. |
+| `invoices refresh <lago_id>` | Recompute a draft. |
+| `invoices finalize <lago_id>` | Finalize a draft. Confirmation-gated, irreversible. |
+| `invoices void <lago_id>` | Void a finalized invoice. Confirmation-gated. |
+| `invoices retry <lago_id>` | Retry finalization of a failed invoice. Confirmation-gated. |
+| `invoices retry-payment <lago_id>` | Retry the payment. Confirmation-gated, charges the customer. |
+| `invoices payment-url <lago_id>` | Payment URL for the customer. |
+| `invoices lose-dispute <lago_id>` | Mark a payment dispute as lost. |
+| `invoices delete <lago_id>` | Delete a draft. Confirmation-gated. |
+
+## list
+
+Filter flags mirror the API query parameters.
+
+| Flag | Values |
+| --- | --- |
+| `--statuses` | `draft`, `finalized`, `voided`, `failed`, `pending`. |
+| `--payment-statuses` | `pending`, `succeeded`, `failed`. |
+| `--payment-overdue true` | Past due date and unpaid. |
+| `--invoice-type` | `subscription`, `add_on`, `credit`, `one_off`, `progressive_billing`, `advance_charges`. |
+| `--external-customer-id`, `--currency`, `--billing-entity-codes` | Scope. |
+| `--issuing-date-from`, `--issuing-date-to` | `YYYY-MM-DD`. |
+| `--amount-from`, `--amount-to` | Cents. |
+| `--search-term` | Number, customer name, external ID, email. |
+
+## Irreversible operations
+
+`finalize`, `void`, `retry`, `retry-payment`, and `delete` are gated regardless of HTTP verb. `PUT /invoices/{id}/finalize` is idempotent by RFC and irreversible by accounting, and `retry-payment` charges a card. Pass `--confirm` with the `lago_id`.
+
+`void` accepts `--generate-credit-note true` with `--credit-amount` or `--refund-amount` to credit the customer for what was already paid.
+
+<RequestExample>
+
+```bash list
+lago invoices list --limit 20
+lago invoices list --external-customer-id acme_001 --statuses finalized
+lago invoices list --payment-statuses pending --payment-overdue true
+lago invoices list --issuing-date-from 2026-09-01 --issuing-date-to 2026-09-30 --currency USD
+
+lago invoices list --output json \
+  --query 'invoices[?status==`"finalized"`].{id: lago_id, number: number, total: total_amount_cents}'
+
+lago invoices list --all --output json \
+  | jq -r '.invoices[] | "\(.number)\t\(.total_amount_cents)"'
+```
+
+```bash get
+lago invoices get 4d904d90-4d90-4d90-4d90-4d904d904d90
+lago invoices get 4d904d90-4d90-4d90-4d90-4d904d904d90 --output json \
+  --query 'invoice.fees[].{item: item.code, units: units, amount: amount_cents}'
+lago invoices get 4d904d90-4d90-4d90-4d90-4d904d904d90 --watch
+```
+
+```bash preview
+lago invoices preview --input '{"customer":{"external_id":"acme_001"},"subscriptions":{"external_ids":["acme_001_pro"]}}'
+
+# A plan for a prospect who is not a customer yet
+lago invoices preview --name "Prospect Co" --currency USD \
+  --plan-code pro --billing-time calendar
+```
+
+```bash create
+lago invoices create --input '{"invoice":{"external_customer_id":"acme_001","currency":"USD","fees":[{"add_on_code":"setup_fee","units":1}]}}'
+```
+
+```bash finalize
+lago invoices refresh 4d904d90-4d90-4d90-4d90-4d904d904d90
+lago invoices finalize 4d904d90-4d90-4d90-4d90-4d904d904d90 --confirm 4d904d90-4d90-4d90-4d90-4d904d904d90
+```
+
+```bash void
+lago invoices void 4d904d90-4d90-4d90-4d90-4d904d904d90 \
+  --generate-credit-note true --refund-amount 150000 \
+  --confirm 4d904d90-4d90-4d90-4d90-4d904d904d90
+```
+
+```bash payment
+lago invoices update 4d904d90-4d90-4d90-4d90-4d904d904d90 --input '{"invoice":{"payment_status":"succeeded"}}'
+lago invoices retry-payment 4d904d90-4d90-4d90-4d90-4d904d904d90 --confirm 4d904d90-4d90-4d90-4d90-4d904d904d90
+lago invoices payment-url 4d904d90-4d90-4d90-4d90-4d904d904d90
+lago invoices download 4d904d90-4d90-4d90-4d90-4d904d904d90
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json list
+{
+  "invoices": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "billing_entity_code": "acme_corp",
+      "sequential_id": 2,
+      "number": "LAG-1234-001-002",
+      "purchase_order_number": "PO-123",
+      "issuing_date": "2022-04-30",
+      "payment_dispute_lost_at": "2022-09-14T16:35:31Z",
+      "payment_due_date": "2022-04-30",
+      "payment_overdue": true,
+      "net_payment_term": 30,
+      "invoice_type": "subscription",
+      "status": "finalized",
+      "payment_status": "succeeded",
+      "currency": "USD",
+      "fees_amount_cents": 100,
+      "coupons_amount_cents": 10,
+      "credit_notes_amount_cents": 10,
+      "sub_total_excluding_taxes_amount_cents": 100,
+      "taxes_amount_cents": 20,
+      "sub_total_including_taxes_amount_cents": 120,
+      "prepaid_credit_amount_cents": 0,
+      "prepaid_granted_credit_amount_cents": 0,
+      "prepaid_purchased_credit_amount_cents": 0,
+      "progressive_billing_credit_amount_cents": 0,
+      "total_amount_cents": 100,
+      "version_number": 3,
+      "self_billed": false,
+      "file_url": "https://getlago.com/invoice/file",
+      "web_url": "https://app.getlago.com/acme/customer/1a901a90-1a90-1a90-1a90-1a901a901a90/invoice/2b012b01-2b01-2b01-2b01-2b012b012b01/overview",
+      "created_at": "2022-04-29T08:59:51Z",
+      "updated_at": "2022-04-29T08:59:51Z",
+      "customer": {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "sequential_id": 1,
+        "slug": "LAG-1234-001",
+        "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "billing_entity_code": "acme_corp",
+        "address_line1": "5230 Penfield Ave",
+        "address_line2": null,
+        "applicable_timezone": "America/Los_Angeles",
+        "city": "Woodland Hills",
+        "country": "US",
+        "currency": "USD",
+        "email": "dinesh@piedpiper.test",
+        "legal_name": "Coleman-Blair",
+        "legal_number": "49-008-2965",
+        "logo_url": "http://hooli.com/logo.png",
+        "name": "Gavin Belson",
+        "firstname": "Gavin",
+        "lastname": "Belson",
+        "account_type": "customer",
+        "customer_type": "company",
+        "phone": "1-171-883-3711 x245",
+        "state": "CA",
+        "tax_identification_number": "EU123456789",
+        "timezone": "America/Los_Angeles",
+        "url": "http://hooli.com",
+        "zipcode": "91364",
+        "net_payment_term": 30,
+        "external_salesforce_id": "0015p00001JQx1QAAT",
+        "created_at": "2022-04-29T08:59:51Z",
+        "updated_at": "2022-04-29T08:59:51Z",
+        "finalize_zero_amount_invoice": "inherit",
+        "skip_invoice_custom_sections": false,
+        "billing_configuration": {
+          "invoice_grace_period": 3,
+          "subscription_invoice_issuing_date_anchor": "next_period_start",
+          "subscription_invoice_issuing_date_adjustment": "keep_anchor",
+          "payment_provider": "stripe",
+          "payment_provider_code": "stripe-eu-1",
+          "provider_customer_id": "cus_12345",
+          "sync": true,
+          "sync_with_provider": true,
+          "document_locale": "fr",
+          "provider_payment_methods": [
+            "card",
+            "sepa_debit",
+            "us_bank_account",
+            "bacs_debit",
+            "link",
+            "boleto",
+            "crypto",
+            "customer_balance"
+          ]
+        },
+        "shipping_address": {
+          "address_line1": "5230 Penfield Ave",
+          "address_line2": null,
+          "city": "Woodland Hills",
+          "country": "US",
+          "state": "CA",
+          "zipcode": "91364"
+        },
+        "metadata": [
+          {}
+        ],
+        "integration_customers": [
+          {}
+        ]
+      },
+      "metadata": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "key": "digital_ref_id",
+          "value": "INV-0123456-98765",
+          "created_at": "2022-04-29T08:59:51Z"
+        }
+      ],
+      "applied_taxes": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "lago_tax_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "tax_name": "TVA",
+          "tax_code": "french_standard_vat",
+          "tax_rate": 20,
+          "tax_description": "French standard VAT",
+          "amount_cents": 2000,
+          "amount_currency": "USD",
+          "created_at": "2022-09-14T16:35:31Z"
+        }
+      ],
+      "applied_invoice_custom_sections": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "code": "eu_bank_details",
+          "details": "Bank Name: Lago Bank, IBAN: FR7630004000031234567890143",
+          "display_name": "Bank Details:",
+          "created_at": "2023-07-06T14:35:58Z"
+        }
+      ],
+      "applied_usage_thresholds": [
+        {
+          "lifetime_usage_amount_cents": 2000,
+          "created_at": "2025-03-31T12:31:44Z",
+          "usage_threshold": {}
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+```json get
+{
+  "invoice": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "billing_entity_code": "acme_corp",
+    "sequential_id": 2,
+    "number": "LAG-1234-001-002",
+    "purchase_order_number": "PO-123",
+    "issuing_date": "2022-04-30",
+    "payment_dispute_lost_at": "2022-09-14T16:35:31Z",
+    "payment_due_date": "2022-04-30",
+    "payment_overdue": true,
+    "net_payment_term": 30,
+    "invoice_type": "subscription",
+    "status": "finalized",
+    "payment_status": "succeeded",
+    "currency": "USD",
+    "fees_amount_cents": 100,
+    "coupons_amount_cents": 10,
+    "credit_notes_amount_cents": 10,
+    "sub_total_excluding_taxes_amount_cents": 100,
+    "taxes_amount_cents": 20,
+    "sub_total_including_taxes_amount_cents": 120,
+    "prepaid_credit_amount_cents": 0,
+    "prepaid_granted_credit_amount_cents": 0,
+    "prepaid_purchased_credit_amount_cents": 0,
+    "progressive_billing_credit_amount_cents": 0,
+    "total_amount_cents": 100,
+    "version_number": 3,
+    "self_billed": false,
+    "file_url": "https://getlago.com/invoice/file",
+    "web_url": "https://app.getlago.com/acme/customer/1a901a90-1a90-1a90-1a90-1a901a901a90/invoice/2b012b01-2b01-2b01-2b01-2b012b012b01/overview",
+    "created_at": "2022-04-29T08:59:51Z",
+    "updated_at": "2022-04-29T08:59:51Z",
+    "customer": {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "sequential_id": 1,
+      "slug": "LAG-1234-001",
+      "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+      "billing_entity_code": "acme_corp",
+      "address_line1": "5230 Penfield Ave",
+      "address_line2": null,
+      "applicable_timezone": "America/Los_Angeles",
+      "city": "Woodland Hills",
+      "country": "US",
+      "currency": "USD",
+      "email": "dinesh@piedpiper.test",
+      "legal_name": "Coleman-Blair",
+      "legal_number": "49-008-2965",
+      "logo_url": "http://hooli.com/logo.png",
+      "name": "Gavin Belson",
+      "firstname": "Gavin",
+      "lastname": "Belson",
+      "account_type": "customer",
+      "customer_type": "company",
+      "phone": "1-171-883-3711 x245",
+      "state": "CA",
+      "tax_identification_number": "EU123456789",
+      "timezone": "America/Los_Angeles",
+      "url": "http://hooli.com",
+      "zipcode": "91364",
+      "net_payment_term": 30,
+      "external_salesforce_id": "0015p00001JQx1QAAT",
+      "created_at": "2022-04-29T08:59:51Z",
+      "updated_at": "2022-04-29T08:59:51Z",
+      "finalize_zero_amount_invoice": "inherit",
+      "skip_invoice_custom_sections": false,
+      "billing_configuration": {
+        "invoice_grace_period": 3,
+        "subscription_invoice_issuing_date_anchor": "next_period_start",
+        "subscription_invoice_issuing_date_adjustment": "keep_anchor",
+        "payment_provider": "stripe",
+        "payment_provider_code": "stripe-eu-1",
+        "provider_customer_id": "cus_12345",
+        "sync": true,
+        "sync_with_provider": true,
+        "document_locale": "fr",
+        "provider_payment_methods": [
+          "card",
+          "sepa_debit",
+          "us_bank_account",
+          "bacs_debit",
+          "link",
+          "boleto",
+          "crypto",
+          "customer_balance"
+        ]
+      },
+      "shipping_address": {
+        "address_line1": "5230 Penfield Ave",
+        "address_line2": null,
+        "city": "Woodland Hills",
+        "country": "US",
+        "state": "CA",
+        "zipcode": "91364"
+      },
+      "metadata": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "key": "Purchase Order",
+          "value": "123456789",
+          "display_in_invoice": true,
+          "created_at": "2022-04-29T08:59:51Z"
+        }
+      ],
+      "integration_customers": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "type": "netsuite",
+          "integration_code": "netsuite-eu-1",
+          "external_customer_id": "cus_12345",
+          "sync_with_provider": true,
+          "subsidiary_id": "2",
+          "targeted_object": "contacts",
+          "email": "dinesh@piedpiper.test"
+        }
+      ]
+    },
+    "metadata": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "key": "digital_ref_id",
+        "value": "INV-0123456-98765",
+        "created_at": "2022-04-29T08:59:51Z"
+      }
+    ],
+    "applied_taxes": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_tax_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "tax_name": "TVA",
+        "tax_code": "french_standard_vat",
+        "tax_rate": 20,
+        "tax_description": "French standard VAT",
+        "amount_cents": 2000,
+        "amount_currency": "USD",
+        "created_at": "2022-09-14T16:35:31Z"
+      }
+    ],
+    "applied_invoice_custom_sections": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "code": "eu_bank_details",
+        "details": "Bank Name: Lago Bank, IBAN: FR7630004000031234567890143",
+        "display_name": "Bank Details:",
+        "created_at": "2023-07-06T14:35:58Z"
+      }
+    ],
+    "applied_usage_thresholds": [
+      {
+        "lifetime_usage_amount_cents": 2000,
+        "created_at": "2025-03-31T12:31:44Z",
+        "usage_threshold": {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "threshold_display_name": "Threshold 1",
+          "amount_cents": 10000,
+          "recurring": true,
+          "created_at": "2023-06-27T19:43:42Z",
+          "updated_at": "2023-06-27T19:43:42Z"
+        }
+      }
+    ],
+    "billing_periods": [
+      {
+        "lago_subscription_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "external_subscription_id": "external_id",
+        "lago_plan_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "subscription_from_datetime": "2022-04-29T08:59:51Z",
+        "subscription_to_datetime": "2022-05-29T08:59:51Z",
+        "charges_from_datetime": "2022-04-29T08:59:51Z",
+        "charges_to_datetime": "2022-05-29T08:59:51Z",
+        "invoicing_reason": "subscription_starting"
+      }
+    ],
+    "credits": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "amount_cents": 1200,
+        "amount_currency": "USD",
+        "before_taxes": false,
+        "item": {
+          "lago_item_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "type": "coupon",
+          "code": "startup_deal",
+          "name": "Startup Deal"
+        },
+        "invoice": {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "payment_status": "succeeded"
+        }
+      }
+    ],
+    "fees": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_charge_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_charge_filter_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_fixed_charge_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_true_up_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_true_up_parent_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_subscription_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "external_customer_id": "external_id",
+        "external_subscription_id": "external_id",
+        "amount_cents": 100,
+        "precise_amount": "1.0001",
+        "precise_total_amount": "1.0212",
+        "amount_currency": "USD",
+        "taxes_amount_cents": 20,
+        "taxes_precise_amount": "0.20123",
+        "taxes_rate": 20,
+        "units": "0.32",
+        "precise_unit_amount": "312.5",
+        "total_aggregated_units": "0.32",
+        "total_amount_cents": 120,
+        "total_amount_currency": "USD",
+        "events_count": 23,
+        "pay_in_advance": true,
+        "invoiceable": true,
+        "from_date": "2022-04-29T08:59:51Z",
+        "to_date": "2022-05-29T08:59:51Z",
+        "payment_status": "pending",
+        "created_at": "2022-08-24T14:58:59Z",
+        "succeeded_at": "2022-08-24T14:58:59Z",
+        "failed_at": "2022-08-24T14:58:59Z",
+        "refunded_at": "2022-08-24T14:58:59Z",
+        "event_transaction_id": "transaction_1234567890",
+        "description": "Fee description",
+        "precise_coupons_amount_cents": "0.0",
+        "sub_total_excluding_taxes_amount_cents": 100,
+        "sub_total_excluding_taxes_precise_amount_cents": "100.0",
+        "amount_details": {
+          "plan_amount_cents": 10000,
+          "graduated_ranges": [],
+          "graduated_percentage_ranges": [],
+          "free_units": "10.0",
+          "paid_units": "40.0",
+          "per_package_size": 1000,
+          "per_package_unit_amount": "0.5",
+          "per_unit_total_amount": "10.0",
+          "units": "20.0",
+          "free_events": 10,
+          "rate": "1.0",
+          "paid_events": 20,
+          "fixed_fee_unit_amount": "1.0",
+          "fixed_fee_total_amount": "20.0",
+          "min_max_adjustment_total_amount": "20.0",
+          "per_unit_amount": "0.5",
+          "flat_unit_amount": "10.0"
+        },
+        "self_billed": false,
+        "item": {
+          "type": "subscription",
+          "code": "startup",
+          "name": "Startup",
+          "description": "Startup",
+          "invoice_display_name": "Setup Fee (SF1)",
+          "filter_invoice_display_name": "AWS eu-east-1",
+          "filters": null,
+          "lago_item_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "item_type": "Subscription",
+          "grouped_by": {}
+        },
+        "applied_taxes": [
+          {}
+        ],
+        "pricing_unit_details": {
+          "lago_pricing_unit_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "pricing_unit_code": "credits",
+          "short_name": "CR",
+          "amount_cents": 200,
+          "precise_amount_cents": "200.0",
+          "unit_amount_cents": 100,
+          "precise_unit_amount": "100.0",
+          "conversion_rate": "0.5"
+        },
+        "presentation_breakdowns": [
+          {}
+        ]
+      }
+    ],
+    "subscriptions": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "external_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "billing_entity_code": "default",
+        "billing_time": "anniversary",
+        "name": "Repository A",
+        "plan_code": "premium",
+        "plan_amount_cents": 10000,
+        "plan_amount_currency": "USD",
+        "status": "active",
+        "created_at": "2022-08-08T00:00:00Z",
+        "canceled_at": "2022-09-14T16:35:31Z",
+        "started_at": "2022-08-08T00:00:00Z",
+        "ending_at": "2022-10-08T00:00:00Z",
+        "subscription_at": "2022-08-08T00:00:00Z",
+        "terminated_at": "2022-09-14T16:35:31Z",
+        "previous_plan_code": null,
+        "next_plan_code": null,
+        "downgrade_plan_date": "2022-04-30",
+        "trial_ended_at": "2022-08-08T00:00:00Z",
+        "current_billing_period_started_at": "2022-08-08T00:00:00Z",
+        "current_billing_period_ending_at": "2022-09-08T00:00:00Z",
+        "on_termination_credit_note": "credit",
+        "on_termination_invoice": "generate",
+        "applied_invoice_custom_sections": [
+          {}
+        ],
+        "payment_method": {
+          "payment_method_type": "provider",
+          "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+        },
+        "consolidate_invoice": true,
+        "cancellation_reason": "payment_failed",
+        "activated_at": "2022-08-08T00:00:00Z",
+        "activation_rules": [
+          {}
+        ],
+        "purchase_order_number": "PO-123"
+      }
+    ],
+    "error_details": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "error_code": "tax_error",
+        "details": {
+          "tax_error": "taxDateTooFarInFuture"
+        }
+      }
+    ]
+  }
+}
+```
+
+```text preview
+CURRENCY            USD
+FEES                [{"amount_cents":100,"units":"1.0"}]
+ISSUING_DATE        2026-10-01
+TOTAL_AMOUNT_CENTS  100
+```
+
+```json payment-url
+{
+  "invoice_payment_details": {
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_invoice_id": "1e501a90-1a90-1a90-1a90-1a901a901a80",
+    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+    "payment_provider": "stripe",
+    "payment_url": "https://foo.bar"
+  }
+}
+```
+
+</ResponseExample>

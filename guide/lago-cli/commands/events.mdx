@@ -1,0 +1,252 @@
+---
+title: "Events"
+description: "Send one usage event, stream thousands from NDJSON, batch, or estimate a fee without recording anything."
+---
+
+| Command | Description |
+| --- | --- |
+| `events send` | Send one event, or stream many with `--file`. |
+| `events batch` | Up to 100 events in one request. |
+| `events get <transaction_id>` | Retrieve an event. |
+| `events list` | List events. |
+| `events estimate-fees` | Fee for a pay-in-advance charge, without recording the event. |
+| `events estimate-instant-fees`, `batch-estimate-instant-fees` | Estimates for instant charges. |
+
+## Idempotency
+
+Events are idempotent on `transaction_id`. Sending the same transaction twice records one event, so a retried request never double-bills. When you omit `--transaction-id`, the CLI generates one and reuses it as the request's idempotency key. Bulk sends do the same per line.
+
+## send
+
+| Flag | Description |
+| --- | --- |
+| `--external-subscription-id` | Which subscription the usage belongs to. |
+| `--code` | The billable metric code. |
+| `--transaction-id` | Your unique event identifier. Generated when omitted. |
+| `--timestamp` | When the usage happened, Unix seconds or RFC 3339 (`2026-09-01T10:00:00Z`, converted for you). Defaults to receipt time. Always set it together with `--transaction-id`: the API deduplicates on both, so a resend without a timestamp is recorded as a new event. |
+| `--properties` | JSON object. Required when the metric aggregates a field or has filters. Numeric values as strings keep precision. |
+| `--precise-total-amount-cents` | For the `dynamic` charge model: the amount your system computed. |
+| `--file`, `--concurrency` | Stream NDJSON from a file or `-`. 1 to 64 workers, default 4. The file is never loaded into memory. |
+
+## estimate-fees
+
+Answers "what would this event cost" for pay-in-advance charges. Nothing is recorded, nothing is invoiced.
+
+<RequestExample>
+
+```bash send
+lago events send --external-subscription-id acme_001_pro --code api_requests
+
+lago events send \
+  --external-subscription-id acme_001_pro \
+  --code llm_tokens \
+  --transaction-id req_01J8X2Y3Z4 \
+  --timestamp 1756684800 \
+  --properties '{"tokens":"1523","model":"gpt-4o"}'
+
+# Dynamic pricing: pass the amount your system computed
+lago events send --external-subscription-id acme_001_pro --code payments_volume \
+  --properties '{"amount":"12000"}' --precise-total-amount-cents 12000.0
+```
+
+```bash send --file
+lago events send --file events.ndjson --concurrency 8
+cat events.ndjson | lago events send --file -
+
+# events.ndjson, one event per line
+# {"external_subscription_id":"acme_001_pro","code":"api_requests","transaction_id":"req_0001","timestamp":1756684800}
+# {"external_subscription_id":"acme_001_pro","code":"llm_tokens","transaction_id":"req_0002","properties":{"tokens":"812","model":"gpt-4o"}}
+```
+
+```bash batch
+lago events batch --input @batch.json
+lago events batch --events '[
+  {"external_subscription_id":"acme_001_pro","code":"api_requests","transaction_id":"req_0004"},
+  {"external_subscription_id":"acme_001_pro","code":"api_requests","transaction_id":"req_0005"}
+]'
+```
+
+```bash get
+lago events get req_01J8X2Y3Z4
+```
+
+```bash list
+lago events list --external-subscription-id acme_001_pro --code api_requests \
+  --timestamp-from 2026-09-01T00:00:00Z --limit 100
+```
+
+```bash estimate-fees
+lago events estimate-fees --external-subscription-id acme_001_pro --code seats \
+  --output json --query 'fees[].amount_cents'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text send
+CODE            api_requests
+LAGO_ID         5e905e90-5e90-5e90-5e90-5e905e905e90
+TRANSACTION_ID  0f3c1d2e-4a5b-6c7d-8e9f-0a1b2c3d4e5f
+```
+
+```json get
+{
+  "event": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "transaction_id": "req_01J8X2Y3Z4",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "code": "api_requests",
+    "timestamp": "2022-04-29T08:59:51.123Z",
+    "precise_total_amount_cents": "1234.56",
+    "properties": {
+      "gb": 10
+    },
+    "lago_subscription_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_subscription_id": "acme_001_pro",
+    "created_at": "2022-04-29T08:59:51Z"
+  }
+}
+```
+
+```json list
+{
+  "events": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "transaction_id": "req_01J8X2Y3Z4",
+      "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "code": "api_requests",
+      "timestamp": "2022-04-29T08:59:51.123Z",
+      "precise_total_amount_cents": "1234.56",
+      "properties": {
+        "gb": 10
+      },
+      "lago_subscription_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "external_subscription_id": "acme_001_pro",
+      "created_at": "2022-04-29T08:59:51Z"
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+```json estimate-fees
+{
+  "fees": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_charge_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_charge_filter_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_fixed_charge_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_true_up_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_true_up_parent_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_subscription_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "external_customer_id": "external_id",
+      "external_subscription_id": "acme_001_pro",
+      "amount_cents": 100,
+      "precise_amount": "1.0001",
+      "precise_total_amount": "1.0212",
+      "amount_currency": "USD",
+      "taxes_amount_cents": 20,
+      "taxes_precise_amount": "0.20123",
+      "taxes_rate": 20,
+      "units": "0.32",
+      "precise_unit_amount": "312.5",
+      "total_aggregated_units": "0.32",
+      "total_amount_cents": 120,
+      "total_amount_currency": "USD",
+      "events_count": 23,
+      "pay_in_advance": true,
+      "invoiceable": true,
+      "from_date": "2022-04-29T08:59:51Z",
+      "to_date": "2022-05-29T08:59:51Z",
+      "payment_status": "pending",
+      "created_at": "2022-08-24T14:58:59Z",
+      "succeeded_at": "2022-08-24T14:58:59Z",
+      "failed_at": "2022-08-24T14:58:59Z",
+      "refunded_at": "2022-08-24T14:58:59Z",
+      "event_transaction_id": "transaction_1234567890",
+      "description": "Fee description",
+      "precise_coupons_amount_cents": "0.0",
+      "sub_total_excluding_taxes_amount_cents": 100,
+      "sub_total_excluding_taxes_precise_amount_cents": "100.0",
+      "amount_details": {
+        "plan_amount_cents": 10000,
+        "graduated_ranges": [
+          {}
+        ],
+        "graduated_percentage_ranges": [
+          {}
+        ],
+        "free_units": "10.0",
+        "paid_units": "40.0",
+        "per_package_size": 1000,
+        "per_package_unit_amount": "0.5",
+        "per_unit_total_amount": "10.0",
+        "units": "20.0",
+        "free_events": 10,
+        "rate": "1.0",
+        "paid_events": 20,
+        "fixed_fee_unit_amount": "1.0",
+        "fixed_fee_total_amount": "20.0",
+        "min_max_adjustment_total_amount": "20.0",
+        "per_unit_amount": "0.5",
+        "flat_unit_amount": "10.0"
+      },
+      "self_billed": false,
+      "item": {
+        "type": "subscription",
+        "code": "startup",
+        "name": "Startup",
+        "description": "Startup",
+        "invoice_display_name": "Setup Fee (SF1)",
+        "filter_invoice_display_name": "AWS eu-east-1",
+        "filters": null,
+        "lago_item_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "item_type": "Subscription",
+        "grouped_by": {}
+      },
+      "applied_taxes": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "lago_tax_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "tax_name": "TVA",
+          "tax_code": "french_standard_vat",
+          "tax_rate": 20,
+          "tax_description": "French standard VAT",
+          "amount_cents": 2000,
+          "amount_currency": "USD",
+          "created_at": "2022-09-14T16:35:31Z"
+        }
+      ],
+      "pricing_unit_details": {
+        "lago_pricing_unit_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "pricing_unit_code": "credits",
+        "short_name": "CR",
+        "amount_cents": 200,
+        "precise_amount_cents": "200.0",
+        "unit_amount_cents": 100,
+        "precise_unit_amount": "100.0",
+        "conversion_rate": "0.5"
+      },
+      "presentation_breakdowns": [
+        {
+          "presentation_by": {},
+          "units": "9.0"
+        }
+      ]
+    }
+  ]
+}
+```
+
+</ResponseExample>

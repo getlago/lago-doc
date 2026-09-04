@@ -1,0 +1,164 @@
+---
+title: "Overview"
+description: "The Lago API from your terminal. One binary, every endpoint, safe defaults."
+---
+
+The [Lago CLI](https://github.com/getlago/lago-cli) is generated from the Lago OpenAPI spec. Every endpoint is a command, every API field is a flag. It works with Lago Cloud US, Lago Cloud EU, and self-hosted Lago.
+
+## Install
+
+Homebrew on macOS and Linux installs the binary, the man page and the shell completions:
+
+```bash
+brew install getlago/tap/lago
+```
+
+Anywhere Go 1.27 or later runs:
+
+```bash
+go install github.com/getlago/lago-cli/cmd/lago@latest
+```
+
+Release archives for macOS, Linux and Windows, with checksums signed by cosign, are on the [releases page](https://github.com/getlago/lago-cli/releases). `lago version` prints the CLI version and the API spec version it was built from. `lago upgrade` tells you whether a newer release exists and the command to install it.
+
+<Warning>
+If `lago version` prints a Docker Compose version, a shell alias named `lago` from a self-hosted Lago setup is shadowing the binary. Run `unalias lago` and remove the alias from your shell profile.
+</Warning>
+
+## Configure
+
+Get an API key from **Developers > API keys** in the Lago app, then:
+
+<CodeGroup>
+
+```bash Cloud US
+lago init --api-key "$LAGO_API_KEY" --region us --mode test
+```
+
+```bash Cloud EU
+lago init --api-key "$LAGO_API_KEY" --region eu --mode test
+```
+
+```bash Self-hosted
+lago init --api-key "$LAGO_API_KEY" --region self-hosted --api-url https://lago.example.com --mode test
+```
+
+</CodeGroup>
+
+`init` checks the key against the API before saving anything to `~/.config/lago/config.toml`. Pass the base URL only: the CLI adds `/api/v1`. The dashboard URL (`app.getlago.com`) is refused, because it is not the API.
+
+`lago whoami` shows the profile and the exact host requests go to. `lago doctor` checks configuration, network, and authentication.
+
+## First commands
+
+```bash
+lago billable-metrics create --name Requests --code api_requests --aggregation-type count_agg
+lago customers create --external-id acme_001 --name "Acme Inc." --currency USD
+lago customers get acme_001
+lago customers list --limit 5
+lago customers get acme_001 --output json --query 'customer.email'
+```
+
+`lago seed demo` creates a full chain (metric, plan, customer, subscription, event, invoice preview) in one command.
+
+## How it works
+
+### Flags are API fields
+
+A `snake_case` field is a `--kebab-case` flag. Nested fields carry their parent as a prefix. Objects and arrays take JSON. `--input` sends a whole request body.
+
+```bash
+lago customers create --external-id acme_001 --billing-configuration-payment-provider stripe
+lago customers create --input @customer.json
+```
+
+### Creates print identifiers
+
+A `create` or `update` prints the identifier block. Add `--output json` for the full resource.
+
+```console
+$ lago customers create --external-id acme_001 --name "Acme Inc." --currency USD
+LAGO_ID      1a901a90-1a90-1a90-1a90-1a901a901a90
+EXTERNAL_ID  acme_001
+NAME         Acme Inc.
+```
+
+### Responses are wrapped
+
+The API wraps every response in its resource name. A `--query` starts with that wrapper. A query that matches nothing prints `null` and lists the available keys on stderr.
+
+```bash
+lago customers get acme_001 --query 'customer.email'
+lago customers list --query 'customers[].external_id'
+```
+
+### Destructive operations ask first
+
+`delete`, `void`, `finalize`, `terminate`, and `retry-payment` prompt for the identifier. In a script, pass it with `--confirm`.
+
+```bash
+lago invoices void 1a901a90-1a90-1a90-1a90-1a901a901a90 --confirm 1a901a90-1a90-1a90-1a90-1a901a901a90
+```
+
+### Live is the default mode
+
+`--mode test` is a safety declaration, not a sandbox. Live mode prints `[LIVE]` and gates destructive operations. Credentials passed by flag or environment run live unless you set a mode.
+
+### Nothing is sent on `--dry-run`
+
+The CLI prints the method, URL, redacted headers, and exact body. No connection is opened.
+
+```bash
+lago customers create --external-id acme_001 --name "Acme Inc." --dry-run
+```
+
+## Scripting
+
+| Flag | Use |
+| --- | --- |
+| `--output json` | Full resource. Also `yaml`. Default is `table`. |
+| `--query <jmespath>` | Select from the response. Implies `--output json`. |
+| `--all` | Every page of a `list`, streamed 100 at a time. Pipe to `jq`. Not combinable with `--query`. |
+| `--limit`, `--page` | One page. `--limit` takes 1 to 1000. |
+| `--dry-run` | Print the request, send nothing. |
+| `--confirm <id>` | Confirm a destructive operation non-interactively. |
+| `--profile <name>` | Switch organization or region. |
+
+```bash
+lago customers list --all --output json | jq -r '.customers[].external_id'
+lago invoices list --output json --query 'invoices[?status==`"finalized"`].total_amount_cents'
+lago api GET /customers?page=2        # any endpoint, same auth and output handling
+```
+
+Precedence is flags, then environment, then profile.
+
+| Environment variable | Sets |
+| --- | --- |
+| `LAGO_API_KEY` | API key |
+| `LAGO_API_URL` | API base URL |
+| `LAGO_MODE` | `live` or `test` |
+| `LAGO_PROFILE` | Profile name |
+
+## Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success |
+| 2 | Usage error, including a missing `--confirm` |
+| 3 | Authentication |
+| 4 | Not found. The error names the resource type and value. |
+| 5 | Validation or other 4xx |
+| 6 | Rate limited |
+| 7 | Server 5xx |
+| 8 | Network or timeout |
+
+Money is exact: `*_amount_cents` are integers, `units` are decimal strings. The CLI sends no telemetry.
+
+<CardGroup cols={2}>
+  <Card title="Command reference" icon="terminal" href="/guide/lago-cli/commands/overview">
+    One page per command group, with commands and their output side by side.
+  </Card>
+  <Card title="API reference" icon="code" href="/api-reference/intro">
+    The schemas the CLI is generated from.
+  </Card>
+</CardGroup>

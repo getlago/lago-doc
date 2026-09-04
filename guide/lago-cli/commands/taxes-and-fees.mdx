@@ -1,0 +1,326 @@
+---
+title: "Taxes and fees"
+description: "Tax rates applied to customers and plans, and the fees that make up invoices."
+---
+
+## Taxes
+
+| Command | Description |
+| --- | --- |
+| `taxes create` | Create a tax rate. |
+| `taxes get <code>`, `list` | Read taxes. |
+| `taxes update <code>` | Update. |
+| `taxes delete <code>` | Delete. Confirmation-gated. |
+
+`--rate` is a percentage as a decimal string. `--applied-to-organization true` makes it the default for customers without their own tax codes.
+
+## Fees
+
+A fee is one line of an invoice: a subscription fee, a charge, an add-on, a credit. Fees are read-mostly. `update` exists to set the payment status of a pay-in-advance fee that was paid outside Lago.
+
+| Command | Description |
+| --- | --- |
+| `fees list` | Filter by type, payment status, dates, customer, subscription, event. |
+| `fees get <lago_id>` | One fee. |
+| `fees update <lago_id>` | Update payment status. |
+| `fees delete <lago_id>` | Delete. Confirmation-gated. |
+
+| Flag | Values |
+| --- | --- |
+| `--fee-type` | `charge`, `subscription`, `add_on`, `credit`, `commitment`. |
+| `--payment-status` | `pending`, `succeeded`, `failed`, `refunded`. |
+| `--event-transaction-id` | The fee produced by one pay-in-advance event. |
+| `--created-at-from`, `--succeeded-at-from`, `--failed-at-from`, `--refunded-at-from` and `-to` | Date windows. |
+
+<RequestExample>
+
+```bash taxes
+lago taxes create --name "VAT FR" --code vat_fr --rate 20.0 --description "French standard rate"
+lago taxes create --name "Sales tax" --code sales_tax_default --rate 8.875 --applied-to-organization true
+lago taxes list
+lago taxes update vat_fr --rate 20.0
+lago taxes delete vat_fr --confirm vat_fr
+```
+
+```bash fees list
+lago fees list --external-customer-id acme_001 --fee-type charge --created-at-from 2026-09-01
+lago fees list --payment-status failed --all --output json \
+  | jq -r '.fees[] | "\(.lago_id)\t\(.amount_cents)"'
+lago fees list --event-transaction-id req_01J8X2Y3Z4
+```
+
+```bash fees get
+lago fees get 6f906f90-6f90-6f90-6f90-6f906f906f90
+lago fees update 6f906f90-6f90-6f90-6f90-6f906f906f90 --input '{"fee":{"payment_status":"succeeded"}}'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text taxes create
+LAGO_ID  1a901a90-1a90-1a90-1a90-1a901a901a90
+CODE     vat_fr
+NAME     VAT FR
+```
+
+```json taxes get
+{
+  "tax": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "name": "VAT FR",
+    "code": "vat_fr",
+    "description": "French standard VAT",
+    "rate": "20.0",
+    "applied_to_organization": true,
+    "created_at": "2023-07-06T14:35:58Z"
+  }
+}
+```
+
+```json fees list
+{
+  "fees": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_charge_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_charge_filter_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_fixed_charge_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_true_up_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_true_up_parent_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_subscription_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "external_customer_id": "external_id",
+      "external_subscription_id": "external_id",
+      "amount_cents": 100,
+      "precise_amount": "1.0001",
+      "precise_total_amount": "1.0212",
+      "amount_currency": "USD",
+      "taxes_amount_cents": 20,
+      "taxes_precise_amount": "0.20123",
+      "taxes_rate": 20,
+      "units": "0.32",
+      "precise_unit_amount": "312.5",
+      "total_aggregated_units": "0.32",
+      "total_amount_cents": 120,
+      "total_amount_currency": "USD",
+      "events_count": 23,
+      "pay_in_advance": true,
+      "invoiceable": true,
+      "from_date": "2022-04-29T08:59:51Z",
+      "to_date": "2022-05-29T08:59:51Z",
+      "payment_status": "pending",
+      "created_at": "2022-08-24T14:58:59Z",
+      "succeeded_at": "2022-08-24T14:58:59Z",
+      "failed_at": "2022-08-24T14:58:59Z",
+      "refunded_at": "2022-08-24T14:58:59Z",
+      "event_transaction_id": "transaction_1234567890",
+      "description": "Fee description",
+      "precise_coupons_amount_cents": "0.0",
+      "sub_total_excluding_taxes_amount_cents": 100,
+      "sub_total_excluding_taxes_precise_amount_cents": "100.0",
+      "amount_details": {
+        "plan_amount_cents": 10000,
+        "graduated_ranges": [
+          {}
+        ],
+        "graduated_percentage_ranges": [
+          {}
+        ],
+        "free_units": "10.0",
+        "paid_units": "40.0",
+        "per_package_size": 1000,
+        "per_package_unit_amount": "0.5",
+        "per_unit_total_amount": "10.0",
+        "units": "20.0",
+        "free_events": 10,
+        "rate": "1.0",
+        "paid_events": 20,
+        "fixed_fee_unit_amount": "1.0",
+        "fixed_fee_total_amount": "20.0",
+        "min_max_adjustment_total_amount": "20.0",
+        "per_unit_amount": "0.5",
+        "flat_unit_amount": "10.0"
+      },
+      "self_billed": false,
+      "item": {
+        "type": "subscription",
+        "code": "startup",
+        "name": "Startup",
+        "description": "Startup",
+        "invoice_display_name": "Setup Fee (SF1)",
+        "filter_invoice_display_name": "AWS eu-east-1",
+        "filters": null,
+        "lago_item_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "item_type": "Subscription",
+        "grouped_by": {}
+      },
+      "applied_taxes": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "lago_tax_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "tax_name": "TVA",
+          "tax_code": "french_standard_vat",
+          "tax_rate": 20,
+          "tax_description": "French standard VAT",
+          "amount_cents": 2000,
+          "amount_currency": "USD",
+          "created_at": "2022-09-14T16:35:31Z"
+        }
+      ],
+      "pricing_unit_details": {
+        "lago_pricing_unit_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "pricing_unit_code": "credits",
+        "short_name": "CR",
+        "amount_cents": 200,
+        "precise_amount_cents": "200.0",
+        "unit_amount_cents": 100,
+        "precise_unit_amount": "100.0",
+        "conversion_rate": "0.5"
+      },
+      "presentation_breakdowns": [
+        {
+          "presentation_by": {},
+          "units": "9.0"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+```json fees get
+{
+  "fee": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_charge_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_charge_filter_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_fixed_charge_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_true_up_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_true_up_parent_fee_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_subscription_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_customer_id": "external_id",
+    "external_subscription_id": "external_id",
+    "amount_cents": 100,
+    "precise_amount": "1.0001",
+    "precise_total_amount": "1.0212",
+    "amount_currency": "USD",
+    "taxes_amount_cents": 20,
+    "taxes_precise_amount": "0.20123",
+    "taxes_rate": 20,
+    "units": "0.32",
+    "precise_unit_amount": "312.5",
+    "total_aggregated_units": "0.32",
+    "total_amount_cents": 120,
+    "total_amount_currency": "USD",
+    "events_count": 23,
+    "pay_in_advance": true,
+    "invoiceable": true,
+    "from_date": "2022-04-29T08:59:51Z",
+    "to_date": "2022-05-29T08:59:51Z",
+    "payment_status": "pending",
+    "created_at": "2022-08-24T14:58:59Z",
+    "succeeded_at": "2022-08-24T14:58:59Z",
+    "failed_at": "2022-08-24T14:58:59Z",
+    "refunded_at": "2022-08-24T14:58:59Z",
+    "event_transaction_id": "transaction_1234567890",
+    "description": "Fee description",
+    "precise_coupons_amount_cents": "0.0",
+    "sub_total_excluding_taxes_amount_cents": 100,
+    "sub_total_excluding_taxes_precise_amount_cents": "100.0",
+    "amount_details": {
+      "plan_amount_cents": 10000,
+      "graduated_ranges": [
+        {
+          "units": "10.0",
+          "from_value": 0,
+          "to_value": 10,
+          "flat_unit_amount": "1.0",
+          "per_unit_amount": "1.0",
+          "per_unit_total_amount": "10.0",
+          "total_with_flat_amount": "11.0"
+        }
+      ],
+      "graduated_percentage_ranges": [
+        {
+          "units": "10.0",
+          "from_value": 0,
+          "to_value": 10,
+          "flat_unit_amount": "1.0",
+          "rate": "1.0",
+          "per_unit_total_amount": "10.0",
+          "total_with_flat_amount": "11.0"
+        }
+      ],
+      "free_units": "10.0",
+      "paid_units": "40.0",
+      "per_package_size": 1000,
+      "per_package_unit_amount": "0.5",
+      "per_unit_total_amount": "10.0",
+      "units": "20.0",
+      "free_events": 10,
+      "rate": "1.0",
+      "paid_events": 20,
+      "fixed_fee_unit_amount": "1.0",
+      "fixed_fee_total_amount": "20.0",
+      "min_max_adjustment_total_amount": "20.0",
+      "per_unit_amount": "0.5",
+      "flat_unit_amount": "10.0"
+    },
+    "self_billed": false,
+    "item": {
+      "type": "subscription",
+      "code": "startup",
+      "name": "Startup",
+      "description": "Startup",
+      "invoice_display_name": "Setup Fee (SF1)",
+      "filter_invoice_display_name": "AWS eu-east-1",
+      "filters": null,
+      "lago_item_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "item_type": "Subscription",
+      "grouped_by": {}
+    },
+    "applied_taxes": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "lago_tax_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "tax_name": "TVA",
+        "tax_code": "french_standard_vat",
+        "tax_rate": 20,
+        "tax_description": "French standard VAT",
+        "amount_cents": 2000,
+        "amount_currency": "USD",
+        "created_at": "2022-09-14T16:35:31Z"
+      }
+    ],
+    "pricing_unit_details": {
+      "lago_pricing_unit_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "pricing_unit_code": "credits",
+      "short_name": "CR",
+      "amount_cents": 200,
+      "precise_amount_cents": "200.0",
+      "unit_amount_cents": 100,
+      "precise_unit_amount": "100.0",
+      "conversion_rate": "0.5"
+    },
+    "presentation_breakdowns": [
+      {
+        "presentation_by": {},
+        "units": "9.0"
+      }
+    ]
+  }
+}
+```
+
+</ResponseExample>

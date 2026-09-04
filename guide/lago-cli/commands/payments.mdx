@@ -1,0 +1,186 @@
+---
+title: "Payments"
+description: "Record manual payments, request payment on invoices, read receipts, manage stored payment methods."
+---
+
+| Command | Description |
+| --- | --- |
+| `payments create` | Record a manual payment against an invoice. |
+| `payments get <lago_id>`, `list` | Read payments. |
+| `payment-requests create` | Request payment for one or more invoices. Sends the dunning email. |
+| `payment-requests get <lago_id>`, `list` | Read payment requests. |
+| `payment-receipts get <lago_id>`, `list` | Read payment receipts. |
+| `payment-methods list-customers-payment-methods <external_customer_id>` | A customer's stored payment methods. |
+| `payment-methods payment-method-set-as-default <lago_id> <external_customer_id>` | Set the default. |
+| `payment-methods destroy <lago_id> <external_customer_id>` | Remove one. Confirmation-gated. |
+
+## payments create
+
+For money that arrived outside a payment provider: a wire, a check. `--amount-cents` is applied to the invoice's remaining balance. Always pass `--idempotency-key`; a duplicated manual payment is a reconciliation problem later.
+
+| Flag | Description |
+| --- | --- |
+| `--invoice-id` | The invoice's `lago_id`. |
+| `--amount-cents` | Amount received. |
+| `--reference` | Bank reference, check number. |
+| `--paid-at` | When the money arrived, ISO 8601. |
+
+## payment-requests create
+
+Groups invoices into one request and one email. `--lago-invoice-ids` is a JSON array. `--email` overrides the customer's billing email for this request.
+
+<RequestExample>
+
+```bash payments create
+lago payments create \
+  --invoice-id 4d904d90-4d90-4d90-4d90-4d904d904d90 \
+  --amount-cents 150000 \
+  --reference "Wire 2026-09-15" \
+  --paid-at 2026-09-15T10:00:00Z
+```
+
+```bash payments read
+lago payments list --limit 20
+lago payments get 2f902f90-2f90-2f90-2f90-2f902f902f90
+```
+
+```bash payment-requests
+lago payment-requests create --external-customer-id acme_001 --email ap@acme.example \
+  --lago-invoice-ids '["4d904d90-4d90-4d90-4d90-4d904d904d90"]'
+lago payment-requests list
+```
+
+```bash payment-receipts
+lago payment-receipts list --invoice-id 4d904d90-4d90-4d90-4d90-4d904d904d90
+```
+
+```bash payment-methods
+lago payment-methods list-customers-payment-methods acme_001
+lago payment-methods payment-method-set-as-default ab90ab90-ab90-ab90-ab90-ab90ab90ab90 acme_001
+lago payment-methods destroy ab90ab90-ab90-ab90-ab90-ab90ab90ab90 acme_001 --confirm acme_001
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text payments create
+LAGO_ID  4cf085a7-c196-4f07-a543-97c50ec6e8b2
+```
+
+```json payments get
+{
+  "lago_id": "4cf085a7-c196-4f07-a543-97c50ec6e8b2",
+  "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+  "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+  "invoice_ids": [
+    "486b147a-02a1-4ccf-8603-f3541fc25e7a"
+  ],
+  "invoice_numbers": [
+    "HOO-202D-005-001"
+  ],
+  "lago_payable_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+  "payable_type": "Invoice",
+  "amount_cents": 1099,
+  "amount_currency": "USD",
+  "status": "Completed",
+  "payment_status": "succeeded",
+  "type": "manual",
+  "reference": "ref1",
+  "payment_provider_code": "stripe_prod",
+  "payment_provider_type": "stripe",
+  "external_payment_id": null,
+  "provider_payment_id": "pi_5eb0285741bc6ba",
+  "provider_customer_id": "cus_5eb0285bcf941bc6ba",
+  "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+  "next_action": {
+    "type": "redirect_to_url",
+    "redirect_to_url": {
+      "url": "https://hooks.stripe.com/3d_secure_2/hosted?merchant=acct_AAA&payment_intent=pi_BBB&payment_intent_client_secret=pi_BBB&publishable_key=pk_test_CCC",
+      "return_url": "https://app.example.com"
+    }
+  },
+  "created_at": "2025-01-21T00:10:29Z"
+}
+```
+
+```text payment-requests create
+LAGO_ID  1a901a90-1a90-1a90-1a90-1a901a901a90
+```
+
+```json payment-receipts list
+{
+  "payment_receipts": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "created_at": "2022-04-29T08:59:51Z",
+      "number": "LAG-1234-001-002",
+      "payment": {
+        "lago_id": "4cf085a7-c196-4f07-a543-97c50ec6e8b2",
+        "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "invoice_ids": [
+          "486b147a-02a1-4ccf-8603-f3541fc25e7a"
+        ],
+        "invoice_numbers": [
+          "HOO-202D-005-001"
+        ],
+        "lago_payable_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "payable_type": "Invoice",
+        "amount_cents": 1099,
+        "amount_currency": "USD",
+        "status": "Completed",
+        "payment_status": "succeeded",
+        "type": "manual",
+        "reference": "ref1",
+        "payment_provider_code": "stripe_prod",
+        "payment_provider_type": "stripe",
+        "external_payment_id": null,
+        "provider_payment_id": "pi_5eb0285741bc6ba",
+        "provider_customer_id": "cus_5eb0285bcf941bc6ba",
+        "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "next_action": {
+          "type": "redirect_to_url",
+          "redirect_to_url": {
+            "url": "https://hooks.stripe.com/3d_secure_2/hosted?merchant=acct_AAA&payment_intent=pi_BBB&payment_intent_client_secret=pi_BBB&publishable_key=pk_test_CCC",
+            "return_url": "https://app.example.com"
+          }
+        },
+        "created_at": "2025-01-21T00:10:29Z"
+      }
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+```json payment-methods list-customers-payment-methods
+{
+  "payment_methods": [
+    {
+      "lago_id": "4cf085a7-c196-4f07-a543-97c50ec6e8b2",
+      "is_default": true,
+      "payment_provider_code": "stripe_prod",
+      "payment_provider_name": "Stripe",
+      "payment_provider_type": "stripe",
+      "provider_method_id": "pm_1N8ZQX2eZvKYlo2CkL9Y8XYZ",
+      "created_at": "2025-01-21T00:10:29Z"
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+</ResponseExample>

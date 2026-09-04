@@ -1,0 +1,177 @@
+---
+title: "Quotes and orders"
+description: "Quotes, their versions, signed order forms, and the orders that execute them."
+---
+
+| Command | Description |
+| --- | --- |
+| `quotes list`, `get <lago_id>` | Read quotes. |
+| `quotes versions <lago_id>`, `get-quote-version <lago_id>` | Quote versions. |
+| `quotes approve-quote-version <lago_id>` | Approve a version. |
+| `quotes clone-quote-version <lago_id>` | Clone a version for editing. |
+| `quotes void-quote-version <lago_id>` | Void a version. Confirmation-gated. |
+| `order-forms list`, `get <lago_id>` | Read order forms. |
+| `order-forms mark-as-signed <lago_id>` | Record a signature. |
+| `order-forms void <lago_id>` | Void. Confirmation-gated. |
+| `orders list`, `get <lago_id>` | Read orders. |
+| `orders execute <lago_id>` | Execute an order, creating its subscriptions. |
+
+Quotes are authored in the Lago app. The CLI reads them, moves them through approval and signature, and executes the resulting order. `orders execute` creates real subscriptions, so it is a state transition whose output is the new state, not a terse identifier block.
+
+<RequestExample>
+
+```bash quotes
+lago quotes list --external-customer-id acme_001 --status draft
+lago quotes get ef90ef90-ef90-ef90-ef90-ef90ef90ef90
+lago quotes versions ef90ef90-ef90-ef90-ef90-ef90ef90ef90
+lago quotes approve-quote-version ef90ef90-ef90-ef90-ef90-ef90ef90ef90
+```
+
+```bash order-forms
+lago order-forms list --status sent
+lago order-forms mark-as-signed fa90fa90-fa90-fa90-fa90-fa90fa90fa90
+lago order-forms void fa90fa90-fa90-fa90-fa90-fa90fa90fa90 --confirm fa90fa90-fa90-fa90-fa90-fa90fa90fa90
+```
+
+```bash orders
+lago orders list --status pending
+lago orders get 0b900b90-0b90-0b90-0b90-0b900b900b90
+lago orders execute 0b900b90-0b90-0b90-0b90-0b900b900b90
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json quotes get
+{
+  "quote": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "number": "QT-2026-0001",
+    "order_type": "subscription_creation",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_subscription_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "created_at": "2026-04-29T08:59:51Z",
+    "updated_at": "2026-04-29T08:59:51Z",
+    "current_version": {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_quote_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "version": 1,
+      "status": "draft",
+      "currency": "USD",
+      "billing_entity_code": "acme_corp",
+      "void_reason": "manual",
+      "approved_at": "2026-04-29T08:59:51Z",
+      "voided_at": "2026-04-29T08:59:51Z",
+      "created_at": "2026-04-29T08:59:51Z",
+      "updated_at": "2026-04-29T08:59:51Z"
+    },
+    "owners": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "email": "sales@getlago.com"
+      }
+    ]
+  }
+}
+```
+
+```json order-forms get
+{
+  "order_form": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "number": "OF-2026-0001",
+    "status": "generated",
+    "void_reason": "manual",
+    "expires_at": "2026-06-30T23:59:59Z",
+    "signed_at": "2026-04-29T08:59:51Z",
+    "voided_at": "2026-04-29T08:59:51Z",
+    "signed_document_url": "https://api.getlago.com/rails/active_storage/blobs/redirect/eyJfcmFpbHMi/OF-2026-0001",
+    "lago_organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_quote_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_quote_version_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "created_at": "2026-04-29T08:59:51Z",
+    "updated_at": "2026-04-29T08:59:51Z"
+  }
+}
+```
+
+```json orders execute
+{
+  "order": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "number": "OR-2026-0001",
+    "status": "created",
+    "order_type": "subscription_creation",
+    "execution_mode": "execute_in_lago",
+    "currency": "USD",
+    "executed_at": "2026-07-01T00:00:00Z",
+    "execution_record": {
+      "executed_at": "2026-07-01T00:00:00Z",
+      "execution_mode": "execute_in_lago",
+      "invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "subscription_ids": [
+        "1a901a90-1a90-1a90-1a90-1a901a901a90"
+      ],
+      "terminated_subscription_ids": [
+        "1a901a90-1a90-1a90-1a90-1a901a901a90"
+      ],
+      "applied_coupon_ids": [
+        "1a901a90-1a90-1a90-1a90-1a901a901a90"
+      ],
+      "wallet_ids": [
+        "1a901a90-1a90-1a90-1a90-1a901a901a90"
+      ],
+      "errors": [
+        "plan_not_found"
+      ]
+    },
+    "lago_organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_order_form_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "created_at": "2026-04-29T08:59:51Z",
+    "updated_at": "2026-04-29T08:59:51Z",
+    "billing_snapshot": {
+      "addOns": [
+        {
+          "id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "localId": "b5c1e2a4-4e1e-4a7f-9f0e-9c1a0c7e1f2b",
+          "type": "add_on",
+          "payload": {},
+          "overrides": {}
+        }
+      ],
+      "plans": [
+        {
+          "id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "localId": "b5c1e2a4-4e1e-4a7f-9f0e-9c1a0c7e1f2b",
+          "type": "plan",
+          "payload": {},
+          "overrides": {}
+        }
+      ],
+      "coupons": [
+        {
+          "id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "localId": "b5c1e2a4-4e1e-4a7f-9f0e-9c1a0c7e1f2b",
+          "type": "coupon",
+          "payload": {},
+          "overrides": {}
+        }
+      ],
+      "walletCredits": [
+        {
+          "localId": "b5c1e2a4-4e1e-4a7f-9f0e-9c1a0c7e1f2b",
+          "type": "wallet_credit",
+          "payload": {}
+        }
+      ]
+    }
+  }
+}
+```
+
+</ResponseExample>

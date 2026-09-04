@@ -1,0 +1,152 @@
+---
+title: "Analytics and logs"
+description: "Revenue and usage aggregates, the audit trail, and raw API request logs."
+---
+
+## Analytics
+
+Read-only aggregates. Each command exposes the same filters as its endpoint, and `--watch` turns any of them into a live view.
+
+| Command | Description |
+| --- | --- |
+| `analytics mrr` | Monthly recurring revenue. |
+| `analytics gross-revenue` | Gross revenue by month. |
+| `analytics invoiced-usage` | Invoiced usage by month. |
+| `analytics invoice-collection` | Invoice collection by payment status. |
+| `analytics overdue-balance` | Overdue balance by month. |
+| `analytics usage` | Usage with metric, plan, customer, and granularity filters. |
+
+## Activity logs
+
+The audit trail: who changed what, from where.
+
+| Flag | Description |
+| --- | --- |
+| `--activity-types` | Comma-separated, such as `invoice.finalized,invoice.voided`. |
+| `--activity-sources` | `api`, `front`, `system`. |
+| `--user-emails`, `--external-customer-id`, `--external-subscription-id` | Actor and subject. |
+| `--resource-types`, `--resource-ids` | Narrow to a resource. |
+| `--from-date`, `--to-date` | Window. |
+
+## API logs
+
+Every request your organization made, with body and status.
+
+| Flag | Description |
+| --- | --- |
+| `--http-methods`, `--http-statuses` | Comma-separated. |
+| `--request-paths` | Path prefixes such as `/api/v1/events`. |
+| `--api-version` | Filter by API version. |
+| `--from-date`, `--to-date` | Window. |
+
+<RequestExample>
+
+```bash analytics
+lago analytics mrr --currency USD --months 12
+lago analytics gross-revenue --currency USD --external-customer-id acme_001
+lago analytics overdue-balance --currency USD --months 3
+lago analytics usage --billable-metric-code api_requests \
+  --from-date 2026-06-01 --to-date 2026-09-01 --time-granularity monthly
+lago analytics mrr --currency USD --watch --watch-interval 60s
+```
+
+```bash activity-logs
+lago activity-logs list --external-customer-id acme_001 --from-date 2026-09-01
+lago activity-logs list --activity-types invoice.finalized,invoice.voided --user-emails finance@acme.example
+lago activity-logs get 3d903d90-3d90-3d90-3d90-3d903d903d90
+```
+
+```bash api-logs
+lago api-logs list --http-statuses 422 --request-paths /api/v1/events --from-date 2026-09-01
+lago api-logs get 1e901e90-1e90-1e90-1e90-1e901e901e90 --output json --query 'api_log.request_body'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json mrr
+{
+  "mrrs": [
+    {
+      "month": "2023-11-01T00:00:00.000Z",
+      "amount_cents": 50000,
+      "currency": "USD"
+    }
+  ]
+}
+```
+
+```json usage
+{
+  "usages": [
+    {
+      "organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "start_of_period_dt": "2023-11-01",
+      "end_of_period_dt": "2023-11-30",
+      "amount_currency": "USD",
+      "amount_cents": 50000,
+      "billable_metric_code": "code1",
+      "units": "1.0",
+      "is_billable_metric_deleted": false
+    }
+  ]
+}
+```
+
+```json activity-logs list
+{
+  "activity_logs": [
+    {
+      "activity_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "user_email": "dinesh@piedpiper.test",
+      "activity_type": "billing_metric.created",
+      "activity_source": "api",
+      "activity_object": {
+        "lago_id": "dad68bc7-c01a-4ad8-a87b-13e78693a5bc",
+        "plan_id": "b9155544-e261-4e92-b54e-f65d7609294c"
+      },
+      "activity_object_changes": {
+        "plan_id": [
+          null,
+          "b9155544-e261-4e92-b54e-f65d7609294c"
+        ]
+      },
+      "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+      "external_subscription_id": "external_id",
+      "resource_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+      "resource_type": "BillableMetric",
+      "organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "logged_at": "2025-03-31T12:31:44Z",
+      "created_at": "2022-04-29T08:59:51Z"
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+```json api-logs get
+{
+  "api_log": {
+    "api_version": "v1",
+    "client": "Lago Ruby v1.26.0",
+    "http_method": "post",
+    "http_status": 200,
+    "logged_at": "2025-03-31T12:31:44Z",
+    "request_body": "{ \"billable_metric\": { \"name\": \"Storage\", \"code\": \"storage\" } }",
+    "request_origin": "https://app.lago.dev/",
+    "request_path": "/billable_metrics",
+    "created_at": "2022-04-29T08:59:51Z",
+    "request_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "request_response": "{ \"lago_id\": \"b9155544-e261-4e92-b54e-f65d7609294c\", ... }"
+  }
+}
+```
+
+</ResponseExample>

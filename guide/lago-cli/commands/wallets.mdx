@@ -1,0 +1,316 @@
+---
+title: "Wallets"
+description: "Prepaid credits: create wallets, top up, grant, void, alert on balance."
+---
+
+Two identifier styles coexist. Organization-level commands take the wallet's `lago_id`. Customer-scoped commands (`*-customer`) take `external_customer_id` and the wallet `code`.
+
+| Command | Description |
+| --- | --- |
+| `wallets create` | Create a wallet for a customer. |
+| `wallets get <lago_id>`, `list` | Read wallets. |
+| `wallets update <lago_id>` | Update. |
+| `wallets terminate <lago_id>` | Terminate. Confirmation-gated. |
+| `wallets create-wallet-transaction` | Top up, grant, or void credits. |
+| `wallets wallet-transactions <lago_id>` | A wallet's transactions. |
+| `wallets get-wallet-transaction <lago_id>` | One transaction. |
+| `wallets wallet-transaction-payment-url <lago_id>` | Payment URL for a paid top-up. |
+| `wallets list-wallet-transaction-fundings`, `list-wallet-transaction-consumptions <lago_id>` | Funding and consumption detail. |
+| `wallets create-customer-wallet`, `list-customer-wallets <external_customer_id>` | Customer-scoped create and list. |
+| `wallets get-customer-wallet`, `update-customer-wallet`, `destroy-customer-wallet <external_customer_id> <code>` | Customer-scoped by wallet code. |
+| `wallets *-customer-wallet-alert <external_customer_id> <wallet_code> [code]` | Balance alerts. |
+| `wallets metadata`, `merge-wallet-metadata`, `delete-wallet-metadata-key`, `delete-all-wallet-metadata <lago_id> [key]` | Metadata. |
+
+## create
+
+| Flag | Description |
+| --- | --- |
+| `--external-customer-id`, `--name`, `--code`, `--currency` | Owner and identity. |
+| `--rate-amount` | Credits to currency. `1.0` means one credit is one unit of currency. |
+| `--paid-credits`, `--granted-credits` | Initial balance. Paid credits produce an invoice, granted ones do not. |
+| `--invoice-requires-successful-payment true` | Credits land only after the top-up invoice is paid. |
+| `--expiration-at` | When unused credits expire. |
+| `--recurring-transaction-rules` | JSON array. `interval` or `threshold` triggers with the credits to add. |
+| `--applies-to-fee-types`, `--applies-to-billable-metric-codes` | Restrict what the wallet pays for. |
+| `--paid-top-up-min-amount-cents`, `--paid-top-up-max-amount-cents` | Bounds on top-ups. |
+
+## create-wallet-transaction
+
+`--wallet-id` plus one of `--paid-credits`, `--granted-credits`, or `--voided-credits`. Paid top-ups accept `--payment-method-payment-method-type` and `--invoice-requires-successful-payment`.
+
+<RequestExample>
+
+```bash create
+lago wallets create \
+  --external-customer-id acme_001 \
+  --name "Prepaid credits" --code prepaid \
+  --currency USD --rate-amount 1.0 \
+  --paid-credits 1000 --granted-credits 100 \
+  --invoice-requires-successful-payment true
+
+# Automatic top-up when the balance drops under 100 credits
+lago wallets create --external-customer-id acme_001 --name Autofill --code autofill \
+  --currency USD --rate-amount 1.0 \
+  --recurring-transaction-rules '[{"trigger":"threshold","threshold_credits":"100","paid_credits":"500"}]'
+```
+
+```bash transactions
+lago wallets create-wallet-transaction --wallet-id 9c909c90-9c90-9c90-9c90-9c909c909c90 \
+  --paid-credits 500 --name "September top-up"
+lago wallets create-wallet-transaction --wallet-id 9c909c90-9c90-9c90-9c90-9c909c909c90 \
+  --granted-credits 50 --name "Goodwill credit"
+lago wallets create-wallet-transaction --wallet-id 9c909c90-9c90-9c90-9c90-9c909c909c90 \
+  --voided-credits 25
+lago wallets wallet-transactions 9c909c90-9c90-9c90-9c90-9c909c909c90
+```
+
+```bash get
+lago wallets get 9c909c90-9c90-9c90-9c90-9c909c909c90
+lago wallets get 9c909c90-9c90-9c90-9c90-9c909c909c90 --output json \
+  --query 'wallet.{balance: balance_cents, credits: credits_balance, status: status}'
+lago wallets get-customer-wallet acme_001 prepaid
+```
+
+```bash list
+lago wallets list --external-customer-id acme_001
+lago wallets list-customer-wallets acme_001
+```
+
+```bash alerts
+lago wallets create-customer-wallet-alert acme_001 prepaid --input '{
+  "alert": {"alert_type": "wallet_balance_amount", "code": "low_balance", "name": "Low balance",
+            "thresholds": [{"code": "warn", "value": "10000"}]}
+}'
+lago wallets get-customer-wallet-alerts acme_001 prepaid
+```
+
+```bash terminate
+lago wallets terminate 9c909c90-9c90-9c90-9c90-9c909c909c90 --confirm 9c909c90-9c90-9c90-9c90-9c909c909c90
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text create
+LAGO_ID  1a901a90-1a90-1a90-1a90-1a901a901a90
+CODE     prepaid
+NAME     Prepaid credits
+```
+
+```json get
+{
+  "wallet": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_customer_id": "hooli_1234",
+    "billing_entity_code": "default",
+    "status": "active",
+    "currency": "USD",
+    "name": "Prepaid credits",
+    "code": "prepaid",
+    "priority": 50,
+    "rate_amount": "1.5",
+    "credits_balance": "28.0",
+    "balance_cents": 1000,
+    "consumed_credits": "2.0",
+    "created_at": "2022-04-29T08:59:51Z",
+    "expiration_at": null,
+    "last_balance_sync_at": "2022-04-29T08:59:51Z",
+    "last_consumed_credit_at": "2022-04-29T08:59:51Z",
+    "terminated_at": "2022-09-14T16:35:31Z",
+    "invoice_requires_successful_payment": false,
+    "applies_to": {
+      "fee_types": [
+        "charge"
+      ],
+      "billable_metric_codes": [
+        "bm1"
+      ]
+    },
+    "recurring_transaction_rules": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "trigger": "interval",
+        "method": "target",
+        "interval": "monthly",
+        "status": "active",
+        "threshold_credits": "20.0",
+        "paid_credits": "20.0",
+        "granted_credits": "10.0",
+        "grants_target_top_up": false,
+        "started_at": "2022-08-08T00:00:00Z",
+        "target_ongoing_balance": "200.0",
+        "created_at": "2022-04-29T08:59:51Z",
+        "expiration_at": "2023-09-30T23:59:59Z",
+        "invoice_requires_successful_payment": false,
+        "transaction_metadata": [
+          {
+            "key": "example_key",
+            "value": "example_value"
+          },
+          {
+            "key": "another_key",
+            "value": "another_value"
+          }
+        ],
+        "transaction_name": "Tokens for models 'high-fidelity-boost'",
+        "ignore_paid_top_up_limits": false,
+        "applied_invoice_custom_sections": [
+          {}
+        ],
+        "payment_method": {
+          "payment_method_type": "provider",
+          "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+        },
+        "purchase_order_number": "PO-123"
+      }
+    ],
+    "ongoing_balance_cents": 800,
+    "ongoing_usage_balance_cents": 200,
+    "credits_ongoing_balance": "8.0",
+    "credits_ongoing_usage_balance": "2.0",
+    "paid_top_up_min_amount_cents": 100,
+    "paid_top_up_max_amount_cents": 1000,
+    "applied_invoice_custom_sections": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "created_at": "2023-07-06T14:35:58Z",
+        "invoice_custom_section_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "invoice_custom_section": {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "name": "EU Bank Details",
+          "code": "eu_bank_details",
+          "description": "This section contains the bank details for EU customers.",
+          "details": "Bank Name: Lago Bank, IBAN: FR7630004000031234567890143",
+          "display_name": "Bank Details:",
+          "applied_to_organization": true,
+          "organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "created_at": "2023-07-06T14:35:58Z"
+        }
+      }
+    ],
+    "payment_method": {
+      "payment_method_type": "provider",
+      "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+    },
+    "purchase_order_number": "PO-123",
+    "metadata": {
+      "external_id": "ext-123",
+      "synced_at": "2024-01-15",
+      "source": null
+    }
+  }
+}
+```
+
+```json create-wallet-transaction
+{
+  "wallet_transactions": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_wallet_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_credit_note_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_voided_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "status": "settled",
+      "source": "manual",
+      "transaction_status": "purchased",
+      "transaction_type": "inbound",
+      "amount": "10.0",
+      "credit_amount": "100.0",
+      "invoice_requires_successful_payment": false,
+      "metadata": [
+        {
+          "key": "example key",
+          "value": "example value"
+        },
+        {
+          "key": "another key",
+          "value": "another value"
+        }
+      ],
+      "remaining_amount_cents": 5000,
+      "remaining_credit_amount": "5.0",
+      "priority": 50,
+      "settled_at": "2022-04-29T08:59:51Z",
+      "failed_at": "2022-04-29T08:59:51Z",
+      "created_at": "2022-04-29T08:59:51Z",
+      "name": "Prepaid credits",
+      "applied_invoice_custom_sections": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "created_at": "2023-07-06T14:35:58Z",
+          "invoice_custom_section_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "invoice_custom_section": {}
+        }
+      ],
+      "payment_method": {
+        "payment_method_type": "provider",
+        "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+      },
+      "purchase_order_number": "PO-123"
+    }
+  ]
+}
+```
+
+```json wallet-transactions
+{
+  "wallet_transactions": [
+    {
+      "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_wallet_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_credit_note_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "lago_voided_invoice_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+      "status": "settled",
+      "source": "manual",
+      "transaction_status": "purchased",
+      "transaction_type": "inbound",
+      "amount": "10.0",
+      "credit_amount": "100.0",
+      "invoice_requires_successful_payment": false,
+      "metadata": [
+        {
+          "key": "example key",
+          "value": "example value"
+        },
+        {
+          "key": "another key",
+          "value": "another value"
+        }
+      ],
+      "remaining_amount_cents": 5000,
+      "remaining_credit_amount": "5.0",
+      "priority": 50,
+      "settled_at": "2022-04-29T08:59:51Z",
+      "failed_at": "2022-04-29T08:59:51Z",
+      "created_at": "2022-04-29T08:59:51Z",
+      "name": "Prepaid credits",
+      "applied_invoice_custom_sections": [
+        {
+          "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "created_at": "2023-07-06T14:35:58Z",
+          "invoice_custom_section_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+          "invoice_custom_section": {}
+        }
+      ],
+      "payment_method": {
+        "payment_method_type": "provider",
+        "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+      },
+      "purchase_order_number": "PO-123"
+    }
+  ],
+  "meta": {
+    "current_page": 2,
+    "next_page": 3,
+    "prev_page": 1,
+    "total_pages": 4,
+    "total_count": 70
+  }
+}
+```
+
+</ResponseExample>

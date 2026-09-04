@@ -1,0 +1,85 @@
+---
+title: "Webhooks"
+description: "Register endpoints, choose the signature, and fetch the key that verifies it."
+---
+
+| Command | Description |
+| --- | --- |
+| `webhook-endpoints create` | Register an endpoint. |
+| `webhook-endpoints get <lago_id>`, `list` | Read endpoints. |
+| `webhook-endpoints update <lago_id>` | Update URL, signature, or event types. |
+| `webhook-endpoints delete <lago_id>` | Remove. Confirmation-gated. |
+| `webhooks public-key` | The public key that verifies JWT signatures. |
+| `webhooks json-public-key` | The same key as JSON. |
+
+| Flag | Description |
+| --- | --- |
+| `--webhook-url` | HTTPS endpoint. |
+| `--signature-algo jwt\|hmac` | How Lago signs deliveries. |
+| `--event-types` | JSON array to subscribe to a subset. Omit for every event. |
+| `--name` | Label in the dashboard. |
+
+<RequestExample>
+
+```bash create
+lago webhook-endpoints create --webhook-url https://billing.acme.example/lago \
+  --signature-algo hmac --name "Billing service"
+
+lago webhook-endpoints create --webhook-url https://ops.acme.example/lago \
+  --event-types '["invoice.created","invoice.payment_failure"]'
+```
+
+```bash list
+lago webhook-endpoints list
+lago webhook-endpoints get cd90cd90-cd90-cd90-cd90-cd90cd90cd90
+```
+
+```bash update
+lago webhook-endpoints update cd90cd90-cd90-cd90-cd90-cd90cd90cd90 \
+  --webhook-url https://billing.acme.example/lago/v2
+```
+
+```bash delete
+lago webhook-endpoints delete cd90cd90-cd90-cd90-cd90-cd90cd90cd90 --confirm cd90cd90-cd90-cd90-cd90-cd90cd90cd90
+```
+
+```bash public-key
+lago webhooks public-key
+lago webhooks json-public-key
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text create
+LAGO_ID  1a901a90-1a90-1a90-1a90-1a901a901a90
+NAME     Billing service
+```
+
+```json get
+{
+  "webhook_endpoint": {
+    "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "webhook_url": "https://billing.acme.example/lago",
+    "signature_algo": "hmac",
+    "name": "Billing service",
+    "event_types": [
+      "invoice.voided",
+      "customer.created"
+    ],
+    "created_at": "2022-04-29T08:59:51Z"
+  }
+}
+```
+
+```json json-public-key
+{
+  "webhook": {
+    "public_key": "MEgCQQCo9+BpMRYQ/dL3DS2CyJxRF+j6ctbT3/Qp84+KeFhnii7NT7fELilKUSnxS30WAvQCCo2yU1orfgqr41mM70MBAgMBAAE="
+  }
+}
+```
+
+</ResponseExample>
