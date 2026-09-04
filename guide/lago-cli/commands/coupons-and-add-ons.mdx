@@ -12,8 +12,8 @@ description: "Discounts applied to customers, and one-off items for one-off invo
 | `coupons update <code>` | Update a coupon. |
 | `coupons delete <code>` | Delete. Confirmation-gated. |
 | `coupons apply` | Apply a coupon to a customer. |
-| `coupons list-applied` | Applied coupons across customers. |
-| `coupons delete-applied <external_customer_id> <applied_coupon_id>` | Remove an applied coupon. Confirmation-gated. |
+| `coupons list-applied-coupons` | Applied coupons across customers. |
+| `coupons delete-applied-coupon <external_customer_id> <applied_coupon_id>` | Remove an applied coupon. Confirmation-gated. |
 
 | Flag | Description |
 | --- | --- |
@@ -51,9 +51,9 @@ lago coupons create --name "Credit 50" --code credit50 \
 
 ```bash coupons apply
 lago coupons apply --coupon-code launch20 --external-customer-id acme_001
-lago coupons list-applied --output json \
+lago coupons list-applied-coupons --output json \
   --query 'applied_coupons[?external_customer_id==`"acme_001"`].{id: lago_id, code: coupon_code}'
-lago coupons delete-applied acme_001 8b908b90-8b90-8b90-8b90-8b908b908b90 \
+lago coupons delete-applied-coupon acme_001 8b908b90-8b90-8b90-8b90-8b908b908b90 \
   --confirm 8b908b90-8b90-8b90-8b90-8b908b908b90
 ```
 

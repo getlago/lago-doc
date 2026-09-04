@@ -20,7 +20,6 @@ Same profile, redaction, retries, and output handling as the generated commands.
 | --- | --- |
 | `--data`, `-d` | Body: inline JSON, `@file`, or `-` for stdin. |
 | `--header`, `-H` | Extra header. Repeatable. |
-| `--idempotency-key` | Sets `Idempotency-Key` and makes the request retry-safe. |
 
 ## alias
 
@@ -28,7 +27,7 @@ An alias expands in place, so any flags after it pass through.
 
 ## seed and fixtures
 
-`seed demo` prefixes everything it creates (`demo` by default) so the data is easy to find and delete. `fixtures run` executes ordered API steps from YAML: `${var}` interpolation, `capture` to lift a value from one response into the next, and an idempotency key per step so a re-run is safe. `--dry-run` prints every request and sends none.
+`seed demo` prefixes everything it creates (`demo` by default) so the data is easy to find and delete. `fixtures run` executes ordered API steps from YAML: `${var}` interpolation, `capture` to lift a value from one response into the next. Give events a `transaction_id` so a re-run does not double count. `--dry-run` prints every request and sends none.
 
 ## logs tail
 
@@ -39,7 +38,7 @@ Filters are `--method` (repeatable), `--status` (a code or a class such as `4xx`
 ```bash api
 lago api GET /customers?page=2
 lago api GET /api/v1/customers                    # same request
-lago api POST /events --data @event.json --idempotency-key event-42
+lago api POST /events --data @event.json
 printf '{"event":{"code":"api_calls","external_subscription_id":"sub_1"}}' \
   | lago api POST /events --data -
 lago api GET /customers -H "X-Trace: qa-run-12"
@@ -96,7 +95,6 @@ steps:
   - id: metric
     method: POST
     path: /billable_metrics
-    idempotency_key: ${prefix}-metric
     body:
       billable_metric:
         name: Demo requests
@@ -107,7 +105,6 @@ steps:
   - id: plan
     method: POST
     path: /plans
-    idempotency_key: ${prefix}-plan
     body:
       plan:
         name: Demo usage plan
@@ -126,7 +123,6 @@ steps:
   - id: customer
     method: POST
     path: /customers
-    idempotency_key: ${prefix}-customer
     body:
       customer:
         external_id: ${prefix}-customer
@@ -137,7 +133,6 @@ steps:
   - id: subscription
     method: POST
     path: /subscriptions
-    idempotency_key: ${prefix}-subscription
     body:
       subscription:
         external_customer_id: ${customer_id}
@@ -148,7 +143,6 @@ steps:
   - id: event
     method: POST
     path: /events
-    idempotency_key: ${prefix}-event-1
     body:
       event:
         transaction_id: ${prefix}-event-1
@@ -157,7 +151,6 @@ steps:
   - id: invoice-preview
     method: POST
     path: /invoices/preview
-    idempotency_key: ${prefix}-preview
     body:
       customer:
         external_id: ${customer_id}

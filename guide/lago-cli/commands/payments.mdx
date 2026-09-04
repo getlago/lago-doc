@@ -10,7 +10,7 @@ description: "Record manual payments, request payment on invoices, read receipts
 | `payment-requests create` | Request payment for one or more invoices. Sends the dunning email. |
 | `payment-requests get <lago_id>`, `list` | Read payment requests. |
 | `payment-receipts get <lago_id>`, `list` | Read payment receipts. |
-| `payment-methods list-customers <external_customer_id>` | A customer's stored payment methods. |
+| `payment-methods list-customers-payment-methods <external_customer_id>` | A customer's stored payment methods. |
 | `payment-methods payment-method-set-as-default <lago_id> <external_customer_id>` | Set the default. |
 | `payment-methods destroy <lago_id> <external_customer_id>` | Remove one. Confirmation-gated. |
 
@@ -36,8 +36,7 @@ lago payments create \
   --invoice-id 4d904d90-4d90-4d90-4d90-4d904d904d90 \
   --amount-cents 150000 \
   --reference "Wire 2026-09-15" \
-  --paid-at 2026-09-15T10:00:00Z \
-  --idempotency-key wire-2026-09-15-acme
+  --paid-at 2026-09-15T10:00:00Z
 ```
 
 ```bash payments read
@@ -56,7 +55,7 @@ lago payment-receipts list --invoice-id 4d904d90-4d90-4d90-4d90-4d904d904d90
 ```
 
 ```bash payment-methods
-lago payment-methods list-customers acme_001
+lago payment-methods list-customers-payment-methods acme_001
 lago payment-methods payment-method-set-as-default ab90ab90-ab90-ab90-ab90-ab90ab90ab90 acme_001
 lago payment-methods destroy ab90ab90-ab90-ab90-ab90-ab90ab90ab90 acme_001 --confirm acme_001
 ```
@@ -161,7 +160,7 @@ LAGO_ID  1a901a90-1a90-1a90-1a90-1a901a901a90
 }
 ```
 
-```json payment-methods list-customers
+```json payment-methods list-customers-payment-methods
 {
   "payment_methods": [
     {
