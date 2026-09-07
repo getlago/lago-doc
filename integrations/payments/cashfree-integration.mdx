@@ -11,8 +11,8 @@ description: "Make your users pay Lago invoices with Cashfree Payments, India's 
 
 ## Payments in India
 Cashfree is a leading payment platform in India, offering an end-to-end suite of payment and payout products tailored to the country's needs. 
-Its extensive coverage of payment methods—including credit/debit cards, net banking, UPI, and popular wallets like Paytm, PhonePe, and Amazon Pay—enables businesses to seamlessly collect payments from Indian customers with minimal friction.
-This integration streamlines the collection of Lago invoices in India by leveraging multiple local payment methods.
+It covers credit and debit cards, net banking, UPI, and wallets such as Paytm, PhonePe and Amazon Pay, so you can collect from Indian customers with the method they already use.
+This integration collects Lago invoices in India through those local payment methods.
 
 ## Connect Cashfree to Lago
 
@@ -43,7 +43,7 @@ via Cashfree Payments, you must create a webhook endpoint in Cashfree. To do so:
 
 1. Log in to your Cashfree Payments account;
 2. Add the following Webhook URL in the **Webhooks** > **Payment Link** section of the Cashfree Payments dashboard;
-3. Enter the following URL: `https://api.getlago.com/webhooks/cashfree/{{__YOUR_ORG_ID__}}?code={{__YOUR_CONNECTION_CODE}}` (you must replace `organization_id` with your Lago organization ID, and the `connection_code` by the targeted Lago connection); and
+3. Enter the following URL: `https://api.getlago.com/webhooks/cashfree/{{__YOUR_ORG_ID__}}?code={{__YOUR_CONNECTION_CODE__}}` (replace `__YOUR_ORG_ID__` with your Lago organization ID and `__YOUR_CONNECTION_CODE__` with the connection code); and
 4. Save the creation of this webhook endpoint.
 
 <Frame caption="Webhook endpoint creation in Cashfree Payments">
@@ -54,14 +54,14 @@ via Cashfree Payments, you must create a webhook endpoint in Cashfree. To do so:
 
 ### Connect a Lago Customer to Cashfree
 To begin collecting payments for your Lago invoices via Cashfree, you need to link a Lago customer to a Cashfree connection. 
-When creating or editing a customer in Lago, simply select the relevant Cashfree connection under **external apps** to enable invoice payments.
+When creating or editing a customer in Lago, select the relevant Cashfree connection under **external apps** to enable invoice payments.
 
 <Frame caption="Link Lago Customers to Cashfree Payments">
   <img src="/integrations/images/cashfree-link-lago-customer.png" />
 </Frame>
 
 ### Generate a checkout link
-Note that payments through Cashfree does not automatically proceed when Lago generates an invoice. You need to programmatically generate a checkout link by calling the [following endpoint](/api-reference/invoices/payment-url):
+Note that payments through Cashfree do not proceed automatically when Lago generates an invoice. You need to programmatically generate a checkout link by calling the [following endpoint](/api-reference/invoices/payment-url):
 
 ```bash Request
 curl --request POST \
@@ -74,9 +74,9 @@ By generating this checkout link, you can forward it to your customer to complet
 ```json Response
 {
   "invoice_payment_details": {
-    "lago_customer_id": "13b901a90-1a90-1a90-1a90-1a901a901a90",
-    "lago_invoice_id": "1e501a90-938s-1a90-1a90-1a901a901a80",
-    "external_customer_id": "53dj371e-4ea2-bcf9-57d3a41bc6ba",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_invoice_id": "1e501a90-938d-1a90-1a90-1a901a901a80",
+    "external_customer_id": "hooli_1234",
     "payment_provider": "cashfree",
     "payment_url": "https://cashfree.payment_link"
   }

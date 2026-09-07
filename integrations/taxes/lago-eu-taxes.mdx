@@ -2,14 +2,14 @@
 title: "Lago EU Taxes"
 ---
 
-Lago now features an automatic European tax detection integration for your customers.
+Lago can detect and apply European tax rates for your customers automatically.
 
 <Info>
   **Lago EU Taxes is a community-maintained integration.** It covers very basic European tax scenarios, but may not address every edge case or jurisdiction. If you need a complete, production-grade tax setup, we recommend using a dedicated tax provider like [Anrok](/integrations/taxes/anrok) or [Avalara](/integrations/taxes/avalara), which are natively integrated with Lago.
 </Info>
 
 ## Enable Lago's EU Tax integration
-Activate Lago's automatic EU tax detection in just a few steps:
+To activate Lago's automatic EU tax detection:
 
 1. Navigate to your Lago instance **Settings**;
 2. Select the **'Lago EU Tax Management'** integration;
@@ -18,11 +18,8 @@ Activate Lago's automatic EU tax detection in just a few steps:
 
 ## Automated EU tax rates detection
 When you connect the Lago EU Tax Management integration, it automatically generates a list of standard European tax rates. 
-These rates, labeled as `automated` in Lago, are synchronized with the latest standard tax rates for European countries, 
-ensuring your tax calculations are always up-to-date and compliant.
-
-Each tax rate begins with the `lago_` prefix, ensuring a uniform and easily identifiable format across your tax rate list.
-This systematic approach simplifies the management and recognition of these automated tax entries within your system.
+These rates are labeled `automated` in Lago and follow the standard tax rates published for European countries.
+Each one is prefixed with `lago_`, so you can tell them apart from the rates you create yourself.
 
 <Frame caption="Automated tax rates">
     <img src="/integrations/images/automated-tax-rates.png" />
@@ -51,8 +48,8 @@ The following 17 territories are supported across 7 EU countries:
 | Country | Territory | Tax Code | Postal Code Pattern | Rate |
 |---|---|---|---|---|
 | Spain | Canary Islands | `lago_eu_es_exception_canary_islands` | 35xxx, 38xxx | 0% |
-| Spain | Ceuta | `lago_eu_es_exception_ceuta` | 51xxx | 0% |
-| Spain | Melilla | `lago_eu_es_exception_melilla` | 52xxx | 0% |
+| Spain | Ceuta | `lago_eu_es_exception_ceuta` | 51001-51005, 51070-51071, 51081 | 0% |
+| Spain | Melilla | `lago_eu_es_exception_melilla` | 52000-52006, 52070-52071, 52081 | 0% |
 | France | Guadeloupe | `lago_eu_fr_exception_guadeloupe` | 971xx | 8.5% (B2B only) |
 | France | Martinique | `lago_eu_fr_exception_martinique` | 972xx | 8.5% (B2B only) |
 | France | Guyane | `lago_eu_fr_exception_guyane` | 973xx | 0% (B2B only) |
@@ -62,14 +59,14 @@ The following 17 territories are supported across 7 EU countries:
 | Germany | Heligoland | `lago_eu_de_exception_heligoland` | 27498 | 0% |
 | Italy | Livigno | `lago_eu_it_exception_livigno` | 23041 | 0% |
 | Italy | Campione d'Italia | `lago_eu_it_exception_campione_d_italia` | 22061 | 0% |
-| Portugal | Azores | `lago_eu_pt_exception_azores` | 95xx | 18% |
-| Portugal | Madeira | `lago_eu_pt_exception_madeira` | 9xxx | 22% |
-| Austria | Jungholz | `lago_eu_at_exception_jungholz` | 6691, 6992 | 19% |
-| Austria | Mittelberg | `lago_eu_at_exception_mittelberg` | 6991, 6993 | 19% |
+| Portugal | Madeira | `lago_eu_pt_exception_madeira` | 90xx-94xx | 22% |
+| Portugal | Azores | `lago_eu_pt_exception_azores` | 95xx-99xx | 18% |
+| Austria | Jungholz | `lago_eu_at_exception_jungholz` | 6691 | 19% |
+| Austria | Mittelberg | `lago_eu_at_exception_mittelberg` | 6991, 6992, 6993 | 19% |
 | Greece | Mount Athos | `lago_eu_gr_exception_mount_athos` | 63086 | 0% |
 
 <Info>
-  **France DOM-TOM exception:** For French overseas territories (Guadeloupe, Martinique, Guyane, Réunion, Mayotte), the exception rate only applies to **B2B customers** (those with a `tax_identification_number`). B2C customers in these territories are charged the standard French rate of 20%, in line with French tax law (CGI Articles 294–296).
+  **France DOM-TOM exception:** For French overseas territories (Guadeloupe, Martinique, Guyane, Réunion, Mayotte), the exception rate only applies to **B2B customers** (those with a `tax_identification_number` that passes validation). B2C customers in these territories are charged the standard French rate of 20%, in line with French tax law (CGI Articles 294–296).
 </Info>
 
 ### B2B tax decision process

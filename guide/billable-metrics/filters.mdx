@@ -242,7 +242,7 @@ On the configuration page of your billable metric, you can define two filters: `
 
 Below is an example of an event including two group values for the billable metric described above:
 
-```json Event including a group value
+```bash Event including a filter value
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
@@ -252,7 +252,7 @@ curl --location --request POST "$LAGO_URL/api/v1/events" \
 --data-raw '{
     "event": {
       "transaction_id": "event_001",
-      "external_customer_id": "customer_1234",
+      "external_subscription_id": "sub_1234",
       "code": "compute",
       "timestamp": 1668461043,
       "properties": {
@@ -266,14 +266,14 @@ curl --location --request POST "$LAGO_URL/api/v1/events" \
 
 And an event for the `tokens` metric with a `model` dimension:
 
-```json Event with a model dimension
+```bash Event with a model dimension
 curl --location --request POST "$LAGO_URL/api/v1/events" \
 --header "Authorization: Bearer $API_KEY" \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "event": {
       "transaction_id": "event_002",
-      "external_customer_id": "customer_1234",
+      "external_subscription_id": "sub_1234",
       "code": "tokens",
       "timestamp": 1668461043,
       "properties": {
@@ -310,7 +310,7 @@ From Payload A:
 	      "key": "region",
 	      "values": [
 	        "usa",
-	        "europe",
+	        "europe"
 	      ]
 	    }
     ]

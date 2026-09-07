@@ -41,17 +41,17 @@ via Moneyhash, you must create a webhook endpoint in Moneyhash. To do so:
 
 1. Log in to your Moneyhash account;
 2. Add the following Webhook URL in the **Webhooks** section of the Moneyhash dashboard;
-3. Enter the following URL: `https://api.getlago.com/webhooks/moneyhash/{{__YOUR_ORG_ID__}}?code={{__YOUR_CONNECTION_CODE}}` (you must replace `organization_id` with your Lago organization ID, and the `connection_code` by the targeted Lago connection); and
+3. Enter the following URL: `https://api.getlago.com/webhooks/moneyhash/{{__YOUR_ORG_ID__}}?code={{__YOUR_CONNECTION_CODE__}}` (replace `__YOUR_ORG_ID__` with your Lago organization ID and `__YOUR_CONNECTION_CODE__` with the connection code); and
 4. Save the creation of this webhook endpoint.
 
 ## Collect payments via Moneyhash
 
 ### Connect a Lago Customer to Moneyhash
 To begin collecting payments for your Lago invoices via Moneyhash, you need to link a Lago customer to a Moneyhash connection. 
-When creating or editing a customer in Lago, simply select the relevant Moneyhash connection under **external apps** to enable invoice payments.
+When creating or editing a customer in Lago, select the relevant Moneyhash connection under **external apps** to enable invoice payments.
 
 ### Generate a checkout link
-Note that payments through Moneyhash does not automatically proceed when Lago generates an invoice. You need to programmatically generate a checkout link by calling the [following endpoint](/api-reference/invoices/payment-url):
+Note that payments through Moneyhash do not proceed automatically when Lago generates an invoice. You need to programmatically generate a checkout link by calling the [following endpoint](/api-reference/invoices/payment-url):
 
 ```bash Request
 curl --request POST \
@@ -59,14 +59,14 @@ curl --request POST \
   --header 'Authorization: Bearer <token>'
 ```
 
-By generating this checkout link, you can forward it to your customer to complete payment using their preferred method from India. Once the payment is processed, Lago automatically retrieves the invoice status from Moneyhash.
+Forward the checkout link to your customer so they can pay with their preferred local method. Once the payment is processed, Lago retrieves the invoice status from Moneyhash.
 
 ```json Response
 {
   "invoice_payment_details": {
-    "lago_customer_id": "13b901a90-1a90-1a90-1a90-1a901a901a90",
-    "lago_invoice_id": "1e501a90-938s-1a90-1a90-1a901a901a80",
-    "external_customer_id": "53dj371e-4ea2-bcf9-57d3a41bc6ba",
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_invoice_id": "1e501a90-938d-1a90-1a90-1a901a901a80",
+    "external_customer_id": "hooli_1234",
     "payment_provider": "moneyhash",
     "payment_url": "https://moneyhash.payment_link"
   }
