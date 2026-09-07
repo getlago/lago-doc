@@ -101,7 +101,7 @@ Docker images are always updated to the last stable version in the
 ### Environment variables
 
 Lago uses the following environment variables to configure the components of the
-application. You can override them to customise your setup.
+application. You can override them to customize your setup.
 
 | Variable                              | Default value                                  | Description                                                                                                                                                                                                                                                        |
 | ------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -129,7 +129,7 @@ application. You can override them to customise your setup.
 | `LAGO_CLICKHOUSE_USERNAME`            |                                                | User name used to connect to ClickHouse |
 | `LAGO_DATABASE_IDLE_TX_TIMEOUT`       |                                                | A transaction left idle past the time limit (in milliseconds) is terminated. Maps to `idle_in_transaction_session_timeout` in postgres                                                                                                                             |
 | `LAGO_DATABASE_LOCK_TIMEOUT`          |                                                | A statement waiting on a lock past the limit (in milliseconds) fails fast instead of blocking. Maps to `lock_timeout` in postgres                                                                                                                                  |
-| `LAGO_DATABASE_STATEMENT_TIMEOUT`     |                                                | Any single query exceeding the time limit (in milliseconds) is cancelled. Maps to `statement_timeout` in postgres                                                                                                                                                  |
+| `LAGO_DATABASE_STATEMENT_TIMEOUT`     |                                                | Any single query exceeding the time limit (in milliseconds) is canceled. Maps to `statement_timeout` in postgres                                                                                                                                                  |
 | `LAGO_DEFAULT_EVENT_STORE`            | postgres                                       | Event store assigned to **newly created organizations**. Set it to `clickhouse` (with `LAGO_CLICKHOUSE_ENABLED` set) to create every new organization on the ClickHouse event store. See [Configuring the event store](#configuring-the-event-store). |
 | `LAGO_DISABLE_PDF_GENERATION`         | false                                          | Disable automatic PDF generation for invoices, credit notes, and receipts. As a result, the corresponding download endpoints will be unavailable                                                                                                                   |
 | `LAGO_DISABLE_SIGNUP`                 |                                                | Disable Sign up when running Lago in self-hosted                                                                                                                                                                                                                   |
@@ -267,7 +267,7 @@ These three opt-in variables are applied to every Lago Rails connection (API, wo
 
 | Environment Variable              | `DATABASE_URL` variable               | Effect when set                                                                      |
 | --------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------ |
-| `LAGO_DATABASE_STATEMENT_TIMEOUT` | `statement_timeout`                   | Any single query exceeding the value (in ms) is cancelled with `PG::QueryCanceled`.  |
+| `LAGO_DATABASE_STATEMENT_TIMEOUT` | `statement_timeout`                   | Any single query exceeding the value (in ms) is canceled with `PG::QueryCanceled`.  |
 | `LAGO_DATABASE_IDLE_TX_TIMEOUT`   | `idle_in_transaction_session_timeout` | A transaction left idle past the value (in ms) is terminated, releasing its locks.   |
 | `LAGO_DATABASE_LOCK_TIMEOUT`      | `lock_timeout`                        | A statement waiting on a lock past the value (in ms) fails fast instead of blocking. |
 
@@ -328,7 +328,7 @@ For an exhaustive list of SSL parameters, refer to the [libpq documentation](htt
 Usage events are stored and aggregated in one of two event stores:
 
 - **Postgres** (default) - no extra infrastructure. Validated up to ~10K events/sec.
-- **ClickHouse** - columnar storage for high-volume ingestion and sub-second aggregation over billions of events. It runs on top of the [Kafka/Redpanda pipeline](/guide/events/ingesting-usage#kafka--redpanda-configuration), which it both requires and unlocks as an ingestion method. See [Performance & Optimization](/guide/events/usage-performances) for the architecture and benchmarks.
+- **ClickHouse** - columnar storage for high-volume ingestion and sub-second aggregation over billions of events. It runs on top of the [Kafka/Redpanda pipeline](/guide/events/ingesting-usage#kafka-/-redpanda-configuration), which it both requires and unlocks as an ingestion method. See [Performance & Optimization](/guide/events/usage-performances) for the architecture and benchmarks.
 
 The event store is a **per-organization** setting: a single Lago instance can run some organizations on Postgres and others on ClickHouse.
 

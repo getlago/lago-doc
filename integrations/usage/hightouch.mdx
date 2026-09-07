@@ -1,12 +1,9 @@
 ---
 title: "Hightouch"
-description:
-  "Hightouch is a Data Activation platform that syncs data from sources (database, warehouses, spreadsheet and much more) to business 
-  applications and developer tools. This data can be sent to Lago, our usage-based billing platform, to automate your billing process 
-  and ensure accurate invoicing for your customers."
+description: "Sync usage data from Hightouch to Lago to bill on it."
 ---
 
-Here's a step-by-step guide to help you get started:
+Here is how to set it up:
 
 ## Prerequisites
 
@@ -19,13 +16,13 @@ Here's a step-by-step guide to help you get started:
 **In Hightouch:**
 1. Create a Hightouch account;
 2. Create a data source (ideally, product usage of your customer);
-3. Create a **HTTP Request** destination.
+3. Create an **HTTP Request** destination.
 
 ## Send usage from Hightouch to Lago
 
 ### Create a data source
 
-To accomplish this, you'll need first to create a source in Hightouch. This can be done by following these simple steps:
+First, create a source in Hightouch:
 1. Navigate to the **Sources** tab;
 2. Add a **new source**; and
 3. Choose and set up a data source that is available in Hightouch (it could be a database, a warehouse or a spreadsheet, for instance).
@@ -50,7 +47,7 @@ Lago uses Hightouch's HTTP Request to ingest usage. Here is how to set it up:
 
 ### Create a Sync
 
-In order to send usage from Hightouch to Lago, you will have to create a new **Sync**. To do so, go in the **Syncs** tab and create a new sync from a source to this HTTP Request destination.
+To send usage from Hightouch to Lago, go to the **Syncs** tab and create a new sync from your source to this HTTP Request destination.
 
 1. Configure when you want to trigger the event (row added, row deleted, row updated);
 2. Define `POST` as the targeted HTTP Method;
@@ -60,19 +57,19 @@ In order to send usage from Hightouch to Lago, you will have to create a new **S
 
 ### Example of JSON payload
 
-You can define manually the JSON payload that will be sent to Lago. Note that Hightouch supports Liquid template language to insert variables from your source to your JSON payload. These variables are created following this syntax: `"{{ row.variable }}"`, *"variable"* being the column name of your source.
+You define the JSON payload sent to Lago yourself. Note that Hightouch supports Liquid template language to insert variables from your source to your JSON payload. These variables are created following this syntax: `"{{ row.variable }}"`, *"variable"* being the column name of your source.
 
 Here is a JSON payload example to send usage events to Lago:
 ```json
 {
   "event": {
     "transaction_id": "{{ row.transactionId }}",
-    "external_customer_id": "{{ row.customerId }}",
+    "external_subscription_id": "{{ row.subscriptionId }}",
     "code": "invoice_created",
     "properties": {
       "invoice_id": "{{ row.invoiceId }}"
+    }
   }
-}
 }
 ```
 
@@ -90,8 +87,8 @@ Note that you can test your sync with a data sample. As a result of this test, y
 </Frame>
 
 
-## Hightouch to Lago - demo video
+## Hightouch to Lago demo video
 
-If easier, please find a demo video explaining the full setup to send events from Hightouch to Lago.
+This video walks through the full setup for sending events from Hightouch to Lago.
 
 <iframe width="700" height="500" src="https://www.youtube.com/embed/2NBmQYjrz40" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>

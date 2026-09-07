@@ -1,6 +1,6 @@
 ---
 title: "Avalara"
-description: "Lago's native integration with Avalara allows you to automatically update your invoices with tax amounts sourced directly from Avalara. This integration ensures compliance with international tax regulations by calculating taxes for US & non-US obligations, like VAT."
+description: "Update your invoices with tax amounts calculated by Avalara. Covers US and non-US obligations such as VAT."
 ---
 
 <Info>
@@ -11,7 +11,7 @@ This integration is available upon request only. Please **[contact us](mailto:he
 
 ## Overview
 
-Lago’s native integration with **AvaTax** (by Avalara) enables seamless tax calculation, application, and reporting throughout the invoicing process. 
+Lago’s native integration with **AvaTax** (by Avalara) calculates, applies and reports tax throughout the invoicing process.
 
 When an invoice is in `draft` status, Lago creates a `SalesOrder` in AvaTax to estimate the applicable taxes. 
 This preliminary calculation allows teams to preview tax amounts before finalizing the invoice.
@@ -25,11 +25,11 @@ AvaTax uses these details to apply tax rules based on the nexus jurisdictions yo
 The calculated tax data is returned from AvaTax and automatically applied to the Lago invoice. 
 
 Lago also keeps your records in sync by automatically updating AvaTax whenever an invoice is voided or disputed, or when a credit note is issued. 
-This ensures that your tax reporting in Avalara remains accurate and up to date at all times.
+This keeps your tax reporting in Avalara up to date.
 
 ## Prerequisites
 
-1. **Premium add-on feature**: To access Avatax via Lago, you must have access to the Premium add-on. If you don’t already have it enabled, please reach out to us for assistance.
+1. **Premium add-on feature**: To access AvaTax via Lago, you must have access to the Premium add-on. If you don’t already have it enabled, please reach out to us for assistance.
 2. **Getting Started**: We strongly recommend reviewing the [AvaTax Getting Started Guide](https://developer.avalara.com/documentation/sales-and-use-tax/) to familiarize yourself with the requirements and configuration steps.
 3. **Billing entity address**: For accurate tax calculation, Avalara requires a valid ShipFrom address. This corresponds to the billing entity’s account address and must be configured in the Lago dashboard under **Settings > Entity > General information**.
 4. **Nexus in Avalara**: Make sure your Avalara account is properly set up with all `nexus` jurisdictions. These are the states or regions where you are obligated to collect and remit sales tax.
@@ -37,7 +37,7 @@ This ensures that your tax reporting in Avalara remains accurate and up to date 
 
 ## Connect AvaTax to Lago
 
-Lago supports connections to multiple AvaTax instances, enabling you to integrate both sandbox and production environments seamlessly.
+Lago supports connections to multiple AvaTax instances, so you can connect both a sandbox and a production environment.
 
 **To connect an AvaTax instance:**
 1. Navigate to **Settings > Integrations** in your Lago dashboard
@@ -113,7 +113,7 @@ To link a Lago customer to an existing Avalara customer:
 </Frame>
 
 **Results**:
-- **Success**: A new field appears in the Lago customer information tab with with a direct link to the corresponding Avalara customer
+- **Success**: A new field appears in the Lago customer information tab with a direct link to the corresponding Avalara customer
 - **Failure**: The `customer.tax_provider_error` webhook is triggered if the sync encounters issues
 
 
@@ -124,7 +124,7 @@ If a shipping address is not available, Lago will default to using the billing a
 If both addresses are invalid or missing, Lago will be unable to generate the invoice, and the invoice status will be marked as failed. 
 In such cases, you will be notified of the failure in the dashboard and via webhook.
 
-<Frame caption="Mapping Lago item to Avalara">
+<Frame caption="Invoice marked as failed after a tax error">
   <img src="/integrations/images/anrok-failed-invoice.png" />
 </Frame>
     
@@ -156,7 +156,7 @@ When an invoice is in `draft` and encounters a tax synchronization error, you ha
 
 When an invoice fails due to a tax synchronization error, you have the option to manually re-sync each invoice individually from the invoice details page or via this [endpoint](/api-reference/invoices/retry_finalization). Alternatively, you can go to the integration settings and trigger a bulk invoice synchronization.
 
-<Frame caption="Mapping Lago item to Avalara">
+<Frame caption="Trigger a bulk invoice synchronization">
   <img src="/integrations/images/anrok-sync-all-invoices.png" />
 </Frame>
 
