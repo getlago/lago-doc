@@ -21,6 +21,7 @@ Both SDKs expose the same surface with idiomatic naming. Python takes seconds, J
 | `cloudflare_account_id`   | `cloudflareAccountId`     | `None` / `undefined`             | Required, with the token below, to price Workers AI |
 | `cloudflare_api_token`    | `cloudflareApiToken`      | `None` / `undefined`             | Cloudflare API token for the model catalog |
 | `mistral_api_key`         | `mistralApiKey`           | `None` / `undefined`             | Usually unnecessary — wrapping a Mistral client auto-detects the key it already carries. Set it only when pricing Mistral usage without ever calling `wrap()` |
+| `ramp_router_api_key`     | `rampRouterApiKey`        | `None` / `undefined`             | Usually unnecessary — wrapping an OpenAI or Anthropic client pointed at Ramp Router reads the key it already carries. Set it only when pricing Router usage without ever calling `wrap()`; an explicit value always wins over a learned one |
 | `verify_ssl`              | `verifySsl`               | `True` / `true`                  | TLS verification for requests to `api_url`. Only disable against a local dev instance with a self-signed certificate |
 | `flush_interval_seconds`  | `flushIntervalMs`         | `1.0` / `1000`                   | How often the background worker flushes |
 | `max_batch_size`          | `maxBatchSize`            | `100`                            | Max events per request. Lago's hard cap is 100 |
@@ -174,7 +175,7 @@ Because instrumentation failures are silent by design, wire `on_error` on day on
   ```
 </CodeGroup>
 
-The `where` argument names the phase that failed: `emit`, `send_batch`, `pricing`, one of `pricing.fetch_openrouter` / `pricing.fetch_bedrock` / `pricing.fetch_cloudflare_workers_ai` / `pricing.fetch_mistral_aliases`, or `overflow` (JavaScript only).
+The `where` argument names the phase that failed: `emit`, `send_batch`, `pricing`, one of `pricing.fetch_openrouter` / `pricing.fetch_bedrock` / `pricing.fetch_cloudflare_workers_ai` / `pricing.fetch_mistral_aliases` / `pricing.fetch_ramp_router`, or `overflow` (JavaScript only).
 
 ## Behaviour under failure
 

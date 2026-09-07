@@ -14,7 +14,7 @@ Both modes ship the same normalized usage. The difference is only where the arit
 | You bill in your own units — credits, requests, seats — and tokens are just the input | You resell LLM access at a margin and want the dollar cost to follow the rate card automatically |
 | You want billing to be independent of any third-party price source | You want your revenue to track your provider invoice without maintaining a price table |
 | Your workload is audio-heavy or very long-context (see [Known limits](#known-limits)) | Your workload is text, and the models you use are in the price sources |
-| You use Bedrock Claude, Databricks, Snowflake Cortex or Ramp Router, where price data is missing or deliberately unmatched | You want the cost broken down by token type on the invoice |
+| You use Bedrock Claude, Databricks or Snowflake Cortex, which the SDK always bills in tokens | You want the cost broken down by token type on the invoice |
 
 You can also mix: set one mode globally and override per call with `extra_lago={"mode": "price"}` in Python or `lago: { mode: "price" }` in TypeScript.
 
@@ -116,7 +116,8 @@ See [Charges with filters](/guide/plans/charges/charges-with-filters) for the fi
 
 - **OpenRouter's public model list** for native OpenAI, Anthropic, Mistral, and Gemini clients. No credentials.
 - **The AWS Bedrock Price List Bulk API** for Bedrock, parsed per region. No credentials.
-- **Cloudflare's own model catalog** for Workers AI. This is the one source that needs credentials — see [Cloudflare AI Gateway](/guide/ai-agents/agent-sdk/cloudflare#workers-ai-is-priced-from-cloudflares-own-catalog).
+- **Cloudflare's own model catalog** for Workers AI. Needs a Cloudflare account id and API token — see [Cloudflare AI Gateway](/guide/ai-agents/agent-sdk/cloudflare#workers-ai-is-priced-from-cloudflares-own-catalog).
+- **Ramp Router's own model catalog** for calls through Router: the rates Router bills, rather than a public listing. The catalog is account-scoped, and `wrap()` reads the Router key from the client you pass in — see [Ramp Router](/guide/ai-agents/agent-sdk/ramp-router#price-mode).
 
 Tables refresh in the background on the queue thread, so your LLM call is never slowed down waiting on a price.
 
@@ -140,11 +141,11 @@ Set `markup` to resell at a profit — `1.2` means the customer pays your cost p
 
 ## Known limits
 
-**Price mode prices five fields: `input`, `output`, `cache_read`, `cache_write`, and `reasoning`.** Tool calls and the 5-minute / 1-hour cache-write splits carry no unit price, so they produce no cost event — meter those in token mode if you bill on them.
+**Price mode prices five fields: `input`, `output`, `cache_read`, `cache_write`, and `reasoning`.** Tool calls carry no unit price, so they produce no cost event — meter those in token mode if you bill on them. The 5-minute / 1-hour cache-write splits are priced separately only where the price source publishes a rate for each, which today is Ramp Router; everywhere else the whole `cache_write` count bills at the single write rate.
 
 **Audio and image tokens are priced at the text rate.** They sit inside `input`/`output`, so they are billed, but at the model's text price rather than its modality price. Providers often charge considerably more for audio. If your workload is audio-heavy, bill it in token mode using `llm_audio_input_tokens` and `llm_audio_output_tokens` and set your own rate.
 
-**Long-context and service-tier rates are not modelled.** Some providers raise the per-token rate above a context threshold, and discount batch or flex tiers. The SDK prices everything at the model's base rate.
+**Long-context and service-tier rates are not modelled.** Some providers raise the per-token rate above a context threshold, and discount batch or flex tiers. The SDK prices everything at the model's base rate. The exception is Ramp Router, where the response names the tier it was served at: a non-default tier there is a reported price miss rather than a base-rate charge. See [Ramp Router](/guide/ai-agents/agent-sdk/ramp-router#only-the-default-tier-is-priced).
 
 **A price miss never drops usage.** If the table has not warmed up on the very first call, or the model is missing from the source, the SDK falls back to token-count events and reports a `PricingUnavailableError` through `on_error`. It never bills zero and never drops the call.
 
@@ -156,7 +157,7 @@ Set `markup` to resell at a profit — `1.2` means the customer pays your cost p
 
 **Snowflake Cortex is always billed as token counts**, on both its REST and AI SQL function surfaces. Snowflake meters Cortex in credits at a per-credit rate that depends on edition, region and contract, published in no API and no view, so there is no rate card to look up and no later refresh that could supply one. A price-mode caller still gets token events for these rows, with no price-miss error, because a structural absence of a rate card is not a lookup failure. See [Snowflake Cortex](/guide/ai-agents/agent-sdk/snowflake).
 
-**Ramp Router is always billed as token counts.** Router serves several vendors behind one endpoint, and its effective rate is unknowable from the response: a request served with your own provider key costs $0 through Router, and a non-default service tier does not bill at the published base rate. Router also normalizes token-overlap numbers to OpenAI's convention rather than the served vendor's, so stamping the served vendor as the provider would de-overlap the counts with the wrong rules. A price-mode caller gets token events here with no price-miss error. See [Ramp Router](/guide/ai-agents/agent-sdk/ramp-router).
+**Ramp Router is priced from Router's own catalog, at the default tier.** Router publishes per-model rates in `GET /v1/models` for your account, and those are the rates it bills on every vendor it fronts. A call served at a non-default tier, or through a backend whose rate the catalog does not publish, falls back to token events with a `PricingUnavailableError` that says why. See [Ramp Router](/guide/ai-agents/agent-sdk/ramp-router#price-mode).
 
 **AWS's public bulk price data omits the current Claude models.** It lists Titan, Llama, Mistral, Cohere and older Claude, but at time of writing not Claude 3.5/3.7/4. Bedrock calls for those fall back to token events. Native Anthropic clients are priced through OpenRouter and unaffected.
 
