@@ -62,6 +62,14 @@ If you change the default campaign or assign a different campaign to a customer,
   </Tab>
 </Tabs>
 
+<Note>
+**Dunning applies regardless of the payment method set on the invoice.** Choosing **Manual payment** on a subscription, a one-off invoice, or a top-up only tells Lago not to charge that invoice automatically when it is finalized. It does not exclude the invoice from dunning. Once the invoice is overdue, a dunning campaign groups all of the customer's overdue invoices (one payment request per currency and per billing entity) and attempts a single automatic payment for the combined outstanding amount, using the payment provider set on the customer. If the customer has no default payment method stored in Lago, Lago falls back to a payment method already saved for that customer at the provider (with Stripe, the first one attached to the Stripe customer).
+
+To stop a customer who always pays manually from being charged this way, you have two options:
+- Leave the **default payment provider empty** on the customer. Dunning still sends the payment request email, but no payment is attempted.
+- Enable **Exclude from dunning campaign** on the customer. This stops the automatic payment and the dunning emails, so the customer receives no reminders at all.
+</Note>
+
 ## Edit a dunning campaign
 You can edit all details of a dunning campaign, but note that changes may directly impact customers linked to the campaign and could trigger new dunning attempts.
 
