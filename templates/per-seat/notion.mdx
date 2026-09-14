@@ -40,7 +40,7 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
     <CodeGroup>
       ```bash cURL highlight={7,9-11}
       curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "billable_metric": {
@@ -90,7 +90,7 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
         recurring: true
       };
 
-      await client.billableMetrics.createBillableMetric({ billableMetric })
+      await client.billableMetrics.createBillableMetric({ billable_metric: billableMetric })
       ```
 
       ```go Go highlight={3,5-7,10}
@@ -121,7 +121,7 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
     <CodeGroup>
       ```bash cURL highlight={7,13-23}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "plan": {
@@ -231,7 +231,7 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
         AmountCurrency: "USD",
         Interval:       "monthly",
         PayInAdvance:   false,
-        Charges: []*lago.PlanChargeInput{
+        Charges: []lago.PlanChargeInput{
           {
             BillableMetricID: "__BILLABLE_METRIC_ID__",
             ChargeModel:        "standard",
@@ -274,7 +274,7 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
     <CodeGroup>
       ```bash cURL highlight={7-12}
       curl --location --request POST "$LAGO_URL/api/v1/events" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "event": {

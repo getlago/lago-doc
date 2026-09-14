@@ -45,7 +45,7 @@ The usage-based component in Segment's pricing is related to **monthly tracked u
     <CodeGroup>
       ```bash cURL highlight={7,9-11}
       curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "billable_metric": {
@@ -95,7 +95,7 @@ The usage-based component in Segment's pricing is related to **monthly tracked u
         recurring: false
       };
 
-      await client.billableMetrics.createBillableMetric({ billableMetric });
+      await client.billableMetrics.createBillableMetric({ billable_metric: billableMetric });
       ```
 
       ```go Go highlight={3,5-7,10}
@@ -124,7 +124,7 @@ The usage-based component in Segment's pricing is related to **monthly tracked u
     <CodeGroup>
       ```bash cURL expandable highlight={7,10-47}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "plan": {
@@ -331,7 +331,7 @@ The usage-based component in Segment's pricing is related to **monthly tracked u
         AmountCurrency: "USD",
         PayInAdvance:   true,
         TrialPeriod:    14,
-        Charges:        []*lago.PlanChargeInput{
+        Charges:        []lago.PlanChargeInput{
           {
             BillableMetricID: "__BILLABLE_METRIC_ID__",
             ChargeModel:        "graduated",
@@ -396,7 +396,7 @@ The usage-based component in Segment's pricing is related to **monthly tracked u
     <CodeGroup>
       ```bash cURL highlight={7-11}
       curl --location --request POST "$LAGO_URL/api/v1/events" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "event": {

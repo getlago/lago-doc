@@ -116,7 +116,7 @@ As Stripe supports more than 20 payment methods in the US and most of them share
         ]
       };
 
-      await client.billableMetrics.createBillableMetric({ billableMetric })
+      await client.billableMetrics.createBillableMetric({ billable_metric: billableMetric })
       ```
 
       ```go Go highlight={3,5-12,15}
@@ -151,7 +151,7 @@ As Stripe supports more than 20 payment methods in the US and most of them share
     5. Set `charges` with different rates for online vs in-person payments
 
     <CodeGroup>        
-      ```bash cURL expandable highlight={7,9,11-37}
+      ```bash cURL expandable highlight={7,10,12-39}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
         --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
@@ -159,6 +159,7 @@ As Stripe supports more than 20 payment methods in the US and most of them share
           "plan": {
             "name": "Payment Processing Plan",
             "code": "__PLAN_CODE__",
+            "interval": "monthly",
             "description": "Per-transaction pricing for payment processing",
             "amount_cents": 0,
             "amount_currency": "USD",
@@ -168,6 +169,7 @@ As Stripe supports more than 20 payment methods in the US and most of them share
                 "billable_metric_id": "__BILLABLE_METRIC_ID__",
                 "invoice_display_name": "Online Card Payment",
                 "charge_model": "percentage",
+                "pay_in_advance": true,
                 "invoiceable": false,
                 "filters": [
                   {
@@ -193,8 +195,8 @@ As Stripe supports more than 20 payment methods in the US and most of them share
         }'
       ```
       
-      ```python Python expandable highlight={3-27,32,34-35,38}
-      from lago_python_client.models import Plan, Charge
+      ```python Python expandable highlight={3-27,34,36-37,40}
+      from lago_python_client.models import Plan, Charge, ChargeFilter
 
       online_charge_filter = ChargeFilter(
         invoice_display_name="Online Card Payment",
@@ -215,15 +217,17 @@ As Stripe supports more than 20 payment methods in the US and most of them share
       )
 
       charge = Charge(
-        billable_metric_code='__BILLABLE_METRIC_CODE__',
+        billable_metric_id='__BILLABLE_METRIC_ID__',
         charge_model='percentage',
+        pay_in_advance=True,
         invoiceable=False,
         filters=[online_charge_filter, in_person_charge_filter]
       )
 
       plan = Plan(
-        name='Payment Processing',
+        name='Payment Processing Plan',
         code='__PLAN_CODE__',
+        interval='monthly',
         description='Per-transaction pricing for payment processing',
         amount_cents=0,
         amount_currency='USD',
@@ -234,10 +238,11 @@ As Stripe supports more than 20 payment methods in the US and most of them share
       client.plans.create(plan)
       ```
 
-      ```ruby Ruby expandable highlight={3,5,8-33}
+      ```ruby Ruby expandable highlight={3,6,9-35}
       client.plans.create({
-        name: 'Payment Processing',
+        name: 'Payment Processing Plan',
         code: '__PLAN_CODE__',
+        interval: 'monthly',
         description: 'Per-transaction pricing for payment processing',
         amount_cents: 0,
         amount_currency: 'USD',
@@ -247,6 +252,7 @@ As Stripe supports more than 20 payment methods in the US and most of them share
             billable_metric_id: '__BILLABLE_METRIC_ID__',
             invoice_display_name: 'Online Card Payment',
             charge_model: 'percentage',
+            pay_in_advance: true,
             invoiceable: false,
             filters: [
               {
@@ -271,10 +277,11 @@ As Stripe supports more than 20 payment methods in the US and most of them share
       })
       ```
 
-      ```javascript Javascript expandable highlight={3,5,7,8-33,36}
+      ```javascript Javascript expandable highlight={3,6,8,9-35,38}
       const plan = {
         name: 'Payment Processing Plan',
         code: '__PLAN_CODE__',
+        interval: 'monthly',
         description: 'Per-transaction pricing for payment processing',
         amount_cents: 0,
         amount_currency: 'USD',
@@ -284,6 +291,7 @@ As Stripe supports more than 20 payment methods in the US and most of them share
             billable_metric_id: '__BILLABLE_METRIC_ID__',
             invoice_display_name: 'Online Card Payment',
             charge_model: 'percentage',
+            pay_in_advance: true,
             invoiceable: false,
             filters: [
               {
@@ -310,25 +318,27 @@ As Stripe supports more than 20 payment methods in the US and most of them share
       await client.plans.createPlan({ plan });
       ```
 
-      ```go Go expandable highlight={3,5,7,8-37,40}
+      ```go Go expandable highlight={3,6,8,9-39,42}
       planInput := &lago.PlanInput{
         Name:           "Payment Processing Plan",
         Code:           "__PLAN_CODE__",
+        Interval:       "monthly",
         Description:    "Per-transaction pricing for payment processing",
         AmountCents:    0,
         AmountCurrency: "USD",
         PayInAdvance:   true,
-        Charges: []lago.ChargeInput{
+        Charges: []lago.PlanChargeInput{
           {
             BillableMetricID:    "__BILLABLE_METRIC_ID__",
             InvoiceDisplayName:  "Online Card Payment",
             ChargeModel:         "percentage",
+            PayInAdvance:        true,
             Invoiceable:         false,
             Filters: []lago.ChargeFilter{
               {
                 InvoiceDisplayName: "Online Card Payment",
                 Values: map[string]interface{}{
-                  "type":         "online",
+                  "type": []string{"online"},
                 },
                 Properties: map[string]interface{}{
                   "rate":         "2.9",
@@ -338,7 +348,7 @@ As Stripe supports more than 20 payment methods in the US and most of them share
               {
                 InvoiceDisplayName: "In-person Card Payment",
                 Values: map[string]interface{}{
-                  "type":         "in-person",
+                  "type": []string{"in-person"},
                 },
                 Properties: map[string]interface{}{
                   "rate":         "2.7",
@@ -375,7 +385,7 @@ As Stripe supports more than 20 payment methods in the US and most of them share
     Send transaction events to Lago for instant processing and charging.
 
     1. Set the `code` to match your billable metric code
-    2. Use `external_customer_id` to identify the customer
+    2. Use `external_subscription_id` to identify the subscription
     3. Include `amount` in properties for the transaction value
     4. Add `type` property to specify online or in-person payment
 
@@ -526,8 +536,8 @@ As Stripe supports more than 20 payment methods in the US and most of them share
         ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
         Code:                   "__BILLABLE_METRIC_CODE__",
         Properties: map[string]string{
-          "amount": 1200,
-          "type": "online",
+          "amount": "1200",
+          "type":   "online",
         },
       }
 

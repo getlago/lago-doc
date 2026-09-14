@@ -20,7 +20,7 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
 
 | Plan      | Cost per volume of data scanned     |
 |------------|------------|
-| On-Demand pricing | $6.25 per TiB (a measure of compute capacity) |
+| On-Demand pricing | $6.25 per TiB (a tebibyte of data scanned) |
 
 ## Get started
 
@@ -39,7 +39,7 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
     <CodeGroup>
       ```bash cURL highlight={7,9-11}
       curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "billable_metric": {
@@ -89,7 +89,7 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
         recurring: false
       };
 
-      await client.billableMetrics.createBillableMetric({ billableMetric })
+      await client.billableMetrics.createBillableMetric({ billable_metric: billableMetric })
       ```
 
       ```go Go highlight={3,5-7,10}
@@ -119,7 +119,7 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
     <CodeGroup>
       ```bash cURL highlight={7,10,13-34}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "plan": {
@@ -273,7 +273,7 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
         AmountCents:    0,
         AmountCurrency: "USD",
         PayInAdvance:   false,
-        Charges: []*lago.ChargeInput{
+        Charges: []lago.PlanChargeInput{
           {
             BillableMetricID: "__BILLABLE_METRIC_ID__",
             ChargeModel:        "graduated",
@@ -317,23 +317,24 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
     2. Set `expiration_at` to 90 days from now for the trial period
 
     <CodeGroup>
-      ```bash cURL highlight={6,8-11}
+      ```bash cURL highlight={6,8-12}
       curl --location --request POST "$LAGO_URL/api/v1/wallets" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "wallet": {
             "external_customer_id": "__EXTERNAL_CUSTOMER_ID__",
             "name": "BigQuery Trial Credits",
             "rate_amount": "1.0",
-            "paid_credits": "300.0",
-            "granted_credits": "0.0",
-            "expiration_at": "2024-12-31T23:59:59Z"
+            "currency": "USD",
+            "paid_credits": "0.0",
+            "granted_credits": "300.0",
+            "expiration_at": "'"$(date -u -d '+90 days' +%Y-%m-%dT%H:%M:%SZ)"'"
           }
         }'
       ```
 
-      ```python Python highlight={5,7-10,13}
+      ```python Python highlight={5,7-11,14}
       from lago_python_client.models import Wallet
       from datetime import datetime, timedelta
 
@@ -341,48 +342,54 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
         external_customer_id='__EXTERNAL_CUSTOMER_ID__',
         name='BigQuery Trial Credits',
         rate_amount='1.0',
-        paid_credits='300.0',
-        granted_credits='0.0',
+        currency='USD',
+        paid_credits='0.0',
+        granted_credits='300.0',
         expiration_at=(datetime.now() + timedelta(days=90)).isoformat() + 'Z'
       )
-      
+
       client.wallets.create(wallet)
       ```
 
-      ```ruby Ruby highlight={2,4-7}
+      ```ruby Ruby highlight={2,4-8}
       client.wallets.create({
         external_customer_id: '__EXTERNAL_CUSTOMER_ID__',
         name: 'BigQuery Trial Credits',
         rate_amount: '1.0',
-        paid_credits: '300.0',
-        granted_credits: '0.0',
+        currency: 'USD',
+        paid_credits: '0.0',
+        granted_credits: '300.0',
         expiration_at: (Date.today + 90).strftime('%Y-%m-%dT23:59:59Z')
       })
       ```
 
-      ```javascript JavaScript highlight={2,4-7,10}
+      ```javascript JavaScript highlight={2,4-8,11}
       const wallet = {
         external_customer_id: '__EXTERNAL_CUSTOMER_ID__',
         name: 'BigQuery Trial Credits',
         rate_amount: '1.0',
-        paid_credits: '300.0',
-        granted_credits: '0.0',
+        currency: 'USD',
+        paid_credits: '0.0',
+        granted_credits: '300.0',
         expiration_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
       }
 
       await client.wallets.createWallet({ wallet })
       ```
 
-      ```go Go highlight={4,6-9,12}
+      ```go Go highlight={5,7-11,14}
       import "time"
+
+      expirationAt := time.Now().AddDate(0, 0, 90)
 
       walletInput := &lago.WalletInput{
         ExternalCustomerID: "__EXTERNAL_CUSTOMER_ID__",
         Name:               "BigQuery Trial Credits",
         RateAmount:         "1.0",
-        PaidCredits:        "300.0",
-        GrantedCredits:     "0.0",
-        ExpirationAt:       time.Now().AddDate(0, 0, 90).Format(time.RFC3339),
+        Currency:           "USD",
+        PaidCredits:        "0.0",
+        GrantedCredits:     "300.0",
+        ExpirationAt:       &expirationAt,
       }
 
       wallet, err := client.Wallet().Create(ctx, walletInput)
@@ -390,8 +397,10 @@ BigQuery offers customers the possibility to subscribe for free and only pay bas
     </CodeGroup>
 
     Refer to the [API reference](/api-reference/wallets/create) to create a wallet.
+  </Step>
 
-    2. Create a subscription for the customer with the plan's `code`.
+  <Step title="Create a subscription">
+    Create a subscription for the customer with the plan's `code`.
 
     <CreateSubscription />
   </Step>
