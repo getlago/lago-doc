@@ -8,11 +8,11 @@ import CreateCustomer from "/snippets/templates/create-customer.mdx";
 import CreateSubscription from "/snippets/templates/create-subscription.mdx";
 import CustomerUsage from "/snippets/templates/customer-usage.mdx";
 
-Set up a per-user (or 'per-seat) pricing like [Notion](https://www.notion.so/product), the collaboration software for innovative teams, including plans based on the number of users and prepaid credits.
+Set up a per-user (or 'per-seat') pricing like [Notion](https://www.notion.so/product), the collaboration software for innovative teams, including plans based on the number of users and prepaid credits.
 
-In this template, you will learn how to build a 'fair' billing system, with charges calculated according to the number of days of use.
+This template shows you how to build a 'fair' billing system, with charges calculated according to the number of days of use.
 
-This template is suitable for companies whose pricing depends on persistent metrics, such as productivity software (e.g. number of days users are active), fintechs (e.g. number of days payment cards are active) and data platforms (e.g. number of days integrations are active).
+It suits companies whose pricing depends on persistent metrics: productivity software (number of days users are active), fintechs (number of days payment cards are active) and data platforms (number of days integrations are active).
 
 ## Pricing structure
 
@@ -40,7 +40,7 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
     <CodeGroup>
       ```bash cURL highlight={7,9-11}
       curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "billable_metric": {
@@ -90,7 +90,7 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
         recurring: true
       };
 
-      await client.billableMetrics.createBillableMetric({ billableMetric })
+      await client.billableMetrics.createBillableMetric({ billable_metric: billableMetric })
       ```
 
       ```go Go highlight={3,5-7,10}
@@ -121,7 +121,7 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
     <CodeGroup>
       ```bash cURL highlight={7,13-23}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "plan": {
@@ -231,7 +231,7 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
         AmountCurrency: "USD",
         Interval:       "monthly",
         PayInAdvance:   false,
-        Charges: []*lago.PlanChargeInput{
+        Charges: []lago.PlanChargeInput{
           {
             BillableMetricID: "__BILLABLE_METRIC_ID__",
             ChargeModel:        "standard",
@@ -274,7 +274,7 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
     <CodeGroup>
       ```bash cURL highlight={7-12}
       curl --location --request POST "$LAGO_URL/api/v1/events" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "event": {
@@ -359,4 +359,4 @@ Notion offers a Personal Pro plan for individuals who want to collaborate with f
 For software companies like Notion, implementing a 'fair' per-user pricing model is a good way to **increase transparency and customer satisfaction**.
 With Lago, you can create your own persistent metrics to adapt this template to your products and services.
 
-Give it a try, click [here](https://www.getlago.com/get-started) to get started!
+[Get started with Lago](https://www.getlago.com/get-started) to build this template.

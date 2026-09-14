@@ -9,8 +9,8 @@ import CreateCustomer from "/snippets/templates/create-customer.mdx";
 import CreateSubscription from "/snippets/templates/create-subscription.mdx";
 import CustomerUsage from "/snippets/templates/customer-usage.mdx";
 
-In this article, you will learn how to build a 'pay-as-you-go' billing system.
-This template is suitable for companies whose pricing fully depends on usage, such as cloud service providers and API companies, that only charge their customers for the resources they consume.
+This template shows you how to build a 'pay-as-you-go' billing system.
+It suits companies whose pricing depends entirely on usage, such as cloud service providers and API companies that charge only for the resources their customers consume.
 
 ## Pricing structure
 For one of its products, Algolia Search, the platform offers its customers to subscribe for free and only pay based on usage.
@@ -29,17 +29,17 @@ Although users don't need to subscribe to access the platform, Algolia offers it
     <SetupLago />
   </Step>
 
-  <Step title="Create billable metrics">
-    Create billable metrics to track request usage for Search and Recommend APIs.
-    
+  <Step title="Create a billable metric">
+    Create a billable metric to track request usage for the Search API.
+
     1. Set the `aggregation_type` to `sum_agg` to sum all request volumes
-    2. Set the `field_name` to `search_requests_volume` for Search API tracking  
+    2. Set the `field_name` to `search_requests_volume` for Search API tracking
     3. Set the `recurring` to `false` for metered billing
 
     <CodeGroup>
       ```bash cURL highlight={7,9-11}
       curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "billable_metric": {
@@ -84,12 +84,12 @@ Although users don't need to subscribe to access the platform, Algolia offers it
         name: 'Search API Requests',
         code: '__BILLABLE_METRIC_CODE__',
         description: 'Search API request volume',
-        aggregationType: 'sum_agg', 
-        fieldName: 'search_requests_volume',
+        aggregation_type: 'sum_agg',
+        field_name: 'search_requests_volume',
         recurring: false
       };
-  
-      await client.billableMetrics.create({ billable_metric })
+
+      await client.billableMetrics.createBillableMetric({ billable_metric })
       ```
 
       ```go Go highlight={3,5-10} 
@@ -117,14 +117,14 @@ Although users don't need to subscribe to access the platform, Algolia offers it
     <CodeGroup>
       ```bash cURL highlight={7,10,13-23}
       curl --location --request POST "$LAGO_URL/api/v1/plans" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "plan": {
-            "name": "Algolia Search",
+            "name": "Algolia Search PAYG",
             "code": "__PLAN_CODE__",
             "interval": "monthly",
-            "description": "Pay-as-you-go pricing for Algolia Search API",
+            "description": "Pay-as-you-go pricing for Search API",
             "amount_cents": 0,
             "amount_currency": "USD",
             "pay_in_advance": false,
@@ -227,7 +227,7 @@ Although users don't need to subscribe to access the platform, Algolia offers it
         AmountCents:    0,
         AmountCurrency: "USD",
         PayInAdvance:   false,
-        Charges: []*lago.PlanChargeInput{
+        Charges: []lago.PlanChargeInput{
           {
             BillableMetricID: "__BILLABLE_METRIC_ID__",
             ChargeModel:        "package",
@@ -268,7 +268,7 @@ Although users don't need to subscribe to access the platform, Algolia offers it
     <CodeGroup>
       ```bash cURL highlight={7-11}
       curl --location --request POST "$LAGO_URL/api/v1/events" \
-        --header 'Authorization: Bearer __API_KEY__' \
+        --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
           "event": {
@@ -347,8 +347,8 @@ Although users don't need to subscribe to access the platform, Algolia offers it
 'Pay-as-you-go' pricing strategies are popular among API companies like Algolia.
 With Lago, you can adapt this template to your products and services, using some of our most popular features:
 
-1. **Plan models**, with or without subscription;‍
-2. **Billable metrics**, including the 'sum' aggregation type; and‍
+1. **Plan models**, with or without subscription;
+2. **Billable metrics**, including the 'sum' aggregation type; and
 3. **Charges**, including our package and graduated pricing models.
 
-Give it a try, click [here](https://www.getlago.com/get-started) to get started!
+[Get started with Lago](https://www.getlago.com/get-started) to build this template.
