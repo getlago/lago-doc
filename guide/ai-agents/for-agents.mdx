@@ -1,0 +1,168 @@
+---
+title: "Build with Lago using your AI agent"
+sidebarTitle: "For agents"
+description: "Start with the Lago plugin for Claude Code or Codex. Use the CLI, MCP, and documentation to build and verify a billing integration."
+---
+
+Give your coding agent the context to turn a pricing idea into a Lago billing integration. The **Lago plugin** guides discovery, billing design, implementation, and validation. You can begin with a product description; open an application repository when you are ready to build.
+
+<Info>
+  The plugin's public release is in preparation. The installation instructions below apply once the public repository is available. You can use the [Lago CLI](/guide/lago-cli/overview), [product MCP](/guide/ai-agents/mcp-server), and public documentation today.
+</Info>
+
+## Install the plugin
+
+The plugin supports Claude Code and Codex. Exploring its offline example and designing an integration require no Lago account, API key, CLI, or MCP connection.
+
+<Tabs>
+  <Tab title="Claude Code">
+    Once the public release is available, run these commands in Claude Code:
+
+    ```text
+    /plugin marketplace add getlago/lago-plugin
+    /plugin install lago@lago-plugins
+    ```
+
+    Then start with:
+
+    ```text
+    /lago:implementation show me what Lago can do
+    ```
+  </Tab>
+  <Tab title="Codex">
+    Once the public release is available, run these commands in your terminal:
+
+    ```bash
+    codex plugin marketplace add getlago/lago-plugin
+    codex plugin add lago@lago-plugins
+    ```
+
+    Start a new Codex task, then ask:
+
+    ```text
+    $lago:implementation show me what Lago can do; do not assume this workspace is my application
+    ```
+  </Tab>
+</Tabs>
+
+The plugin is distributed from Lago's repository. This installation path does not imply an official OpenAI or Anthropic marketplace listing. Installation identifiers above follow the v0.2.0 release candidate.
+
+## Get a first result
+
+The offline walkthrough follows one customer action through model usage, pricing, included credits, and overage. It uses fictional prices:
+
+| Step | Example result |
+| --- | --- |
+| Customer agreement | $99 subscription with $10 of included AI usage |
+| Credit remaining before the action | $0.20, after $9.80 has already been used |
+| New usage charge | $0.37 from input and output token records |
+| Duplicate event replay | No additional charge |
+| Credit applied to this action | $0.20 |
+| Overage from this action | $0.17 |
+
+This is an offline calculation, not proof that your environment is configured correctly. Live validation checks actual Lago results separately. Amounts exclude tax and payment processing. Automated monthly wallet renewal is edition-dependent.
+
+### Apply it to your product
+
+After loading the skill, give the agent a product description or pricing page:
+
+```text
+We sell an AI research product. Customers pay a subscription with included usage,
+then overages. Help me model who pays, what we meter, and how the amount is
+calculated in Lago. Identify the smallest integration we can verify.
+```
+
+Other starting points:
+
+- **API usage:** "Model a subscription with included API calls and usage overages."
+- **Prepaid credits:** "Help me model prepaid usage, wallet consumption, and what my application should do when credit runs out."
+- **Existing billing:** "Help me add Lago usage billing to my existing architecture. Identify which system owns subscriptions, invoicing, and payments."
+
+### Implement in your application
+
+Open the application repository and ask:
+
+```text
+Implement Lago in this application. Inspect the codebase, propose the smallest
+billing slice, and add usage events and tests. Ask before accessing any live
+Lago environment.
+```
+
+Review the proposed customer identifiers, billable metrics, plans, and subscription lifecycle. Your application should use an official Lago SDK or the REST API. It should not shell out to the CLI or require an MCP server at runtime.
+
+A useful first validation checks the expected charge, retries the same logical event with the same `transaction_id`, and compares the resulting Lago usage or invoice data with the independently calculated expectation. A successful API response alone does not establish billing correctness.
+
+## Choose how your agent connects
+
+| Tool | Use it for | Requirements |
+| --- | --- | --- |
+| Lago plugin | Explore pricing, design an integration, edit code, and guide validation | Supported coding agent; no Lago credentials for offline work |
+| Lago CLI | Terminal workflows, diagnostics, scripts, and structured billing results | Installed CLI; configured credentials for live requests |
+| Product MCP | Read billing data and perform supported operations through connected tools | MCP client, Docker, Lago API key, and target API URL |
+| Documentation MCP | Search and retrieve public Lago documentation | Compatible MCP client |
+| REST API or SDK | Your application's production integration | Server-side API credentials and the correct regional or self-hosted API URL |
+
+The plugin can use an already-installed CLI or compatible connected tools when available. Neither is required for its core discovery and implementation workflow.
+
+### Use the CLI
+
+Install with Homebrew on macOS or Linux:
+
+```bash
+brew install getlago/tap/lago
+```
+
+For Go installation and Windows releases, see the [CLI setup guide](/guide/lago-cli/overview).
+
+Inspect the installed version and available commands before building a script:
+
+```bash
+lago version
+lago --help
+```
+
+Follow the [configuration guide](/guide/lago-cli/overview) to select the environment and store credentials. After authorizing live access, verify the resolved target:
+
+```bash
+lago whoami --output json
+lago doctor --output json
+```
+
+These commands contact the configured Lago environment. Review each command's help for JSON output and dry-run support. A CLI mode named `test` is not an isolated Lago sandbox.
+
+### Connect the product MCP
+
+Follow the [MCP server setup guide](/guide/ai-agents/mcp-server) for the Docker configuration. Set `LAGO_API_URL` explicitly to the US, EU, or self-hosted API endpoint and provide `LAGO_API_KEY` through your client's secret configuration.
+
+Start with an authorized read, such as:
+
+```text
+Show the current usage for this customer. Do not change billing data.
+```
+
+Available operations are listed in the [Lago Agent Toolkit](https://github.com/getlago/lago-agent-toolkit). The product MCP accesses live billing data; it is separate from the public documentation MCP.
+
+## Give your agent the documentation
+
+You can use this path without the plugin. Paste this prompt into your agent:
+
+```text
+Read https://getlago.com/llms.txt and follow the relevant Lago guides for this
+project. Use https://swagger.getlago.com/openapi.yaml for exact API fields.
+Help me design and implement a billing integration. Ask before live access.
+```
+
+- **Documentation index:** [llms.txt](https://getlago.com/llms.txt)
+- **Documentation MCP:** `https://docs.getlago.com/mcp`
+- **Complete OpenAPI contract:** [openapi.yaml](https://swagger.getlago.com/openapi.yaml)
+- **Developer resources:** [API, SDKs, authentication, and webhooks](/developers)
+
+Configure the documentation MCP as a remote HTTP server in a compatible client. It provides documentation access, not access to your Lago organization.
+
+## Validate before live billing
+
+Keep API keys out of prompts, source control, and browser code. Confirm the organization, API URL, affected records, and expected billing impact before live work. The plugin requires separate explicit approval for production access or mutations; this is an instruction-level policy, not a technical permission boundary.
+
+Use an isolated self-hosted instance for seeded plugin demos. Lago has no built-in sandbox, and calling a Cloud organization "test" does not isolate it. Follow the [integration testing guide](/guide/integration-testing) when validating your own application.
+
+[Explore Lago's tools for AI agents](https://getlago.com/for-agents)
