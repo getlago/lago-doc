@@ -1,55 +1,26 @@
 ---
 title: "Build with Lago using your AI agent"
 sidebarTitle: "For agents"
-description: "Start with the Lago plugin for Claude Code or Codex. Use the CLI, MCP, and documentation to build and verify a billing integration."
+description: "Give your coding agent Lago's documentation, then build and verify a billing integration with the API, CLI, or MCP."
 ---
 
-Give your coding agent the context to turn a pricing idea into a Lago billing integration. The **Lago plugin** guides discovery, billing design, implementation, and validation. You can begin with a product description; open an application repository when you are ready to build.
+Use Lago's public documentation, REST API, CLI, and MCP server with your AI agent. Start with a product description or pricing model; open your application repository when you are ready to implement. **No Lago plugin is required.**
 
-<Info>
-  The plugin's public release is in preparation. The installation instructions below apply once the public repository is available. You can use the [Lago CLI](/guide/lago-cli/overview), [product MCP](/guide/ai-agents/mcp-server), and public documentation today.
-</Info>
+## Start with a prompt
 
-## Install the plugin
+Paste this into your coding agent:
 
-The plugin supports Claude Code and Codex. Exploring its offline example and designing an integration require no Lago account, API key, CLI, or MCP connection.
+```text
+Read https://getlago.com/llms.txt and follow the relevant Lago guides for this
+project. Use https://swagger.getlago.com/openapi.yaml for exact API fields.
+Help me design and implement a billing integration. Ask before live access.
+```
 
-<Tabs>
-  <Tab title="Claude Code">
-    Once the public release is available, run these commands in Claude Code:
-
-    ```text
-    /plugin marketplace add getlago/lago-plugin
-    /plugin install lago@lago-plugins
-    ```
-
-    Then start with:
-
-    ```text
-    /lago:implementation show me what Lago can do
-    ```
-  </Tab>
-  <Tab title="Codex">
-    Once the public release is available, run these commands in your terminal:
-
-    ```bash
-    codex plugin marketplace add getlago/lago-plugin
-    codex plugin add lago@lago-plugins
-    ```
-
-    Start a new Codex task, then ask:
-
-    ```text
-    $lago:implementation show me what Lago can do; do not assume this workspace is my application
-    ```
-  </Tab>
-</Tabs>
-
-The plugin is distributed from Lago's repository. This installation path does not imply an official OpenAI or Anthropic marketplace listing. Installation identifiers above follow the v0.2.0 release candidate.
+Describe what your customers pay for. Your agent can use public documentation to propose the customer identifiers, billable metrics, plans, and subscription lifecycle before connecting to a live environment.
 
 ## Get a first result
 
-The offline walkthrough follows one customer action through model usage, pricing, included credits, and overage. It uses fictional prices:
+Ask your agent to calculate an expected bill before writing the integration. This example follows one customer action through usage, pricing, included credits, and overage, using fictional prices:
 
 | Step | Example result |
 | --- | --- |
@@ -64,7 +35,7 @@ This is an offline calculation, not proof that your environment is configured co
 
 ### Apply it to your product
 
-After loading the skill, give the agent a product description or pricing page:
+Give the agent a product description or pricing page:
 
 ```text
 We sell an AI research product. Customers pay a subscription with included usage,
@@ -96,13 +67,16 @@ A useful first validation checks the expected charge, retries the same logical e
 
 | Tool | Use it for | Requirements |
 | --- | --- | --- |
-| Lago plugin | Explore pricing, design an integration, edit code, and guide validation | Supported coding agent; no Lago credentials for offline work |
 | Lago CLI | Terminal workflows, diagnostics, scripts, and structured billing results | Installed CLI; configured credentials for live requests |
 | Product MCP | Read billing data and perform supported operations through connected tools | MCP client, Docker, Lago API key, and target API URL |
 | Documentation MCP | Search and retrieve public Lago documentation | Compatible MCP client |
 | REST API or SDK | Your application's production integration | Server-side API credentials and the correct regional or self-hosted API URL |
 
-The plugin can use an already-installed CLI or compatible connected tools when available. Neither is required for its core discovery and implementation workflow.
+Choose the interface your agent supports. The API, CLI, and MCP work independently; you do not need to install all three. Application code should use the REST API or an official SDK.
+
+### Build with the API or an SDK
+
+Start with the [API reference](/api-reference/intro) and [developer resources](/developers) for supported SDKs. Give your agent the [complete OpenAPI specification](https://swagger.getlago.com/openapi.yaml) for exact fields. Keep credentials server-side and confirm the US, EU, or self-hosted API URL before sending requests.
 
 ### Use the CLI
 
@@ -144,13 +118,7 @@ Available operations are listed in the [Lago Agent Toolkit](https://github.com/g
 
 ## Give your agent the documentation
 
-You can use this path without the plugin. Paste this prompt into your agent:
-
-```text
-Read https://getlago.com/llms.txt and follow the relevant Lago guides for this
-project. Use https://swagger.getlago.com/openapi.yaml for exact API fields.
-Help me design and implement a billing integration. Ask before live access.
-```
+Use these sources to keep generated code aligned with Lago’s current API and workflows.
 
 - **Documentation index:** [llms.txt](https://getlago.com/llms.txt)
 - **Documentation MCP:** `https://docs.getlago.com/mcp`
@@ -161,8 +129,52 @@ Configure the documentation MCP as a remote HTTP server in a compatible client. 
 
 ## Validate before live billing
 
-Keep API keys out of prompts, source control, and browser code. Confirm the organization, API URL, affected records, and expected billing impact before live work. The plugin requires separate explicit approval for production access or mutations; this is an instruction-level policy, not a technical permission boundary.
+Keep API keys out of prompts, source control, and browser code. Confirm the organization, API URL, affected records, and expected billing impact before live work. Ask your agent to show the proposed changes before executing financial or destructive operations.
 
-Use an isolated self-hosted instance for seeded plugin demos. Lago has no built-in sandbox, and calling a Cloud organization "test" does not isolate it. Follow the [integration testing guide](/guide/integration-testing) when validating your own application.
+Use an isolated self-hosted instance for synthetic demos. Lago has no built-in sandbox, and calling a Cloud organization "test" does not isolate it. Follow the [integration testing guide](/guide/integration-testing) when validating your own application.
+
+## Optional: install the Lago plugin
+
+The plugin packages Lago billing guidance, worked examples, and an implementation workflow for Claude Code and Codex. It is an optional shortcut for the same API, CLI, and MCP workflows.
+
+<Info>
+  The plugin's public release is in preparation. The installation instructions below apply once the public repository is available. The API, CLI, MCP, and documentation paths above are available now.
+</Info>
+
+The plugin supports Claude Code and Codex. Exploring its offline example and designing an integration require no Lago account, API key, CLI, or MCP connection.
+
+<Tabs>
+  <Tab title="Claude Code">
+    Once the public release is available, run these commands in Claude Code:
+
+    ```text
+    /plugin marketplace add getlago/lago-plugin
+    /plugin install lago@lago-plugins
+    ```
+
+    Then start with:
+
+    ```text
+    /lago:implementation show me what Lago can do
+    ```
+  </Tab>
+  <Tab title="Codex">
+    Once the public release is available, run these commands in your terminal:
+
+    ```bash
+    codex plugin marketplace add getlago/lago-plugin
+    codex plugin add lago@lago-plugins
+    ```
+
+    Start a new Codex task, then ask:
+
+    ```text
+    $lago:implementation show me what Lago can do; do not assume this workspace is my application
+    ```
+  </Tab>
+</Tabs>
+
+The plugin is distributed from Lago's repository. This installation path does not imply an official OpenAI or Anthropic marketplace listing. Installation identifiers above follow the v0.2.0 release candidate.
+
 
 [Explore Lago's tools for AI agents](https://getlago.com/for-agents)
