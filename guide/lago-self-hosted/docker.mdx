@@ -708,6 +708,33 @@ In order to use the email feature, you need to configure some environment variab
 | `LAGO_SMTP_USERNAME` | Username of the SMTP Server                                                      |
 | `LAGO_SMTP_PASSWORD` | Password of the SMTP Server                                                      |
 
+#### Authentication and TLS overrides[](#authentication-and-tls-overrides)
+
+By default, Lago authenticates against your SMTP server with the `login` method and upgrades the connection with STARTTLS. Keep these defaults: they work with every hosted email provider (SendGrid, Mailgun, Amazon SES, Gmail SMTP and the like) and they keep your messages and your credentials encrypted in transit.
+
+Two optional variables let you override this behaviour. They exist for one scenario only: an internal SMTP relay that accepts unauthenticated or unencrypted traffic from inside your own network, a setup you still find in large enterprises.
+
+| Name                             | Description                                                                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `LAGO_SMTP_AUTHENTICATION`       | Authentication method: `login` (default), `plain`, `cram_md5` or `xoauth2`. Set it to `none` or `disabled` to connect without authentication.     |
+| `LAGO_SMTP_ENABLE_STARTTLS_AUTO` | Set it to `false` to stop upgrading the connection with STARTTLS. Defaults to `true`, and any value other than `false` or `0` keeps STARTTLS on.  |
+
+<Warning>
+  Use these overrides at your own risk, and only when the relay sits on a network you fully control. Without STARTTLS, your emails and your SMTP credentials travel in clear text and can be read by anything on the path. Neither override is recommended for an SMTP server reachable over the public internet.
+</Warning>
+
+A few things worth knowing before you change them:
+
+- Leaving either variable empty keeps the default, so a blank value in a Docker Compose file or a Helm chart cannot silently turn authentication or TLS off.
+- When authentication is set to `none` or `disabled`, `LAGO_SMTP_USERNAME` and `LAGO_SMTP_PASSWORD` are ignored and dropped from the mailer settings. This is required, as the SMTP client would otherwise authenticate with `PLAIN` as soon as a username is present.
+- Any other value for `LAGO_SMTP_AUTHENTICATION` makes every delivery fail.
+
+To check the settings your instance actually uses, run the diagnostics task and read its SMTP section:
+
+```
+docker-compose exec api bundle exec rails lago:diagnostics
+```
+
 #### Single Sign On using Google authentication[](#single-sign-on-using-google-authentication)
 
 In order to enable Google authentication for single sign on, you have to set those variables.
