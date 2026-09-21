@@ -6,7 +6,7 @@ Lago API endpoints follow common RESTful standards.
 
 ## Authentication
 
-Authentication is required for most endpoints, via an API key provided in the `Authorization` header as:
+Most endpoints require authentication with an API key in the `Authorization` header:
 
 ```http
 Authorization: Bearer <your_api_key>
@@ -14,7 +14,7 @@ Authorization: Bearer <your_api_key>
 
 ## HTTP status codes
 
-HTTP status codes communicate the outcome of each API request. For example, a successful request returns `200 OK`, while a malformed request returns `400 Bad Request`. More information about error codes can be found in the [Errors](./errors) section.
+HTTP status codes communicate the outcome of each API request. For example, a successful request returns `200 OK`, while a malformed request returns `400 Bad Request`. See [Errors](./errors) for the full list of error codes.
 
 ## Request and response body
 
@@ -26,13 +26,13 @@ Query parameters allow you to filter, search, and paginate API results. The Lago
 
 ### Simple parameters
 
-Simple query parameters are sent as key-value pairs. These parameters are used for pagination or to filter results by a single value:
+Simple query parameters are key-value pairs. Use them for pagination, or to filter results by a single value:
 
 ```http List subscriptions
 GET /api/v1/subscriptions?page=1&per_page=20&external_customer_id=123
 ```
 
-In this case, the parameter will be described in the API reference as:
+The API reference describes this parameter as:
 
 <ParamField query="external_customer_id" type="string">
   The customer external unique identifier (provided by your own application)
@@ -42,13 +42,13 @@ In this case, the parameter will be described in the API reference as:
 
 ### Array parameters
 
-Array parameters are sent as multiple entries of the same key, always ending with square brackets (`[]`). These parameters are used to filter results by multiple values:
+Array parameters repeat the same key, which always ends with square brackets (`[]`). Use them to filter results by multiple values:
 
 ```http List applied coupons
 GET /api/v1/applied_coupons?coupon_code[]=10_OFF&coupon_code[]=20_OFF
 ```
 
-In this case, the parameter will be described in the API reference as:
+The API reference describes this parameter as:
 
 <ParamField query="coupon_code[]" type="enum<string>[]">
   The coupon codes to filter the applied coupons by.

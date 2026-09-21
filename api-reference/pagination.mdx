@@ -2,15 +2,25 @@
 title: "Pagination"
 ---
 
-Many API endpoints that return lists of resources support pagination, enabling you to manage large result sets efficiently. You can control which results are returned by specifying the `page` and `per_page` query parameters.
+Many API endpoints that return lists of resources support pagination. Use the `page` and `per_page` query parameters to control which results are returned.
 
 Paginated responses include a `meta` object that provides detailed pagination information, such as:
 
 - `current_page`: The current page number.
-- `next_page`: The next page number, if available.
-- `prev_page`: The previous page number, if available.
+- `next_page`: The next page number, or `null` on the last page.
+- `prev_page`: The previous page number, or `null` on the first page.
 - `total_pages`: The total number of pages.
 - `total_count`: The total number of records available.
+
+<RequestExample>
+  ```bash cURL
+  LAGO_URL="https://api.getlago.com"
+  API_KEY="__YOUR_API_KEY__"
+
+  curl --location --request GET "$LAGO_URL/api/v1/coupons?page=1&per_page=10" \
+    --header "Authorization: Bearer $API_KEY"
+  ```
+</RequestExample>
 
 <ResponseExample>
   ```json
@@ -21,7 +31,7 @@ Paginated responses include a `meta` object that provides detailed pagination in
     "meta": {
       "current_page": 1,
       "next_page": 2,
-      "prev_page": 1,
+      "prev_page": null,
       "total_pages": 10,
       "total_count": 100
     }
