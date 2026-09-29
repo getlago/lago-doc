@@ -1,0 +1,67 @@
+---
+title: "Migration to v1.54.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about a security change in Lago v1.54.0: **webhooks can no longer be delivered to private or internal network addresses by default**.
+
+# What are the changes?
+
+## Private webhook destinations are blocked
+
+Lago now checks the IP address a webhook endpoint resolves to, and refuses to deliver to private, loopback, link-local and other reserved ranges, in IPv4 and IPv6. This includes addresses such as `127.0.0.1`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `::1` and `fc00::/7`.
+
+The check runs at two moments:
+
+- **When a webhook endpoint is created or its URL is updated.** A URL whose host resolves to a blocked address is rejected with a `url_invalid` error. A host that does not resolve yet is still accepted.
+- **Before every delivery attempt.** Lago resolves the host again and connects to the address it checked. A delivery to a blocked address is not sent: the attempt fails with the message `Destination address is not allowed`, and is retried like any other failed delivery.
+
+The same protection applies to the Okta and Entra ID hosts used for single sign-on.
+
+Failed deliveries now record a generic `Connection failed` message instead of the raw network error, and the stored response body of a webhook is capped at 64 KB.
+
+# Why are we doing this?
+
+A webhook endpoint URL is set by any user allowed to manage webhooks, and Lago's servers then send requests to it. Without this check, an endpoint pointing at an internal address let Lago reach services that are not meant to be exposed, and read part of their response back through the webhook logs.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions. Webhook endpoints on Lago Cloud must use a public address.
+</Note>
+
+<Warning>
+If you're using a version below `v1.52.0`, please first follow the migration steps for [v1.52.0](/guide/migration/migration-to-v1.52.0).
+Only after completing those should you proceed to v1.54.0.
+</Warning>
+
+## If your webhooks use public URLs
+
+No action is needed.
+
+## If your webhooks target an internal host
+
+This is the case when a webhook endpoint points at a service on your own network, for example `http://billing-listener:8080/webhooks`, `http://localhost:3000/lago` or `http://10.0.4.12/hooks`.
+
+After upgrading, these webhooks stop being delivered, and creating such an endpoint or changing its URL is rejected. To keep them working, set the following environment variable on **both the API and the worker** containers, then restart them:
+
+```bash
+LAGO_WEBHOOK_ALLOW_PRIVATE_URLS=true
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `LAGO_WEBHOOK_ALLOW_PRIVATE_URLS` | `false` | Set to `true` to allow webhook endpoints, and the Okta and Entra ID hosts, to resolve to private, loopback, link-local or other reserved addresses. |
+
+<Warning>
+Only enable this option when the users allowed to manage webhooks are trusted with access to your internal network. With it enabled, any of them can make Lago send requests to internal services.
+</Warning>
+
+# Get Involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
