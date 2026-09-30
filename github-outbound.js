@@ -1,13 +1,16 @@
-// Lago's product is free and self-hosted, so a reader leaving the docs for the
-// repo is a conversion, not a bounce. GA4 stops watching at the domain
-// boundary, which made that path invisible: the reader who goes on to deploy
-// looked identical to the one who gave up.
+// Lago's product is free and self-hosted, so a docs reader leaving for the repo
+// is a real signal, not a bounce. GA4 stops watching at the domain boundary,
+// which made that path invisible.
 //
-// Five GitHub links sit on the Docker install page alone, which is exactly
-// where a self-hosted evaluator leaves.
+// The event records where on the page the link sat. The Docker guide alone
+// carries five in-content GitHub links plus the ones in the nav and footer, all
+// on the same page path, and they mean completely different things: a click in
+// install instructions is deploy intent, a click in the nav is navigation.
+// link_location is derived from DOM landmarks rather than matching on the URL,
+// so it stays correct when pages are restructured.
 //
-// Mirrors the github_outbound_click event the marketing site sends, so both
-// surfaces report the same event name into GA4.
+// Mirrors the outbound_click event the marketing site sends, distinguished by
+// surface, so both can be read together or apart.
 (function () {
   var TRACKED_HOSTS = ["github.com"];
 
@@ -19,13 +22,20 @@
     }
   }
 
-  function isTracked(host) {
-    if (!host) return false;
+  function trackedDomain(host) {
+    if (!host) return null;
     for (var i = 0; i < TRACKED_HOSTS.length; i++) {
       var h = TRACKED_HOSTS[i];
-      if (host === h || host.slice(-(h.length + 1)) === "." + h) return true;
+      if (host === h || host.slice(-(h.length + 1)) === "." + h) return h;
     }
-    return false;
+    return null;
+  }
+
+  function linkLocation(anchor) {
+    if (anchor.closest("footer")) return "footer";
+    if (anchor.closest("nav")) return "nav";
+    if (anchor.closest("main")) return "content";
+    return "chrome";
   }
 
   // Capture phase: the docs are a SPA and some handlers stop propagation.
@@ -38,15 +48,20 @@
       if (!anchor) return;
 
       var href = anchor.getAttribute("href");
-      if (!href || !isTracked(hostOf(href))) return;
+      if (!href) return;
+
+      var domain = trackedDomain(hostOf(href));
+      if (!domain) return;
 
       if (typeof window.gtag !== "function") return;
 
-      window.gtag("event", "github_outbound_click", {
+      window.gtag("event", "outbound_click", {
+        link_domain: domain,
+        link_location: linkLocation(anchor),
+        surface: "docs",
         page_path: window.location.pathname,
         link_url: href,
         link_text: (anchor.textContent || "").trim().slice(0, 100),
-        source_surface: "docs",
       });
     },
     true
