@@ -1,0 +1,157 @@
+---
+title: "Python quickstart: usage-based billing with Lago"
+sidebarTitle: "Python"
+description: "Add usage-based billing to a Python app with the Lago Python SDK: install, define a metric, create a plan with a usage charge, send an event, and read current usage."
+keywords: ["Lago Python", "usage-based billing Python", "metering Python", "lago-python-client", "FastAPI billing", "Django billing"]
+---
+
+To add usage-based billing to a Python app with Lago, install `lago-python-client`, create a billable metric and a plan with a usage charge, subscribe a customer, send one event per billable action, and read current usage. The full script is below. It works the same in FastAPI, Django, Flask or a worker.
+
+Lago Cloud is the default: Lago runs the platform and you only call the API. You can also point the same code at a self-hosted Lago instance.
+
+## Before you start
+
+- A Lago API key. An organization admin creates it in Lago organization settings. See [Authentication](/auth).
+- The API URL for your deployment:
+  - Lago Cloud US: `https://api.getlago.com/` (the SDK default)
+  - Lago Cloud EU: `https://api.eu.getlago.com/`
+  - Self-hosted: your Lago API origin
+
+## Install
+
+```bash
+pip install lago-python-client
+```
+
+## The full script
+
+```python quickstart.py
+import os
+import time
+import uuid
+
+from lago_python_client import Client
+from lago_python_client.models import (
+    BillableMetric,
+    Charge,
+    Customer,
+    Event,
+    Plan,
+    Subscription,
+)
+
+# Lago Cloud US by default. Set LAGO_API_URL to https://api.eu.getlago.com/
+# for Lago Cloud EU, or to your own API origin if you self-host.
+client = Client(
+    api_key=os.environ["LAGO_API_KEY"],
+    api_url=os.environ.get("LAGO_API_URL", "https://api.getlago.com/"),
+)
+
+# 1. A billable metric: count every API call.
+metric = client.billable_metrics.create(
+    BillableMetric(
+        name="API calls",
+        code="api_calls",
+        aggregation_type="count_agg",
+    )
+)
+
+# 2. A plan with a usage charge: $0.001 per call, billed monthly in arrears.
+client.plans.create(
+    Plan(
+        name="Starter",
+        code="starter",
+        interval="monthly",
+        amount_cents=0,
+        amount_currency="USD",
+        pay_in_advance=False,
+        charges=[
+            Charge(
+                billable_metric_id=metric.lago_id,
+                charge_model="standard",
+                properties={"amount": "0.001"},
+            )
+        ],
+    )
+)
+
+# 3. A customer and a subscription to the plan.
+client.customers.create(Customer(external_id="acme", name="Acme Inc", currency="USD"))
+client.subscriptions.create(
+    Subscription(
+        external_customer_id="acme",
+        external_id="sub_acme",
+        plan_code="starter",
+    )
+)
+
+# 4. Send a usage event. transaction_id is the idempotency key.
+client.events.create(
+    Event(
+        transaction_id=str(uuid.uuid4()),
+        external_subscription_id="sub_acme",
+        code="api_calls",
+        timestamp=int(time.time()),
+    )
+)
+
+# 5. Read current usage for the open billing period.
+usage = client.customers.current_usage("acme", "sub_acme")
+print(usage.amount_cents, usage.currency)
+```
+
+Run it with your key:
+
+```bash
+LAGO_API_KEY=... python quickstart.py
+```
+
+Steps 1 to 3 are setup. Run them once, or create the metric and plan in the Lago UI instead. In your app you only keep step 4, at the point where the billable action happens, and step 5 wherever you show usage or spend.
+
+## What each step does
+
+1. **Billable metric.** `count_agg` counts events with the code `api_calls`. Use `sum_agg` with a `field_name` to bill on a quantity such as tokens or GPU-seconds. See [Aggregation types](/guide/billable-metrics/aggregation-types/overview).
+2. **Plan and charge.** The `standard` charge model bills a flat unit price. Graduated, volume, package, percentage and other models are in [Charge models](/guide/plans/charges/charge-models/standard).
+3. **Customer and subscription.** Events attach to a subscription through `external_subscription_id`, so use the same ID you set here.
+4. **Event.** Lago deduplicates on `transaction_id`. When you retry a failed request, resend the same `transaction_id` and the same `timestamp`. See [Idempotency and deduplication](/guide/events/ingesting-usage#idempotency-and-deduplication).
+5. **Current usage.** Returns the amount accrued so far in the open billing period, per charge. See [Retrieve usage](/guide/events/retrieve-usage).
+
+At the end of the billing period Lago generates the invoice. Listen for it with [webhooks](/guide/webhooks).
+
+## In a FastAPI route
+
+```python
+import os
+import time
+import uuid
+
+from fastapi import FastAPI
+from lago_python_client import Client
+from lago_python_client.models import Event
+
+app = FastAPI()
+lago = Client(api_key=os.environ["LAGO_API_KEY"])
+
+
+@app.post("/v1/infer")
+def infer(subscription_id: str):
+    # ... do the work ...
+    lago.events.create(
+        Event(
+            transaction_id=str(uuid.uuid4()),
+            external_subscription_id=subscription_id,
+            code="api_calls",
+            timestamp=int(time.time()),
+        )
+    )
+    return {"ok": True}
+```
+
+For high volume, send events in batches or through a stream instead of one HTTP call per action. See [Delivery methods](/guide/events/ingesting-usage#delivery-methods).
+
+## Next steps
+
+- [Prepaid credits and wallets](/guide/wallet-and-prepaid-credits/overview)
+- [Minimum commitments](/guide/plans/commitment)
+- [Usage alerts](/guide/alerts/usage-alerts)
+- [Python SDK source](https://github.com/getlago/lago-python-client) and the [API reference](/api-reference/intro)

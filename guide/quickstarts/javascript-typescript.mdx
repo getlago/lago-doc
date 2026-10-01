@@ -1,0 +1,146 @@
+---
+title: "JavaScript and TypeScript quickstart: usage-based billing with Lago"
+sidebarTitle: "JavaScript and TypeScript"
+description: "Add usage-based billing to a Node.js, Next.js or TypeScript app with the Lago JavaScript SDK: install, define a metric, create a plan with a usage charge, send an event, and read current usage."
+keywords: ["Lago JavaScript", "Lago TypeScript", "Lago Node.js", "usage-based billing TypeScript", "usage-based billing Next.js", "lago-javascript-client", "metering Node.js"]
+---
+
+To add usage-based billing to a JavaScript or TypeScript app with Lago, install `lago-javascript-client`, create a billable metric and a plan with a usage charge, subscribe a customer, send one event per billable action, and read current usage. The SDK ships its own TypeScript types, so the same code works in TypeScript and in plain JavaScript.
+
+Lago Cloud is the default: Lago runs the platform and you only call the API. You can also point the same code at a self-hosted Lago instance.
+
+## Before you start
+
+- A Lago API key. An organization admin creates it in Lago organization settings. See [Authentication](/auth). Keep the key on the server. Never ship it to the browser.
+- The API base URL for your deployment. With this SDK, the base URL includes `/api/v1`:
+  - Lago Cloud US: `https://api.getlago.com/api/v1` (the SDK default)
+  - Lago Cloud EU: `https://api.eu.getlago.com/api/v1`
+  - Self-hosted: your Lago API origin followed by `/api/v1`
+- Node.js 18 or later. The SDK also runs in Deno and Cloudflare Workers. The script below uses Node's `process.env` and `node:crypto`.
+
+## Install
+
+```bash
+npm install lago-javascript-client
+```
+
+## The full script
+
+```ts quickstart.ts
+import { randomUUID } from "node:crypto";
+import { Client } from "lago-javascript-client";
+
+// Lago Cloud US by default. Set LAGO_API_URL to https://api.eu.getlago.com/api/v1
+// for Lago Cloud EU, or to your own API origin followed by /api/v1 if you self-host.
+const lago = Client(process.env.LAGO_API_KEY!, {
+  baseUrl: process.env.LAGO_API_URL ?? "https://api.getlago.com/api/v1",
+});
+
+// 1. A billable metric: count every API call.
+const { data: metric } = await lago.billableMetrics.createBillableMetric({
+  billable_metric: {
+    name: "API calls",
+    code: "api_calls",
+    aggregation_type: "count_agg",
+  },
+});
+
+// 2. A plan with a usage charge: $0.001 per call, billed monthly in arrears.
+await lago.plans.createPlan({
+  plan: {
+    name: "Starter",
+    code: "starter",
+    interval: "monthly",
+    amount_cents: 0,
+    amount_currency: "USD",
+    pay_in_advance: false,
+    charges: [
+      {
+        billable_metric_id: metric.billable_metric.lago_id,
+        charge_model: "standard",
+        properties: { amount: "0.001" },
+      },
+    ],
+  },
+});
+
+// 3. A customer and a subscription to the plan.
+await lago.customers.createCustomer({
+  customer: { external_id: "acme", name: "Acme Inc", currency: "USD" },
+});
+await lago.subscriptions.createSubscription({
+  subscription: {
+    external_customer_id: "acme",
+    external_id: "sub_acme",
+    plan_code: "starter",
+  },
+});
+
+// 4. Send a usage event. transaction_id is the idempotency key.
+await lago.events.createEvent({
+  event: {
+    transaction_id: randomUUID(),
+    external_subscription_id: "sub_acme",
+    code: "api_calls",
+    timestamp: Math.floor(Date.now() / 1000),
+  },
+});
+
+// 5. Read current usage for the open billing period.
+const { data: usage } = await lago.customers.findCustomerCurrentUsage("acme", {
+  external_subscription_id: "sub_acme",
+});
+console.log(usage.customer_usage.amount_cents, usage.customer_usage.currency);
+```
+
+Run it from a project with `"type": "module"` in `package.json`:
+
+```bash
+LAGO_API_KEY=... npx tsx quickstart.ts
+```
+
+Steps 1 to 3 are setup. Run them once, or create the metric and plan in the Lago UI instead. In your app you only keep step 4, at the point where the billable action happens, and step 5 wherever you show usage or spend.
+
+Each call returns `{ data }` with the response body. On an error the SDK throws. Use `getLagoError` to read the typed error body, as shown in the [SDK README](https://github.com/getlago/lago-javascript-client#error-handling).
+
+## What each step does
+
+1. **Billable metric.** `count_agg` counts events with the code `api_calls`. Use `sum_agg` with a `field_name` to bill on a quantity such as tokens or GPU-seconds. See [Aggregation types](/guide/billable-metrics/aggregation-types/overview).
+2. **Plan and charge.** The `standard` charge model bills a flat unit price. Graduated, volume, package, percentage and other models are in [Charge models](/guide/plans/charges/charge-models/standard).
+3. **Customer and subscription.** Events attach to a subscription through `external_subscription_id`, so use the same ID you set here.
+4. **Event.** Lago deduplicates on `transaction_id`. When you retry a failed request, resend the same `transaction_id` and the same `timestamp`. See [Idempotency and deduplication](/guide/events/ingesting-usage#idempotency-and-deduplication).
+5. **Current usage.** Returns the amount accrued so far in the open billing period, per charge. See [Retrieve usage](/guide/events/retrieve-usage).
+
+At the end of the billing period Lago generates the invoice. Listen for it with [webhooks](/guide/webhooks).
+
+## In a Next.js route handler
+
+```ts app/api/infer/route.ts
+import { randomUUID } from "node:crypto";
+import { Client } from "lago-javascript-client";
+
+const lago = Client(process.env.LAGO_API_KEY!);
+
+export async function POST(request: Request) {
+  const { subscriptionId } = await request.json();
+  // ... do the work ...
+  await lago.events.createEvent({
+    event: {
+      transaction_id: randomUUID(),
+      external_subscription_id: subscriptionId,
+      code: "api_calls",
+      timestamp: Math.floor(Date.now() / 1000),
+    },
+  });
+  return Response.json({ ok: true });
+}
+```
+
+Run this in the Node.js runtime, on the server only. For high volume, send events in batches or through a stream instead of one HTTP call per action. See [Delivery methods](/guide/events/ingesting-usage#delivery-methods).
+
+## Next steps
+
+- [Prepaid credits and wallets](/guide/wallet-and-prepaid-credits/overview)
+- [Minimum commitments](/guide/plans/commitment)
+- [Usage alerts](/guide/alerts/usage-alerts)
+- [JavaScript SDK source](https://github.com/getlago/lago-javascript-client) and the [API reference](/api-reference/intro)
