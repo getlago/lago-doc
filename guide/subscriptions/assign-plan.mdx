@@ -12,12 +12,13 @@ description: "A subscription is created when a plan is assigned to a customer.
     3. In the **"Overview"** tab, click **"Add a plan"** on the right;
     4. Select a plan (that you can overwrite if needed - [see below](#overriding-a-plan));
     5. Give a name to the subscription (name that will be displayed on the invoice - optional);
-    5. Give an id to the subscription (define your own subscription identifier - optional);
+    6. Give an id to the subscription (define your own subscription identifier - optional);
     7. Set a subscription start date (start date of the subscription - [see below](#subscription-start-date));
     8. Set a subscription end date (end date of the subscription - [see below](#subscription-end-date) - optional);
     9. Define a PO number to be used on invoices generated from this subscription.
-    10. Choose whether the subscription should be renewed at the beginning of the period or on its anniversary date (see [below](#billing-cycles)); and
-    11. Click **"Add plan"** to confirm;
+    10. Choose whether the subscription should be renewed at the beginning of the period or on its anniversary date (see [below](#billing-cycles));
+    11. In the payment settings, keep the inherited [payment term](#payment-terms) or choose one for this subscription; and
+    12. Click **"Add plan"** to confirm.
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -52,6 +53,14 @@ The subscription date displayed in the app is based on the organization's timezo
 <Info>
 Want to hold activation until the first payment clears, so you never open AR for an unpaid subscription? See [Activation rules](/guide/subscriptions/activation-rules).
 </Info>
+
+## Payment terms
+
+Payment terms determine when the subscription's invoices are due. When assigning a plan, open the payment settings and choose a term for this subscription, or keep the inherited customer term. If the customer has no term of their own, the billing entity's default applies.
+
+For example, keep **Net 30** for a standard subscription and choose **Net 60** for an enterprise subscription belonging to the same customer. For invoices dated **April 10, 2026**, payment is due on **May 10** and **June 9**, respectively. The different terms require [separate invoices](#invoice-consolidation).
+
+See [Payment terms](/guide/invoicing/invoicing-settings/payment-term#choose-a-payment-term) for all six options and dated examples. You can also [change an existing subscription's term](/guide/subscriptions/edit-subscription#change-payment-terms).
 
 ## Billing cycles
 Optimize billing for your customers by assigning subscriptions based on either calendar dates or anniversary dates (the day they signed up).
@@ -199,11 +208,11 @@ We recommend that you give each subscription a name when assigning multiple plan
 ## Invoice consolidation
 When a customer is subscribed to multiple plans, Lago can either group all subscription charges into a **single consolidated invoice** or issue a **separate invoice for each subscription**.
 
-By default, Lago automatically consolidates subscriptions into a single invoice when they meet both of these conditions:
-- They are billed on the same day; and
-- They share the same payment method.
+For subscriptions to share an invoice, they must be billed on the same day, share the same payment method, and have the same effective payment term. Different payment terms require separate invoices, even if they happen to produce the same due date for a particular month.
 
-This reduces the number of invoices your customers receive and simplifies payment reconciliation. In the example below, a customer is subscribed to three plans — two billed monthly and one billed yearly — and Lago groups all charges that fall on the same billing date into a single invoice:
+The effective term is the term that applies after checking subscription, customer, and billing-entity settings. For example, a subscription that inherits Net 30 and one explicitly set to Net 30 have the same effective term. A Net 30 subscription and a Net 60 subscription do not.
+
+This reduces the number of invoices your customers receive and simplifies payment reconciliation. In the example below, a customer is subscribed to three plans — two billed monthly and one billed yearly. All three use the same payment method and payment term, and Lago groups eligible charges that fall on the same billing date into a single invoice:
 
 |                   | Month 1  | Month 2  | Month 3  | Month 4  | (...) | Month 13 |
 | ----------------- | -------- | -------- | -------- | -------- | ----- | -------- |

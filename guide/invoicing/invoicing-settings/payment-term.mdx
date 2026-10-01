@@ -1,0 +1,169 @@
+---
+title: "Payment terms"
+description: "Choose when invoices are due, set defaults, and use different payment terms for subscriptions, wallets, one-off invoices, and quote items."
+---
+
+Payment terms define **when your customer must pay an invoice**. For example, Net 30 gives them 30 days from the invoice's issuing date to pay. The resulting due date appears on the invoice and its PDF.
+
+You can set a default for a billing entity or customer, then choose different terms for a subscription, wallet, or one-off invoice. You can also choose terms for individual billing items when preparing a quote.
+
+## Choose a payment term
+
+Lago offers six payment-term types. The examples below all use an invoice dated **April 10, 2026** so you can compare the results.
+
+| Payment term | How it works | Example setting | Payment due date |
+| --- | --- | --- | --- |
+| **Due on receipt** | Payment is due on the invoice's issuing date. | No additional days | **April 10, 2026** |
+| **Net days** | Add the selected number of days to the issuing date. | 30 days (Net 30) | **May 10, 2026** |
+| **End of month** | Use the last day of the month in which the invoice is dated. | End of April | **April 30, 2026** |
+| **Net days after end of month** | Go to the end of the invoice month, then add the selected number of days. | 30 days after April 30 | **May 30, 2026** |
+| **Days end of month** | Add the selected number of days to the issuing date, then go to the end of that month. | Add 30 days to reach May 10, then go to month-end | **May 31, 2026** |
+| **Month following invoice (MFI)** | Choose a day of the month and how many months after the invoice month to use. | Day 15, month offset 1 (the following month) | **May 15, 2026** |
+
+<Tip>
+  **The two terms that combine days and month-end use a different order.** For an invoice dated April 10, adding 30 days **after month-end** gives May 30. Adding 30 days **before moving to month-end** gives May 31. Check the example due date in the payment-term form before saving.
+</Tip>
+
+### Choose the number of days
+
+For **Net days**, **Net days after end of month**, and **Days end of month**, enter the number of days agreed with your customer. The 30-day examples above are not a fixed duration.
+
+For example, an invoice dated April 10 with **Net 15** is due on **April 25**. With **15 net days after end of month**, it is due on **May 15**. With **15 days end of month**, it is due on **April 30**.
+
+Days are calendar days, including weekends. For example, Net 30 on an invoice dated January 31, 2026 gives a due date of **March 2, 2026**.
+
+### Choose a day of the month
+
+For **Month following invoice (MFI)**, set **Day of month** and **Month offset**. The offset counts months from the invoice month; it defaults to **1**, meaning the following month.
+
+| Setting | Example |
+| --- | --- |
+| Day 15, offset 0: the invoice month | An invoice dated April 10 is due April 15. If it is dated April 20, April 15 has already passed, so payment is due May 15. |
+| Day 15, offset 1: the following month | An invoice dated April 10 is due May 15. |
+| Day 15, offset 2: two months later | An invoice dated April 10 is due June 15. |
+| Day 31 in a shorter month | An invoice dated January 10, 2026 with offset 1 is due February 28. In a leap year, it would be due February 29. |
+
+You can choose a day from 1 to 31 and a month offset from 0 to 12. When the selected day does not exist in the target month, Lago uses that month's last day.
+
+## Which payment term applies?
+
+Lago uses the most specific setting available, in this order:
+
+1. The term set on the **subscription, wallet, or one-off invoice**.
+2. The **customer's** term, if the item has no term of its own.
+3. The **billing entity's** term, if the customer has no term of their own.
+4. **Due on receipt**, if no term is configured at any of these levels.
+
+Using the setting from the level above is called **inheritance**. To return to the default, choose the inheritance option instead of entering a term of your own. Selecting **Due on receipt** sets an explicit term; it does not mean "use the default."
+
+For example, your billing entity uses **Net 30**, but one customer has negotiated **Net 45**. That customer's invoices use Net 45 unless you set a more specific term. You can make their wallet purchases **Due on receipt** while leaving their subscription on Net 45.
+
+If you change an inherited default, future invoices follow the new default. A subscription or wallet with its own term keeps that term until you change it or restore inheritance.
+
+## Set the billing entity default
+
+<a id="define-a-net-payment-term-at-entity-level" />
+
+Use this setting for the standard terms offered by your billing entity, such as Net 30 for an invoice dated April 10 to be due May 10.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open **Settings** and select the billing entity.
+    2. Open **Invoicing settings**.
+    3. Click **Edit** in **Payment terms**.
+    4. Choose a **Term type** and enter any days or month settings it requires.
+    5. Review the example due date, then save your changes.
+  </Tab>
+  <Tab title="API">
+    This example sets **Net 15 days** using the day-count field `net_payment_term`. An invoice dated April 10 is due April 25. This field expresses Net terms; it does not express the month-based options above. See [Update a billing entity](/api-reference/billing-entities/update) for the API contract.
+
+    ```bash Set Net 15 days on a billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/{code}" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "net_payment_term": 15
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+## Set a customer's payment terms
+
+<a id="define-a-net-payment-term-at-customer-level" />
+
+Use a customer setting when you have agreed different terms with that customer. For example, Net 45 gives them until May 25 to pay an invoice dated April 10, instead of May 10 under a Net 30 billing-entity default.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open **Customers** and select the customer.
+    2. Open their **Settings** tab.
+    3. In **Payment terms**, add or edit the customer's term.
+    4. Choose a **Term type** and enter its days or month settings.
+    5. Review the example due date, then save your changes.
+
+    To use the billing entity's default again, choose the inheritance option in the term selector. The customer's settings display the inherited term.
+  </Tab>
+  <Tab title="API">
+    This example sets **Net 15 days** for a customer. An invoice dated April 10 is due April 25. The `net_payment_term` field expresses a number of days, not a month-based term. See [Update a customer](/api-reference/customers/update) for the API contract.
+
+    ```bash Set Net 15 days on a customer
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "hooli_1234",
+          "net_payment_term": 15
+        }
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+## Set terms for a subscription, wallet, one-off invoice, or quote item
+
+Choose a term in the item's payment settings, or keep the inherited term. Each item can use any of the six [payment-term types](#choose-a-payment-term).
+
+| Where you set the term | What it applies to | Example |
+| --- | --- | --- |
+| [Subscription](/guide/subscriptions/assign-plan#payment-terms) | Invoices for that subscription | Net 60 for an enterprise subscription: an April 10 invoice is due June 9. |
+| [Wallet](/guide/wallet-and-prepaid-credits/overview#payment-terms) | Invoices for purchased credits in that wallet | Due on receipt: an April 10 top-up invoice is due April 10. |
+| [One-off invoice](/guide/one-off-invoices/create-one-off-invoices#payment-terms) | That one-off invoice | Net 15 for a setup fee: an April 10 invoice is due April 25. |
+| [Quote item](/guide/quotes/quote-editor#payment-terms-for-quote-items) | The subscription, wallet, or one-off invoice configured in that quote item | Net 30 for the subscription and due on receipt for its wallet purchases: April 10 invoices are due May 10 and April 10, respectively. |
+
+Payment terms on a quote belong to its individual billing items. A subscription and a wallet in the same quote can have different terms.
+
+Subscriptions with different effective payment terms are billed on separate invoices. See [invoice consolidation](/guide/subscriptions/assign-plan#invoice-consolidation).
+
+## Invoice dates and later changes
+
+Payment terms are calculated from the **issuing date shown on the invoice**. The billing period describes the service being billed. The [grace period](/guide/invoicing/invoicing-settings/grace-period) gives your team time to review a draft invoice before finalization. These are separate settings.
+
+In this Net 15 example, the issuing date matches finalization on **November 15**, so payment is due **November 30**:
+
+<Frame caption="Net 15 when the invoice's issuing date and finalization date are both November 15">
+  <img src="/guide/invoicing/images/net-payment-term-timeline.png" alt="October billing period, followed by a draft review period, finalization on November 15, and payment due on November 30 with Net 15 terms." />
+</Frame>
+
+If you configure the invoice to keep an earlier issuing date, payment terms count from that date instead. See [issuing date preferences](/guide/invoicing/invoicing-settings/issuing_date).
+
+Lago stores the applicable payment term when it creates an invoice. Changing a customer's, billing entity's, subscription's, or wallet's terms affects **future invoices**. Existing invoices, including drafts, keep the term they were created with.
+
+For example, a draft invoice dated April 10 with Net 30 keeps Net 30 after you change the customer's default to Net 60. Its due date remains May 10. If that draft's issuing date later changes to April 12, its stored Net 30 term gives a new due date of May 12.
+
+## Overdue invoices
+
+<a id="application-scope" />
+
+An unpaid invoice is marked overdue after its payment due date has passed. Lago emits the `invoice.payment_overdue` [webhook message](/api-reference/webhooks/messages).
+
+The invoice remains overdue until its payment succeeds, a payment dispute is recorded as lost, or the invoice is voided.
