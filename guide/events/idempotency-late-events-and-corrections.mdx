@@ -1,0 +1,224 @@
+---
+title: "Idempotency, late events, and corrections"
+description: "How Lago deduplicates usage events, bills late events, corrects wrong usage, and backfills historical usage. Short answers first, then the API calls and limits."
+---
+
+This page answers four questions about usage events. Each answer starts with the short version. The API calls, limits, and links to the detailed guides follow.
+
+## How does Lago deduplicate usage events?
+
+Lago deduplicates usage events on `transaction_id`, and the exact key depends on the event store your organization runs on.
+
+- **Postgres event store.** The key is `transaction_id` for a given `external_subscription_id`. A second event with the same pair is rejected with a `422` and the error code `value_already_exist`. Lago keeps the first copy.
+- **ClickHouse event store** (the high-volume pipeline, required for Kafka ingestion). The key is `transaction_id` plus `timestamp`, for a given `external_subscription_id` and `code`. A repeat is accepted with a `200`, and the most recently ingested copy replaces the earlier one. The same `transaction_id` with a different `timestamp` is a separate event, and it is billed.
+
+If you omit `timestamp`, Lago uses the time it received the event. On the ClickHouse store, a retry without an explicit `timestamp` is therefore a new event. Always send `timestamp`, and resend the original payload unchanged when you retry.
+
+Charges billed in advance have an extra guard. Lago does not create a second in-advance fee for a `transaction_id` that already produced one.
+
+## What happens to late events?
+
+A late event is assigned to the billing period that contains its `timestamp`, not to the period in which it arrives.
+
+What happens next depends on the state of that period's invoice:
+
+| Invoice for the event's period | Result |
+| --- | --- |
+| Not generated yet | The event is counted when the invoice is generated. |
+| `draft` (inside the grace period) | The event is counted the next time the draft is refreshed. Lago also refreshes the draft when it finalizes it at the end of the grace period. |
+| `finalized` | Lago does not reopen the invoice. For metered billable metrics on charges billed in arrears, the event is stored but not billed, because the next invoice only aggregates events from its own period. For recurring `SUM` and `UNIQUE COUNT` metrics, aggregation starts at the beginning of the subscription, so the event counts on the next invoice. |
+
+Draft invoices exist only when an invoice grace period is set. The grace period is a premium feature. You set it on the billing entity or on the customer, and the customer value overrides the billing entity value. With a grace period of `0`, subscription invoices are finalized immediately and late events can't reach them.
+
+Yes, you can refresh a draft invoice. `PUT /api/v1/invoices/{lago_id}/refresh` recomputes the fees of a draft subscription invoice from the events in its period. Sending an event does not refresh a draft by itself, so call refresh when you want to see the new total before finalization. On an invoice that is no longer a draft, refresh changes nothing.
+
+A fee you adjusted manually on a draft keeps your adjustment when the draft is refreshed. New events do not change an adjusted fee.
+
+## How do you correct or remove usage that was sent by mistake?
+
+Lago has no API to delete or void an individual event. You correct usage by sending more events while the period is still open, by editing the draft invoice, or by issuing a credit note once the invoice is finalized.
+
+**Before the invoice is finalized:**
+
+- **Replace the event (ClickHouse store only).** Send the same `transaction_id` with the same `timestamp` and the corrected `properties`. The new copy replaces the original. On the Postgres store, a resend is rejected as a duplicate.
+- **Offset the event.** For a `SUM` metric, send a new event with a new `transaction_id` and a negative value in the aggregated property. It reduces the period total. Lago does not bill negative units: if the period total goes below zero, the fee has zero units. For a `UNIQUE COUNT` metric, send an event with `"operation_type": "remove"` to remove a value.
+- **Adjust the fee on the draft.** Edit the units or the amount of a fee on a draft invoice from the Dashboard. Fee adjustments are a premium feature, available on draft invoices only, and not exposed in the REST API.
+- **Delete the draft.** If the invoice should not exist at all, `DELETE /api/v1/invoices/{lago_id}` removes a draft invoice. It returns `405` with `not_deletable` on any other status.
+
+Refresh the draft after you send corrective events.
+
+**After the invoice is finalized:**
+
+- **Issue a credit note** on the invoice. A credit note can credit the customer's balance, refund a paid amount, or offset the amount still due, per fee. Manual credit notes are a premium feature.
+- **Void the invoice** if it should not be collected. You can then regenerate it from the Dashboard with corrected fees.
+
+## How do you backfill historical usage?
+
+Send historical events with their original `timestamp` through `POST /api/v1/events` or `POST /api/v1/events/batch`, which accepts up to 100 events per request.
+
+- Lago accepts timestamps in the past. The API does not reject an event for being old.
+- An event is billed only if its `timestamp` falls inside the subscription's active dates. Events dated before the subscription's start, or after its termination, are stored but not billed.
+- Backfilled events follow the late event rules above. They reach invoices that are not generated yet and drafts. They do not reopen finalized invoices.
+- Batches are validated as a whole. If one event is invalid, the request returns a `422`, nothing is stored, and errors are keyed by the event's index in your array.
+
+## API calls
+
+<CodeGroup>
+```bash Send one event
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/events" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "event": {
+      "transaction_id": "storage_20260915_org55_001",
+      "external_subscription_id": "sub_org55",
+      "code": "storage_gb",
+      "timestamp": 1757894400,
+      "properties": { "gb": 120 }
+    }
+  }'
+```
+
+```bash Backfill a batch
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/events/batch" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "events": [
+      {
+        "transaction_id": "storage_20260901_org55_001",
+        "external_subscription_id": "sub_org55",
+        "code": "storage_gb",
+        "timestamp": 1756684800,
+        "properties": { "gb": 100 }
+      },
+      {
+        "transaction_id": "storage_20260902_org55_001",
+        "external_subscription_id": "sub_org55",
+        "code": "storage_gb",
+        "timestamp": 1756771200,
+        "properties": { "gb": 110 }
+      }
+    ]
+  }'
+```
+
+```bash Offset a SUM event
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/events" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "event": {
+      "transaction_id": "storage_20260915_org55_001_offset",
+      "external_subscription_id": "sub_org55",
+      "code": "storage_gb",
+      "timestamp": 1757894400,
+      "properties": { "gb": -120 }
+    }
+  }'
+```
+
+```bash Check an event
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+TRANSACTION_ID="storage_20260915_org55_001"
+
+curl --location --request GET "$LAGO_URL/api/v1/events/$TRANSACTION_ID" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```bash Refresh a draft invoice
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+INVOICE_ID="__YOUR_INVOICE_ID__"
+
+curl --location --request PUT "$LAGO_URL/api/v1/invoices/$INVOICE_ID/refresh" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```bash Finalize a draft invoice
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+INVOICE_ID="__YOUR_INVOICE_ID__"
+
+curl --location --request PUT "$LAGO_URL/api/v1/invoices/$INVOICE_ID/finalize" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```bash Issue a credit note
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/credit_notes" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "credit_note": {
+      "invoice_id": "__YOUR_INVOICE_ID__",
+      "reason": "duplicated_charge",
+      "credit_amount_cents": 1200,
+      "refund_amount_cents": 0,
+      "items": [
+        { "fee_id": "__YOUR_FEE_ID__", "amount_cents": 1200 }
+      ]
+    }
+  }'
+```
+</CodeGroup>
+
+Use `https://api.eu.getlago.com` for the EU region, or your own URL if you self-host. Finalizing a draft refreshes it first, so late events in the period are included.
+
+For a credit note, the credited, refunded, and offset amounts must add up to the item amounts plus tax. Call `POST /api/v1/credit_notes/estimate` with the same `invoice_id` and `items` to get the exact amounts before you create it.
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Events per batch request | 100. More returns `422` with `too_many_events`. Self-hosted instances can change it with `LAGO_EVENTS_BATCH_MAX_LENGTH`. |
+| Duplicate on the Postgres store | `422` with `value_already_exist` on `transaction_id`. |
+| Duplicate on the ClickHouse store | `200`. The latest copy with the same `transaction_id` and `timestamp` replaces the earlier one. |
+| Oldest accepted `timestamp` | No limit in the API. Billing still depends on the subscription dates and the invoice status. |
+| Event delete or void | Not available. |
+| Draft invoices | Require a grace period. Premium feature. |
+| Fee adjustments on drafts | Dashboard only. Premium feature. |
+| Manual credit notes | Premium feature. Refunds require a paid invoice. |
+
+REST rate limits are listed in [Rate limits](/api-reference/rate-limits).
+
+## Learn more
+
+<CardGroup cols={2}>
+  <Card title="Ingest usage" href="/guide/events/ingesting-usage">
+    Event schema, delivery methods, and deduplication per event store.
+  </Card>
+  <Card title="Metering ingestion sources" href="/guide/events/metering-source">
+    REST, Kafka, Kinesis, and S3 ingestion.
+  </Card>
+  <Card title="Draft invoices" href="/guide/invoicing/draft-invoices">
+    Edit, refresh, finalize, or delete a draft.
+  </Card>
+  <Card title="Grace period" href="/guide/invoicing/invoicing-settings/grace-period">
+    Set the review window on the billing entity or the customer.
+  </Card>
+  <Card title="Credit notes" href="/guide/invoicing/credit-notes/overview">
+    Credit, refund, or offset a finalized invoice.
+  </Card>
+  <Card title="Void invoices" href="/guide/invoicing/void">
+    Cancel a finalized invoice and regenerate it.
+  </Card>
+  <Card title="Recurring vs metered metrics" href="/guide/billable-metrics/recurring-vs-metered">
+    How recurring metrics carry usage across periods.
+  </Card>
+  <Card title="Batch events API" href="/api-reference/events/batch">
+    Request and response reference for batch ingestion.
+  </Card>
+</CardGroup>
