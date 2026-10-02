@@ -7,6 +7,36 @@ rss: "true"
 Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024) · [2023](/changelog/product-2023) · [2022](/changelog/product-2022)
 
 <Update
+  label="October 2026"
+  tags={["Self-hosted"]}
+  rss={{
+    title: "October 2026 - Lago Helm chart 2.0",
+    description: "The Helm chart Lago runs in production, published: independent subcharts and one Deployment per Sidekiq queue."
+  }}
+>
+  ## Helm chart 2.0: scale each Lago component on its own
+
+  <Frame>
+    <img src="/changelog/images/20261002-helm-chart-2.webp" loading="lazy" />
+  </Frame>
+
+  The 1.x Helm chart was a monolith. One Sidekiq worker ran every queue, so a slow billing run could starve webhook delivery.
+
+  **Helm chart 2.0** is the chart Lago runs in its own production clusters, now published. It is an umbrella over independent subcharts.
+
+  - **One Deployment per queue.** Billing, events, webhook, PDF, clock, alerts, wallets and analytics each toggle on with their own replicas and resources.
+  - **Separate subcharts.** API, frontend, PDF rendering and streaming ingestion are configured and scaled independently. Shared config lives once, under `global`.
+  - **Two install sources.** The Helm repo at `charts.getlago.com`, or OCI artifacts at `oci://ghcr.io/getlago/helm-charts/lago`.
+  - **1.x keeps working.** It is frozen at `1.28.0` and still gets fixes on the `v1` branch. Pin the version and nothing changes.
+
+  [Learn more](/guide/lago-self-hosted/kubernetes)
+
+  <Info>
+  **New install, not an upgrade.** The values schema and resource names changed, so `helm upgrade` from 1.x migrates nothing. Install 2.0 as a new release against your existing database, check it, then remove the old release. Your data lives in Postgres, not in the chart.
+  </Info>
+</Update>
+
+<Update
   label="September 2026"
   tags={["API", "AI agents"]}
   rss={{
