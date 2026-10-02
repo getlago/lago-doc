@@ -1,0 +1,273 @@
+---
+title: "Prepaid credits and commitment drawdown"
+description: "Sell prepaid credits or a committed spend that usage draws down in Lago: create a wallet with paid and granted credits, top it up automatically, let usage invoices consume it, track the live balance, and add a minimum commitment with a true-up fee."
+---
+
+To sell prepaid credits or a committed spend that usage draws down, create a **wallet** for the customer with paid and free credits, and bill usage with a normal plan. When Lago finalizes a usage invoice, it deducts the wallet balance from the invoice total, so usage draws the credits down and only the remainder is due. To guarantee a minimum spend per billing period, add a **minimum commitment** to the plan: if usage falls short, Lago adds a true-up fee for the difference. You can use the two together.
+
+## How the pieces fit
+
+| You want to | Use | Where |
+| --- | --- | --- |
+| Collect money up front and let usage consume it | Wallet with `paid_credits` | `POST /api/v1/wallets` |
+| Give free or promotional credits | Wallet with `granted_credits` | `POST /api/v1/wallets` |
+| Refill credits automatically | Recurring transaction rule on the wallet (premium) | `recurring_transaction_rules` |
+| See how much is left right now | Ongoing balance on the wallet (premium) | `GET /api/v1/wallets/{lago_id}` |
+| Guarantee a minimum spend per period | Minimum commitment on the plan (premium) | `minimum_commitment` |
+| Invoice usage before the period ends | Progressive billing thresholds (premium add-on) | `usage_thresholds` |
+
+## 1. Create a wallet with paid and granted credits
+
+`rate_amount` sets the value of one credit in the wallet currency. Granted credits are added to the balance right away. Paid credits create a credit purchase invoice and are added to the balance once that invoice's payment succeeds.
+
+```bash Create a wallet
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "wallet": {
+      "external_customer_id": "hooli_1234",
+      "name": "Committed spend 2026",
+      "code": "committed_spend_2026",
+      "rate_amount": "1.0",
+      "currency": "USD",
+      "paid_credits": "10000.0",
+      "granted_credits": "500.0",
+      "expiration_at": "2026-12-31T23:59:59Z",
+      "priority": 1,
+      "transaction_metadata": [
+        { "key": "contract", "value": "2026-annual" }
+      ]
+    }
+  }'
+```
+
+- `priority` goes from 1 to 50 and defaults to 50. Wallets with a lower number are applied first.
+- `expiration_at` is optional. When it passes, Lago terminates the wallet and stops applying its remaining credits.
+- `applies_to` limits which fees the credits can pay for. Use `fee_types` (for example `charge`, `subscription`, `commitment`, `fixed_charge`) and `billable_metric_codes`. Without it, the wallet applies to all fees.
+
+```json Limit a wallet to usage charges
+"applies_to": {
+  "fee_types": ["charge"],
+  "billable_metric_codes": ["api_calls"]
+}
+```
+
+To add credits later, create a wallet transaction:
+
+```bash Top up a wallet
+curl --location --request POST "$LAGO_URL/api/v1/wallet_transactions" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "wallet_transaction": {
+      "wallet_id": "__WALLET_LAGO_ID__",
+      "paid_credits": "2000.0",
+      "granted_credits": "0.0"
+    }
+  }'
+```
+
+The same endpoint accepts `voided_credits` to remove credits from the balance.
+
+## 2. Refill credits automatically
+
+<Info>
+**PREMIUM FEATURE** ✨
+
+Recurring top-ups are only available to users with a premium license. Please **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago Self-Hosted Premium.
+</Info>
+
+A wallet can have one recurring transaction rule.
+
+- `trigger`: `interval` (`weekly`, `monthly`, `quarterly`, `semiannual`, `yearly`) or `threshold` (top up when the ongoing balance reaches `threshold_credits` or less).
+- `method`: `fixed` (add `paid_credits` and `granted_credits`) or `target` (add what is needed to bring the balance back to `target_ongoing_balance`). For a `target` rule, set `grants_target_top_up` to `true` to add free credits instead of paid ones.
+
+```bash Refill to 1,000 credits when the balance drops to 200
+curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "wallet": {
+      "external_customer_id": "hooli_1234",
+      "name": "Auto-refill credits",
+      "rate_amount": "1.0",
+      "currency": "USD",
+      "paid_credits": "1000.0",
+      "recurring_transaction_rules": [
+        {
+          "trigger": "threshold",
+          "threshold_credits": "200.0",
+          "method": "target",
+          "target_ongoing_balance": "1000.0",
+          "invoice_requires_successful_payment": true
+        }
+      ]
+    }
+  }'
+```
+
+`target_ongoing_balance` must be greater than or equal to `threshold_credits`.
+
+## 3. How usage consumes credits
+
+Lago applies wallet credits when it finalizes these invoices:
+
+- subscription invoices at the end of the billing period, including usage-based charges and any minimum commitment true-up fee;
+- invoices for charges and fixed charges paid in advance; and
+- progressive billing invoices.
+
+For each invoice, Lago:
+
+1. computes fees, coupons and taxes;
+2. applies credit notes;
+3. applies wallet credits to the remaining total, in wallet priority order, then by creation date. Only active wallets with a positive balance in the invoice currency, and only fees allowed by each wallet's `applies_to`, are used; and
+4. leaves any amount the credits did not cover as due on the invoice, which then follows your normal payment flow.
+
+Each deduction is recorded as an outbound wallet transaction linked to the invoice, and Lago sends a `wallet_transaction.created` webhook. The invoice shows the deduction in `prepaid_credit_amount_cents`. A balance never goes below zero at invoicing time.
+
+## 4. Track the live balance
+
+<Info>
+**PREMIUM FEATURE** ✨
+
+Real-time wallet balance is only available to users with a premium license. Please **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago Self-Hosted Premium.
+</Info>
+
+```bash Retrieve a wallet
+curl --location --request GET "$LAGO_URL/api/v1/wallets/__WALLET_LAGO_ID__" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+| Field | Meaning |
+| --- | --- |
+| `credits_balance`, `balance_cents` | Invoiced balance. Changes when invoices are finalized and when credits are added or voided. |
+| `credits_ongoing_usage_balance`, `ongoing_usage_balance_cents` | Usage not yet deducted: current usage and draft invoices, including taxes. |
+| `credits_ongoing_balance`, `ongoing_balance_cents` | Balance minus ongoing usage. This is the live estimate. |
+| `consumed_credits` | Credits consumed so far. |
+
+When the ongoing balance reaches zero or less, Lago sends a `wallet.depleted_ongoing_balance` [webhook](/api-reference/webhooks/messages). Threshold top-ups watch the ongoing balance.
+
+## 5. Add a minimum commitment and true-up fee
+
+<Info>
+**PREMIUM FEATURE** ✨
+
+Minimum commitments are only available to users with a premium license. Please **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago Self-Hosted Premium.
+</Info>
+
+A minimum commitment sets the least a subscription pays per billing period. At the end of the period, Lago adds the subscription fee, usage-based charges and fixed charges for the period. If the total is below the commitment, Lago adds a true-up fee equal to the difference. If it is above, there is no true-up fee.
+
+```bash Plan with a $5,000 monthly minimum commitment
+curl --location --request POST "$LAGO_URL/api/v1/plans" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "plan": {
+      "name": "Usage with commitment",
+      "code": "usage_commitment",
+      "interval": "monthly",
+      "amount_cents": 0,
+      "amount_currency": "USD",
+      "pay_in_advance": false,
+      "minimum_commitment": {
+        "amount_cents": 500000,
+        "invoice_display_name": "Minimum commitment true-up",
+        "tax_codes": []
+      },
+      "charges": [
+        {
+          "billable_metric_id": "__BILLABLE_METRIC_ID__",
+          "charge_model": "standard",
+          "properties": { "amount": "0.01" }
+        }
+      ]
+    }
+  }'
+```
+
+To negotiate a different commitment for one customer, override it on the subscription:
+
+```bash Override the commitment for one subscription
+curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "subscription": {
+      "external_customer_id": "hooli_1234",
+      "external_id": "hooli_1234_main",
+      "plan_code": "usage_commitment",
+      "plan_overrides": {
+        "minimum_commitment": {
+          "amount_cents": 800000
+        }
+      }
+    }
+  }'
+```
+
+For a commitment on a single charge instead of the whole invoice, use a [spending minimum](/guide/plans/charges/spending-minimum) (`min_amount_cents` on the charge).
+
+## 6. Combine credits and a commitment
+
+The true-up fee is a regular fee with the `commitment` fee type. It is added to the invoice before wallet credits are applied, so:
+
+- a wallet with no `applies_to` limits, or with `commitment` in `fee_types`, pays the true-up fee from credits; and
+- a wallet limited to other fee types, such as `["charge"]`, does not, and the true-up fee stays due on the invoice.
+
+Pick the one that matches your contract. Two common setups:
+
+- **Prepaid drawdown.** The customer prepays the committed amount. Create a wallet with `paid_credits` for that amount and an `expiration_at` at the end of the term. Usage invoices draw it down. Unused credits stop applying once the wallet expires.
+- **Pay-as-you-go with a floor.** The customer pays usage in arrears, with a minimum per period. Add a `minimum_commitment` to the plan. A wallet with granted credits can sit on top as a discount.
+
+To bill usage before the period ends, and draw credits down as you go, add [progressive billing](/guide/plans/progressive-billing) thresholds to the plan. Each threshold invoice applies wallet credits like any other invoice.
+
+## Limits and gotchas
+
+- **Wallets per customer.** A customer can have up to 6 active wallets by default.
+- **One recurring rule per wallet.**
+- **Currency.** Credits only apply to invoices in the wallet's currency. If the customer has no currency yet, creating the wallet sets it.
+- **Not every invoice.** Credits do not apply to one-off invoices or to credit purchase invoices.
+- **Finalized invoices only.** Draft invoices count toward the ongoing balance, but credits are deducted when the invoice is finalized.
+- **Paid credits wait for payment.** Paid credits stay pending until the credit purchase invoice is paid. If the payment fails, the transaction is marked as failed and no credits are added. Granted credits are added right away.
+- **Invoice after payment.** `invoice_requires_successful_payment` only takes effect with a premium license.
+- **Top-up limits.** `paid_top_up_min_amount_cents` and `paid_top_up_max_amount_cents` reject paid top-ups outside the range. Pass `ignore_paid_top_up_limits` on a transaction to skip them.
+- **Ongoing balance refresh.** The ongoing balance is refreshed on a schedule, not on every event. On self-hosted instances the default is every 5 minutes, set with `LAGO_WALLET_ONGOING_BALANCE_REFRESH_INTERVAL_SECONDS`, and it requires a configured cache (`LAGO_MEMCACHE_SERVERS` or `LAGO_REDIS_CACHE_URL`).
+- **Commitment period.** A plan has at most one minimum commitment, its amount must be greater than zero, and it follows the plan's billing interval.
+- **Commitment proration.** The commitment is prorated when the subscription covers only part of the period.
+- **Pay-in-advance plans.** The true-up for a period is added to the next invoice, so the first invoice never has one.
+- **Commitment base.** The commitment is compared with fee amounts before taxes and before coupons, credit notes or wallet credits.
+- **Commitment request fields.** In requests, send `amount_cents`, `invoice_display_name` and `tax_codes`. Fields such as `plan_code`, `interval` and `taxes` only appear in responses.
+- **Premium.** Recurring top-ups, real-time balance, minimum commitments, spending minimums and plan overrides on subscriptions need a premium license. Progressive billing is a premium add-on enabled on request.
+
+## Related pages
+
+<CardGroup cols={2}>
+  <Card title="Wallets and prepaid credits" href="/guide/wallet-and-prepaid-credits/overview">
+    Wallet settings, priority, scope and expiration.
+  </Card>
+  <Card title="Top-up and void credits" href="/guide/wallet-and-prepaid-credits/wallet-top-up-and-void">
+    One-off and recurring top-ups, and voiding credits.
+  </Card>
+  <Card title="Traceability" href="/guide/wallet-and-prepaid-credits/traceability">
+    Which top-ups funded which usage deductions.
+  </Card>
+  <Card title="Commitments" href="/guide/plans/commitment">
+    Minimum commitments and true-up fees.
+  </Card>
+  <Card title="Spending minimums" href="/guide/plans/charges/spending-minimum">
+    Minimum spend on a single charge.
+  </Card>
+  <Card title="Progressive billing" href="/guide/plans/progressive-billing">
+    Invoice usage when thresholds are reached.
+  </Card>
+  <Card title="Create a wallet (API)" href="/api-reference/wallets/create">
+    Full request and response schema.
+  </Card>
+  <Card title="Top up a wallet (API)" href="/api-reference/wallets/top-up">
+    Wallet transaction endpoint.
+  </Card>
+</CardGroup>
