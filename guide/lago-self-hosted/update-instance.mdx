@@ -79,6 +79,28 @@ This command will rebuild and launch your Lago instance with the latest changes.
 ### 6. Test new features
 After the instance restarts, test the new features and give feedback to the team.
 
+## Updating a Helm deployment
+
+The steps above assume a Docker Compose instance tracked with Git. If you deploy
+with the [Helm charts](/guide/lago-self-hosted/kubernetes), update the chart
+instead:
+
+```bash
+helm repo update
+helm upgrade lago lago/lago -f values.yaml
+```
+
+Pin a specific chart version with `--version` when you want a known release
+rather than the newest one. The migration Job runs on each upgrade and brings
+the database schema up to date before the rest of the release restarts.
+
+<Warning>
+  Moving from chart `1.x` to `2.x` is the one exception: it is a new install,
+  not an upgrade, because the values schema and the generated resource names
+  both changed. See [coming from chart
+  v1](/guide/lago-self-hosted/kubernetes#coming-from-chart-v1).
+</Warning>
+
 ## Addressing concerns about breaking changes
 Lago reviews database and UI migrations carefully to limit the risk of breaking your instance during an update, so your workflows and
 user interfaces stay consistent across versions.

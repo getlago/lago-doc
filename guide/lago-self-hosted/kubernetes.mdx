@@ -1,0 +1,250 @@
+---
+title: "Kubernetes"
+description:
+  "Deploy Lago on Kubernetes with the official Helm charts, with each component
+  scaled independently."
+---
+
+## Requirements
+
+1. A Kubernetes cluster running 1.26 or later;
+2. [Helm](https://helm.sh/docs/intro/install/) 3.8 or later (OCI registry
+   support is required to pull the charts from GHCR); and
+3. A PostgreSQL database and a Redis instance the cluster can reach. The charts
+   deploy neither — see [managed dependencies](#managed-dependencies) below.
+
+## Choose your chart version
+
+Two chart lines are published, and they are not interchangeable.
+
+| Chart | Lago version | Branch | Shape |
+|---|---|---|---|
+| `2.x` | `v1.41.2` and later | `main` | Umbrella chart over independent subcharts |
+| `1.x` | up to `1.32.4` | `v1` | Single monolithic chart |
+
+<Warning>
+  **2.0 is a new install, not an upgrade from 1.x.** The values schema and the
+  generated resource names both changed, so `helm upgrade` across the boundary
+  does not migrate anything — Helm would try to reconcile two unrelated sets of
+  objects. If you run 1.x today, read [coming from chart
+  v1](#coming-from-chart-v1) before you touch anything.
+</Warning>
+
+Installing without a `--version` flag gives you the latest `2.x` release.
+
+## Install
+
+Add the chart repository:
+
+```shell
+helm repo add lago https://charts.getlago.com
+helm repo update
+```
+
+Then install, supplying your own values file:
+
+```shell
+helm install lago lago/lago -f values.yaml
+```
+
+The charts are also published as OCI artifacts, which skips the repository step:
+
+```shell
+helm install lago oci://ghcr.io/getlago/helm-charts/lago -f values.yaml
+```
+
+Both sources serve the same chart. Use whichever fits your tooling.
+
+### Minimum values
+
+At a minimum Lago needs its public URLs, a database, a Redis instance, and its
+encryption and signing secrets:
+
+```yaml
+global:
+  urls:
+    api: "https://lago-api.example.com"
+    front: "https://lago.example.com"
+
+  database:
+    uri: "postgres://lago:password@postgres.example.com:5432/lago"
+
+  redis:
+    uri: "redis://redis.example.com:6379"
+  redisCache:
+    uri: "redis://redis.example.com:6379"
+  redisStore:
+    uri: "redis://redis.example.com:6379"
+
+  encryption:
+    key: "<openssl rand -hex 16>"
+    salt: "<openssl rand -hex 16>"
+
+  signing:
+    rsa: "<openssl genrsa 2048 | openssl base64 -A>"
+    hmac: "<openssl rand -base64 16>"
+```
+
+<Warning>
+  Generate your own `encryption` and `signing` values and keep them out of
+  version control. Changing `encryption.key` or `encryption.salt` after the
+  fact makes previously encrypted data unreadable.
+</Warning>
+
+A fuller starting point, including ingress definitions and a throwaway Postgres
+and Redis for evaluation, lives in
+[`charts/lago/examples/`](https://github.com/getlago/lago-helm-charts/tree/main/charts/lago/examples)
+in the chart repository.
+
+## What a default install deploys
+
+With no optional components enabled, the chart creates four Deployments and a
+migration Job:
+
+| Workload | Role |
+|---|---|
+| `lago-api` | The Rails API |
+| `lago-front` | The web interface |
+| `lago-worker` | A single Sidekiq worker handling every queue |
+| `lago-clock` | Scheduled jobs |
+| `lago-migrate` | A Job that runs database migrations before the rest starts |
+
+That is deliberately the smallest useful deployment. Everything below is opt-in.
+
+## Scale workers by queue
+
+The 1.x chart ran one Sidekiq worker for everything. In 2.x each queue can be
+split into its own Deployment, so a slow billing run cannot starve webhook
+delivery, and each queue is sized and scaled on its own.
+
+Every queue is `false` by default, which leaves its jobs with the catch-all
+`lago-worker`. Enabling one moves that queue's jobs to a dedicated Deployment:
+
+```yaml
+global:
+  sidekiq:
+    queues:
+      billing: true
+      events: true
+      webhook: true
+      clock: true
+      analytics: true
+      alerts: true
+      wallets: true
+      pdf: true
+```
+
+Each enabled queue gets a top-level values key named after it, where resources,
+replica counts and autoscaling are configured independently:
+
+```yaml
+billing-worker:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+```
+
+## Optional components
+
+### PDF generation
+
+Invoice rendering runs as its own subchart, bundling Gotenberg and its worker:
+
+```yaml
+pdf:
+  enabled: true
+
+global:
+  sidekiq:
+    queues:
+      pdf: true
+```
+
+### Streaming ingestion
+
+High-volume event ingestion through Kafka and ClickHouse is off by default.
+Enabling it adds the events consumer and the events processor, and requires
+connection details for both backends:
+
+```yaml
+global:
+  streaming_ingestion:
+    enabled: true
+    kafka:
+      bootstrapServers:
+        - kafka.example.com:9093
+      consumerGroup: consumer
+    clickhouse:
+      address: clickhouse.example.com
+      port: 8123
+      database: lago
+      username: lago
+      password: "<password>"
+```
+
+See [ingesting usage](/guide/events/ingesting-usage) for when this is worth
+enabling.
+
+## Managed dependencies
+
+The charts do not deploy PostgreSQL, Redis, or object storage. Point Lago at
+managed services, or at instances you run separately — the
+[compatibility matrix](/guide/lago-self-hosted/compatibility-matrix) lists the
+supported versions.
+
+For file storage, configure S3 (or any S3-compatible endpoint) under
+`global.s3`. The chart provisions no local volume, so without object storage
+configured, generated files live only in the container filesystem and are lost
+when a pod restarts.
+
+## Coming from chart v1
+
+There is no supported in-place upgrade. Treat it as a fresh install against the
+same database:
+
+<Steps>
+  <Step title="Keep your 1.x release running">
+    Do not uninstall it yet. Your data is in PostgreSQL, not in the release.
+  </Step>
+  <Step title="Translate your values">
+    The schema changed. Most 1.x keys have a 2.x equivalent under `global`, and
+    per-component settings moved under the subchart key they belong to. Nothing
+    carries over automatically.
+  </Step>
+  <Step title="Install 2.x as a separate release">
+    Point it at your existing PostgreSQL and Redis. The migration Job brings the
+    schema up to date on first start.
+
+    ```shell
+    helm install lago-v2 lago/lago -f values-2x.yaml
+    ```
+  </Step>
+  <Step title="Cut traffic over, then remove the old release">
+    Verify the new release serves correctly, move your ingress or DNS, and only
+    then `helm uninstall` the 1.x release.
+  </Step>
+</Steps>
+
+<Note>
+  Run this against a copy of your database first if you can. The migration Job
+  applies schema changes that the 1.x release will not expect, so the two
+  versions cannot safely share a database for long.
+</Note>
+
+## Staying on 1.x
+
+1.x remains available and keeps receiving fixes on the
+[`v1`](https://github.com/getlago/lago-helm-charts/tree/v1) branch. Pin the
+version and nothing changes for you:
+
+```shell
+helm install lago lago/lago --version 1.28.0
+```
+
+## Values reference
+
+Every chart carries a generated `README.md` documenting its values. Start with
+the [umbrella chart](https://github.com/getlago/lago-helm-charts/tree/main/charts/lago),
+then follow into the subchart that owns the component you are configuring.
