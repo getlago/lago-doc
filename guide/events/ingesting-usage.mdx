@@ -45,7 +45,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
 
 <AccordionGroup>
   <Accordion title="transaction_id (required)">
-    A unique ID you generate. Lago uses it for **deduplication**: if the same event arrives twice, it is billed once. Which copy Lago keeps depends on your event store — see Idempotency and deduplication.
+    A unique ID you generate. Lago uses it for **deduplication**: if the same event arrives twice, it is billed once. Which copy Lago keeps depends on your event store, see [Idempotency and deduplication](#idempotency-and-deduplication).
 
     <Tip>
       **Good practice:** Don't use random UUIDs. Embed the customer, event type, and timestamp so you can trace a billed amount back to its source event without guessing:
@@ -669,7 +669,7 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
 
 ## Rate limits
 
-Lago enforces per-organization rate limits on the REST API, with the highest limits on event ingestion. If you exceed them you receive a `429 Too Many Requests` response with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Retrying after a `429` is safe as long as you resend the identical payload, timestamp included (see Idempotency and deduplication). See [Rate limits](/api-reference/rate-limits) for the full limits and retry guidance.
+Lago enforces per-organization rate limits on the REST API, with the highest limits on event ingestion. If you exceed them you receive a `429 Too Many Requests` response with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Retrying after a `429` is safe as long as you resend the identical payload, timestamp included (see [Idempotency and deduplication](#idempotency-and-deduplication)). See [Rate limits](/api-reference/rate-limits) for the full limits and retry guidance.
 
 <Info>
   Kafka, Kinesis, and S3 connectors are not subject to REST API rate limits. Their throughput is bounded by your broker or infrastructure capacity.
