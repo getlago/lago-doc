@@ -132,7 +132,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** Create a metric `llm_tokens` with aggregation type `SUM` and a custom expression like `properties.tokens_in + properties.tokens_out`. Use `model` as a charge filter to apply different per-token rates for GPT-4, GPT-3.5, Claude, etc.
+    **Billable metric setup:** Create a metric `llm_tokens` with aggregation type `SUM` and a custom expression like `event.properties.tokens_in + event.properties.tokens_out`. Use `model` as a charge filter to apply different per-token rates for GPT-4, GPT-3.5, Claude, etc.
 
     <Tip>
       Include `latency_ms` and `stream` in properties even if you don't price on them today. Lago ignores unused properties, but having the data means you can add latency-based tiers or streaming surcharges later without re-instrumenting.
@@ -197,7 +197,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** For per-transaction flat fees, use `COUNT` aggregation on the `transactions` metric with charge filters on `payment_method` (different rates for card vs. ACH vs. wire). For percentage-based fees, use a custom expression like `properties.amount_cents * 0.029` or set up pricing tiers in your charge configuration.
+    **Billable metric setup:** For per-transaction flat fees, use `COUNT` aggregation on the `transactions` metric with charge filters on `payment_method` (different rates for card vs. ACH vs. wire). For percentage-based fees, use a custom expression like `event.properties.amount_cents * 0.029` or set up pricing tiers in your charge configuration.
 
     <Info>
       A major global payments company runs Lago self-hosted, processing **thousands of transactions per second**. They started on Postgres (validated at 10K events/sec) and later migrated to ClickHouse + Kafka for higher throughput — same event format, same pricing config, zero billing logic changes.
@@ -257,7 +257,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** For storage, use `MAX` or `LAST` aggregation on `gb_stored` to bill on peak or end-of-period usage. For bandwidth, use `SUM` on `gb_transferred`.
+    **Billable metric setup:** For storage, use `MAX` or `LATEST` aggregation on `gb_stored` to bill on peak or end-of-period usage. For bandwidth, use `SUM` on `gb_transferred`.
 
     <Tip>
       **Snapshot events vs. delta events:** For storage billing, periodic snapshots (one event per day with total GB stored) are simpler and more reliable than tracking every write/delete. This is also a natural pre-aggregation pattern — one event per day per customer instead of thousands.
@@ -284,7 +284,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** Use a custom expression to calculate the platform fee: e.g., `properties.order_amount_cents * 0.029 + 30` for a 2.9% + $0.30 model. Alternatively, use `precise_total_amount_cents` to compute the fee in your application and pass the exact amount to Lago.
+    **Billable metric setup:** Use a custom expression to calculate the platform fee: e.g., `event.properties.order_amount_cents * 0.029 + 30` for a 2.9% + $0.30 model. Alternatively, use `precise_total_amount_cents` to compute the fee in your application and pass the exact amount to Lago.
 
     <Info>
       **Why `precise_total_amount_cents`?** When fee calculations involve complex business rules (tiered take rates, negotiated seller rates, promotional discounts), it's often cleaner to compute the fee in your backend and pass the result to Lago rather than encoding all that logic in metric expressions.

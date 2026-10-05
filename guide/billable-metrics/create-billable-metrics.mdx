@@ -18,7 +18,7 @@ you should create the corresponding billable metric.
     - Select the `aggregation type` which will define how consumption will be
       measured;
     - Define the aggregation property `field_name` to aggregate on;
-    - Define `groups` if you price several dimensions for a same billing component; and
+    - Define `filters` if you price several dimensions for the same billing component; and
     - Define if this billable metric is `recurring` and kept in memory period over period, or resume to 0 at the end of each period.
   </Tab>
   <Tab title="API">
@@ -39,10 +39,12 @@ you should create the corresponding billable metric.
             "aggregation_type": "sum_agg",
             "field_name": "gb",
             "recurring": false,
-            "group": {
-              "key": "provider",
-              "value": ["aws", "google", "azure"]
-            }
+            "filters": [
+              {
+                "key": "provider",
+                "values": ["aws", "google", "azure"]
+              }
+            ]
           }
         }'
         ```
