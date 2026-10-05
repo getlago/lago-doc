@@ -476,7 +476,7 @@ client.Event().Create(ctx, &event)
 For applications that bill on LLM tokens, the [Agent SDK](/guide/ai-agents/agent-sdk/overview) is the lowest-effort path to ingestion. You wrap your existing provider client and keep calling it the same way. The SDK extracts token usage from each response, normalizes it across providers, and ships events to Lago in the background.
 
 - **Providers:** AWS Bedrock (`Converse` and `InvokeModel`, sync and stream), Mistral, OpenAI, Anthropic, Google Gemini, and potentially more.
-- **Languages:** [Python](https://github.com/getlago/lago-agent-sdk-python) and [JavaScript / TypeScript](https://github.com/getlago/lago-agent-sdk-js)).
+- **Languages:** [Python](https://github.com/getlago/lago-agent-sdk-python) and [JavaScript / TypeScript](https://github.com/getlago/lago-agent-sdk-js).
 
 <CodeGroup>
   ```python Python
@@ -637,12 +637,12 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
 
 <AccordionGroup>
   <Accordion title="Late-arriving events">
-    Events that arrive after a billing period has closed are assigned to the correct historical period based on `timestamp`. If the invoice has already been finalized, the event will not be included in the billing cycle. However if they match a recurring billable metric, they will impact the next billing cycle.
+    Events that arrive after a billing period has closed are assigned to the correct historical period based on `timestamp`. If the invoice has already been finalized, the event is not included in that billing cycle. However, if it matches a recurring billable metric, it impacts the next billing cycle.
   </Accordion>
 
   <Accordion title="Correcting events">
-    - With Postgres: duplicates are rejected with a 422 and there is no replacement. Use a new transaction_id to correct an event.
-    - With ClickHouse: send a new event with the same transaction_id and the same timestamp, carrying the updated properties. The new event replaces the original. A different timestamp creates a second billable event instead of amending the first.
+    - With Postgres: duplicates are rejected with a 422 and there is no replacement. Use a new `transaction_id` to correct an event.
+    - With ClickHouse: send a new event with the same `transaction_id` and the same `timestamp`, carrying the updated properties. The new event replaces the original. A different `timestamp` creates a second billable event instead of amending the first.
   </Accordion>
 
   <Accordion title="Events before subscription start">
@@ -663,7 +663,7 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
 **Reconciliation pattern:** Compare your source-of-truth event count against Lago. Use `GET /events` filtered by `external_subscription_id`, `timestamp_from`, and `timestamp_to`, then compare against your internal logs. Any delta means dropped events or events that failed validation.
 
 **What to watch on your side:**
-- **REST API response codes:** 200 = accepted, 422 = validation error (missing transaction_id or code, invalid timestamp, failing expression, or a duplicate transaction_id on the Postgres event store), 429 = rate limited (retry safely), 5xx = server-side error (investigate before retrying)
+- **REST API response codes:** 200 = accepted, 422 = validation error (missing `transaction_id` or `code`, invalid `timestamp`, failing expression, or a duplicate `transaction_id` on the Postgres event store), 429 = rate limited (retry safely), 5xx = server-side error (investigate before retrying)
 - **At invoice time:** compare line item quantities against your own event counts per subscription per billing period. If they diverge, check for late arrivals outside the billing window.
 
 
