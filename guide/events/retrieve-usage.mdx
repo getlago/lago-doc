@@ -55,11 +55,11 @@ Some events can be ingested but trigger unexpected behavior. Lago displays two p
     2. Detailed breakdowns per metric: Units and amounts by metric and optional sub-breakdowns by filters or groupings (e.g., per project, environment, or AI models)
 
     <Info>
-    Note: Since the billing period is not yet finalized, the retrieved data should be treated as provisional. Final invoice values may differ.
+    Since the billing period is not yet finalized, treat the retrieved data as provisional. Final invoice values may differ.
     </Info>
 
-    Notice that if the events were sent with a timestamp in the future, they are taken into account in current usage. Yet, if you terminate the
-    subscription before the timestamp of this event, it will be ignored in the termination invoice.
+    Events sent with a timestamp in the future are taken into account in current usage. If you terminate the
+    subscription before that timestamp, the event is ignored in the termination invoice.
 
     <Frame caption="Retrieving current usage">
       <img src="/guide/events/images/current-usage.png" />
@@ -94,7 +94,7 @@ Some events can be ingested but trigger unexpected behavior. Lago displays two p
     2. Per-metric projections, including: Forecasted units and amounts for each billable metric and projections broken down by optional sub-filters or groups (e.g., per project, environment, or AI models)
 
     <Info>
-    Note: Recurring metrics, such as Seats, typically remain stable over time, unlike metered metrics which fluctuate. Therefore, the projected usage for a recurring metric is assumed to be equal to its current usage.
+    Recurring metrics, such as Seats, typically remain stable over time, unlike metered metrics which fluctuate. The projected usage for a recurring metric is therefore assumed to equal its current usage.
     </Info>
 
     <Frame caption="Retrieving projected usage">
@@ -235,7 +235,7 @@ The combination of `from_date`, `to_date`, and `time_granularity` is what makes 
 - **`from_date` / `to_date`** define the window the analytics cover. Set them to the start and end of a billing period to look at exactly what a given invoice was computed from.
 - **`time_granularity`** controls how that window is sliced. With `daily`, you get **one row per day per metric**, so you can see the units that accrued each day and the corresponding amount, rather than a single aggregated total.
 
-This daily breakdown is the key to **finding back why a customer was invoiced a given number of units and a given amount**. When an invoice total looks unexpected, query `/analytics/usage` over that invoice's billing period with `time_granularity=daily`, filtered on the relevant `external_subscription_id` and `billable_metric_code`. The day-by-day series shows exactly when consumption spiked, lets you tie each day's units to the amount they generated, and makes it possible to trace the invoiced total back to the underlying daily usage.
+This daily breakdown is the key to **tracing back why a customer was invoiced a given number of units and a given amount**. When an invoice total looks unexpected, query `/analytics/usage` over that invoice's billing period with `time_granularity=daily`, filtered on the relevant `external_subscription_id` and `billable_metric_code`. The day-by-day series shows exactly when consumption spiked, lets you tie each day's units to the amount they generated, and makes it possible to trace the invoiced total back to the underlying daily usage.
 
 <Tip>
 For an invoice you want to explain, set `from_date` and `to_date` to that invoice's billing period boundaries and use `time_granularity=daily`. Summing the daily `units` and `amount_cents` returned reconciles back to the invoiced totals.

@@ -45,7 +45,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
 
 <AccordionGroup>
   <Accordion title="transaction_id (required)">
-    A unique ID you generate. Lago uses it for **deduplication**: if the same event arrives twice, it is billed once. Which copy Lago keeps depends on your event store — see Idempotency and deduplication.
+    A unique ID you generate. Lago uses it for **deduplication**: if the same event arrives twice, it is billed once. Which copy Lago keeps depends on your event store, see [Idempotency and deduplication](#idempotency-and-deduplication).
 
     <Tip>
       **Good practice:** Don't use random UUIDs. Embed the customer, event type, and timestamp so you can trace a billed amount back to its source event without guessing:
@@ -132,7 +132,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** Create a metric `llm_tokens` with aggregation type `SUM` and a custom expression like `properties.tokens_in + properties.tokens_out`. Use `model` as a charge filter to apply different per-token rates for GPT-4, GPT-3.5, Claude, etc.
+    **Billable metric setup:** Create a metric `llm_tokens` with aggregation type `SUM` and a custom expression like `event.properties.tokens_in + event.properties.tokens_out`. Use `model` as a charge filter to apply different per-token rates for GPT-4, GPT-3.5, Claude, etc.
 
     <Tip>
       Include `latency_ms` and `stream` in properties even if you don't price on them today. Lago ignores unused properties, but having the data means you can add latency-based tiers or streaming surcharges later without re-instrumenting.
@@ -197,7 +197,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** For per-transaction flat fees, use `COUNT` aggregation on the `transactions` metric with charge filters on `payment_method` (different rates for card vs. ACH vs. wire). For percentage-based fees, use a custom expression like `properties.amount_cents * 0.029` or set up pricing tiers in your charge configuration.
+    **Billable metric setup:** For per-transaction flat fees, use `COUNT` aggregation on the `transactions` metric with charge filters on `payment_method` (different rates for card vs. ACH vs. wire). For percentage-based fees, use a custom expression like `event.properties.amount_cents * 0.029` or set up pricing tiers in your charge configuration.
 
     <Info>
       A major global payments company runs Lago self-hosted, processing **thousands of transactions per second**. They started on Postgres (validated at 10K events/sec) and later migrated to ClickHouse + Kafka for higher throughput — same event format, same pricing config, zero billing logic changes.
@@ -257,7 +257,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** For storage, use `MAX` or `LAST` aggregation on `gb_stored` to bill on peak or end-of-period usage. For bandwidth, use `SUM` on `gb_transferred`.
+    **Billable metric setup:** For storage, use `MAX` or `LATEST` aggregation on `gb_stored` to bill on peak or end-of-period usage. For bandwidth, use `SUM` on `gb_transferred`.
 
     <Tip>
       **Snapshot events vs. delta events:** For storage billing, periodic snapshots (one event per day with total GB stored) are simpler and more reliable than tracking every write/delete. This is also a natural pre-aggregation pattern — one event per day per customer instead of thousands.
@@ -284,7 +284,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** Use a custom expression to calculate the platform fee: e.g., `properties.order_amount_cents * 0.029 + 30` for a 2.9% + $0.30 model. Alternatively, use `precise_total_amount_cents` to compute the fee in your application and pass the exact amount to Lago.
+    **Billable metric setup:** Use a custom expression to calculate the platform fee: e.g., `event.properties.order_amount_cents * 0.029 + 30` for a 2.9% + $0.30 model. Alternatively, use `precise_total_amount_cents` to compute the fee in your application and pass the exact amount to Lago.
 
     <Info>
       **Why `precise_total_amount_cents`?** When fee calculations involve complex business rules (tiered take rates, negotiated seller rates, promotional discounts), it's often cleaner to compute the fee in your backend and pass the result to Lago rather than encoding all that logic in metric expressions.
@@ -476,7 +476,7 @@ client.Event().Create(ctx, &event)
 For applications that bill on LLM tokens, the [Agent SDK](/guide/ai-agents/agent-sdk/overview) is the lowest-effort path to ingestion. You wrap your existing provider client and keep calling it the same way. The SDK extracts token usage from each response, normalizes it across providers, and ships events to Lago in the background.
 
 - **Providers:** AWS Bedrock (`Converse` and `InvokeModel`, sync and stream), Mistral, OpenAI, Anthropic, Google Gemini, and potentially more.
-- **Languages:** [Python](https://github.com/getlago/lago-agent-sdk-python) and [JavaScript / TypeScript](https://github.com/getlago/lago-agent-sdk-js)).
+- **Languages:** [Python](https://github.com/getlago/lago-agent-sdk-python) and [JavaScript / TypeScript](https://github.com/getlago/lago-agent-sdk-js).
 
 <CodeGroup>
   ```python Python
@@ -637,12 +637,12 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
 
 <AccordionGroup>
   <Accordion title="Late-arriving events">
-    Events that arrive after a billing period has closed are assigned to the correct historical period based on `timestamp`. If the invoice has already been finalized, the event will not be included in the billing cycle. However if they match a recurring billable metric, they will impact the next billing cycle.
+    Events that arrive after a billing period has closed are assigned to the correct historical period based on `timestamp`. If the invoice has already been finalized, the event is not included in that billing cycle. However, if it matches a recurring billable metric, it impacts the next billing cycle.
   </Accordion>
 
   <Accordion title="Correcting events">
-    - With Postgres: duplicates are rejected with a 422 and there is no replacement. Use a new transaction_id to correct an event.
-    - With ClickHouse: send a new event with the same transaction_id and the same timestamp, carrying the updated properties. The new event replaces the original. A different timestamp creates a second billable event instead of amending the first.
+    - With Postgres: duplicates are rejected with a 422 and there is no replacement. Use a new `transaction_id` to correct an event.
+    - With ClickHouse: send a new event with the same `transaction_id` and the same `timestamp`, carrying the updated properties. The new event replaces the original. A different `timestamp` creates a second billable event instead of amending the first.
   </Accordion>
 
   <Accordion title="Events before subscription start">
@@ -663,13 +663,13 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
 **Reconciliation pattern:** Compare your source-of-truth event count against Lago. Use `GET /events` filtered by `external_subscription_id`, `timestamp_from`, and `timestamp_to`, then compare against your internal logs. Any delta means dropped events or events that failed validation.
 
 **What to watch on your side:**
-- **REST API response codes:** 200 = accepted, 422 = validation error (missing transaction_id or code, invalid timestamp, failing expression, or a duplicate transaction_id on the Postgres event store), 429 = rate limited (retry safely), 5xx = server-side error (investigate before retrying)
+- **REST API response codes:** 200 = accepted, 422 = validation error (missing `transaction_id` or `code`, invalid `timestamp`, failing expression, or a duplicate `transaction_id` on the Postgres event store), 429 = rate limited (retry safely), 5xx = server-side error (investigate before retrying)
 - **At invoice time:** compare line item quantities against your own event counts per subscription per billing period. If they diverge, check for late arrivals outside the billing window.
 
 
 ## Rate limits
 
-Lago enforces per-organization rate limits on the REST API, with the highest limits on event ingestion. If you exceed them you receive a `429 Too Many Requests` response with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Retrying after a `429` is safe as long as you resend the identical payload, timestamp included (see Idempotency and deduplication). See [Rate limits](/api-reference/rate-limits) for the full limits and retry guidance.
+Lago enforces per-organization rate limits on the REST API, with the highest limits on event ingestion. If you exceed them you receive a `429 Too Many Requests` response with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. Retrying after a `429` is safe as long as you resend the identical payload, timestamp included (see [Idempotency and deduplication](#idempotency-and-deduplication)). See [Rate limits](/api-reference/rate-limits) for the full limits and retry guidance.
 
 <Info>
   Kafka, Kinesis, and S3 connectors are not subject to REST API rate limits. Their throughput is bounded by your broker or infrastructure capacity.
