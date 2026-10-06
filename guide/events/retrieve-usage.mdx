@@ -68,7 +68,7 @@ Some events can be ingested but trigger unexpected behavior. Lago displays two p
   </Tab>
   <Tab title="API">
     <CodeGroup>
-    ```bash Retrieve current usage
+    ```bash cURL
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
     EXTERNAL_CUSTOMER_ID="__EXTERNAL_CUSTOMER_ID__"
@@ -78,7 +78,88 @@ Some events can be ingested but trigger unexpected behavior. Lago displays two p
     --header "Authorization: Bearer $API_KEY" \
     --header 'Content-Type: application/json'
     ```
+
+    ```python Python
+    from lago_python_client import Client
+
+    client = Client(api_key="__YOUR_API_KEY__")
+
+    usage = client.customers.current_usage(
+        "__EXTERNAL_CUSTOMER_ID__", "__EXTERNAL_SUBSCRIPTION_ID__"
+    )
+    print(usage.total_amount_cents, usage.currency)
+    ```
+
+    ```typescript TypeScript
+    import { Client } from "lago-javascript-client";
+
+    const client = Client("__YOUR_API_KEY__");
+
+    const { data } = await client.customers.findCustomerCurrentUsage(
+      "__EXTERNAL_CUSTOMER_ID__",
+      { external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__" }
+    );
+    console.log(data.customer_usage.total_amount_cents);
+    ```
+
+    ```go Go
+    client := lago.New().SetApiKey("__YOUR_API_KEY__")
+
+    usage, err := client.Customer().CurrentUsage(ctx, "__EXTERNAL_CUSTOMER_ID__", &lago.CustomerUsageInput{
+        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
+    })
+    ```
+
+    ```ruby Ruby
+    require "lago-ruby-client"
+
+    client = Lago::Api::Client.new(api_key: "__YOUR_API_KEY__")
+
+    usage = client.customers.current_usage(
+      "__EXTERNAL_CUSTOMER_ID__", "__EXTERNAL_SUBSCRIPTION_ID__"
+    )
+    ```
+
+    ```rust Rust
+    use lago_client::LagoClient;
+    use lago_types::requests::customer_usage::GetCustomerCurrentUsageRequest;
+
+    // Reads LAGO_API_KEY and LAGO_REGION (or LAGO_API_URL) from the environment.
+    let client = LagoClient::from_env()?;
+
+    let request = GetCustomerCurrentUsageRequest::new(
+        "__EXTERNAL_CUSTOMER_ID__".to_string(),
+        "__EXTERNAL_SUBSCRIPTION_ID__".to_string(),
+    );
+    let usage = client.get_customer_current_usage(request).await?.customer_usage;
+    ```
     </CodeGroup>
+
+    The response returns the open period and its running totals. Amounts are in cents of the plan currency. `charges_usage` holds one entry per charge, with `units`, `events_count` and `amount_cents`.
+
+    ```json Response (trimmed)
+    {
+      "customer_usage": {
+        "from_datetime": "2026-10-01T00:00:00Z",
+        "to_datetime": "2026-10-31T23:59:59Z",
+        "issuing_date": "2026-11-01",
+        "lago_invoice_id": null,
+        "currency": "USD",
+        "amount_cents": 12300,
+        "taxes_amount_cents": 2460,
+        "total_amount_cents": 14760,
+        "charges_usage": [
+          {
+            "units": "1230.0",
+            "events_count": 1230,
+            "amount_cents": 12300,
+            "amount_currency": "USD",
+            "billable_metric": { "code": "api_calls", "aggregation_type": "count_agg" }
+          }
+        ]
+      }
+    }
+    ```
   </Tab>
 </Tabs>
 
@@ -104,7 +185,7 @@ Some events can be ingested but trigger unexpected behavior. Lago displays two p
   </Tab>
   <Tab title="API">
     <CodeGroup>
-    ```bash Retrieve projected usage
+    ```bash cURL
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
     EXTERNAL_CUSTOMER_ID="__EXTERNAL_CUSTOMER_ID__"
@@ -113,6 +194,31 @@ Some events can be ingested but trigger unexpected behavior. Lago displays two p
     curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/projected_usage?external_subscription_id=$EXTERNAL_SUBSCRIPTION_ID" \
     --header "Authorization: Bearer $API_KEY" \
     --header 'Content-Type: application/json'
+    ```
+
+    ```python Python
+    usage = client.customers.projected_usage(
+        "__EXTERNAL_CUSTOMER_ID__", "__EXTERNAL_SUBSCRIPTION_ID__"
+    )
+    ```
+
+    ```typescript TypeScript
+    const { data } = await client.customers.findCustomerProjectedUsage(
+      "__EXTERNAL_CUSTOMER_ID__",
+      { external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__" }
+    );
+    ```
+
+    ```go Go
+    usage, err := client.Customer().ProjectedUsage(ctx, "__EXTERNAL_CUSTOMER_ID__", &lago.CustomerUsageInput{
+        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
+    })
+    ```
+
+    ```ruby Ruby
+    usage = client.customers.projected_usage(
+      "__EXTERNAL_CUSTOMER_ID__", "__EXTERNAL_SUBSCRIPTION_ID__"
+    )
     ```
     </CodeGroup>
   </Tab>
@@ -133,7 +239,7 @@ Some events can be ingested but trigger unexpected behavior. Lago displays two p
   </Tab>
   <Tab title="API">
     <CodeGroup>
-    ```bash Retrieve past usage
+    ```bash cURL
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
     EXTERNAL_CUSTOMER_ID="__EXTERNAL_CUSTOMER_ID__"
@@ -142,6 +248,31 @@ Some events can be ingested but trigger unexpected behavior. Lago displays two p
     curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/past_usage?external_subscription_id=$EXTERNAL_SUBSCRIPTION_ID" \
     --header "Authorization: Bearer $API_KEY" \
     --header 'Content-Type: application/json'
+    ```
+
+    ```python Python
+    usage = client.customers.past_usage(
+        "__EXTERNAL_CUSTOMER_ID__", "__EXTERNAL_SUBSCRIPTION_ID__"
+    )
+    ```
+
+    ```typescript TypeScript
+    const { data } = await client.customers.findCustomerPastUsage(
+      "__EXTERNAL_CUSTOMER_ID__",
+      { external_subscription_id: "__EXTERNAL_SUBSCRIPTION_ID__" }
+    );
+    ```
+
+    ```go Go
+    usage, err := client.Customer().PastUsage(ctx, "__EXTERNAL_CUSTOMER_ID__", &lago.CustomerPastUsageInput{
+        ExternalSubscriptionID: "__EXTERNAL_SUBSCRIPTION_ID__",
+    })
+    ```
+
+    ```ruby Ruby
+    usage = client.customers.past_usage(
+      "__EXTERNAL_CUSTOMER_ID__", "__EXTERNAL_SUBSCRIPTION_ID__"
+    )
     ```
     </CodeGroup>
   </Tab>
