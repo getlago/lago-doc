@@ -23,52 +23,54 @@ When a billable metric has defined filters, establish a set of filters to refine
   <Tab title="API">
     Here is an example of a plan you can create:
     <CodeGroup>
-      ```bash Charge with filters {22-43}
+      ```bash Charge with filters {23-44}
       LAGO_URL="https://api.getlago.com"
       API_KEY="__YOUR_API_KEY__"
 
-      curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
         --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
-          "name": "Standard plan",
-          "code": "standard_plan",
-          "interval": "monthly",
-          "pay_in_advance": false,
-          "amount_cents": 1000,
-          "amount_currency": "USD",
-          "charges": [
-            {
-              "billable_metric_id": "5d387072-e1f2-416f-b981-135c2f177069",
-              "invoice_display_name": null,
-              "charge_model": "standard",
-              "properties": {
-                "amount": "2"
-              },
-              "filters": [
-                {
-                  "values": {
-                    "region": ["africa"],
-                    "provider": ["aws"]
-                  },
-                  "invoice_display_name": "Africa & AWS",
-                  "properties": {
-                    "amount": "1"
-                  }
+          "plan": {
+            "name": "Standard plan",
+            "code": "standard_plan",
+            "interval": "monthly",
+            "pay_in_advance": false,
+            "amount_cents": 1000,
+            "amount_currency": "USD",
+            "charges": [
+              {
+                "billable_metric_id": "5d387072-e1f2-416f-b981-135c2f177069",
+                "invoice_display_name": null,
+                "charge_model": "standard",
+                "properties": {
+                  "amount": "2"
                 },
-                {
-                  "values": {
-                    "region": ["__ALL_FILTER_VALUES__"],
-                    "provider": ["__ALL_FILTER_VALUES__"]
+                "filters": [
+                  {
+                    "values": {
+                      "region": ["africa"],
+                      "provider": ["aws"]
+                    },
+                    "invoice_display_name": "Africa & AWS",
+                    "properties": {
+                      "amount": "1"
+                    }
                   },
-                  "invoice_display_name": "Other regions and providers",
-                  "properties": {
-                    "amount": "0.5"
+                  {
+                    "values": {
+                      "region": ["__ALL_FILTER_VALUES__"],
+                      "provider": ["__ALL_FILTER_VALUES__"]
+                    },
+                    "invoice_display_name": "Other regions and providers",
+                    "properties": {
+                      "amount": "0.5"
+                    }
                   }
-                }
-              ]
-            }
-          ]
+                ]
+              }
+            ]
+          }
         }'
         ```
       </CodeGroup>
@@ -94,30 +96,32 @@ When a billable metric has filters defined, set a default price on the charge le
   <Tab title="API">
       Here is an example of a plan you can create:
       <CodeGroup>
-      ```bash Storage
+      ```bash Default price for a charge {20-22}
       LAGO_URL="https://api.getlago.com"
       API_KEY="__YOUR_API_KEY__"
 
-      curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+      curl --location --request POST "$LAGO_URL/api/v1/plans" \
         --header "Authorization: Bearer $API_KEY" \
         --header 'Content-Type: application/json' \
         --data-raw '{
-          "name": "Standard plan",
-          "code": "standard_plan",
-          "interval": "monthly",
-          "pay_in_advance": false,
-          "amount_cents": 1000,
-          "amount_currency": "USD",
-          "charges": [
-            {
-              "billable_metric_id": "5d387072-e1f2-416f-b981-135c2f177069",
-              "invoice_display_name": null,
-              "charge_model": "standard",
-              "properties": {
-                "amount": "2"
+          "plan": {
+            "name": "Standard plan",
+            "code": "standard_plan",
+            "interval": "monthly",
+            "pay_in_advance": false,
+            "amount_cents": 1000,
+            "amount_currency": "USD",
+            "charges": [
+              {
+                "billable_metric_id": "5d387072-e1f2-416f-b981-135c2f177069",
+                "invoice_display_name": null,
+                "charge_model": "standard",
+                "properties": {
+                  "amount": "2"
+                }
               }
-            }
-          ]
+            ]
+          }
         }'
         ```
       </CodeGroup>

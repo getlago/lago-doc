@@ -40,10 +40,12 @@ recurring charges and their implications within the Lago system.
             "aggregation_type": "sum_agg",
             "recurring": false,
             "field_name": "gb",
-            "group": {
-                "key": "region",
-                "value": ["us-east-1", "us-east-2", "eu-west-1"]
-            }
+            "filters": [
+                {
+                    "key": "region",
+                    "values": ["us-east-1", "us-east-2", "eu-west-1"]
+                }
+            ]
           }
         }'
       ```
@@ -82,13 +84,15 @@ recurring charges and their implications within the Lago system.
             "name": "Seats",
             "code": "seats",
             "description": "Active seats.",
-            "aggregation_type": "count_unique",
+            "aggregation_type": "unique_count_agg",
             "recurring": true,
             "field_name": "seat_id",
-            "group": {
-                "key": "type",
-                "value": ["admin", "viewer", "editor"]
-            }
+            "filters": [
+                {
+                    "key": "type",
+                    "values": ["admin", "viewer", "editor"]
+                }
+            ]
           }
         }'
       ```
