@@ -21,7 +21,7 @@ By setting the invoiceable parameter to false, a fee is created by default, and 
 1. `null`: Fees generated never appear on invoices (default behavior).
 2. `invoice`: Groups all paid fees into one invoice at the end of the billing period.
 
-Please note that if `invoice`, all fees generated with a `payment_status` different from `succeeded` won’t appear on invoice generated at the end of the billing period. They will appear on next ones if you manually edit their `payment_status` to `succeeded`.
+With `invoice`, fees whose `payment_status` is not `succeeded` do not appear on the invoice generated at the end of the billing period. They appear on a later invoice if you set their `payment_status` to `succeeded`.
 
 The invoice generated consolidates paid fees, is marked as paid, and will not be emailed to your end customer if the email feature is activated.
 
@@ -39,7 +39,7 @@ The invoice generated consolidates paid fees, is marked as paid, and will not be
 
   </Tab>
   <Tab title="API">
-    Use the `invoiceable : false` for a charge paid in advance:
+    Set `invoiceable` to `false` on a charge paid in advance:
     
     <CodeGroup>
     ```bash Define a charge as invoiceable or not {23}
