@@ -3,28 +3,31 @@ title: "Prorated vs Full"
 description: "Usage-based charges can be either billed fully or prorated based on the number of days used."
 ---
 
-You can **determine whether a charge is prorated or fully-billed**. Understanding the distinction between these two types of charges is crucial for effectively managing your billing processes. In this documentation, we will delve into the differences between prorated and fully-billed charges and their implications within the Lago system.
+A usage-based charge is either **prorated or fully-billed**. The difference is
+how Lago charges a unit added mid-period: prorated charges bill it for the days
+it was used, fully-billed charges bill it for the whole period.
 
 ## Prorated charges
 
 <Tabs>
   <Tab title="Dashboard">
     <Warning>
-      Only charges that are [recurring](/guide/plans/charges/metered-vs-recurring#recurring-charges) (billable metric with `recurring` argument set to `true`), invoiced [in arrears](https://docs.getlago.com/guide/plans/charges/arrears-vs-advance), with a `charge_model` defined to `standard`, `graduated` or `volume` can be prorated. If your charge is pay-in-advance, it can only be prorated if the `charge_model` is `standard`. 
+      Only charges that are [recurring](/guide/plans/charges/metered-vs-recurring#recurring-charges) (billable metric with `recurring` argument set to `true`), invoiced [in arrears](/guide/plans/charges/arrears-vs-advance), with a `charge_model` defined to `standard`, `graduated` or `volume` can be prorated. If your charge is pay-in-advance, it can only be prorated if the `charge_model` is `standard`. 
     </Warning>
-    When creating a prorated charge in Lago with the `prorated` parameter set to `true`, an important behavior is triggered. Adding a new unit during the billing period results in the amount due for that unit being prorated based on the number of days it was used.
+    Set the `prorated` parameter to `true` to prorate a charge. A unit added
+    during the billing period is then charged for the number of days it was
+    used, not for the whole period.
 
-    This means that your customers will only be charged for the actual number of days they utilized a billing unit. Let's **consider the example of prorated** `Seats`, where each seat costs \$10. If a new seat is added on July 10th, the unit will be prorated for 22 days, resulting in a corresponding prorated charge for that duration. This ensures fair and accurate billing based on the usage period.
+    Take prorated `Seats`, where each seat costs \$10. A seat added on July 10th
+    is used for 22 days of the period, so Lago charges it for those 22 days:
 
     _Example: (1 Seat x \$10), used for 22 days = \$7.33_
-
-    By leveraging prorated charges in Lago, you can provide transparent and cost-effective billing for services that are added or removed mid-billing cycle, adjusting the charges according to the actual duration of usage.
   </Tab>
   <Tab title="API">
     Create a charge that is prorated by setting `prorated` to `true`.
 
     <Warning>
-      Only charges that are [recurring](/guide/plans/charges/metered-vs-recurring#recurring-charges) (billable metric with `recurring` argument set to `true`), invoiced [in arrears](https://docs.getlago.com/guide/plans/charges/arrears-vs-advance), with a `charge_model` defined to `standard`, `graduated` or `volume` can be prorated. If your charge is pay-in-advance, it can only be prorated if the `charge_model` is `standard`. 
+      Only charges that are [recurring](/guide/plans/charges/metered-vs-recurring#recurring-charges) (billable metric with `recurring` argument set to `true`), invoiced [in arrears](/guide/plans/charges/arrears-vs-advance), with a `charge_model` defined to `standard`, `graduated` or `volume` can be prorated. If your charge is pay-in-advance, it can only be prorated if the `charge_model` is `standard`. 
     </Warning>
     <CodeGroup>
 
@@ -54,14 +57,9 @@ You can **determine whether a charge is prorated or fully-billed**. Understandin
               "invoiceable": true,
               "min_amount_cents": 0,
               "prorated": true,
-              "group_properties": [
-                {
-                  "group_id": "__GROUP_ID__",
-                  "values": {
-                    "amount": "10"
-                  }
-                }
-              ]
+              "properties": {
+                "amount": "10"
+              }
             }
           ]
         }
@@ -79,13 +77,14 @@ You can **determine whether a charge is prorated or fully-billed**. Understandin
     <Warning>
       Note that metered charges (billable metrics with `recurring` set to `false`) are automatically fully-billed.
     </Warning>
-    When creating a fully-billed charge in Lago with the `prorated` parameter set to `false`, an important behavior occurs. If a new unit is added during the billing period, the amount due for that unit is billed in full, regardless of the number of days it was used.
+    Set the `prorated` parameter to `false` to bill a charge in full. A unit
+    added during the billing period is then charged for the whole period,
+    whatever the number of days it was used.
 
-    This means that your customers will be charged for the entire billing period, even if they only utilized the billing unit for a few days. **Let's consider the example of fully-billed **`Seats`, where each seat costs \$10. If a new seat is added on July 10th, it will be billed for the full billing period. For instance, if there is one seat that was used for 22 days in the billing period, the charge would be calculated as follows:
+    Take fully-billed `Seats`, where each seat costs \$10. A seat added on July
+    10th is used for 22 days of the period, and is still charged in full:
 
     _(1 Seat x \$10), used for 22 days = \$10._
-
-    By utilizing fully-billed charges in Lago, you ensure that you do not lose revenue by billing customers for the entire billing period, regardless of the actual duration of usage.
   </Tab>
   <Tab title="API">
     Create a charge that is billed fully by setting `prorated` to `false`.
@@ -95,7 +94,7 @@ You can **determine whether a charge is prorated or fully-billed**. Understandin
     </Warning>
     <CodeGroup>
 
-    ```bash Fully-billed charges
+    ```bash Fully-billed charges {25}
       LAGO_URL="https://api.getlago.com"
       API_KEY="__YOUR_API_KEY__"
     
@@ -121,14 +120,9 @@ You can **determine whether a charge is prorated or fully-billed**. Understandin
               "invoiceable": true,
               "min_amount_cents": 0,
               "prorated": false,
-              "group_properties": [
-                {
-                  "group_id": "__GROUP_ID__",
-                  "values": {
-                    "amount": "10"
-                  }
-                }
-              ]
+              "properties": {
+                "amount": "10"
+              }
             }
           ]
         }
