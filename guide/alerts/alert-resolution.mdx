@@ -1,0 +1,168 @@
+---
+title: "Alert resolution"
+description: "Get notified when usage or a wallet balance is back on the safe side of a threshold, so your system can lift a block without polling."
+---
+
+## Overview
+An alert tells you when a value crosses a threshold with `alert.triggered`. Alert resolution adds the other half: `alert.resolved`, sent when the value is back on the safe side of that threshold.
+
+Use it to close an automation loop on webhooks alone:
+1. Usage hits a hard cap: `alert.triggered`, you pause the customer's jobs. A usage correction brings it back under: `alert.resolved`, you resume them.
+2. A wallet balance hits 0: `alert.triggered`, you suspend usage. The customer tops up: `alert.resolved`, you re-open access.
+
+Resolution is **opt-in per threshold**. A threshold that does not opt in behaves exactly as before. It works with every [usage alert](/guide/alerts/usage-alerts) and [credits consumption alert](/guide/alerts/credits-consumption-alerts) type.
+
+## How it works
+Each threshold is either **ok** or **in alarm**:
+
+| Alert direction | In alarm when | Resolved when |
+|---|---|---|
+| Usage alerts (increasing) | the value is at or above the threshold | the value is strictly below the threshold |
+| Wallet alerts (decreasing) | the value is at or below the threshold | the value is strictly above the threshold |
+
+A value sitting exactly on the line is still in alarm. With a `hard` threshold at 10,000 units, 10,000 is in alarm and 9,999 resolves. With a `critical` threshold at 0, a balance of 0 is in alarm and any positive balance resolves.
+
+Lago sends one notification per state change:
+- **ok → in alarm** sends `alert.triggered`, as today;
+- **in alarm → ok** sends `alert.resolved`, if the threshold opted in; and
+- a threshold in alarm never triggers again until it resolves, so a value hovering above the line does not produce a storm of events.
+
+When one evaluation clears several thresholds (a large top-up, a large correction), Lago sends a **single** `alert.resolved` listing every opted-in threshold that recovered.
+
+Thresholds are paired by `code`. This is why a threshold must have a code to opt in.
+
+## Configure resolution
+Add `notify_on` to a threshold:
+
+| Value | Behavior |
+|---|---|
+| `["triggered"]` | Default. Sends `alert.triggered` only. |
+| `["triggered", "resolved"]` | Also sends `alert.resolved` when the threshold recovers. |
+
+`triggered` is always required. Duplicates are dropped and values are stored in the order above.
+
+```bash Subscription alert with resolution on the hard threshold
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/subscriptions/:external_id/alerts" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "alert": {
+      "alert_type": "billable_metric_current_usage_units",
+      "code": "image_quota",
+      "name": "Image quota",
+      "billable_metric_code": "images",
+      "thresholds": [
+        { "code": "warn", "value": "8000" },
+        { "code": "hard", "value": "10000", "notify_on": ["triggered", "resolved"] }
+      ]
+    }
+  }'
+```
+
+The same field works on wallet alerts (`POST /api/v1/customers/:customer_external_id/wallets/:wallet_code/alerts`), on update, and on batch creation.
+
+### Updating `notify_on`
+- **Omitted**: the current setting is kept, matched by threshold `code`. A threshold whose code changes starts from the default.
+- **`null`**: resets to the default `["triggered"]`.
+- **A string instead of a list** (`"resolved"`): rejected with `value_is_invalid`.
+
+### Validation
+| Request | Error |
+|---|---|
+| `notify_on` without `triggered` (`["resolved"]`, `[]`) | `thresholds:notify_on` → `triggered_is_mandatory` |
+| Unknown value, or a string | `thresholds:notify_on` → `value_is_invalid` |
+| `resolved` on a recurring threshold | `thresholds:notify_on` → `recurring_not_supported` |
+| `resolved` on a threshold without a code | `thresholds:code` → `value_is_mandatory` |
+
+### Subscribe your webhook endpoint
+`alert.resolved` is a new webhook type. An endpoint that receives all events gets it automatically. An endpoint filtered with `event_types` must add `alert.resolved` to the list. See [webhook messages](/api-reference/webhooks/messages).
+
+## The `alert.resolved` webhook
+
+```json
+{
+  "webhook_type": "alert.resolved",
+  "object_type": "resolved_alert",
+  "organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+  "resolved_alert": {
+    "lago_id": "2d3d82f0-d946-47ac-a065-19dc45647eac",
+    "lago_organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "lago_alert_id": "b1f8f101-e4da-4a7c-a82f-863093dd90db",
+    "lago_subscription_id": "32cccc23-7be9-43b0-bf28-2088bbec0f4d",
+    "external_subscription_id": "sub_1234567890",
+    "lago_wallet_id": null,
+    "external_customer_id": "hooli_1234",
+    "billable_metric_code": "images",
+    "alert_name": "Image quota",
+    "alert_code": "image_quota",
+    "alert_type": "billable_metric_current_usage_units",
+    "current_value": "9000.0",
+    "previous_value": "10500.0",
+    "recovered_thresholds": [
+      { "code": "hard", "value": "10000.0", "recurring": false }
+    ],
+    "in_alarm_thresholds": ["warn"],
+    "fully_resolved": false,
+    "reason": "recovered",
+    "resolved_at": "2026-10-12T20:52:11Z"
+  }
+}
+```
+
+| Field | Description |
+|---|---|
+| `recovered_thresholds` | Opted-in thresholds this resolution announces. Same shape as `crossed_thresholds` on `alert.triggered`. |
+| `in_alarm_thresholds` | Codes of every threshold still in alarm after this resolution, **opted in or not**. A list of strings, not objects. |
+| `fully_resolved` | `true` when no threshold of the alert is in alarm. `in_alarm_thresholds` is then empty. Use it to unblock only when everything is clear. |
+| `reason` | Why the alarm closed. See below. |
+| `current_value` / `previous_value` | The value at this evaluation and at the previous one. Equal when the reason is an edit. |
+| `resolved_at` | When Lago resolved the alarm. |
+
+### Resolution reasons
+| `reason` | Sent when |
+|---|---|
+| `recovered` | The usage or balance moved back to the safe side. |
+| `threshold_updated` | You edited an opted-in threshold that was in alarm, and the current value is now on the safe side of its new value. `recovered_thresholds[].value` is the value **before** the edit. |
+| `threshold_removed` | You removed an opted-in threshold that was in alarm. |
+
+`threshold_updated` and `threshold_removed` are sent as soon as the edit is saved, with no change in usage or balance.
+
+## Edge cases
+| Situation | What Lago sends |
+|---|---|
+| An alert is created, or a threshold opts in, while the value is already past it | Nothing. The alarm is recorded silently, and its recovery is announced. You can receive `alert.resolved` with no earlier `alert.triggered`. |
+| A threshold opts out (`notify_on: ["triggered"]`) while in alarm | Nothing, now or later. That alarm never sends a resolution. Lift your block yourself. |
+| The alert is deleted while in alarm | Nothing. |
+| The subscription or wallet is terminated while in alarm | Nothing. |
+| An edit moves a threshold but the value is still in alarm | Nothing. |
+| A threshold that did not opt in recovers | Nothing. It still appears in `in_alarm_thresholds` while in alarm. |
+| The value crosses and recovers within a single evaluation | Nothing. Lago notifies on observed state changes only. |
+
+<Info>
+  Treat deletion and termination as the end of the guardrail. If your system blocked a customer on an alert you then delete, or on a subscription that ends, lift that block on your side.
+</Info>
+
+### Billing period renewal
+A renewal is never a recovery. Usage returning to zero at the start of a period sends no `alert.resolved`.
+
+What happens to thresholds at renewal depends on what the alert watches:
+
+| Alert watches | At renewal |
+|---|---|
+| A billable metric that is not recurring | Thresholds re-arm. A threshold crossed again in the new period sends `alert.triggered` again. |
+| The whole plan (`current_usage_amount`) with at least one non-recurring charge | Thresholds re-arm, including for the recurring part of the usage. |
+| A recurring billable metric, or a plan whose charges are all recurring | Usage carries over, so thresholds do not re-arm. A threshold crossed once does not trigger again in later periods. |
+| Lifetime usage, wallet balances | Not affected by renewal. |
+
+Usage measured before a renewal but processed after it still counts toward the period it belongs to.
+
+## Limitations
+- Recurring thresholds cannot opt in to resolution. One recurring threshold stands for an unbounded series of lines, so a resolution could not say which one cleared.
+- Thresholds must have a `code`, unique within the alert, to opt in.
+- A threshold resolves on its own line. There is no separate resolve margin (hysteresis): a top-up of 0.01 above a `critical` threshold at 0 sends `alert.resolved`. Pick the threshold value accordingly.
+- Usage alerts are evaluated as events are processed, about every minute. Wallet alerts are evaluated on each balance movement, within seconds. Edits resolve immediately.
+- The API does not expose a per-threshold state. To reconcile after missed webhooks, compare the current usage or balance with your thresholds, or use the `in_alarm_thresholds` of the last `alert.resolved` you received.
+- Lifetime usage rarely goes down. Resolution on lifetime alerts only fires after a correction, for example a voided invoice leaving the invoiced total.
