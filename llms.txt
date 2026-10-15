@@ -4,7 +4,7 @@
 
 ## When to use these docs
 
-Use the Lago documentation when you need to evaluate Lago, integrate the REST API, ingest usage events, model pricing, manage customers and subscriptions, generate invoices, coordinate payments, configure webhooks, deploy Lago, or build an AI-assisted billing workflow. Prefer the OpenAPI contract for exact request and response shapes, and prefer task guides for workflow decisions and operational constraints.
+Use the Lago documentation when you need to evaluate Lago, integrate the REST API, ingest usage events, model pricing, manage customers and subscriptions, generate invoices, coordinate payments, configure webhooks, deploy Lago, or bill usage from an AI gateway or router. Prefer the OpenAPI contract for exact request and response shapes, and prefer task guides for workflow decisions and operational constraints.
 
 Do not invent endpoints, fields, pricing behavior, or permissions. For an exhaustive API contract, use the complete OpenAPI specification. Before any billing mutation, verify the target environment, organization, resource identifiers, currency, effective dates, and authorization. Keep API keys secret. Treat destructive or financial actions as approval-gated.
 
@@ -66,6 +66,16 @@ Do not invent endpoints, fields, pricing behavior, or permissions. For an exhaus
 - [Quotes and order forms](/guide/quotes/overview.md): Assemble a priced deal, approve it into an order form, and execute the signed order into billing. Premium feature. Quotes are authored in the user interface; the API reads them and drives every transition after authoring.
 - [Webhooks](/guide/webhooks.md): Process asynchronous billing state changes safely.
 - [Integration testing](/guide/integration-testing.md): Validate billing behavior before production rollout.
+
+## Bill usage from AI gateways and routers
+
+Keep your gateway for model routing, caching, and traffic controls. Lago's Agent SDK captures supported usage, associates it with the customer subscription you supply, and sends billable events to Lago. Price that usage with your plans and credits. To monitor margins, compare billed revenue with verified provider or gateway cost data; cost capture differs by integration.
+
+- [Cloudflare AI Gateway](/guide/ai-agents/agent-sdk/cloudflare.md): Bill live calls or backfill from gateway logs. The log path can use Cloudflare's metered cost, but that cost excludes reasoning tokens.
+- [Snowflake Cortex](/guide/ai-agents/agent-sdk/snowflake.md): Bill REST calls or backfill AI SQL usage from Snowflake's account-usage views. This path bills token counts, not automatic dollar cost.
+- [Ramp Router](/guide/ai-agents/agent-sdk/ramp-router.md): Bill tokens for the model that actually served a routed call. The supported path has no cost feed or backfill.
+- [Databricks AI Gateway](/guide/ai-agents/agent-sdk/databricks.md): Bill supported hosted and bring-your-own-key gateway usage; check the guide for attribution and cost boundaries.
+- [Token and cost billing modes](/guide/ai-agents/agent-sdk/billing.md): Choose when usage should be priced from tokens or from a supported dollar-cost source.
 
 ## SDKs and examples
 
