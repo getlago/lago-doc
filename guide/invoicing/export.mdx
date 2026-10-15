@@ -51,3 +51,16 @@ sent to the email address of the user who requested the export. The download lin
 
 ## Filter and export Credit notes
 The `Credit notes` list can be filtered and exported too. The behavior matches the invoice export described above, using the credit note fields.
+
+## Review a billing period for finance
+
+Use the same export process whether a customer bought a self-serve plan or signed a negotiated agreement. Start with a single billing entity, currency, and issuing-date range so the files cover the same population.
+
+1. Export **invoices** for one row per invoice and **invoice fees** for the underlying line items. Export **credit notes** for the same period if you issued any corrections.
+2. For self-serve customers, check the recurring fee, usage charges, and any plan-change adjustment against the plan and the effective date of the change. A mid-cycle upgrade can produce a prorated charge; review the actual invoice rather than assuming a full-period price.
+3. For negotiated customers, check the fixed fee, usage charges, and any wallet credit applied to the invoice against the agreed terms. If terms changed during the period, compare the invoice with the effective date of the subscription change.
+4. Review the invoice **payment status** separately from the billed amount. A partial payment can leave an invoice pending until it is fully settled; see [record manual payments](/guide/payments/record-manual-payments) if payments were recorded outside a connected provider.
+
+To investigate a difference, finance teams can ask the [AI Finance Assistant](/guide/ai-agents/finance-assistant) in Lago or connect the [Lago MCP Server](/guide/ai-agents/mcp-server) to an MCP-compatible AI client of their choice. For example, ask which invoices remain overdue or which customers consumed the most credits, then compare the answer with the underlying export or API data. AI-generated answers need review before they are used in a report. The Finance Assistant guide also explains how its API-key access is scoped.
+
+These exports explain what was billed and corrected. They are not, by themselves, a revenue-recognition close or a complete payment reconciliation. If you are evaluating [Lago revenue recognition](/guide/revenue-recognition/overview), follow its current access and independent-reconciliation guidance before using its output for a statutory close.
