@@ -8,12 +8,31 @@ Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024
 
 <Update
   label="October 2026"
-  tags={["Self-hosted"]}
+  tags={["Usage & metering", "Wallets & credits", "Self-hosted"]}
   rss={{
-    title: "October 2026 - Lago Helm chart 2.0",
-    description: "The Helm chart Lago runs in production, published: independent subcharts and one Deployment per Sidekiq queue."
+    title: "October 2026 - Alert resolution and Lago Helm chart 2.0",
+    description: "alert.resolved tells you when usage or a wallet balance is back under a threshold. Plus the Helm chart Lago runs in production, published."
   }}
 >
+  ## Alert resolution: know when it is safe to unblock
+
+  <Frame>
+    <img src="/changelog/images/20261013-alert-resolution.webp" loading="lazy" />
+  </Frame>
+
+  Lago alerts only announced the breach. A customer hit a usage cap or emptied a wallet, your system blocked them, and then nothing. Unblocking meant polling usage on a timer, or a customer who had just paid waiting on support.
+
+  **Alert resolution** sends `alert.resolved` when the value is back on the safe side of a threshold.
+
+  - **Opt in per threshold.** Set `notify_on: ["triggered", "resolved"]` on the `hard` cap and leave the `warn` nudge alone. Thresholds that don't opt in behave exactly as before.
+  - **One event per state change.** A threshold in alarm cannot trigger again until it resolves, so usage hovering over the line never floods your endpoint.
+  - **Safe to automate.** `fully_resolved` is true only when no threshold is left in alarm. `reason` says whether the value recovered or you edited the threshold.
+  - **Usage and wallets.** Works on every usage and credits consumption alert type. A top-up on an empty wallet sends `alert.resolved` within seconds.
+
+  A renewal is not a recovery: usage restarting at zero sends nothing. Recurring thresholds cannot opt in, and deleting an alert in alarm sends no resolution.
+
+  [Learn more](/guide/alerts/alert-resolution)
+
   ## Helm chart 2.0: scale each Lago component on its own
 
   The 1.x Helm chart was a monolith. One Sidekiq worker ran every queue, so a slow billing run could starve webhook delivery.
