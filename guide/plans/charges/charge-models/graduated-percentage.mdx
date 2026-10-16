@@ -18,6 +18,23 @@ Consider the following example, where each unit represents an API call:
 - A second transaction at \$550 costs [(500 units x 1%) + (50 units x 2%)] + \$300 flat fee = \$306.00
 - A third transaction at \$4,000 costs (4,000 x 2%) = \$80.00
 
+In the API, set `charge_model` to `graduated_percentage` on a charge of the [plan](/api-reference/plans/create) and define the tiers in `properties`. This payload matches the example above:
+
+```json Graduated percentage charge
+{
+  "charge_model": "graduated_percentage",
+  "properties": {
+    "graduated_percentage_ranges": [
+      { "from_value": 0, "to_value": 1000, "rate": "1", "flat_amount": "200" },
+      { "from_value": 1001, "to_value": 10000, "rate": "2", "flat_amount": "300" },
+      { "from_value": 10001, "to_value": null, "rate": "3", "flat_amount": "400" }
+    ]
+  }
+}
+```
+
+The `rate` is a percentage: `"1"` means 1%. The last tier has a `to_value` of `null`.
+
 <Tip>
 Unlike the fixed fee, **the flat fee is applied to the entire tier**, rather than per transaction.
 </Tip>

@@ -46,3 +46,19 @@ Consider the following list of events:
 
 Therefore, for the fourth transaction, the charge will be \$0.10 x 1 event + 1.2%
 of \$50 = \$0.70.
+
+In the API, set `charge_model` to `percentage` on a charge of the [plan](/api-reference/plans/create) and define the rate, the fixed fee and the free units in `properties`. This payload matches the example above:
+
+```json Percentage charge
+{
+  "charge_model": "percentage",
+  "properties": {
+    "rate": "1.2",
+    "fixed_amount": "0.1",
+    "free_units_per_events": 3,
+    "free_units_per_total_aggregation": "500"
+  }
+}
+```
+
+The `rate` is a percentage: `"1.2"` means 1.2%. The premium spending limits use `per_transaction_min_amount` and `per_transaction_max_amount`.

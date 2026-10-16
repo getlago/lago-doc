@@ -16,3 +16,21 @@ Consider the following example, where each unit represents an API call:
 | Tier 4 | 100,001    | ∞         | \$0.0004   | \$10       |
 
 In this case, 65,000 API calls would cost 65,000 x \$0.0006 + \$10 = \$49.
+
+In the API, set `charge_model` to `volume` on a charge of the [plan](/api-reference/plans/create) and define the tiers in `properties`. This payload matches the example above:
+
+```json Volume charge
+{
+  "charge_model": "volume",
+  "properties": {
+    "volume_ranges": [
+      { "from_value": 0, "to_value": 10000, "per_unit_amount": "0.001", "flat_amount": "10" },
+      { "from_value": 10001, "to_value": 50000, "per_unit_amount": "0.0008", "flat_amount": "10" },
+      { "from_value": 50001, "to_value": 100000, "per_unit_amount": "0.0006", "flat_amount": "10" },
+      { "from_value": 100001, "to_value": null, "per_unit_amount": "0.0004", "flat_amount": "10" }
+    ]
+  }
+}
+```
+
+The last tier has a `to_value` of `null`.
