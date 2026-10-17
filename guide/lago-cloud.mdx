@@ -1,32 +1,88 @@
 ---
 title: "Lago Cloud"
-description: "Run subscriptions, usage billing, invoicing, and connected payments on Lago's hosted Premium deployment."
+description: "Lago Cloud is the fully managed Lago billing platform, hosted in the US or EU. Regions, API URLs, usage ingestion, security, and how to start."
+keywords: ["Lago Cloud", "hosted billing", "managed usage-based billing", "Lago EU region"]
 ---
 
-Lago Cloud is the hosted deployment of Lago Premium. Lago runs, maintains, and updates the billing service. Your team configures what customers pay for, connects its product data, and chooses the payment and finance systems that fit its workflow. [Self-hosting](/guide/lago-self-hosted/overview) is also available when your team needs to operate the service itself.
+Lago Cloud is the fully managed deployment of Lago Premium. Lago runs the application, the database, the ClickHouse and Kafka event pipeline, upgrades, and monitoring. Your team configures pricing, sends usage, and connects its payment and finance tools through the same API, SDKs, and app used everywhere in these docs.
 
-## What your team owns
+To operate Lago on your own infrastructure instead, see [self-hosting](/guide/lago-self-hosted/overview).
 
-| Part of the workflow | In Lago Cloud |
+## Regions and endpoints
+
+Lago Cloud runs in two regions. Your organization lives in one of them, and API requests must target that region.
+
+| Region | API base URL |
 | --- | --- |
-| Hosting and application updates | Lago operates the hosted billing service and delivers updates. |
-| Pricing and customer data | Your team configures plans, billable metrics, customers, and subscriptions in Lago. Your application or an integration sends the customer and usage data needed for billing. |
-| Payment processing | Lago can trigger collection and update invoice status through [supported payment providers](/guide/payments/payment-providers). Your chosen provider processes the payment. |
-| Finance systems | Your team selects and configures the accounting integration or export it needs. Lago has documented [NetSuite](/integrations/accounting/netsuite) and [Xero](/integrations/accounting/xero) integrations available on request; [QuickBooks](/integrations/accounting/quickbooks) uses a community-maintained n8n workflow. |
+| US | `https://api.getlago.com/api/v1` |
+| EU | `https://api.eu.getlago.com/api/v1` |
 
-Cloud removes the work of running Lago's application infrastructure. It does not remove the work of defining your billing rules or connecting Lago to your product, payment provider, and accounting system.
+SDKs connect to the US region by default. Set the API URL for EU organizations. The CLI takes `--region us` or `--region eu`. See the [API reference](/api-reference/intro) and [developer resources](/developers) for each SDK.
 
-## Choose a workflow to evaluate
+## What Lago runs and what you configure
 
-- [Self-serve subscription plus usage](/guide/lago-cloud/self-serve-billing): configure a recurring fee and metered charge, connect Stripe Payments, and check the resulting invoice.
-- [Negotiated contract plus usage](/guide/lago-cloud/contract-billing): set customer-specific terms and a minimum commitment, then inspect the invoice and true-up.
-- [Finance invoice workflow](/guide/lago-cloud/finance-workflow): review invoices and payments, export data, and connect accounting and AI analysis.
+| Area | Lago Cloud |
+| --- | --- |
+| Hosting, scaling, and upgrades | Lago operates the application, databases, and event pipeline, and ships updates. |
+| Pricing and customer data | Your team configures [billable metrics](/guide/billable-metrics/create-billable-metrics), [plans](/guide/plans/overview), customers, and subscriptions. Your application sends customer and usage data. |
+| Payment processing | Lago triggers collection and tracks invoice status through [payment providers](/guide/payments/payment-providers). The provider processes the payment. |
+| Finance systems | Your team connects an accounting integration or uses [invoice exports](/guide/invoicing/export). [NetSuite](/integrations/accounting/netsuite) and [Xero](/integrations/accounting/xero) are available on request. |
 
-## Start with Lago Cloud
+## Usage ingestion
 
-1. [Contact Lago's sales team](https://getlago.com/book-a-demo) for a Cloud account. Cloud access currently runs through sales. Confirm the edition, region, integrations, and support package you need; [pricing](https://getlago.com/pricing) lists Premium features and deployment options.
-2. [Create a billable metric](/guide/billable-metrics/create-billable-metrics), [plan](/guide/plans/overview), and [customer](/guide/customers/customer-management). Assign the plan to the customer and, if applicable, [send usage events](/guide/events/ingesting-usage).
-3. [Connect a payment provider](/guide/payments/payment-providers) and decide how the customer will receive a checkout or payment link. A payment provider is still required to process payments.
-4. Inspect an [invoice preview](/guide/invoicing/previews) before live billing, then verify the finalized invoice, payment status, and finance export against your expected charges. Invoice previews are a Premium capability; they use configured billing data, not a free-form mock-invoice generator.
+Lago Cloud manages the high-volume pipeline: Kafka or Redpanda for streaming, ClickHouse for storage and aggregation. You send events. Lago's load tests measure this architecture at 1 to 3 million events per second sustained. See [performance and optimization](/guide/events/usage-performances) for benchmarks and connector throughput.
 
-Lago does not provide a built-in sandbox within a Cloud account. Use a separate organization for integration testing and follow the [testing guide](/guide/integration-testing) before sending synthetic events or real payment requests. For a deployment comparison, include the Lago plan, provider fees, and integration work; self-hosting also adds infrastructure, upgrades, monitoring, and incident response.
+| Connector | Public internet | Private connectivity |
+| --- | --- | --- |
+| [REST API](/guide/events/ingesting-usage) | Yes | No |
+| Kafka / Redpanda | Yes | Yes, through VPC peering |
+| Amazon Kinesis | Yes | No |
+| Amazon S3 | Yes | No |
+
+Event data is retained for 90 days after a subscription terminates. Contact the Lago team to set up VPC peering or a [metering source](/guide/events/metering-source) connector.
+
+## Security and compliance
+
+- **SOC 2 Type 2** covers the hosted version. Email hello@getlago.com to request the report. See [SOC 2](/guide/security/soc).
+- **Infrastructure** runs on AWS with Kubernetes on managed services. Data is encrypted at rest and in transit, with keys managed in AWS KMS. GuardDuty monitors the environment.
+- **Access control:** [API keys](/guide/security/api-keys), [SSO](/guide/security/sso), [role-based access control](/guide/security/rbac), and [audit logs](/guide/security/audit-logs). SSO and RBAC are premium add-ons.
+- **Trust resources:** [status page](https://status.getlago.com/), [security portal](https://security.getlago.com), [Cloud terms of service](https://getlago.com/company/terms-of-service-cloud), and [privacy](/privacy).
+
+## Features and plans
+
+Lago Cloud includes the open-source billing engine plus Premium features such as [invoice previews](/guide/invoicing/previews). Some capabilities, like the AI assistants and certain integrations, are add-ons available on request. Check the [pricing page](https://getlago.com/pricing) for the current feature list.
+
+## Get started
+
+<Steps>
+  <Step title="Request an account">
+    Cloud accounts are set up by [Lago's team](https://getlago.com/book-a-demo). Confirm the region, features, and integrations you need.
+  </Step>
+  <Step title="Create an API key">
+    Sign in to the web app for your region and [create an API key](/guide/security/api-keys). Keep it server-side.
+  </Step>
+  <Step title="Model your pricing">
+    Create a [billable metric](/guide/billable-metrics/create-billable-metrics), a [plan](/guide/plans/overview), and a [customer](/guide/customers/customer-management), then [assign the plan](/guide/subscriptions/assign-plan).
+  </Step>
+  <Step title="Send usage">
+    [Ingest events](/guide/events/ingesting-usage) from your application and check them against the subscription.
+  </Step>
+  <Step title="Connect payments">
+    Connect a [payment provider](/guide/payments/payment-providers) to collect invoices.
+  </Step>
+</Steps>
+
+Lago Cloud has no built-in sandbox inside an organization. Use a separate organization for tests and follow the [integration testing guide](/guide/integration-testing).
+
+## Cloud or self-hosted
+
+| | Lago Cloud | Self-hosted |
+| --- | --- | --- |
+| Who operates it | Lago | Your team |
+| Upgrades | Delivered by Lago | You run [updates](/guide/lago-self-hosted/update-instance) |
+| Event pipeline | Managed ClickHouse and Kafka | You run ClickHouse and Redpanda, or Postgres only |
+| SOC 2 Type 2 | Covers the hosted service | Your infrastructure, your controls |
+| Network | Public internet, or VPC peering for Kafka | Fully inside your network |
+| Editions | Premium | Open source (free) or Premium |
+
+See the [deployment FAQ](/faq/deployment) for more detail.
