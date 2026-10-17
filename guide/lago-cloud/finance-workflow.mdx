@@ -1,9 +1,23 @@
 ---
-title: "Finance invoice workflow"
-description: "Review Lago invoices, track collection, export line items, and connect accounting or AI analysis."
+title: "Finance subscription and invoice workflow"
+description: "Start a recurring plan on Lago Cloud, collect through an existing Adyen account, and review invoices as pricing grows."
 ---
 
-Finance can review billing in the Lago app without running the billing service. Lago Cloud hosts the application; your team still defines billing rules and configures the payment and accounting connections it uses.
+Finance can create subscriptions and review invoices in the Lago app without running the billing service. Lago Cloud hosts the application; your team still defines billing rules, connects Adyen, and supplies the customer and usage data Lago needs.
+
+## Start one recurring plan with Adyen
+
+1. **Set up the plan.** Define a monthly subscription fee, currency, and whether the fee is billed in advance or arrears. A [plan](/guide/plans/overview) becomes billable when you assign it to a customer.
+2. **Connect your Adyen account.** Configure the [native Adyen integration](/integrations/payments/adyen-integration) with your merchant account, API key, recurring-payment settings, and webhook. Check the payment methods and capture settings enabled on your Adyen account. Lago initiates collection for eligible invoices; Adyen processes the payment.
+3. **Add the customer and collect a payment method.** Set Adyen as the customer's default payment provider. You can link an existing Adyen shopper reference or use Lago's Adyen checkout URL to collect and store a method for a new shopper. The checkout URL performs a zero-value pre-authorization; it does not let the customer choose a Lago plan or create a subscription. Confirm the method is stored and Lago receives Adyen's webhook before relying on automatic collection.
+4. **Assign the plan.** In the customer's **Overview** tab, choose **Add a plan**, select the plan and billing date, and confirm. Lago creates the subscription and generates invoices according to the plan's billing cycle. [Customer-specific plan overrides](/guide/subscriptions/assign-plan#overriding-a-plan) require Premium.
+5. **Verify the first collection.** Compare the first invoice with the plan and check its payment status against Adyen. If collection fails or no usable method is on file, follow the [payment retry and payment URL steps](/guide/payments/payment-retries) for that invoice.
+
+For self-service signup, your application still has to create or assign the Lago customer and subscription. The Adyen checkout URL above is a payment-method collection step, not a complete hosted subscription signup page.
+
+## Add usage and negotiated terms later
+
+Configure a plan with a [usage-based charge](/guide/plans/charges/usage-based-charges) when the product begins sending billable events, then check the [plan-change timing and invoice behavior](/guide/subscriptions/upgrades-downgrades) before moving existing subscriptions. For customer-specific pricing, Premium [subscription overrides](/guide/subscriptions/assign-plan#overriding-a-plan) can change supported plan amounts and charge properties. [Quotes and order forms](/guide/quotes/overview), available as a Premium add-on on request, can carry signed terms into a new subscription; signatures happen outside Lago. Check the selected Cloud features and Adyen test flow before committing to the rollout. Adyen remains the payment processor as the billing model changes.
 
 ## From invoice to reconciliation
 
