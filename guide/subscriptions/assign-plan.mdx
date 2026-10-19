@@ -10,12 +10,12 @@ description: "A subscription is created when a plan is assigned to a customer.
     1. Access the **"Customers"** section via the side menu;
     2. Select a customer from the list;
     3. In the **"Overview"** tab, click **"Add a plan"** on the right;
-    4. Select a plan (that you can overwrite if needed - [see below](#overriding-a-plan));
+    4. Select a plan (that you can override if needed - [see below](#overriding-a-plan));
     5. Give a name to the subscription (name that will be displayed on the invoice - optional);
-    5. Give an id to the subscription (define your own subscription identifier - optional);
+    6. Give an id to the subscription (define your own subscription identifier - optional);
     7. Set a subscription start date (start date of the subscription - [see below](#subscription-start-date));
     8. Set a subscription end date (end date of the subscription - [see below](#subscription-end-date) - optional);
-    9. Define a PO number to be used on invoices generated from this subscription.
+    9. Define a PO number to be used on invoices generated from this subscription;
     10. Choose whether the subscription should be renewed at the beginning of the period or on its anniversary date (see [below](#billing-cycles)); and
     11. Click **"Add plan"** to confirm;
   </Tab>
@@ -89,9 +89,7 @@ Optimize billing for your customers by assigning subscriptions based on either c
 </Tabs>
 
 ## Subscription start date
-By default, the subscription starts the day it is created. However, you can set a subscription date in the past or in the future. 
-The subscription date displayed in the app is based on the organization's timezone.
-However, you can decide to start a subscription **in the past** or **in the future**.
+By default, the subscription starts the day it is created. However, you can decide to start a subscription **in the past** or **in the future**.
 
 <Tabs>
   <Tab title="Start date in the past">
@@ -212,10 +210,10 @@ This reduces the number of invoices your customers receive and simplifies paymen
 | Plan C (yearly)   | $500     | -        | -        | -        | (...) | $500     |
 | **Total invoice** | **$600** | **$100** | **$100** | **$100** | (...) | **$600** |
 
-If you'd prefer to keep a specific subscription on its own invoice — for example, to bill a different cost center, track a contract independently, or simplify internal reporting — you can disable consolidation for that subscription. To do so, set the `consolidate_invoices` field to `false` on the subscription, either from the dashboard or via the API. Lago will then issue a standalone invoice for that subscription, even when other subscriptions for the same customer are billed on the same day.
+If you'd prefer to keep a specific subscription on its own invoice — for example, to bill a different cost center, track a contract independently, or simplify internal reporting — you can disable consolidation for that subscription. To do so, set the `consolidate_invoice` field to `false` on the subscription, either from the dashboard or via the API. Lago will then issue a standalone invoice for that subscription, even when other subscriptions for the same customer are billed on the same day.
 
 <Info>
-The `consolidate_invoices` setting applies at the **subscription level**, so you can mix consolidated and standalone subscriptions for the same customer. You can update this setting at any time.
+The `consolidate_invoice` setting applies at the **subscription level**, so you can mix consolidated and standalone subscriptions for the same customer. You can update this setting at any time.
 </Info>
 
 ## Overriding a plan
@@ -273,7 +271,7 @@ This enables you to maintain a consistent plan structure for all customers while
           "description": "Overridden plan for customer X",
           "amount_cents": 10000,
           "amount_currency": "USD",
-          "trial_period": "0",
+          "trial_period": 0,
           "tax_codes": [
             "vat_10"
           ],

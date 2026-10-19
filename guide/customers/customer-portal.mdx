@@ -2,7 +2,7 @@
 title: "The customer portal"
 ---
 
-The Lago Customer Portal is a user-friendly platform that allows you to effortlessly share billing information, such as past invoices, with your end customers. As we continue to develop this tool, you will be able to display even more useful information to your customers.
+The Lago Customer Portal shares billing information, such as past invoices, with your end customers.
 
 ## Generate a customer portal link
 To generate a customer portal URL that can be embedded into your product, you have two options:
@@ -16,12 +16,33 @@ To generate a customer portal URL that can be embedded into your product, you ha
 ## Embedding the dashboard
 You can also use the API to generate an embeddable Customer Portal that can be displayed in your application by using an iframe. To do so, use the endpoint `/customers/:external_customer_id/portal_url` to generate an embeddable URL that can be displayed in your user interface.
 
+<CodeGroup>
+```bash Generate a customer portal URL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+EXTERNAL_CUSTOMER_ID="hooli_1234"
+
+curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/portal_url" \
+--header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+The endpoint returns the embeddable URL:
+
+```json Response
+{
+  "customer": {
+    "portal_url": "https://app.lago.com/customer-portal/1234567890"
+  }
+}
+```
+
 <Info>
 For security reasons, the token returned by the API **expires after 12 hours**. Therefore, it is important to use the endpoint and generate a new token every time a customer refreshes or accesses the billing page.
 </Info>
 
 ## Customer portal preferred language
-By default, the embedded portal is displayed in English. However, you can easily change the language for a specific customer by adjusting the `document language` in their settings. To access this feature, follow these simple steps:
+By default, the embedded portal is displayed in English. To change the language for a specific customer, adjust the document language in their settings.
 
 To access document language settings:
 1. Go to the specific customer's profile;
@@ -29,7 +50,26 @@ To access document language settings:
 3. **Edit** the document language section; and
 4. Select the preferred language.
 
-You can also update the language of a customer directly from the API.
+You can also update the language of a customer directly from the API, using the `document_locale` field inside `billing_configuration`:
+
+<CodeGroup>
+```bash Set the customer portal language
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/customers" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "customer": {
+    "external_id": "hooli_1234",
+    "billing_configuration": {
+      "document_locale": "fr"
+    }
+  }
+}'
+```
+</CodeGroup>
 
 <Info>
 If the language you are looking for is not yet available, please [visit this page](/api-reference/resources/locales).
@@ -39,9 +79,9 @@ If the language you are looking for is not yet available, please [visit this pag
 ## Customer portal information
 
 ### 1. Invoice history
-The invoice history section provides a summary of both total invoices (everything that has been invoiced since the beginning) and overdue invoices (all the invoices past their due date, which are due). Your customers can know where they stand in one glance.
+The invoice history section summarizes total invoices (everything invoiced since the customer was created) and overdue invoices (every invoice past its due date).
 
-The Customer Portal allows your customers to retrieve all past invoices and download them with ease. Lago displays useful billing information such as the issuing date, invoice number, amount, and payment status (paid or unpaid). Additionally, your customers can filter the list and search for a specific invoice.
+Your customers can retrieve and download all past invoices. Lago displays the issuing date, invoice number, amount, and payment status (paid or unpaid). Your customers can also filter the list and search for a specific invoice.
 
 <Frame caption="Invoices list - Customer Portal">
   <img src="/guide/images/customer-portal-invoices-list.png" />
@@ -50,7 +90,7 @@ The Customer Portal allows your customers to retrieve all past invoices and down
 ### 2. Customer information
 In addition to viewing their invoice list, customers can retrieve essential billing information, including legal name, tax identification number, billing email, and billing/shipping addresses.
 
-Customers can also update this information directly through the portal, ensuring that their billing details remain synchronized with the latest data.
+Customers can also update this information directly through the portal.
 
 <Frame caption="Customer information - Customer Portal">
   <img src="/guide/images/customer-information-portal.png" />
@@ -61,7 +101,7 @@ In addition to viewing their invoices and customer details, customers can access
 
 For subscription details, they can view key information such as the plan name, recurring fee, and subscription renewal date.
 
-Customers also have real-time access to comprehensive usage details, including:
+Customers also have access to their usage details, including:
 - Total lifetime usage and the next threshold for subscriptions using progressive billing;
 - A detailed usage report, showing the number of units consumed and associated costs; and
 - A full breakdown of usage by billing filters and groups.
@@ -71,9 +111,9 @@ Customers also have real-time access to comprehensive usage details, including:
 </Frame>
 
 ### 4. Prepaid credits information
-The customer portal provides your customers with real-time access to their prepaid credit balance, showing the remaining credits based on their current usage.
+The customer portal shows your customers their prepaid credit balance, including the remaining credits based on their current usage.
 
-Additionally, customers can top up their paid credits, ensuring their wallet is always sufficiently funded.
+Customers can also top up their prepaid credits from the portal.
 
 <Frame caption="Prepaid credits - Customer Portal">
   <img src="/guide/images/prepaid-credits-portal.png" />
