@@ -1,6 +1,6 @@
 ---
 title: "Upgrades and downgrades"
-description: "Customers have the flexibility to easily upgrade or downgrade their plan at any given moment."
+description: "Upgrade or downgrade a customer's plan at any time."
 ---
 
 <Tabs>
@@ -16,16 +16,19 @@ description: "Customers have the flexibility to easily upgrade or downgrade thei
   <Tab title="API">
     <CodeGroup>
     ```bash Upgrade or downgrade a subscription
-    curl --request POST \
-    --url https://api.getlago.com/api/v1/subscriptions \
-    --header 'Authorization: Bearer <bearer>' \
-    --data '{
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+    --header "Authorization: Bearer $API_KEY" \
+    --header 'Content-Type: application/json' \
+    --data-raw '{
       "subscription": {
-          "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
-          "plan_code": "new_plan",
-          "external_id": "existing_sub_id"
-        }
-      }'
+        "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+        "plan_code": "new_plan",
+        "external_id": "existing_sub_id"
+      }
+    }'
     ```
     </CodeGroup>
   </Tab>
@@ -54,7 +57,7 @@ At the end of the billing period, a second invoice is issued for the prorated po
 
 ## Downgrades behavior
 
-A downgrade occurs when the subscription fee of the new plan, calculated on a daily basis is lower than the subscription fee of the previous plan,
+A downgrade occurs when the subscription fee of the new plan, calculated on a daily basis, is lower than the subscription fee of the previous plan,
 regardless of the pricing for usage-based charges.
 
 When a subscription is downgraded:
