@@ -8,12 +8,64 @@ Customer metadata stores additional structured information on a customer to prov
 
 For example, you could store a customer's full name and unique identifier from your system on a Customer object by defining a key-value pair. A key cannot exist without its corresponding value, and vice versa.
 
+Metadata is set through the `metadata` array on the customer, using the `key`, `value` and `display_in_invoice` fields:
+
+<CodeGroup>
+```bash Add metadata to a customer
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/customers" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "customer": {
+    "external_id": "hooli_1234",
+    "name": "Gavin Belson",
+    "metadata": [
+      {
+        "key": "Purchase Order",
+        "value": "123456789",
+        "display_in_invoice": true
+      }
+    ]
+  }
+}'
+```
+</CodeGroup>
+
 ## Edit and delete metadata on customer
 
 After adding metadata to a customer, you can edit or delete it. To edit metadata, you have two options:
 
 1. Use the user interface to update the information displayed in the "Edit customer" drawer, and then save the customer changes.
 2. Use the API to target the key-value pair information with the metadata ID in your code snippet and edit the key and value.
+
+To edit a pair through the API, send it back with its `id`. Any pair you omit is removed, so include every pair you want to keep:
+
+<CodeGroup>
+```bash Edit customer metadata
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/customers" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "customer": {
+    "external_id": "hooli_1234",
+    "metadata": [
+      {
+        "id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+        "key": "Purchase Order",
+        "value": "987654321",
+        "display_in_invoice": true
+      }
+    ]
+  }
+}'
+```
+</CodeGroup>
 
 <Info>
 When editing customer metadata through the API, make sure to include the existing metadata in your payload to avoid removing them.

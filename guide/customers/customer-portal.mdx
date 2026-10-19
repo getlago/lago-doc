@@ -16,6 +16,27 @@ To generate a customer portal URL that can be embedded into your product, you ha
 ## Embedding the dashboard
 You can also use the API to generate an embeddable Customer Portal that can be displayed in your application by using an iframe. To do so, use the endpoint `/customers/:external_customer_id/portal_url` to generate an embeddable URL that can be displayed in your user interface.
 
+<CodeGroup>
+```bash Generate a customer portal URL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+EXTERNAL_CUSTOMER_ID="hooli_1234"
+
+curl --location --request GET "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/portal_url" \
+--header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+The endpoint returns the embeddable URL:
+
+```json Response
+{
+  "customer": {
+    "portal_url": "https://app.lago.com/customer-portal/1234567890"
+  }
+}
+```
+
 <Info>
 For security reasons, the token returned by the API **expires after 12 hours**. Therefore, it is important to use the endpoint and generate a new token every time a customer refreshes or accesses the billing page.
 </Info>
@@ -29,7 +50,26 @@ To access document language settings:
 3. **Edit** the document language section; and
 4. Select the preferred language.
 
-You can also update the language of a customer directly from the API.
+You can also update the language of a customer directly from the API, using the `document_locale` field inside `billing_configuration`:
+
+<CodeGroup>
+```bash Set the customer portal language
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/customers" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "customer": {
+    "external_id": "hooli_1234",
+    "billing_configuration": {
+      "document_locale": "fr"
+    }
+  }
+}'
+```
+</CodeGroup>
 
 <Info>
 If the language you are looking for is not yet available, please [visit this page](/api-reference/resources/locales).
