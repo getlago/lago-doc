@@ -55,6 +55,19 @@ You need an organization and API key for live CLI or API requests:
 
 Get the API key from **Developers → API keys** in that organization, or ask an admin to provide one. Make it available to your terminal as `LAGO_API_KEY`; keep it out of prompts and source control. Install the CLI where you run your agent:
 
+You can ask your agent to handle the setup without giving it the key in chat:
+
+```text
+Set up the Lago CLI in this development environment. Check my operating
+system and whether the CLI is already installed. Tell me how to set
+LAGO_API_KEY in my terminal or secret manager without pasting it into chat,
+printing it, or saving it in this repository. Ask whether my target is
+Lago Cloud US, Lago Cloud EU, or a self-hosted API URL. Then run lago version,
+lago init with the environment variable, lago whoami, and lago doctor.
+Show me the API host and organization you connected to. Stop if either is
+different from the one I intended. Do not create or change billing data.
+```
+
 ```bash
 brew install getlago/tap/lago
 lago version
@@ -122,6 +135,8 @@ lago customers current-usage "$CUSTOMER_EXTERNAL_ID" \
 Compare the quantity and usage charge with your calculation. If the first read shows zero, wait for processing and read again rather than sending another event. In an isolated test environment, retry one event with its original `transaction_id` and `timestamp`; confirm that the charge does not increase.
 
 If your organization has Premium, [preview the invoice](/guide/invoicing/previews) and compare the base charge, usage charge, credits, taxes, and total. Invoice preview is also Premium on self-hosted Lago. A successful event response or passing local test does not by itself prove the bill is correct. The [integration testing guide](/guide/integration-testing) covers the rest of the billing lifecycle.
+
+Want a prompt for a specific task, such as usage retries, prepaid credits, a self-hosted connection, or investigating a mismatch? Use the [Lago coding-agent prompt library](/guide/ai-agents/prompts).
 
 ## Optional: practice on a sample application
 
