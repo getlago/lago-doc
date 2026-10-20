@@ -1,5 +1,5 @@
 ---
-title: "Format & Signature"
+title: "Format and signature"
 description:
   "Webhooks are HTTP notifications sent from Lago to your application."
 ---
@@ -7,9 +7,9 @@ description:
 The messages are sent as a `POST` request to every webhook endpoint defined in
 the settings of your Lago organization.
 
-If you return an error (other than a 2xx HTTP response) or if there is a network issue,
-the message is sent again. Lago attempts each message 3 times, waiting longer
-between each attempt.
+If you return an error (any response other than a 2xx) or if there is a network
+issue, the message is sent again. Lago attempts each message 3 times, waiting
+longer between each attempt.
 
 ## Message format
 
@@ -27,25 +27,25 @@ between each attempt.
 The `object_type` field names the key that carries the object. For example, an
 `invoice.created` message has `"object_type": "invoice"` and an `invoice` key.
 
-## Unique Key
+## Unique key
 
-Lago sends an idempotency key (unique identifier) in the HTTP headers named `X-Lago-Unique-Key`. This key can be used
-to ensure you process a webhook only once.
+Lago sends an idempotency key (a unique identifier) in the `X-Lago-Unique-Key` HTTP header. Use it to
+process a message only once.
 
 
 ## Signature
 
-Along with the payload the message contains both `X-Lago-Signature` and `X-Lago-Signature-Algorithm` HTTP header.
+Along with the payload, the message carries the `X-Lago-Signature` and `X-Lago-Signature-Algorithm` HTTP headers.
 
-It is used to ensure the message is coming from Lago and that the message has not been altered.
+They ensure the message comes from Lago and has not been altered.
 
-To verify the signature, you must decode the signature and compare the result with the body of the webhook.
+To verify the signature, decode it and compare the result with the body of the webhook.
 
-You can choose between two different signature algorithms during webhook endpoint creation, `hmac` or `jwt`.
-Please note that `jwt` is our original signature and is used by default.
+You choose between two signature algorithms when you create a webhook endpoint, `hmac` or `jwt`. The
+default is `jwt`.
 
 
-### JWT Signature
+### JWT signature
 
 #### 1\. Retrieve the public key
 
@@ -152,7 +152,7 @@ decoded_signature['data'] == request.body
 
 </CodeGroup>
 
-### HMAC Signature
+### HMAC signature
 
 #### Decode and validate the signature
 
