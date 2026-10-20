@@ -203,7 +203,7 @@ By default, Lago consolidates subscriptions into a single invoice when they are 
 - The same billing entity; and
 - The same PO number (`purchase_order_number`).
 
-This reduces the number of invoices your customers receive and simplifies payment reconciliation. In the example below, a customer is subscribed to three plans — two billed monthly and one billed yearly — and Lago groups all charges that fall on the same billing date into a single invoice:
+This reduces the number of invoices your customers receive and simplifies payment reconciliation. In the example below, a customer is subscribed to three plans, two billed monthly and one billed yearly, and Lago groups all charges that fall on the same billing date into a single invoice:
 
 |                   | Month 1  | Month 2  | Month 3  | Month 4  | (...) | Month 13 |
 | ----------------- | -------- | -------- | -------- | -------- | ----- | -------- |
@@ -212,7 +212,7 @@ This reduces the number of invoices your customers receive and simplifies paymen
 | Plan C (yearly)   | $500     | -        | -        | -        | (...) | $500     |
 | **Total invoice** | **$600** | **$100** | **$100** | **$100** | (...) | **$600** |
 
-If you'd prefer to keep a specific subscription on its own invoice — for example, to bill a different cost center, track a contract independently, or simplify internal reporting — you can disable consolidation for that subscription. To do so, set the `consolidate_invoice` field to `false` on the subscription, either from the dashboard or via the API. Lago will then issue a standalone invoice for that subscription, even when other subscriptions for the same customer are billed on the same day.
+To keep a specific subscription on its own invoice, for example to bill a different cost center, track a contract independently, or simplify internal reporting, disable consolidation for that subscription. Set the `consolidate_invoice` field to `false` on the subscription, either from the dashboard or via the API. Lago then issues a standalone invoice for that subscription, even when other subscriptions for the same customer are billed on the same day.
 
 <Info>
 The `consolidate_invoice` setting applies at the **subscription level**, so you can mix consolidated and standalone subscriptions for the same customer. You can update this setting at any time.
@@ -230,8 +230,8 @@ Self-Hosted Premium.
 
 </Info>
 
-By assigning a subscription to a customer, you gain the flexibility to customize certain aspects of the initially selected plan. 
-This enables you to maintain a consistent plan structure for all customers while tailoring individualized discounts through price adjustments per customer.
+When you assign a plan to a customer, you can customize parts of it for that subscription.
+You keep one plan structure for every customer, and adjust prices per customer where you need to.
 
 <Tabs>
   <Tab title="Dashboard">
@@ -307,11 +307,11 @@ This enables you to maintain a consistent plan structure for all customers while
   Fixed charges are also overridden under `plan_overrides`, using the `fixed_charges` array. Sending only `units` (and `apply_units_immediately` if needed) updates the quantity without creating a plan override. Passing a price or `properties` creates one. See [Update a fixed charge via the API](/guide/plans/charges/fixed-charges#update-a-fixed-charge-via-the-api).
 </Info>
 
-It's crucial to note that all overridden plans will remain associated with the initial plan but won't be visible in the plans list. 
-To access an overridden plan, simply click on the specific subscription item in the customer details view.
+An overridden plan stays linked to the initial plan, but it does not appear in the plans list.
+To open it, click the subscription in the customer details view.
 
-Moreover, all invoices generated from this subscription will be based on the overridden plan, not the initial plan. 
-Additionally, any coupons restricted to a plan code will apply to both the initial and overridden plans.
+All invoices generated from this subscription are based on the overridden plan, not the initial plan.
+Coupons restricted to a plan code apply to both the initial plan and its overrides.
 
 By default, changes made to the initial plan do not reach subscriptions linked to an overridden plan. To propagate them, update the plan with `cascade_updates` set to `true`. See [Editing plans](/guide/plans/overview#editing-plans).
 
