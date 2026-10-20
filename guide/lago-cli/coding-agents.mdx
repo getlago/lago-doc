@@ -70,7 +70,7 @@ If your isolated instance uses loopback-only HTTP, add `--insecure` to each CLI 
 
 The public [growth-agent billing lab](https://github.com/anhtho-lago/growth-agent-billing-lab) is a small synthetic application for practicing the workflow. One existing customer has a flat monthly charge collected through Stripe Payments. Stripe is specific to this fixture. The fixture records a Stripe customer ID and monthly amount; it does not model the existing invoice or subscription system.
 
-The application has durable usage records but starts without a Lago integration. Its [billing brief](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/BILLING_BRIEF.md) describes a $500 monthly plan, 50,000 included credits, and $0.05 for each excess credit. The expected pretax amount at 75,000 credits is **$1,750**.
+The application has durable usage records but starts without a Lago integration. Its [billing brief](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/BILLING_BRIEF.md) describes a \$500 monthly plan, 50,000 included credits, and \$0.05 for each excess credit. The expected pretax amount at 75,000 credits is **\$1,750**.
 
 ```bash
 git clone https://github.com/anhtho-lago/growth-agent-billing-lab.git
@@ -140,7 +140,7 @@ PYTHONPATH=src python3 -m growth_lab.lago_reference verify-usage \
   --usage "$PROOF_DIR/usage.json"
 ```
 
-The expected usage is 75,000 credits and the expected overage charge is **$1,250**; the $500 base fee is separate. If the first read shows zero, wait for usage processing and read again rather than sending another event. Replay the original event with the same ID **and timestamp**, then verify that usage has not increased:
+The expected usage is 75,000 credits and the expected overage charge is **\$1,250**; the \$500 base fee is separate. If the first read shows zero, wait for usage processing and read again rather than sending another event. Replay the original event with the same ID **and timestamp**, then verify that usage has not increased:
 
 ```bash
 if lago api POST /events --data "@$PROOF_DIR/proof/event-request.json" \
@@ -160,7 +160,7 @@ PYTHONPATH=src python3 -m growth_lab.lago_reference verify-usage \
 
 Lago returns HTTP 422 with `transaction_id: value_already_exist` for this duplicate in the tested standard self-hosted instance. The CLI exits nonzero; the replay verifier checks that exact reason, then the usage verifier checks that the amount stayed the same. A different error is a failed test.
 
-<Info>[Invoice preview requires a Premium license](/guide/invoicing/previews), including on self-hosted Lago. On an isolated Self-Hosted Premium instance, use the generated `preview-request.json` and `verify` command to compare the full preview with the expected $1,750 pretax amount. Standard self-hosted Lago can complete the current-usage and replay checks above.</Info>
+<Info>[Invoice preview requires a Premium license](/guide/invoicing/previews), including on self-hosted Lago. On an isolated Self-Hosted Premium instance, use the generated `preview-request.json` and `verify` command to compare the full preview with the expected \$1,750 pretax amount. Standard self-hosted Lago can complete the current-usage and replay checks above.</Info>
 
 ```bash
 # Self-Hosted Premium only, after the current-usage check passes.
