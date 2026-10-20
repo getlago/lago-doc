@@ -125,7 +125,7 @@ Compare the quantity and usage charge with your calculation. If the first read s
 
 If your organization has Premium, [preview the invoice](/guide/invoicing/previews) and compare the base charge, usage charge, credits, taxes, and total. Invoice preview is also Premium on self-hosted Lago. A successful event response or passing local test does not by itself prove the bill is correct. The [integration testing guide](/guide/integration-testing) covers the rest of the billing lifecycle.
 
-Want a prompt for a specific task, such as usage retries, prepaid credits, a self-hosted connection, or investigating a mismatch? Use the [Lago coding-agent prompt library](/guide/ai-agents/prompts).
+For usage retries, prepaid credits, a self-hosted connection, or a billing mismatch, choose a prompt from [More prompts](#more-prompts) below.
 
 ## Optional: practice on a sample application
 
@@ -151,3 +151,412 @@ To compare that result with an isolated self-hosted Lago instance, follow the sa
 | Event exists but usage is zero | Check the subscription's active period, metric code, event timestamp, and aggregation property. |
 | A retry increases usage | Compare both the original `transaction_id` and explicit `timestamp`. |
 | Usage or preview differs from expected money | Check the plan charge, billing period, customer overrides, taxes, credits, and whether the base fee was billed in advance. |
+
+## More prompts
+
+Choose a task, replace the named placeholders, then paste the prompt into your coding agent. Keep API keys out of prompts.
+
+### Understand your app and pricing
+
+<AccordionGroup>
+
+<Accordion title="1. Find the billing boundary">
+
+**Replace before pasting:** Nothing. Open your application repository.
+
+```text
+Inspect this repository and map how customers pay today. Identify which
+system sets prices, manages subscriptions, issues invoices, and collects
+payments. Show the code and records behind each answer. Recommend which
+responsibilities Lago should take, and flag any path that could bill a
+customer twice. Do not edit code or contact a live billing system.
+```
+
+</Accordion>
+
+<Accordion title="2. Find the billable action">
+
+**Replace before pasting:** `[customer action]` with the action you charge for, such as a completed job.
+
+```text
+Our product charges for [customer action]. Find the application record that
+proves this action happened. Show when it is created, its stable ID and
+timestamp, the customer it belongs to, and cases where the action is
+cancelled or retried. Propose the Lago usage event we should send and
+explain anything the current data cannot prove. Do not edit code yet.
+```
+
+</Accordion>
+
+<Accordion title="3. Turn a pricing brief into a bill">
+
+**Replace before pasting:** `[pricing rules]` with your fee, included units, rates, period, and currency; `[example usage]` with one customer's quantity.
+
+```text
+Our pricing is [pricing rules]. Calculate a bill for [example usage].
+Show each line item and the formula. Then map the rules to Lago metrics,
+plan charges, and any credits. Identify decisions the brief leaves open,
+including proration, taxes, and when charges become effective. Do not
+create anything in Lago.
+```
+
+</Accordion>
+
+<Accordion title="4. Compare pricing options">
+
+**Replace before pasting:** `[pricing option A]`, `[pricing option B]`, and `[examples]` with two price structures and three realistic usage amounts.
+
+```text
+We are considering [pricing option A] and [pricing option B]. Use these
+three customer usage examples: [examples]. Calculate the bill under each
+option, then explain the trade-offs for customers and implementation in
+Lago. Recommend one option and list the exact questions we must answer
+before configuring a plan. Do not change our app or Lago organization.
+```
+
+</Accordion>
+
+<Accordion title="5. Choose customer and subscription IDs">
+
+**Replace before pasting:** Nothing. Open the repository that owns your customer records.
+
+```text
+Find our existing customer, account, subscription, and workspace IDs.
+Recommend stable external IDs for Lago customers and subscriptions. Trace
+how a usage record reaches the paying customer, including account moves
+and multiple workspaces. Show collisions or missing mappings and the code
+that would need to change. Do not create Lago customers yet.
+```
+
+</Accordion>
+
+<Accordion title="6. Plan a move from current billing">
+
+**Replace before pasting:** `[system]` with your current billing system; `[customer segment]` with the customers you plan to move.
+
+```text
+We currently bill through [system]. Inspect the subscription, invoice,
+payment, and usage paths in this repo. Propose a staged move of [customer segment]
+to Lago. Define the cutover date, who owns each invoice before and after it,
+how to avoid duplicate charges, how to reconcile the first
+bill, and how to roll back. Flag any decision that needs finance approval.
+Do not change production billing.
+```
+
+</Accordion>
+
+</AccordionGroup>
+
+### Build and test in your repository
+
+<AccordionGroup>
+
+<Accordion title="7. Add the smallest working integration">
+
+**Replace before pasting:** `[billable action]` with the action from your approved billing plan.
+
+```text
+Implement the billing plan we reviewed for [billable action]. Use a Lago
+SDK or REST API from server-side code. Keep the API key in the existing
+secret-management pattern. Add local tests for one complete example bill.
+Preserve current billing paths unless we explicitly agreed to change them.
+Show the diff and test results before contacting a live Lago organization.
+```
+
+</Accordion>
+
+<Accordion title="8. Make usage retries safe">
+
+**Replace before pasting:** `[billable action]` with the action your app records and sends to Lago.
+
+```text
+Trace how [billable action] is recorded and retried. Make the Lago event's
+transaction_id come from that durable app record, and reuse its original
+timestamp on every retry. Check Lago's current idempotency guidance.
+Test a timeout, a duplicate job, and a replay so one action produces one
+billed unit. Show which failures still need an operator to intervene.
+```
+
+</Accordion>
+
+<Accordion title="9. Implement a base fee with overage">
+
+**Replace before pasting:** `[base amount]`, `[billing period]`, `[included units]`, and `[overage rate]` with your price, period, allowance, and price per extra unit.
+
+```text
+We charge [base amount] per [billing period], including [included units],
+then [overage rate] for each extra unit. Inspect our usage records and
+implement the server-side Lago integration for this rule. Calculate bills
+at zero usage, exactly the included amount, and above it without relying
+on Lago's answer. Add local tests and show the proposed Lago plan as a
+dry run before any live configuration change.
+```
+
+</Accordion>
+
+<Accordion title="10. Meter AI usage">
+
+**Replace before pasting:** `[billable measure]` with one quantity, such as requests, tokens, or compute time.
+
+```text
+We want to charge for [billable measure]. Find where this
+app receives the provider's final usage count. Propose one billable event
+per completed operation, with a stable operation ID, original timestamp,
+customer mapping, and the measured quantity. Explain how failed,
+cancelled, streamed, and retried operations behave. Implement and test
+the event path only after showing the event contract for review.
+```
+
+</Accordion>
+
+<Accordion title="11. Model prepaid credits">
+
+**Replace before pasting:** `[credit amount]` with the purchased credit quantity; `[usage]` with what consumes credits.
+
+```text
+Our customers buy [credit amount] and spend credits on [usage]. Read
+Lago's current wallet and prepaid-credit docs. Show when credits become
+available, which charges consume them, what happens at zero balance, and
+the difference between purchased and granted credits. Calculate a sample
+balance and invoice. Propose configuration and code, but make no wallet
+transactions or customer charges yet.
+```
+
+</Accordion>
+
+<Accordion title="12. Handle subscription changes">
+
+**Replace before pasting:** `[subscription change]` with the upgrade, downgrade, pause, or cancellation you want to test.
+
+```text
+Inspect how this app handles [subscription change]. Map that action to
+Lago's current subscription API and billing timing. Show the expected
+charges before and after the change. Implement it with local tests only;
+do not change live customers.
+```
+
+</Accordion>
+
+<Accordion title="13. Process Lago webhooks">
+
+**Replace before pasting:** `[invoice or payment event]` with the Lago event your app needs to handle.
+
+```text
+We need our app to react to [invoice or payment event]. Check Lago's
+current webhook docs, then inspect our existing webhook handler pattern.
+Implement signature verification if supported for our setup, durable
+deduplication, safe retries, and a test for repeated delivery. Name the
+source of truth for the resulting app state. Do not expose a new public
+endpoint or change production settings until the diff is reviewed.
+```
+
+</Accordion>
+
+<Accordion title="14. Build a billing test matrix">
+
+**Replace before pasting:** `[pricing rules]` with the agreed rules or their file path.
+
+```text
+Create focused local tests for our Lago integration using [pricing rules].
+Cover zero usage, the included boundary, overage, duplicate
+events, a delayed event, a different customer, and a subscription change
+if our app supports one. Calculate expected amounts independently from
+Lago responses. Run the tests and show any case that cannot yet be proved.
+```
+
+</Accordion>
+
+</AccordionGroup>
+
+### Connect and configure Lago
+
+<AccordionGroup>
+
+<Accordion title="15. Get the right access">
+
+**Replace before pasting:** Nothing. The agent will ask which Lago deployment you use.
+
+```text
+Help me identify the access I need for this Lago integration. Ask whether
+my team uses Lago Cloud US, Lago Cloud EU, or self-hosted Lago. Tell me
+who should invite me or how to request a new Cloud organization, where
+to find Developers > API keys after sign-in, and what API URL I need for
+self-hosted Lago. Do not ask me to paste a key into chat. Do not access
+or change an organization yet.
+```
+
+</Accordion>
+
+<Accordion title="16. Set up the CLI">
+
+**Replace before pasting:** Nothing. Have your Cloud region or self-hosted API URL ready; keep the key out of chat.
+
+```text
+Set up the Lago CLI in this development environment. Check the operating
+system and whether lago is already installed. Give me a safe way to set
+LAGO_API_KEY in my terminal or secret manager without printing it or
+saving it in the repo. Ask for my Cloud region or self-hosted API URL.
+Run lago version, initialize the CLI using the environment variable,
+then run lago whoami and lago doctor. Show the connected host and
+organization. Stop if they are not the target I named. Make no billing
+data changes.
+```
+
+</Accordion>
+
+<Accordion title="17. Check a self-hosted connection">
+
+**Replace before pasting:** `[web app URL]` with your self-hosted Lago web address.
+
+```text
+I have access to a self-hosted Lago instance at [web app URL]. Help me
+identify the API service's base URL, without assuming it matches the web
+app URL. Check CLI availability, connect using LAGO_API_KEY from my
+environment, and run read-only connection checks. Report the host,
+organization, and any failing service. Do not create test customers or
+change plans on this instance.
+```
+
+</Accordion>
+
+<Accordion title="18. Inspect the existing catalog">
+
+**Replace before pasting:** `[expected organization and host]` with both values; `[our pricing brief]` with the pricing text or its file path.
+
+```text
+The CLI is connected to [expected organization and host]. Read its
+existing billable metrics and plans. Compare their codes, aggregation,
+charges, currency, and billing intervals with [our pricing brief].
+Show what can be reused and what conflicts. Treat this organization as
+production: read only, and do not assume an empty list means a safe
+place for test data.
+```
+
+</Accordion>
+
+<Accordion title="19. Prepare a metric and plan dry run">
+
+**Replace before pasting:** `[approved pricing brief]` with the approved rules or their file path.
+
+```text
+Using [approved pricing brief] and the current Lago catalog, prepare
+the billable metric and plan we need. Check the latest CLI command
+reference and API schema. Run CLI dry runs and show their output, the
+target host, currency, base amount, included units, overage rate, and
+effective dates. Identify the metric ID the plan will need after metric
+creation. Stop before any live write.
+```
+
+</Accordion>
+
+<Accordion title="20. Review a configuration change">
+
+**Replace before pasting:** `[expected organization and host]` with the organization name and API host you intend to inspect.
+
+```text
+Compare our proposed Lago metric and plan with the actual configuration
+in [expected organization and host]. Show a field-by-field change list, the
+customers who could be affected, and one example bill before and after.
+Check whether this change needs a new plan instead of editing an existing
+one. Present the exact API or CLI requests for review. Do not execute them.
+```
+
+</Accordion>
+
+</AccordionGroup>
+
+### Check a bill and investigate problems
+
+<AccordionGroup>
+
+<Accordion title="21. Compare one customer's usage">
+
+**Replace before pasting:** `[customer ID]`, `[subscription ID]`, and `[billing period]` with the exact IDs and date range.
+
+```text
+For [customer ID], [subscription ID], and [billing period], calculate
+the expected quantity and charge from our application's own records and
+pricing rules. Read Lago's current usage for that subscription and
+compare quantities, amounts, and time boundaries. Show the source of
+each number and every difference. Do not send more events to make the
+totals match.
+```
+
+</Accordion>
+
+<Accordion title="22. Test a duplicate in an isolated environment">
+
+**Replace before pasting:** `[test organization and host]` with an isolated target; `[test usage record ID]` with one test record.
+
+```text
+In [test organization and host], use [test usage record ID]. Send its Lago
+event, read current usage, then retry with the same transaction_id and
+original timestamp. Wait for
+processing before the second read. Show the two quantities and charges
+and whether the retry changed them. Stop if this is a shared production
+organization or the record belongs to a real customer.
+```
+
+</Accordion>
+
+<Accordion title="23. Check an invoice preview">
+
+**Replace before pasting:** `[test customer ID]` and `[subscription ID]` with IDs from the same Premium organization.
+
+```text
+If this organization has Lago Premium, preview the invoice for
+[test customer ID] and [subscription ID]. Independently calculate the
+base charge, usage, credits, tax assumptions, and expected total from our records.
+Compare each invoice line with that calculation and explain differences.
+If invoice preview is unavailable, say so and use current usage for the
+checks it can support. Do not finalize or issue an invoice.
+```
+
+</Accordion>
+
+<Accordion title="24. Diagnose zero usage">
+
+**Replace before pasting:** `[test record]` with the app record ID for the missing usage event.
+
+```text
+Our app sent an event for [test record], but Lago current usage shows
+zero. Trace the event's customer, subscription, metric code, properties,
+timestamp, and response. Check whether the subscription is active and
+allow for processing delay before reading again. Show the most likely
+cause with evidence and the smallest safe fix. Do not resend the event
+with a new transaction_id.
+```
+
+</Accordion>
+
+<Accordion title="25. Explain a billing mismatch">
+
+**Replace before pasting:** `[expected amount]`, `[observed amount]`, `[customer ID]`, and `[billing period]` with amounts, ID, and dates.
+
+```text
+Our app calculates [expected amount] for [customer ID] in [billing period],
+while Lago shows [observed amount]. Recalculate from source usage records.
+Inspect the plan charge, included units, aggregation, billing period,
+customer overrides, credits, taxes, and advance billing. Separate the
+first proven difference from possible causes. Propose a fix and its
+customer impact; do not alter an issued invoice or live plan.
+```
+
+</Accordion>
+
+<Accordion title="26. Prepare the first live rollout">
+
+**Replace before pasting:** `[test organization]` with the isolated test organization; `[customer segment]` with the first customers to move.
+
+```text
+We have passed local tests and checked one bill in [test organization].
+Prepare a rollout plan for [customer segment]. List the configuration
+to promote, the first customers and billing periods to
+compare, who will review the first invoices, and the signal to pause.
+Show how existing billing is turned off for exactly those customers so
+they cannot be charged twice. Do not perform the production cutover.
+```
+
+</Accordion>
+
+</AccordionGroup>
