@@ -1,0 +1,163 @@
+---
+title: "Build billing with Claude Code, Codex, or Cursor"
+sidebarTitle: "Build with a coding agent"
+description: "Take a coding agent from an application repository to checked Lago usage and, with Premium, an invoice preview."
+---
+
+Your coding agent inspects the application and writes the billing integration. The [Lago CLI](/guide/lago-cli/overview) inspects and configures a Lago organization. Your running application sends customers, subscriptions, and usage through a [Lago SDK or REST API](/api-reference/intro), never by shelling out to the CLI.
+
+**Outcome:** a reviewed event contract, server-side integration, pricing configuration, and metered usage compared with an independent calculation. [Invoice preview](/guide/invoicing/previews) is an additional check when your organization has a Premium license. If you do not yet have a Lago organization, you can complete the repository and offline-test steps first.
+
+## Choose your agent
+
+| Agent | Open your application repository | Lago guidance |
+| --- | --- | --- |
+| Claude Code | Run `claude` in the repository | Optional [Lago plugin](https://github.com/getlago/lago-plugin#claude-code) |
+| Codex | Run `codex` or open the repository in Codex | Optional [Lago plugin](https://github.com/getlago/lago-plugin#codex) |
+| Cursor | Open the repository in Cursor Agent | This guide, the [agent documentation](/guide/ai-agents/for-agents), and the prompts below |
+
+The plugin supports Claude Code and Codex. It provides offline billing guidance and an implementation workflow; it does not connect your application to Lago at runtime. The CLI and API work with all three agents. You can also give a compatible agent the [documentation MCP](/guide/ai-agents/for-agents#give-your-agent-the-documentation) for current Lago docs; it does not provide access to your organization.
+
+## 1. Connect to the right Lago organization
+
+Use the Lago Cloud organization your team gave you access to, or [deploy self-hosted Lago](/guide/lago-self-hosted/overview) and get its API base URL. In either case, get an API key from **Developers → API keys**. Install the CLI on the machine where you run your agent:
+
+```bash
+brew install getlago/tap/lago
+lago version
+```
+
+On other systems, use the [CLI release archives](https://github.com/getlago/lago-cli/releases). Keep the key in your environment or secret manager, outside prompts and source control. Initialize one profile for your target:
+
+<CodeGroup>
+
+```bash Cloud US
+lago init --api-key "$LAGO_API_KEY" --region us
+```
+
+```bash Cloud EU
+lago init --api-key "$LAGO_API_KEY" --region eu
+```
+
+```bash Self-hosted
+lago init --api-key "$LAGO_API_KEY" --region self-hosted \
+  --api-url https://lago.example.com
+```
+
+</CodeGroup>
+
+Pass the self-hosted API **base URL**, without `/api/v1`. Then confirm the organization and exact host before any write:
+
+```bash
+lago whoami
+lago doctor
+```
+
+`--mode test` is a safety declaration, **not a sandbox**. A CLI dry run prints a request but sends nothing. For synthetic live exercises, use a dedicated, isolated self-hosted instance with no real customers or payment provider. Use a designated environment and your own actual pricing and customer data when validating a real Cloud integration. Do not seed generic demo data in a shared or production organization.
+
+## 2. Get a first result without billing anyone
+
+The public [growth-agent billing lab](https://github.com/anhtho-lago/growth-agent-billing-lab) is a small synthetic application. It has durable usage records and an existing Stripe-billed customer, but intentionally starts without a Lago integration. Its [billing brief](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/BILLING_BRIEF.md) describes a $500 monthly plan, 50,000 included credits, and $0.05 for each excess credit. The expected pretax amount at 75,000 credits is **$1,750**.
+
+```bash
+git clone https://github.com/anhtho-lago/growth-agent-billing-lab.git
+cd growth-agent-billing-lab
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+```
+
+Open this repository in your chosen agent and paste its [credits-and-overage prompt](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/prompts/credits-and-overage.md). Have the agent show its payer, event contract, IDs, ownership boundaries, and independent money calculation **before editing**. Then let it implement the smallest server-side adapter and offline tests. The agent should leave the Stripe-billed `legacy_zenith` account on its existing path.
+
+**Expected offline result:** a code diff, tests for 50,000, 50,001, and 75,000 credits, and evidence that a retry reuses the source `transaction_id` and explicit `timestamp`. An offline pass is not a Lago invoice result.
+
+## 3. Apply your application's billing design
+
+In your own repository, use this prompt to begin with the business rule rather than an API call:
+
+```text
+Read https://getlago.com/llms.txt and the relevant Lago guides. Check
+https://swagger.getlago.com/openapi.yaml for exact API fields.
+
+Our customers pay for [describe your actual pricing]. Inspect this repository.
+Before editing, show who pays; the durable customer, subscription, and source
+usage IDs; the product action that creates usage; existing billing paths;
+the proposed Lago metric and plan; who owns invoices and payments; and one
+independent example bill. Ask about decisions that change money or ownership.
+Do not access a live Lago organization yet.
+```
+
+Once you accept that design, ask the agent to implement server-side SDK or REST calls, retries, and offline money tests. The event's `transaction_id` must come from a durable source record. Persist its original timestamp so a retry uses **both** the same ID and timestamp; both matter for duplicate protection on ClickHouse-based event pipelines. See [idempotency and deduplication](/guide/events/ingesting-usage#idempotency-and-deduplication).
+
+Have the agent write reviewable CLI requests for the metric and plan. Inspect existing configuration before creating anything:
+
+```bash
+lago billable-metrics list --limit 50
+lago plans list --limit 50
+
+# Illustrative metric; use your product's accepted code and aggregation.
+lago billable-metrics create --name "Completed jobs" \
+  --code completed_jobs --aggregation-type count_agg --dry-run
+lago plans create --input @billing/lago-plan.json --dry-run
+```
+
+Review the resolved API URL, currency, base amount, included usage, overage price, and effective dates. `--dry-run` does not compare your request with existing Lago configuration. A plan charge needs the **actual metric ID** after metric creation; do not submit a placeholder. Ask the agent to show the complete diff and exact target before any live configuration write. See the [metric](/guide/lago-cli/commands/billable-metrics) and [plan](/guide/lago-cli/commands/plans) command references.
+
+## 4. Prove the amount and retry behavior
+
+The example repository includes a [reference fixture](https://github.com/anhtho-lago/growth-agent-billing-lab#verify-usage-in-isolated-self-hosted-lago). Its generator writes a Lago CLI scenario, an optional invoice-preview request, the original event for replay, and an expected-money file from the application's durable usage record. Run it **only** on an isolated self-hosted Lago instance:
+
+```bash
+PROOF_DIR="$(mktemp -d)"
+PROOF_PREFIX="lab_$(date +%s)"
+PYTHONPATH=src python3 -m growth_lab.lago_reference build \
+  --output-dir "$PROOF_DIR/proof" --prefix "$PROOF_PREFIX"
+lago fixtures run "$PROOF_DIR/proof/scenario.yaml" --dry-run
+```
+
+After `lago whoami` confirms the isolated target, run the fixture and compare current usage with the source-side calculation:
+
+```bash
+lago fixtures run "$PROOF_DIR/proof/scenario.yaml"
+lago customers current-usage "${PROOF_PREFIX}_new_acme" \
+  --external-subscription-id "${PROOF_PREFIX}_enrollment_001" \
+  --output json > "$PROOF_DIR/usage.json"
+PYTHONPATH=src python3 -m growth_lab.lago_reference verify-usage \
+  --expected "$PROOF_DIR/proof/expected.json" \
+  --usage "$PROOF_DIR/usage.json"
+```
+
+The expected usage is 75,000 credits and the expected overage charge is **$1,250**; the $500 base fee is separate. If the first read shows zero, wait for usage processing and read again rather than sending another event. Replay the original event with the same ID **and timestamp**, then verify that usage has not increased:
+
+```bash
+lago api POST /events --data "@$PROOF_DIR/proof/event-request.json"
+lago customers current-usage "${PROOF_PREFIX}_new_acme" \
+  --external-subscription-id "${PROOF_PREFIX}_enrollment_001" \
+  --output json > "$PROOF_DIR/usage-after-retry.json"
+PYTHONPATH=src python3 -m growth_lab.lago_reference verify-usage \
+  --expected "$PROOF_DIR/proof/expected.json" \
+  --usage "$PROOF_DIR/usage-after-retry.json"
+```
+
+<Info>[Invoice preview requires a Premium license](/guide/invoicing/previews), including on self-hosted Lago. On an isolated Self-Hosted Premium instance, use the generated `preview-request.json` and `verify` command to compare the full preview with the expected $1,750 pretax amount. Standard self-hosted Lago can complete the current-usage and replay checks above.</Info>
+
+```bash
+# Self-Hosted Premium only, after the current-usage check passes.
+lago invoices preview --input "@$PROOF_DIR/proof/preview-request.json" \
+  --output json > "$PROOF_DIR/preview.json"
+PYTHONPATH=src python3 -m growth_lab.lago_reference verify \
+  --expected "$PROOF_DIR/proof/expected.json" \
+  --preview "$PROOF_DIR/preview.json"
+```
+
+For your own product, trace one customer through subscription, source action, usage event, and current usage. When invoice preview is available, compare quantity, base charge, usage charge, credits, taxes, and total with an independent calculation. Do not treat a successful event response as proof of correct billing. The [integration testing guide](/guide/integration-testing) covers the broader lifecycle.
+
+## If the result differs
+
+| Symptom | First check |
+| --- | --- |
+| `lago` runs Docker Compose | Run `lago version`; remove a self-hosted shell alias shadowing the CLI. |
+| Authentication or wrong organization | Run `lago doctor` and `lago whoami`; verify API host and key. |
+| Event exists but usage is zero | Check the subscription's active period, metric code, event timestamp, and aggregation property. |
+| A replay increases usage | Compare both the original `transaction_id` and explicit `timestamp`. |
+| Usage or preview differs from expected money | Check plan charge, billing period, customer overrides, taxes, credits, and whether the base fee was billed in advance. |
+
+Use the [evaluation rubric](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/evals/README.md) to compare agent runs. Record actual diffs, tests, and live checks; mark anything not run as **not tested**.
