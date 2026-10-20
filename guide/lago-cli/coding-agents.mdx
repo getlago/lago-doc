@@ -22,14 +22,19 @@ The plugin supports Claude Code and Codex. It provides offline billing guidance 
 
 For an offline first pass, skip to step 2 and return here before any live CLI request.
 
-Use the Lago Cloud organization your team gave you access to, or [deploy self-hosted Lago](/guide/lago-self-hosted/overview) and get its API base URL. In either case, get an API key from **Developers → API keys**. Install the CLI on the machine where you run your agent:
+Before connecting the CLI, choose the Lago organization you will use:
+
+- **Lago Cloud:** Accept the invitation from Lago or your team to a specific organization and sign in. Confirm whether that organization is in the US or EU region; the CLI setup below asks you to choose one. If you have no invitation, ask your Lago contact or organization admin for access.
+- **Self-hosted Lago:** Use your team's existing deployment or [deploy Lago](/guide/lago-self-hosted/overview). Record the API service's base URL, or ask the operator for it: for example, `https://lago.example.com` (without `/api/v1`).
+
+In that **same organization**, get an API key from **Developers → API keys**, or ask an admin to provide one. Expose it to your terminal as `LAGO_API_KEY`, directly or through a secret manager; keep it out of prompts and source control. Install the CLI in the development environment where you run Claude Code or Codex:
 
 ```bash
 brew install getlago/tap/lago
 lago version
 ```
 
-On other systems, use the [CLI release archives](https://github.com/getlago/lago-cli/releases). Keep the key in your environment or secret manager, outside prompts and source control. Initialize one profile for your target:
+On other systems, use the [CLI release archives](https://github.com/getlago/lago-cli/releases). Initialize one profile for your target:
 
 <CodeGroup>
 
@@ -48,7 +53,7 @@ lago init --api-key "$LAGO_API_KEY" --region self-hosted \
 
 </CodeGroup>
 
-Pass the self-hosted API **base URL**, without `/api/v1`. Then confirm the organization and exact host before any write:
+For self-hosted Lago, `--api-url` must point to the API service if its address differs from the web app. Confirm the organization and exact host before any write:
 
 ```bash
 lago whoami
