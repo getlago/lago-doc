@@ -1,22 +1,27 @@
 ---
-title: "Build Lago billing with Claude Code or Codex"
+title: "Build Lago billing with a coding agent"
 sidebarTitle: "Build with a coding agent"
-description: "Use Claude Code or Codex to plan, build, and test Lago billing in your app."
+description: "Use a coding agent to plan, build, and test Lago billing in your app."
 ---
 
-Open your app's repository in Claude Code or Codex. Have the agent inspect your pricing, usage, and any billing you already run. Before it edits code, decide which system will calculate charges, issue invoices, and collect payments.
+Open your app's repository in your coding agent. Have it inspect your pricing, usage, and any billing you already run. Before it edits code, decide which system will calculate charges, issue invoices, and collect payments.
 
 Then have the agent add the integration. Your app sends customers, subscriptions, and usage to Lago through an [SDK or REST API](/api-reference/intro). You can run local tests before you have a Lago organization. Once connected, use the [Lago CLI](/guide/lago-cli/overview) to configure Lago and read its recorded usage. Check it against your app's records. [Invoice preview](/guide/invoicing/previews) requires Premium.
 
 ## Choose your agent
 
-| Agent | Open your application repository | Lago guidance |
+| Agent | Open your application repository | Lago install path |
 | --- | --- | --- |
-| Claude Code | Run `claude` in the repository | Optional [Lago plugin](https://github.com/getlago/lago-plugin#claude-code) |
-| Codex | Run `codex` or open the repository in Codex | Optional [Lago plugin](https://github.com/getlago/lago-plugin#codex) |
-| Cursor | Open the repository in Cursor Agent | Use the CLI, API, and prompts in this guide |
+| Claude Code | Run `claude` in the repository | [Plugin](https://github.com/getlago/lago-plugin#claude-code) |
+| Codex | Run `codex` or open the repository in Codex | [Plugin](https://github.com/getlago/lago-plugin#codex) |
+| GitHub Copilot CLI | Run `copilot` in the repository | [Plugin](https://github.com/getlago/lago-plugin#github-copilot-cli) |
+| Gemini CLI | Run `gemini` in the repository | [Extension](https://github.com/getlago/lago-plugin#gemini-cli) |
+| Cursor | Open the repository in Cursor Agent | [Plugin manifest](https://github.com/getlago/lago-plugin#cursor); not tested in Cursor |
+| Other agents that support Agent Skills | Open the repository in your agent | [Skill-only install](https://github.com/getlago/lago-plugin#other-agents-with-agent-skills) |
 
-Claude Code, Codex, and Cursor can follow the CLI and API steps below. The [Lago plugin](https://github.com/getlago/lago-plugin) provides a guided implementation workflow in Claude Code and Codex. Connect the [documentation MCP](/guide/ai-agents/for-agents#give-your-agent-the-documentation) if you want your agent to look up Lago's current guides and API reference as it codes. It searches public docs; use the authenticated CLI in step 1 to inspect or configure your Lago organization.
+The CLI and API workflow below does not require the plugin. [Local install checks](https://github.com/getlago/lago-plugin/tree/main/docs/release-evidence/agents-2026-10-19) verified the offline demo in GitHub Copilot CLI and Gemini CLI; they did not test automatic skill selection or a billing integration. Cursor's manifest is published but untested in Cursor. The Agent Skills route installs the skill without the bundled demo.
+
+Connect the [documentation MCP](/guide/ai-agents/for-agents#give-your-agent-the-documentation) if you want your agent to look up Lago's current guides and API reference as it codes. It searches public docs; use the authenticated CLI in step 1 to inspect or configure your Lago organization.
 
 ## 1. Connect to the right Lago organization
 
@@ -27,7 +32,7 @@ Before connecting the CLI, choose the Lago organization you will use:
 - **Lago Cloud:** Accept the invitation from Lago or your team to a specific organization and sign in. Confirm whether that organization is in the US or EU region; the CLI setup below asks you to choose one. If you have no invitation, ask your Lago contact or organization admin for access.
 - **Self-hosted Lago:** Use your team's existing deployment or [deploy Lago](/guide/lago-self-hosted/overview). Record the API service's base URL, or ask the operator for it: for example, `https://lago.example.com` (without `/api/v1`).
 
-In that **same organization**, get an API key from **Developers → API keys**, or ask an admin to provide one. Expose it to your terminal as `LAGO_API_KEY`, directly or through a secret manager; keep it out of prompts and source control. Install the CLI in the development environment where you run Claude Code or Codex:
+In that **same organization**, get an API key from **Developers → API keys**, or ask an admin to provide one. Expose it to your terminal as `LAGO_API_KEY`, directly or through a secret manager; keep it out of prompts and source control. Install the CLI in the development environment where you run your coding agent:
 
 ```bash
 brew install getlago/tap/lago

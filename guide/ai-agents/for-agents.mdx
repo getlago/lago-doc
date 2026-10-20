@@ -4,9 +4,9 @@ sidebarTitle: "For agents"
 description: "Give your coding agent Lago's documentation, then build and verify a billing integration with the API, CLI, or MCP."
 ---
 
-Use Lago's public documentation, REST API, CLI, and MCP server with your AI agent. Start with a product description or pricing model; open your application repository when you are ready to implement. The public [Lago plugin](https://github.com/getlago/lago-plugin) offers a guided offline example and implementation workflow for Claude Code and Codex.
+Use Lago's public documentation, REST API, CLI, and MCP server with your AI agent. Start with a product description or pricing model; open your application repository when you are ready to implement. The public [Lago plugin](https://github.com/getlago/lago-plugin) offers a guided offline example and implementation workflow; see the install paths below.
 
-For a repository-to-billing-proof walkthrough, follow [Build Lago billing with Claude Code or Codex](/guide/lago-cli/coding-agents). Cursor users can follow its CLI and API steps without the plugin.
+For a hands-on guide to adding Lago to an application, follow [Build Lago billing with a coding agent](/guide/lago-cli/coding-agents).
 
 ## Start with a prompt
 
@@ -88,9 +88,9 @@ Lago has no built-in sandbox, and naming an organization "test" does not isolate
 
 ## Optional: install the Lago plugin
 
-The public [Lago plugin](https://github.com/getlago/lago-plugin) packages Lago billing guidance, worked examples, and an implementation workflow for Claude Code and Codex. It is optional; your application uses the REST API or a Lago SDK at runtime.
+The public [Lago plugin](https://github.com/getlago/lago-plugin) packages Lago billing guidance, worked examples, and an implementation workflow. It is optional; your application uses the REST API or a Lago SDK at runtime.
 
-The plugin supports Claude Code and Codex. Exploring its offline example and designing an integration require no Lago account, API key, CLI, or MCP connection.
+Claude Code and Codex have plugin installs. [Local checks](https://github.com/getlago/lago-plugin/tree/main/docs/release-evidence/agents-2026-10-19) installed the GitHub Copilot CLI and Gemini CLI bundles and ran their offline demo. They did not test automatic skill selection or a billing integration. Cursor's manifest is published but untested in Cursor. Other Agent Skills clients can install the skill alone, without the bundled demo. Offline planning requires no Lago account or API key.
 
 <Tabs>
   <Tab title="Claude Code">
@@ -120,5 +120,34 @@ The plugin supports Claude Code and Codex. Exploring its offline example and des
     ```text
     $lago:implementation show me what Lago can do; do not assume this workspace is my application
     ```
+  </Tab>
+  <Tab title="GitHub Copilot CLI">
+    Run these commands in your terminal:
+
+    ```bash
+    copilot plugin marketplace add getlago/lago-plugin
+    copilot plugin install lago@lago-plugins
+    ```
+
+    The local checkout install was verified; this GitHub marketplace command has not been separately tested.
+  </Tab>
+  <Tab title="Gemini CLI">
+    Run this command in your terminal:
+
+    ```bash
+    gemini extensions install https://github.com/getlago/lago-plugin
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    In Cursor, open **Customize**, choose **From GitHub Repository**, and enter `getlago/lago-plugin`. This install path has not been tested in Cursor.
+  </Tab>
+  <Tab title="Other agents">
+    If your agent supports Agent Skills, install the implementation skill:
+
+    ```bash
+    npx skills add getlago/lago-plugin --skill implementation
+    ```
+
+    This installs the skill without the plugin's bundled offline demo.
   </Tab>
 </Tabs>
