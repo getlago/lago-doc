@@ -57,6 +57,8 @@ lago doctor
 
 `--mode test` is a safety declaration, **not a sandbox**. A CLI dry run prints a request but sends nothing. For synthetic live exercises, use a dedicated, isolated self-hosted instance with no real customers or payment provider. Use a designated environment and your own actual pricing and customer data when validating a real Cloud integration. Do not seed generic demo data in a shared or production organization.
 
+If your isolated instance uses loopback-only HTTP, add `--insecure` to each CLI command. The CLI requires it for HTTP. Keep the example's normal HTTPS configuration for any nonlocal deployment.
+
 ## 2. Get a first result without billing anyone
 
 The public [growth-agent billing lab](https://github.com/anhtho-lago/growth-agent-billing-lab) is a small synthetic application. It has durable usage records and an existing Stripe-billed customer, but intentionally starts without a Lago integration. Its [billing brief](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/BILLING_BRIEF.md) describes a $500 monthly plan, 50,000 included credits, and $0.05 for each excess credit. The expected pretax amount at 75,000 credits is **$1,750**.
@@ -112,13 +114,13 @@ PROOF_DIR="$(mktemp -d)"
 PROOF_PREFIX="lab_$(date +%s)"
 PYTHONPATH=src python3 -m growth_lab.lago_reference build \
   --output-dir "$PROOF_DIR/proof" --prefix "$PROOF_PREFIX"
-lago fixtures run "$PROOF_DIR/proof/scenario.yaml" --dry-run
+lago fixtures run "$PROOF_DIR/proof/scenario.yaml" --mode test --dry-run
 ```
 
 After `lago whoami` confirms the isolated target, run the fixture and compare current usage with the source-side calculation:
 
 ```bash
-lago fixtures run "$PROOF_DIR/proof/scenario.yaml"
+lago fixtures run "$PROOF_DIR/proof/scenario.yaml" --mode test
 lago customers current-usage "${PROOF_PREFIX}_new_acme" \
   --external-subscription-id "${PROOF_PREFIX}_enrollment_001" \
   --output json > "$PROOF_DIR/usage.json"
@@ -130,7 +132,13 @@ PYTHONPATH=src python3 -m growth_lab.lago_reference verify-usage \
 The expected usage is 75,000 credits and the expected overage charge is **$1,250**; the $500 base fee is separate. If the first read shows zero, wait for usage processing and read again rather than sending another event. Replay the original event with the same ID **and timestamp**, then verify that usage has not increased:
 
 ```bash
-lago api POST /events --data "@$PROOF_DIR/proof/event-request.json"
+if lago api POST /events --data "@$PROOF_DIR/proof/event-request.json" \
+  --output json > "$PROOF_DIR/replay.json" 2>&1; then
+  echo "Unexpectedly accepted a duplicate event" >&2
+  exit 1
+fi
+PYTHONPATH=src python3 -m growth_lab.lago_reference verify-replay \
+  --replay "$PROOF_DIR/replay.json"
 lago customers current-usage "${PROOF_PREFIX}_new_acme" \
   --external-subscription-id "${PROOF_PREFIX}_enrollment_001" \
   --output json > "$PROOF_DIR/usage-after-retry.json"
@@ -138,6 +146,8 @@ PYTHONPATH=src python3 -m growth_lab.lago_reference verify-usage \
   --expected "$PROOF_DIR/proof/expected.json" \
   --usage "$PROOF_DIR/usage-after-retry.json"
 ```
+
+Lago returns HTTP 422 with `transaction_id: value_already_exist` for this duplicate in the tested standard self-hosted instance. The CLI exits nonzero; the replay verifier checks that exact reason, then the usage verifier checks that the amount stayed the same. A different error is a failed test.
 
 <Info>[Invoice preview requires a Premium license](/guide/invoicing/previews), including on self-hosted Lago. On an isolated Self-Hosted Premium instance, use the generated `preview-request.json` and `verify` command to compare the full preview with the expected $1,750 pretax amount. Standard self-hosted Lago can complete the current-usage and replay checks above.</Info>
 
@@ -159,6 +169,7 @@ For your own product, trace one customer through subscription, source action, us
 | `lago` runs Docker Compose | Run `lago version`; remove a self-hosted shell alias shadowing the CLI. |
 | Authentication or wrong organization | Run `lago doctor` and `lago whoami`; verify API host and key. |
 | Event exists but usage is zero | Check the subscription's active period, metric code, event timestamp, and aggregation property. |
+| Fixture says it requires a test profile | Add `--mode test` to `lago fixtures run`; confirm the exact isolated target with `lago whoami` first. The flag does not create a sandbox. |
 | A replay increases usage | Compare both the original `transaction_id` and explicit `timestamp`. |
 | Usage or preview differs from expected money | Check plan charge, billing period, customer overrides, taxes, credits, and whether the base fee was billed in advance. |
 
