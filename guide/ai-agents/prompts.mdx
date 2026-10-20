@@ -4,13 +4,15 @@ sidebarTitle: "Coding-agent prompts"
 description: "Copy prompts for exploring, implementing, configuring, and checking Lago billing with a coding agent."
 ---
 
-Open your application repository in Claude Code, Codex, or another coding agent, then paste the prompt for the job you want done. Replace text in `[brackets]` with your own pricing or environment. You can explore and build local tests without a Lago account. For live work, [connect to the right organization](/guide/lago-cli/coding-agents#3-connect-to-the-right-lago-organization) first. Keep your API key in your terminal or secret manager, never in a prompt or source file.
+Open your application repository in a coding agent, choose a task below, and replace the named placeholders before pasting. Planning and local tests need no Lago account. For live work, [connect to the right organization](/guide/lago-cli/coding-agents#3-connect-to-the-right-lago-organization) first. Keep your API key out of prompts and source files.
 
 If you installed the [Lago plugin](/guide/ai-agents/for-agents#pick-your-agent), ask the agent to use its **Lago implementation skill** with any prompt below. For a complete walkthrough, start with [Build Lago billing with a coding agent](/guide/lago-cli/coding-agents).
 
 ## Understand your app and pricing
 
 ### 1. Find the billing boundary
+
+**Replace before pasting:** Nothing. Open your application repository.
 
 ```text
 Inspect this repository and map how customers pay today. Identify which
@@ -22,6 +24,8 @@ customer twice. Do not edit code or contact a live billing system.
 
 ### 2. Find the billable action
 
+**Replace before pasting:** `[customer action]` with the action you charge for, such as a completed job.
+
 ```text
 Our product charges for [customer action]. Find the application record that
 proves this action happened. Show when it is created, its stable ID and
@@ -32,9 +36,10 @@ explain anything the current data cannot prove. Do not edit code yet.
 
 ### 3. Turn a pricing brief into a bill
 
+**Replace before pasting:** `[pricing rules]` with your fee, included units, rates, period, and currency; `[example usage]` with one customer's quantity.
+
 ```text
-Our pricing is [describe base fee, included units, usage rates, billing
-period, and currency]. Calculate a bill for [example customer and usage].
+Our pricing is [pricing rules]. Calculate a bill for [example usage].
 Show each line item and the formula. Then map the rules to Lago metrics,
 plan charges, and any credits. Identify decisions the brief leaves open,
 including proration, taxes, and when charges become effective. Do not
@@ -42,6 +47,8 @@ create anything in Lago.
 ```
 
 ### 4. Compare pricing options
+
+**Replace before pasting:** `[pricing option A]`, `[pricing option B]`, and `[examples]` with two price structures and three realistic usage amounts.
 
 ```text
 We are considering [pricing option A] and [pricing option B]. Use these
@@ -53,6 +60,8 @@ before configuring a plan. Do not change our app or Lago organization.
 
 ### 5. Choose customer and subscription IDs
 
+**Replace before pasting:** Nothing. Open the repository that owns your customer records.
+
 ```text
 Find our existing customer, account, subscription, and workspace IDs.
 Recommend stable external IDs for Lago customers and subscriptions. Trace
@@ -63,11 +72,13 @@ that would need to change. Do not create Lago customers yet.
 
 ### 6. Plan a move from current billing
 
+**Replace before pasting:** `[system]` with your current billing system; `[customer segment]` with the customers you plan to move.
+
 ```text
 We currently bill through [system]. Inspect the subscription, invoice,
-payment, and usage paths in this repo. Propose a staged move of [customer
-segment] to Lago. Define the cutover date, who owns each invoice before
-and after it, how to avoid duplicate charges, how to reconcile the first
+payment, and usage paths in this repo. Propose a staged move of [customer segment]
+to Lago. Define the cutover date, who owns each invoice before and after it,
+how to avoid duplicate charges, how to reconcile the first
 bill, and how to roll back. Flag any decision that needs finance approval.
 Do not change production billing.
 ```
@@ -75,6 +86,8 @@ Do not change production billing.
 ## Build and test in your repository
 
 ### 7. Add the smallest working integration
+
+**Replace before pasting:** `[billable action]` with the action from your approved billing plan.
 
 ```text
 Implement the billing plan we reviewed for [billable action]. Use a Lago
@@ -86,6 +99,8 @@ Show the diff and test results before contacting a live Lago organization.
 
 ### 8. Make usage retries safe
 
+**Replace before pasting:** `[billable action]` with the action your app records and sends to Lago.
+
 ```text
 Trace how [billable action] is recorded and retried. Make the Lago event's
 transaction_id come from that durable app record, and reuse its original
@@ -96,8 +111,10 @@ billed unit. Show which failures still need an operator to intervene.
 
 ### 9. Implement a base fee with overage
 
+**Replace before pasting:** `[base amount]`, `[billing period]`, `[included units]`, and `[overage rate]` with your price, period, allowance, and price per extra unit.
+
 ```text
-We charge [base amount] per [billing period], including [number] units,
+We charge [base amount] per [billing period], including [included units],
 then [overage rate] for each extra unit. Inspect our usage records and
 implement the server-side Lago integration for this rule. Calculate bills
 at zero usage, exactly the included amount, and above it without relying
@@ -107,8 +124,10 @@ dry run before any live configuration change.
 
 ### 10. Meter AI usage
 
+**Replace before pasting:** `[billable measure]` with one quantity, such as requests, tokens, or compute time.
+
 ```text
-We want to charge for [requests, tokens, or compute time]. Find where this
+We want to charge for [billable measure]. Find where this
 app receives the provider's final usage count. Propose one billable event
 per completed operation, with a stable operation ID, original timestamp,
 customer mapping, and the measured quantity. Explain how failed,
@@ -117,6 +136,8 @@ the event path only after showing the event contract for review.
 ```
 
 ### 11. Model prepaid credits
+
+**Replace before pasting:** `[credit amount]` with the purchased credit quantity; `[usage]` with what consumes credits.
 
 ```text
 Our customers buy [credit amount] and spend credits on [usage]. Read
@@ -129,15 +150,18 @@ transactions or customer charges yet.
 
 ### 12. Handle subscription changes
 
+**Replace before pasting:** `[subscription change]` with the upgrade, downgrade, pause, or cancellation you want to test.
+
 ```text
-Find how this app starts, upgrades, downgrades, pauses, and cancels a
-subscription. Map those actions to Lago's current subscription API and
-documented billing timing. Show one timeline with expected charges for
-each transition. Implement only the transition we agree to test first,
-with local tests and no live customer changes.
+Inspect how this app handles [subscription change]. Map that action to
+Lago's current subscription API and billing timing. Show the expected
+charges before and after the change. Implement it with local tests only;
+do not change live customers.
 ```
 
 ### 13. Process Lago webhooks
+
+**Replace before pasting:** `[invoice or payment event]` with the Lago event your app needs to handle.
 
 ```text
 We need our app to react to [invoice or payment event]. Check Lago's
@@ -150,9 +174,11 @@ endpoint or change production settings until the diff is reviewed.
 
 ### 14. Build a billing test matrix
 
+**Replace before pasting:** `[pricing rules]` with the agreed rules or their file path.
+
 ```text
-Create focused local tests for our Lago integration using the agreed
-pricing rules. Cover zero usage, the included boundary, overage, duplicate
+Create focused local tests for our Lago integration using [pricing rules].
+Cover zero usage, the included boundary, overage, duplicate
 events, a delayed event, a different customer, and a subscription change
 if our app supports one. Calculate expected amounts independently from
 Lago responses. Run the tests and show any case that cannot yet be proved.
@@ -161,6 +187,8 @@ Lago responses. Run the tests and show any case that cannot yet be proved.
 ## Connect and configure Lago
 
 ### 15. Get the right access
+
+**Replace before pasting:** Nothing. The agent will ask which Lago deployment you use.
 
 ```text
 Help me identify the access I need for this Lago integration. Ask whether
@@ -172,6 +200,8 @@ or change an organization yet.
 ```
 
 ### 16. Set up the CLI
+
+**Replace before pasting:** Nothing. Have your Cloud region or self-hosted API URL ready; keep the key out of chat.
 
 ```text
 Set up the Lago CLI in this development environment. Check the operating
@@ -186,6 +216,8 @@ data changes.
 
 ### 17. Check a self-hosted connection
 
+**Replace before pasting:** `[web app URL]` with your self-hosted Lago web address.
+
 ```text
 I have access to a self-hosted Lago instance at [web app URL]. Help me
 identify the API service's base URL, without assuming it matches the web
@@ -196,6 +228,8 @@ change plans on this instance.
 ```
 
 ### 18. Inspect the existing catalog
+
+**Replace before pasting:** `[expected organization and host]` with both values; `[our pricing brief]` with the pricing text or its file path.
 
 ```text
 The CLI is connected to [expected organization and host]. Read its
@@ -208,6 +242,8 @@ place for test data.
 
 ### 19. Prepare a metric and plan dry run
 
+**Replace before pasting:** `[approved pricing brief]` with the approved rules or their file path.
+
 ```text
 Using [approved pricing brief] and the current Lago catalog, prepare
 the billable metric and plan we need. Check the latest CLI command
@@ -219,9 +255,11 @@ creation. Stop before any live write.
 
 ### 20. Review a configuration change
 
+**Replace before pasting:** `[expected organization and host]` with the organization name and API host you intend to inspect.
+
 ```text
 Compare our proposed Lago metric and plan with the actual configuration
-in [expected organization]. Show a field-by-field change list, the
+in [expected organization and host]. Show a field-by-field change list, the
 customers who could be affected, and one example bill before and after.
 Check whether this change needs a new plan instead of editing an existing
 one. Present the exact API or CLI requests for review. Do not execute them.
@@ -230,6 +268,8 @@ one. Present the exact API or CLI requests for review. Do not execute them.
 ## Check a bill and investigate problems
 
 ### 21. Compare one customer's usage
+
+**Replace before pasting:** `[customer ID]`, `[subscription ID]`, and `[billing period]` with the exact IDs and date range.
 
 ```text
 For [customer ID], [subscription ID], and [billing period], calculate
@@ -242,10 +282,12 @@ totals match.
 
 ### 22. Test a duplicate in an isolated environment
 
+**Replace before pasting:** `[test organization and host]` with an isolated target; `[test usage record ID]` with one test record.
+
 ```text
-In our separate test organization or isolated self-hosted instance,
-choose one test usage record. Send its Lago event, read current usage,
-then retry with the same transaction_id and original timestamp. Wait for
+In [test organization and host], use [test usage record ID]. Send its Lago
+event, read current usage, then retry with the same transaction_id and
+original timestamp. Wait for
 processing before the second read. Show the two quantities and charges
 and whether the retry changed them. Stop if this is a shared production
 organization or the record belongs to a real customer.
@@ -253,16 +295,20 @@ organization or the record belongs to a real customer.
 
 ### 23. Check an invoice preview
 
+**Replace before pasting:** `[test customer ID]` and `[subscription ID]` with IDs from the same Premium organization.
+
 ```text
-If this organization has Lago Premium, preview the invoice for [test
-customer and subscription]. Independently calculate the base charge,
-usage, credits, tax assumptions, and expected total from our records.
+If this organization has Lago Premium, preview the invoice for
+[test customer ID] and [subscription ID]. Independently calculate the
+base charge, usage, credits, tax assumptions, and expected total from our records.
 Compare each invoice line with that calculation and explain differences.
 If invoice preview is unavailable, say so and use current usage for the
 checks it can support. Do not finalize or issue an invoice.
 ```
 
 ### 24. Diagnose zero usage
+
+**Replace before pasting:** `[test record]` with the app record ID for the missing usage event.
 
 ```text
 Our app sent an event for [test record], but Lago current usage shows
@@ -275,9 +321,11 @@ with a new transaction_id.
 
 ### 25. Explain a billing mismatch
 
+**Replace before pasting:** `[expected amount]`, `[observed amount]`, `[customer ID]`, and `[billing period]` with amounts, ID, and dates.
+
 ```text
-Our app calculates [expected amount] for [customer and period], while
-Lago shows [observed amount]. Recalculate from source usage records.
+Our app calculates [expected amount] for [customer ID] in [billing period],
+while Lago shows [observed amount]. Recalculate from source usage records.
 Inspect the plan charge, included units, aggregation, billing period,
 customer overrides, credits, taxes, and advance billing. Separate the
 first proven difference from possible causes. Propose a fix and its
@@ -286,10 +334,12 @@ customer impact; do not alter an issued invoice or live plan.
 
 ### 26. Prepare the first live rollout
 
+**Replace before pasting:** `[test organization]` with the isolated test organization; `[customer segment]` with the first customers to move.
+
 ```text
-We have passed local tests and checked one bill in [separate test
-organization]. Prepare a rollout plan for [customer segment]. List the
-configuration to promote, the first customers and billing periods to
+We have passed local tests and checked one bill in [test organization].
+Prepare a rollout plan for [customer segment]. List the configuration
+to promote, the first customers and billing periods to
 compare, who will review the first invoices, and the signal to pause.
 Show how existing billing is turned off for exactly those customers so
 they cannot be charged twice. Do not perform the production cutover.
