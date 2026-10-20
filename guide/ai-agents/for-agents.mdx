@@ -1,145 +1,55 @@
 ---
-title: "Build with Lago using your AI agent"
-sidebarTitle: "For agents"
-description: "Give your coding agent Lago's documentation, then build and verify a billing integration with the API, CLI, or MCP."
+title: "AI tools for Lago"
+sidebarTitle: "AI tools"
+description: "Install the Lago plugin in your coding agent, build a billing integration, and connect to a Lago organization when you are ready to test it."
 ---
 
-Use Lago's public documentation, REST API, CLI, and MCP server with your AI agent. Start with a product description or pricing model; open your application repository when you are ready to implement. The public [Lago plugin](https://github.com/getlago/lago-plugin) offers a guided offline example and implementation workflow; see the install paths below.
+Use your coding agent to explore Lago, model your pricing, and add billing to your application. The [Lago plugin](https://github.com/getlago/lago-plugin) gives the agent an offline example and an implementation workflow. You can start without a Lago account. Connect to a Lago Cloud organization or self-hosted instance when you are ready to check real usage and billing data.
 
-For a hands-on guide to adding Lago to an application, follow [Build Lago billing with a coding agent](/guide/lago-cli/coding-agents).
-
-## Start with a prompt
-
-Paste this into your coding agent:
-
-```text
-Read https://getlago.com/llms.txt and follow the relevant Lago guides for this
-project. Use https://swagger.getlago.com/openapi.yaml for exact API fields.
-Help me design and implement a billing integration. Ask before live access.
-```
-
-Describe what your customers pay for. Your agent can use public documentation to propose the customer identifiers, billable metrics, plans, and subscription lifecycle before connecting to a live environment.
-
-## Model your pricing
-
-Give the agent a product description or pricing page:
-
-```text
-We sell an AI research product. Customers pay a subscription with included usage,
-then overages. Help me model who pays, what we meter, and how the amount is
-calculated in Lago. Identify the smallest integration we can verify.
-```
-
-Other starting points:
-
-- **API usage:** "Model a subscription with included API calls and usage overages."
-- **Prepaid credits:** "Help me model prepaid usage, wallet consumption, and what my application should do when credit runs out."
-- **Existing billing:** "Help me add Lago usage billing to my existing architecture. Identify which system owns subscriptions, invoicing, and payments."
-
-## Implement in your application
-
-Open the application repository and ask:
-
-```text
-Implement Lago in this application. Inspect the codebase, propose the smallest
-billing slice, and add usage events and tests. Ask before accessing any live
-Lago environment.
-```
-
-Review the proposed customer identifiers, billable metrics, plans, and subscription lifecycle. Your application should use an official Lago SDK or the REST API. It should not shell out to the CLI or require an MCP server at runtime.
-
-A useful first validation checks the expected charge, retries the same logical event with the same `transaction_id` and explicit `timestamp`, and compares the resulting Lago usage or invoice data with the independently calculated expectation. On organizations using the ClickHouse-based event pipeline, both fields must match for Lago to treat a retry as the same event. A different or omitted timestamp creates a distinct billable event. See [Idempotency and deduplication](/guide/events/ingesting-usage#idempotency-and-deduplication). A successful API response alone does not establish billing correctness.
-
-## Choose how your agent connects
-
-| Tool | Use it for | Requirements |
-| --- | --- | --- |
-| Lago CLI | Terminal workflows, diagnostics, scripts, and structured billing results | Installed CLI; configured credentials for live requests |
-| Product MCP | Read billing data and perform supported operations through connected tools | MCP client, Docker, Lago API key, and target API URL |
-| Documentation MCP | Search and retrieve public Lago documentation | Compatible MCP client |
-| REST API or SDK | Your application's production integration | Server-side API credentials and the correct regional or self-hosted API URL |
-
-Choose the interface your agent supports. The API, CLI, and MCP work independently; you do not need to install all three. Application code should use the REST API or an official SDK.
-
-### Build with the API or an SDK
-
-Start with the [API reference](/api-reference/intro) and [developer resources](/developers) for supported SDKs. Give your agent the [complete OpenAPI specification](https://swagger.getlago.com/openapi.yaml) for exact fields. Keep credentials server-side and confirm the US, EU, or self-hosted API URL before sending requests.
-
-### Use the CLI or the product MCP
-
-The [Lago CLI](/guide/lago-cli/overview) covers terminal workflows, diagnostics, and scripts. The [product MCP server](/guide/ai-agents/mcp-server) gives an MCP client access to live billing data. Both contact a real Lago organization: set the US, EU, or self-hosted API URL explicitly and keep the API key in your client's secret configuration. Start with a read-only request, such as listing a customer's invoices.
-
-## Give your agent the documentation
-
-Use these sources to keep generated code aligned with Lago’s current API and workflows.
-
-- **Documentation index:** [llms.txt](https://getlago.com/llms.txt)
-- **Documentation MCP:** `https://docs.getlago.com/mcp`
-- **Complete OpenAPI contract:** [openapi.yaml](https://swagger.getlago.com/openapi.yaml)
-- **Developer resources:** [API, SDKs, authentication, and webhooks](/developers)
-
-Configure the documentation MCP as a remote HTTP server in a compatible client. It provides documentation access, not access to your Lago organization.
-
-## Validate before live billing
-
-Keep API keys out of prompts, source control, and browser code. Confirm the organization, API URL, affected records, and expected billing impact before live work. Ask your agent to show the proposed changes before executing financial or destructive operations.
-
-Lago has no built-in sandbox, and naming an organization "test" does not isolate it. Run synthetic tests in a separate Lago Cloud organization or an isolated self-hosted instance. Follow the [integration testing guide](/guide/integration-testing) when validating your own application.
-
-## Optional: install the Lago plugin
-
-The public [Lago plugin](https://github.com/getlago/lago-plugin) packages Lago billing guidance, worked examples, and an implementation workflow. It is optional; your application uses the REST API or a Lago SDK at runtime.
-
-Claude Code and Codex have plugin installs. [Local checks](https://github.com/getlago/lago-plugin/tree/main/docs/release-evidence/agents-2026-10-19) installed the GitHub Copilot CLI and Gemini CLI bundles and ran their offline demo. They did not test automatic skill selection or a billing integration. Cursor's manifest is published but untested in Cursor. Other Agent Skills clients can install the skill alone, without the bundled demo. Offline planning requires no Lago account or API key.
+## Pick your agent
 
 <Tabs>
   <Tab title="Claude Code">
-    Run these commands in Claude Code:
+    Run in Claude Code:
 
     ```text
     /plugin marketplace add getlago/lago-plugin
     /plugin install lago@lago-plugins
     ```
 
-    Then start with:
-
-    ```text
-    /lago:implementation show me what Lago can do
-    ```
+    Then ask: `/lago:implementation show me what Lago can do`
   </Tab>
   <Tab title="Codex">
-    Run these commands in your terminal:
+    Run in your terminal:
 
     ```bash
     codex plugin marketplace add getlago/lago-plugin
     codex plugin add lago@lago-plugins
     ```
 
-    Start a new Codex task, then ask:
+    Start a new Codex task, then ask: `$lago:implementation show me what Lago can do; do not assume this workspace is my application`
+  </Tab>
+  <Tab title="Gemini CLI">
+    Run in your terminal:
 
-    ```text
-    $lago:implementation show me what Lago can do; do not assume this workspace is my application
+    ```bash
+    gemini extensions install https://github.com/getlago/lago-plugin
     ```
+
+    Then ask: `Use the Lago implementation skill to show me what Lago can do.`
   </Tab>
   <Tab title="GitHub Copilot CLI">
-    Run these commands in your terminal:
+    Run in your terminal:
 
     ```bash
     copilot plugin marketplace add getlago/lago-plugin
     copilot plugin install lago@lago-plugins
     ```
 
-    The local checkout install was verified; this GitHub marketplace command has not been separately tested.
-  </Tab>
-  <Tab title="Gemini CLI">
-    Run this command in your terminal:
-
-    ```bash
-    gemini extensions install https://github.com/getlago/lago-plugin
-    ```
+    Then ask: `Use the Lago implementation skill to show me what Lago can do.` The local plugin install and offline demo were tested; the GitHub marketplace command has not been separately tested.
   </Tab>
   <Tab title="Cursor">
-    In Cursor, open **Customize**, choose **From GitHub Repository**, and enter `getlago/lago-plugin`. This install path has not been tested in Cursor.
+    In Cursor, open **Customize → From GitHub Repository** and enter `getlago/lago-plugin`. The manifest is published, but this install has not been tested in Cursor.
   </Tab>
   <Tab title="Other agents">
     If your agent supports Agent Skills, install the implementation skill:
@@ -151,3 +61,39 @@ Claude Code and Codex have plugin installs. [Local checks](https://github.com/ge
     This installs the skill without the plugin's bundled offline demo.
   </Tab>
 </Tabs>
+
+[Local checks](https://github.com/getlago/lago-plugin/tree/main/docs/release-evidence/agents-2026-10-19) ran the offline demo in Gemini CLI and GitHub Copilot CLI. They did not test automatic skill selection or an application billing integration. The Claude Code and Codex paths are the plugin's primary installs.
+
+If your agent cannot install the plugin or a skill, give it the [one-page Lago starter](https://github.com/getlago/lago-plugin/blob/main/START_HERE.md), which includes the offline example and Node.js/TypeScript and Python integration code.
+
+## Give the agent a task
+
+**Just exploring?** After installing the plugin, ask it to use the Lago implementation skill to show you what Lago can do. The example runs offline, so you do not need an application repository or API key.
+
+**Adding billing to an app?** Open your application repository in the agent and paste:
+
+```text
+Build billing on Lago in this app. Inspect the code and our current billing.
+Before editing, show who pays, what usage we would send, how the bill is
+calculated, and which system handles subscriptions, invoices, and payments.
+Then implement the smallest useful slice and test the money offline.
+Ask before changing existing billing or accessing a live Lago organization.
+```
+
+For the full workflow, including a sample application, CLI commands, and billing checks, follow [Build Lago billing with a coding agent](/guide/lago-cli/coding-agents).
+
+## Connect to Lago when you are ready
+
+To read or configure a real organization, use the [Lago CLI](/guide/lago-cli/overview) or [product MCP server](/guide/ai-agents/mcp-server). These are separate from the plugin. Your application uses a [Lago SDK or the REST API](/developers) at runtime.
+
+| Tool | What it gives your agent | Lago API key? |
+| --- | --- | --- |
+| [Lago plugin](https://github.com/getlago/lago-plugin) | Guided billing examples and implementation instructions | No, for offline work |
+| [Documentation MCP](https://docs.getlago.com/mcp) | Search of Lago's public docs | No |
+| [Lago CLI](/guide/lago-cli/overview) | Terminal commands to inspect, configure, and verify a Lago organization | Yes, for live commands |
+| [Product MCP](/guide/ai-agents/mcp-server) | Supported tools that access an organization's billing data | Yes |
+| [SDK or REST API](/developers) | Your application's server-side billing integration | Yes |
+
+For live access, use the **Lago Cloud organization your team invited you to**, or [deploy self-hosted Lago](/guide/lago-self-hosted/overview). Confirm the Cloud region or your self-hosted API URL. In that same organization, get an API key from **Developers → API keys**. Then follow the [CLI setup and verification steps](/guide/lago-cli/coding-agents#2-connect-to-the-right-lago-organization). Keep the key out of prompts and source control.
+
+The plugin does not bundle the CLI or either MCP connection. If you want your agent to look up exact event or pricing guidance while coding, add `https://docs.getlago.com/mcp` as a remote HTTP MCP server. It searches public docs and cannot read your organization's data.

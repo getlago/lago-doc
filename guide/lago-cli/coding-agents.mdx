@@ -4,28 +4,33 @@ sidebarTitle: "Build with a coding agent"
 description: "Use a coding agent to plan, build, and test Lago billing in your app."
 ---
 
-Open your app's repository in your coding agent. Have it inspect your pricing, usage, and any billing you already run. Before it edits code, decide which system will calculate charges, issue invoices, and collect payments.
+Use this guide to add Lago billing to an application with a coding agent. Start with a local example or your own repository, then connect to a Lago organization to check the result. You can complete the offline work without a Lago account or API key.
 
-Then have the agent add the integration. Your app sends customers, subscriptions, and usage to Lago through an [SDK or REST API](/api-reference/intro). You can run local tests before you have a Lago organization. Once connected, use the [Lago CLI](/guide/lago-cli/overview) to configure Lago and read its recorded usage. Check it against your app's records. [Invoice preview](/guide/invoicing/previews) requires Premium.
+Your agent should first identify who pays, what usage creates a charge, and which system currently calculates charges, issues invoices, and collects payments. Your application will send customers, subscriptions, and usage through a [Lago SDK or REST API](/api-reference/intro). The [Lago CLI](/guide/lago-cli/overview) is for configuration and verification, not for application runtime code.
 
 ## Choose your agent
 
-| Agent | Open your application repository | Lago install path |
-| --- | --- | --- |
-| Claude Code | Run `claude` in the repository | [Plugin](https://github.com/getlago/lago-plugin#claude-code) |
-| Codex | Run `codex` or open the repository in Codex | [Plugin](https://github.com/getlago/lago-plugin#codex) |
-| GitHub Copilot CLI | Run `copilot` in the repository | [Plugin](https://github.com/getlago/lago-plugin#github-copilot-cli) |
-| Gemini CLI | Run `gemini` in the repository | [Extension](https://github.com/getlago/lago-plugin#gemini-cli) |
-| Cursor | Open the repository in Cursor Agent | [Plugin manifest](https://github.com/getlago/lago-plugin#cursor); not tested in Cursor |
-| Other agents that support Agent Skills | Open the repository in your agent | [Skill-only install](https://github.com/getlago/lago-plugin#other-agents-with-agent-skills) |
+First, [pick your agent and install the Lago plugin](/guide/ai-agents/for-agents#pick-your-agent). That page has the exact steps for Claude Code, Codex, Gemini CLI, GitHub Copilot CLI, Cursor, and agents that support Agent Skills, along with the test status of each path. Open your application repository in the agent when you are ready to work on your own code. The CLI and API steps below also work without the plugin.
 
-The CLI and API workflow below does not require the plugin. [Local install checks](https://github.com/getlago/lago-plugin/tree/main/docs/release-evidence/agents-2026-10-19) verified the offline demo in GitHub Copilot CLI and Gemini CLI; they did not test automatic skill selection or a billing integration. Cursor's manifest is published but untested in Cursor. The Agent Skills route installs the skill without the bundled demo.
+Connect the [documentation MCP](https://docs.getlago.com/mcp) if you want your agent to search Lago's public docs as it codes. To inspect or configure your organization, use the authenticated CLI in step 2.
 
-Connect the [documentation MCP](/guide/ai-agents/for-agents#give-your-agent-the-documentation) if you want your agent to look up Lago's current guides and API reference as it codes. It searches public docs; use the authenticated CLI in step 1 to inspect or configure your Lago organization.
+## 1. Get a first result without billing anyone
 
-## 1. Connect to the right Lago organization
+The public [growth-agent billing lab](https://github.com/anhtho-lago/growth-agent-billing-lab) is a small synthetic application for practicing the workflow. One existing customer has a flat monthly charge collected through Stripe Payments. Stripe is specific to this fixture. The fixture records a Stripe customer ID and monthly amount; it does not model the existing invoice or subscription system.
 
-For an offline first pass, skip to step 2 and return here before any live CLI request.
+The application has durable usage records but starts without a Lago integration. Its [billing brief](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/BILLING_BRIEF.md) describes a \$500 monthly plan, 50,000 included credits, and \$0.05 for each excess credit. The expected pretax amount at 75,000 credits is **\$1,750**.
+
+```bash
+git clone https://github.com/anhtho-lago/growth-agent-billing-lab.git
+cd growth-agent-billing-lab
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+```
+
+Open this repository in your chosen agent and paste its [credits-and-overage prompt](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/prompts/credits-and-overage.md). Have the agent show its payer, event contract, IDs, ownership boundaries, and independent money calculation **before editing**. Then let it implement the smallest server-side adapter and offline tests. The agent should leave `legacy_zenith` on its existing flat-charge and Stripe Payments collection path.
+
+**Expected offline result:** a code diff, tests for 50,000, 50,001, and 75,000 credits, and evidence that a retry reuses the source `transaction_id` and explicit `timestamp`. An offline pass is not a Lago invoice result.
+
+## 2. Connect to the right Lago organization
 
 Before connecting the CLI, choose the Lago organization you will use:
 
@@ -68,22 +73,6 @@ lago doctor
 `--mode test` is a safety declaration, **not a sandbox**. A CLI dry run prints a request but sends nothing. For synthetic live exercises, use a dedicated, isolated self-hosted instance with no real customers or payment provider. Use a designated environment and your own actual pricing and customer data when validating a real Cloud integration. Do not seed generic demo data in a shared or production organization.
 
 If your isolated instance uses loopback-only HTTP, add `--insecure` to each CLI command. The CLI requires it for HTTP. Keep the example's normal HTTPS configuration for any nonlocal deployment.
-
-## 2. Get a first result without billing anyone
-
-The public [growth-agent billing lab](https://github.com/anhtho-lago/growth-agent-billing-lab) is a small synthetic application for practicing the workflow. One existing customer has a flat monthly charge collected through Stripe Payments. Stripe is specific to this fixture. The fixture records a Stripe customer ID and monthly amount; it does not model the existing invoice or subscription system.
-
-The application has durable usage records but starts without a Lago integration. Its [billing brief](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/BILLING_BRIEF.md) describes a \$500 monthly plan, 50,000 included credits, and \$0.05 for each excess credit. The expected pretax amount at 75,000 credits is **\$1,750**.
-
-```bash
-git clone https://github.com/anhtho-lago/growth-agent-billing-lab.git
-cd growth-agent-billing-lab
-PYTHONPATH=src python3 -m unittest discover -s tests -v
-```
-
-Open this repository in your chosen agent and paste its [credits-and-overage prompt](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/prompts/credits-and-overage.md). Have the agent show its payer, event contract, IDs, ownership boundaries, and independent money calculation **before editing**. Then let it implement the smallest server-side adapter and offline tests. The agent should leave `legacy_zenith` on its existing flat-charge and Stripe Payments collection path.
-
-**Expected offline result:** a code diff, tests for 50,000, 50,001, and 75,000 credits, and evidence that a retry reuses the source `transaction_id` and explicit `timestamp`. An offline pass is not a Lago invoice result.
 
 ## 3. Apply your application's billing design
 
