@@ -122,12 +122,12 @@ If you want to try the workflow before touching your own code, use the [growth-a
 git clone --branch codex/lago-agent-doc-example \
   https://github.com/anhtho-lago/growth-agent-billing-lab.git
 cd growth-agent-billing-lab
-PYTHONPATH=src python3 -m unittest discover -s tests -v
+python3 scripts/prove_offline.py
 ```
 
 Open the sample in your agent and use its [credits-and-overage prompt](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/codex/lago-agent-doc-example/prompts/credits-and-overage.md). Its [synthetic pricing rules](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/codex/lago-agent-doc-example/BILLING_BRIEF.md) are \$500 per month with 50,000 included credits, then \$0.05 per extra credit.
 
-- **At 75,000 credits:** expect \$1,250 in usage charges and a \$1,750 full-period bill before tax, including the \$500 base fee.
+- **Offline proof:** seven tests run and `proof.json` records the source, subscription, and event IDs. At 75,000 credits, expect \$1,250 in usage charges and \$1,750 for a full period before tax, including the \$500 base fee. The proof explicitly says Lago was not contacted.
 - **After a retry:** expect no increase in quantity or usage charge. The sample's verification fixture checks for Lago's duplicate-event response.
 
 To compare that result with an isolated self-hosted Lago instance, follow the sample's [verification instructions](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/codex/lago-agent-doc-example/README.md#verify-usage-in-isolated-self-hosted-lago). They include the fixture, retry check, and optional Premium invoice preview. Run the fixture only on an isolated instance with no real customers or payment provider; `--mode test` is a label, not a sandbox. Use the [evaluation rubric](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/codex/lago-agent-doc-example/evals/README.md) to record what your agent actually proved.
