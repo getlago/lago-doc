@@ -197,9 +197,11 @@ We recommend that you give each subscription a name when assigning multiple plan
 ## Invoice consolidation
 When a customer is subscribed to multiple plans, Lago can either group all subscription charges into a **single consolidated invoice** or issue a **separate invoice for each subscription**.
 
-By default, Lago automatically consolidates subscriptions into a single invoice when they meet both of these conditions:
-- They are billed on the same day; and
-- They share the same payment method.
+By default, Lago consolidates subscriptions into a single invoice when they are billed on the same day and share all of the following:
+- The same payment method;
+- The same currency;
+- The same billing entity; and
+- The same PO number (`purchase_order_number`).
 
 This reduces the number of invoices your customers receive and simplifies payment reconciliation. In the example below, a customer is subscribed to three plans — two billed monthly and one billed yearly — and Lago groups all charges that fall on the same billing date into a single invoice:
 
@@ -241,7 +243,7 @@ This enables you to maintain a consistent plan structure for all customers while
   4. Plan trial period
   5. Plan taxes
   6. Charges properties (please note that the charge model cannot be modified)
-  7. Charge group definitions & properties (if applicable)
+  7. Charge filters and their properties (if applicable)
   8. Charge minimum spending
   9. Charge taxes
   10. Charge invoice display name
@@ -279,13 +281,11 @@ This enables you to maintain a consistent plan structure for all customers while
             {
               "id": "cac4cff7-e2d9-41e2-83e5-7947d91f0eb5",
               "invoice_display_name": "Cards - custom price",
-              "billable_metric_code": "cards",
               "min_amount_cents": 0,
               "properties": {
                 "amount": "10"
               },
-              "group_properties": [],
-              "taxes": []
+              "tax_codes": []
             }
           ],
           "fixed_charges": [
@@ -313,7 +313,7 @@ To access an overridden plan, simply click on the specific subscription item in 
 Moreover, all invoices generated from this subscription will be based on the overridden plan, not the initial plan. 
 Additionally, any coupons restricted to a plan code will apply to both the initial and overridden plans.
 
-Importantly, any changes made to the initial plans will not impact the subscriptions linked to overridden plans.
+By default, changes made to the initial plan do not reach subscriptions linked to an overridden plan. To propagate them, update the plan with `cascade_updates` set to `true`. See [Editing plans](/guide/plans/overview#editing-plans).
 
 ## Deleting a plan
 You could [delete a plan](/api-reference/plans/destroy) linked to existing subscriptions.
