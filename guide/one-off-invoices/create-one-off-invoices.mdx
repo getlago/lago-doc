@@ -6,8 +6,8 @@ description: "Bill one or several add-ons to a customer immediately, without wai
 ## Create a one-off invoice
 To create a one-off invoice for a specific customer:
 
-1. Select the customer from the list of customers; and
-2. Click the **"Actions"** button located in the upper-right corner and select **"Create one-off invoice"**.
+1. Select the customer from the list of customers
+2. Click the **"Actions"** button in the upper-right corner, then select **"Create one-off invoice"**
 
 ## Adding add-ons to one-off invoices
 Once you have started the flow, add one or several add-ons to the invoice:
@@ -64,11 +64,10 @@ Once you have started the flow, add one or several add-ons to the invoice:
 </Tabs>
 
 ## Application scope of one-off invoices
-Keep the following in mind:
 
-- One-off invoices are issued immediately and can include the same add-on multiple times.
+- A one-off invoice can include the same add-on several times.
 - The currency and billing entity of the one-off invoice can differ from the customer's defaults: the invoice is issued in the currency and by the billing entity you select for it. Set `billing_entity_code` to pick the billing entity from the API.
-- You can use the same add-on to create one-off invoices for multiple customers whose subscriptions don't have the same currency or to apply a different amount for one of these customers.
+- You can reuse the same add-on for several customers, even when their subscriptions use different currencies. You can also charge a different amount to each of them.
 - Coupons or prepaid credits (discounts) **do not apply** to one-off invoices.
 - One-off invoices are subject to taxes. For each fee, Lago applies the `tax_codes` sent in the payload. If there are none, it falls back to the taxes of the add-on, then to the taxes of the customer, then to the default taxes of the billing entity.
 
@@ -80,4 +79,4 @@ When using the API endpoint, if `unit_amount_cents` is null, Lago applies the de
 
 ## Invoicing
 
-A **one-off invoice is invoiced straight away**. You can find one-off invoices via the `invoice.one_off_created` webhook message.
+A one-off invoice is issued straight away. Lago then sends the `invoice.one_off_created` webhook message.
