@@ -4,11 +4,12 @@ description:
   "Webhooks are HTTP notifications sent from Lago to your application."
 ---
 
-The messages are sent as a `POST` to the URL defined in the settings of your
-Lago workspace.
+The messages are sent as a `POST` request to every webhook endpoint defined in
+the settings of your Lago organization.
 
 If you return an error (other than a 2xx HTTP response) or if there is a network issue,
-the webhook will be sent again. Lago will try to send the webhook 3 times.
+the message is sent again. Lago attempts each message 3 times, waiting longer
+between each attempt.
 
 ## Message format
 
@@ -17,10 +18,14 @@ the webhook will be sent again. Lago will try to send the webhook 3 times.
 ```json
 {
   "webhook_type": "__TYPE__",
-  "object_type": "OBJECT_TYPE",
-  "__OBJECT__": {}
+  "object_type": "__OBJECT_TYPE__",
+  "organization_id": "__ORGANIZATION_ID__",
+  "__OBJECT_TYPE__": {}
 }
 ```
+
+The `object_type` field names the key that carries the object. For example, an
+`invoice.created` message has `"object_type": "invoice"` and an `invoice` key.
 
 ## Unique Key
 
@@ -54,17 +59,23 @@ webhooks_public_key = client.webhooks().public_key()
 ```
 
 ```js Node.js
-import Client from "lago-nodejs-client";
+const apiKey = "__YOUR_API_KEY__";
 
-let client = new Client("__YOUR_API_KEY__");
-let webhooksPublicKey = client.webhookPublicKey();
+const response = await fetch(
+  "https://api.getlago.com/api/v1/webhooks/json_public_key",
+  { headers: { Authorization: `Bearer ${apiKey}` } }
+);
+
+const { webhook } = await response.json();
+const webhooksPublicKey = webhook.public_key;
 ```
 
 ```ruby Ruby
+require 'json'
 require 'net/http'
 
 api_key = "__YOUR_API_KEY__"
-uri = URI('https://api.getlago.com/api/v1/webhooks/public_key')
+uri = URI('https://api.getlago.com/api/v1/webhooks/json_public_key')
 
 http = Net::HTTP.new(uri.host, uri.port)
 http.use_ssl = true
@@ -76,7 +87,7 @@ response = http.send_request(
   { 'Authorization' => "Bearer #{api_key}" }
 )
 
-webhooks_public_key = response.body
+webhooks_public_key = JSON.parse(response.body).dig('webhook', 'public_key')
 ```
 
 </CodeGroup>
