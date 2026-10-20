@@ -4,7 +4,7 @@ sidebarTitle: "AI tools"
 description: "Install the Lago plugin in your coding agent, build a billing integration, and connect to a Lago organization when you are ready to test it."
 ---
 
-Use your coding agent to explore Lago, model your pricing, and add billing to your application. The [Lago plugin](https://github.com/getlago/lago-plugin) gives the agent an offline example and an implementation workflow. You can start without a Lago account. Connect to a Lago Cloud organization or self-hosted instance when you are ready to check real usage and billing data.
+Use your coding agent to explore Lago, model your pricing, and add billing to your application. The [Lago plugin](https://github.com/getlago/lago-plugin) gives the agent an offline example and an implementation workflow. You do not need a Lago account to start. To check real usage and billing data, [get access to a Lago organization](#connect-to-lago-when-you-are-ready).
 
 ## Pick your agent
 
@@ -84,7 +84,15 @@ For the full workflow, including a sample application, CLI commands, and billing
 
 ## Connect to Lago when you are ready
 
-To read or configure a real organization, use the [Lago CLI](/guide/lago-cli/overview) or [product MCP server](/guide/ai-agents/mcp-server). These are separate from the plugin. Your application uses a [Lago SDK or the REST API](/developers) at runtime.
+First, get access to the organization you will use:
+
+- **Your team already uses Lago Cloud:** Ask your Lago organization admin for an invitation, accept it, and sign in. Confirm whether the organization is in the US or EU region.
+- **You need a new Lago Cloud organization:** [Request access from Lago](https://getlago.com/book-a-demo). Lago's team sets up Cloud accounts; tell them which region you need and whether you are setting up a test integration.
+- **You use self-hosted Lago:** [Deploy Lago](/guide/lago-self-hosted/overview) and sign up in its web app to create your organization, or ask your team's operator for access to an existing instance. Record the API service URL.
+
+Once signed in to that organization, get its API key from **Developers → API keys**, or ask an admin to provide one. Keep it out of prompts and source control. Follow the [CLI setup and verification steps](/guide/lago-cli/coding-agents#2-connect-to-the-right-lago-organization) to connect to the correct region or self-hosted API URL.
+
+Use the [Lago CLI](/guide/lago-cli/overview) or [product MCP server](/guide/ai-agents/mcp-server) to read or configure a real organization. These are separate from the plugin. Your application uses a [Lago SDK or the REST API](/developers) at runtime.
 
 | Tool | What it gives your agent | Lago API key? |
 | --- | --- | --- |
@@ -93,7 +101,5 @@ To read or configure a real organization, use the [Lago CLI](/guide/lago-cli/ove
 | [Lago CLI](/guide/lago-cli/overview) | Terminal commands to inspect, configure, and verify a Lago organization | Yes, for live commands |
 | [Product MCP](/guide/ai-agents/mcp-server) | Supported tools that access an organization's billing data | Yes |
 | [SDK or REST API](/developers) | Your application's server-side billing integration | Yes |
-
-For live access, use the **Lago Cloud organization your team invited you to**, or [deploy self-hosted Lago](/guide/lago-self-hosted/overview). Confirm the Cloud region or your self-hosted API URL. In that same organization, get an API key from **Developers → API keys**. Then follow the [CLI setup and verification steps](/guide/lago-cli/coding-agents#2-connect-to-the-right-lago-organization). Keep the key out of prompts and source control.
 
 The plugin does not bundle the CLI or either MCP connection. If you want your agent to look up exact event or pricing guidance while coding, add `https://docs.getlago.com/mcp` as a remote HTTP MCP server. It searches public docs and cannot read your organization's data.
