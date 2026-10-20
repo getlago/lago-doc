@@ -8,6 +8,8 @@ Your coding agent inspects the application and writes the billing integration. T
 
 **Outcome:** a reviewed event contract, server-side integration, pricing configuration, and metered usage compared with an independent calculation. [Invoice preview](/guide/invoicing/previews) is an additional check when your organization has a Premium license. If you do not yet have a Lago organization, you can complete the repository and offline-test steps first.
 
+Start with your current billing stack: which system calculates charges, issues invoices, and collects payments? Decide which responsibilities Lago should take on after you map those boundaries. A payment provider in your codebase does not establish who owns invoices or subscriptions.
+
 ## Choose your agent
 
 | Agent | Open your application repository | Lago guidance |
@@ -66,7 +68,9 @@ If your isolated instance uses loopback-only HTTP, add `--insecure` to each CLI 
 
 ## 2. Get a first result without billing anyone
 
-The public [growth-agent billing lab](https://github.com/anhtho-lago/growth-agent-billing-lab) is a small synthetic application. It has durable usage records and an existing customer with a flat monthly charge collected through Stripe Payments, but intentionally starts without a Lago integration. The fixture records a Stripe customer ID and monthly amount; it does not model the existing invoice or subscription system. Its [billing brief](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/BILLING_BRIEF.md) describes a $500 monthly plan, 50,000 included credits, and $0.05 for each excess credit. The expected pretax amount at 75,000 credits is **$1,750**.
+The public [growth-agent billing lab](https://github.com/anhtho-lago/growth-agent-billing-lab) is a small synthetic application for practicing the workflow. One existing customer has a flat monthly charge collected through Stripe Payments. Stripe is specific to this fixture. The fixture records a Stripe customer ID and monthly amount; it does not model the existing invoice or subscription system.
+
+The application has durable usage records but starts without a Lago integration. Its [billing brief](https://github.com/anhtho-lago/growth-agent-billing-lab/blob/main/BILLING_BRIEF.md) describes a $500 monthly plan, 50,000 included credits, and $0.05 for each excess credit. The expected pretax amount at 75,000 credits is **$1,750**.
 
 ```bash
 git clone https://github.com/anhtho-lago/growth-agent-billing-lab.git
@@ -80,7 +84,7 @@ Open this repository in your chosen agent and paste its [credits-and-overage pro
 
 ## 3. Apply your application's billing design
 
-In your own repository, use this prompt to begin with the business rule rather than an API call:
+In your own repository, use this prompt to begin with the business rule and current system ownership rather than an API call:
 
 ```text
 Read https://getlago.com/llms.txt and the relevant Lago guides. Check
@@ -88,13 +92,15 @@ https://swagger.getlago.com/openapi.yaml for exact API fields.
 
 Our customers pay for [describe your actual pricing]. Inspect this repository.
 Before editing, show who pays; the durable customer, subscription, and source
-usage IDs; the product action that creates usage; existing billing paths;
-the proposed Lago metric and plan; who owns invoices and payments; and one
-independent example bill. Ask about decisions that change money or ownership.
-Do not access a live Lago organization yet.
+usage IDs; and the product action that creates usage. Map which system currently
+calculates charges, issues invoices, and collects payments. Identify existing
+customers and any migration boundary. Propose what Lago should own, the metric
+and plan, and one independent example bill. Distinguish code evidence from
+assumptions, and ask about decisions that change money or ownership. Do not
+change existing billing or payment paths or access a live Lago organization yet.
 ```
 
-Once you accept that design, ask the agent to implement server-side SDK or REST calls, retries, and offline money tests. The event's `transaction_id` must come from a durable source record. Persist its original timestamp so a retry uses **both** the same ID and timestamp; both matter for duplicate protection on ClickHouse-based event pipelines. See [idempotency and deduplication](/guide/events/ingesting-usage#idempotency-and-deduplication).
+Review the proposed ownership and migration boundary before the agent edits code. The first integration can leave existing customers on their current path while you test a new cohort with Lago; a cutover needs an explicit plan for invoices, payments, and duplicate charges. Once you accept that design, ask the agent to implement server-side SDK or REST calls, retries, and offline money tests. The event's `transaction_id` must come from a durable source record. Persist its original timestamp so a retry uses **both** the same ID and timestamp; both matter for duplicate protection on ClickHouse-based event pipelines. See [idempotency and deduplication](/guide/events/ingesting-usage#idempotency-and-deduplication).
 
 Have the agent write reviewable CLI requests for the metric and plan. Inspect existing configuration before creating anything:
 
