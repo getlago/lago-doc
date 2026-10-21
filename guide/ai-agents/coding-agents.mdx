@@ -20,7 +20,14 @@ Agree on the price and which existing customers, if any, will move to Lago befor
 **Prompt. Replace `[pricing rules]` with your billing period, currency, base fee, included usage, and overage rate:**
 
 ```text
-Our pricing is [pricing rules]. Inspect this repository and show who pays, the saved record and stable ID for each billable action, and which system owns subscriptions, invoices, and payment collection today. Calculate one example bill from source usage. Separate code evidence from assumptions and flag any risk of charging twice. Do not edit code or contact Lago.
+Our pricing is [pricing rules].
+
+Inspect this repository. Show:
+- Who pays, the billable action, and its saved record and ID.
+- Which system owns subscriptions, invoices, and payments.
+- One example bill calculated from source usage.
+- Code evidence, assumptions, and duplicate-billing risks.
+Do not edit code or contact Lago.
 ```
 
 ## 2. Build and test locally
@@ -36,7 +43,13 @@ On retries, reuse the saved record's original `transaction_id` **and** `timestam
 **Prompt. Replace `[approved billing plan]` with the metric, billing period, price, and who will own invoices and payments:**
 
 ```text
-Implement [approved billing plan] in this repository. Map customer and subscription IDs from saved app records, send usage from server-side code through a Lago SDK or REST API, and reuse each record's transaction_id and timestamp on retry. Test the example bill independently and test duplicate delivery offline. Preserve current billing. Show the diff and test results before any live Lago call.
+Implement [approved billing plan] in this repository.
+- Map customer and subscription IDs from saved app records.
+- Send usage server-side with a Lago SDK or REST API.
+- Reuse each record's transaction_id and timestamp on retry.
+- Test the example bill and duplicate delivery offline.
+Preserve current billing. Before any live Lago call, show the
+diff, test results, and independent bill calculation.
 ```
 
 ## 3. Connect to the right Lago organization
@@ -100,7 +113,12 @@ Before sending usage, identify or create the [Lago customer](/guide/lago-cli/com
 **Prompt. Replace `[target organization]` with the organization name and API host, and `[approved pricing]` with your reviewed price and metric:**
 
 ```text
-For [target organization], run read-only CLI checks and show the resolved host and organization. Compare existing metrics and plans with [approved pricing]. Prepare metric and plan dry runs, including currency, tiers, dates, and the metric ID the plan will need. Show the exact requests and conflicts. Stop before creating or changing anything in Lago.
+For [target organization], run read-only CLI checks.
+Show the resolved host and organization.
+Compare existing metrics and plans with [approved pricing].
+Prepare metric and plan dry runs with currency, tiers,
+effective dates, and the metric ID the plan needs.
+Show exact requests and conflicts. Stop before live writes.
 ```
 
 ## 4. Check what Lago recorded
@@ -122,7 +140,14 @@ Check:
 **Prompt. Replace `[customer ID]`, `[subscription ID]`, and `[source record ID]` with IDs from the same isolated test organization:**
 
 ```text
-For [customer ID], [subscription ID], and [source record ID], calculate expected usage and charge from the app's saved record. Read Lago's current usage and compare quantity, amount, and billing period. In this isolated test organization, retry that event with the same transaction_id and timestamp, then read usage again. Stop if the customer, subscription, or amount differs. Report what is proven and what still needs an invoice check.
+For [customer ID], [subscription ID], and [source record ID]:
+- Calculate expected quantity and charge from the app record.
+- Read Lago current usage; compare quantity, amount, period.
+- In the isolated test organization, retry the same event
+  with its original transaction_id and timestamp.
+- Read usage again and check the charge did not increase.
+Stop on an identity or amount mismatch. List untested
+invoice parts.
 ```
 
 See the [integration testing guide](/guide/integration-testing) for the rest of the billing lifecycle.
@@ -140,5 +165,10 @@ See the [integration testing guide](/guide/integration-testing) for the rest of 
 **Prompt. Replace `[customer ID]`, `[billing period]`, `[expected amount]`, and `[observed amount]` with the values you are investigating:**
 
 ```text
-For [customer ID] in [billing period], our app expects [expected amount] but Lago shows [observed amount]. Recalculate from source usage, then check the plan, period, customer overrides, credits, tax, and advance fees. Show the first proven difference and its customer impact. Do not change billing or send another event.
+For [customer ID] in [billing period], our app expects
+[expected amount] and Lago shows [observed amount].
+Recalculate source usage; check the plan, period, customer
+overrides, credits, tax, and advance fees.
+Show the first proven difference and customer impact.
+Do not change billing or send another event.
 ```
