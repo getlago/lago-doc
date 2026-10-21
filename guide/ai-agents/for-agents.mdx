@@ -1,10 +1,10 @@
 ---
 title: "AI tools for Lago"
 sidebarTitle: "AI tools"
-description: "Install the Lago plugin in your coding agent, build a billing integration, and connect to a Lago organization when you are ready to test it."
+description: "Install the Lago plugin in Claude Code or Codex and get access to a Lago organization when you are ready to test."
 ---
 
-Use your coding agent to explore Lago, model your pricing, and add billing to your application. The [Lago plugin](https://github.com/getlago/lago-plugin) gives the agent an offline example and an implementation workflow. You do not need a Lago account to start. To check real usage and billing data, [get access to a Lago organization](#connect-to-lago-when-you-are-ready).
+Use Claude Code or Codex to explore Lago and build a billing integration. The [Lago plugin](https://github.com/getlago/lago-plugin) gives your agent an offline example and implementation guidance. You do not need a Lago account to start. When you are ready to check real usage, [get access to a Lago organization](#connect-to-lago-when-you-are-ready).
 
 ## Pick your agent
 
@@ -29,57 +29,9 @@ Use your coding agent to explore Lago, model your pricing, and add billing to yo
 
     Start a new Codex task, then ask: `$lago:implementation show me what Lago can do; do not assume this workspace is my application`
   </Tab>
-  <Tab title="Gemini CLI">
-    Run in your terminal:
-
-    ```bash
-    gemini extensions install https://github.com/getlago/lago-plugin
-    ```
-
-    Then ask: `Use the Lago implementation skill to show me what Lago can do.`
-  </Tab>
-  <Tab title="GitHub Copilot CLI">
-    Run in your terminal:
-
-    ```bash
-    copilot plugin marketplace add getlago/lago-plugin
-    copilot plugin install lago@lago-plugins
-    ```
-
-    Then ask: `Use the Lago implementation skill to show me what Lago can do.`
-  </Tab>
-  <Tab title="Cursor">
-    In Cursor, open **Customize → From GitHub Repository** and enter `getlago/lago-plugin`. This import is not yet verified in Cursor. If it fails, use the [one-page Lago starter](https://github.com/getlago/lago-plugin/blob/main/START_HERE.md).
-  </Tab>
-  <Tab title="Other agents">
-    If your agent supports Agent Skills, install the implementation skill:
-
-    ```bash
-    npx skills add getlago/lago-plugin --skill implementation
-    ```
-
-    This installs the skill only. For the offline example, use the [one-page Lago starter](https://github.com/getlago/lago-plugin/blob/main/START_HERE.md).
-  </Tab>
 </Tabs>
 
-**No plugin support?** Give your agent the [one-page Lago starter](https://github.com/getlago/lago-plugin/blob/main/START_HERE.md). It includes the offline example and Node.js/TypeScript and Python integration code.
-
-## Give the agent a task
-
-**Just exploring?** After installing the plugin, ask it to use the Lago implementation skill to show you what Lago can do. The example runs offline, so you do not need an application repository or API key.
-
-**Adding billing to an app?** Open your application repository in the agent and paste:
-
-```text
-Build billing on Lago in this app. Inspect the code and our current billing.
-Before editing, show who pays, what usage we would send, how the bill is
-calculated, and which system handles subscriptions, invoices, and payments.
-Then implement the smallest useful slice and test the money offline.
-Ask before changing existing billing or accessing a live Lago organization.
-```
-
-For the full workflow, including CLI commands, billing checks, and an optional practice app, follow [Build Lago billing with a coding agent](/guide/lago-cli/coding-agents).
-For a specific job, choose a copyable prompt from [More prompts](/guide/lago-cli/coding-agents#more-prompts) in that guide.
+To add billing to an application, follow [Build Lago billing with a coding agent](/guide/ai-agents/coding-agents). It covers the repository work, local tests, CLI setup, and a check against Lago.
 
 ## Connect to Lago when you are ready
 
@@ -89,7 +41,7 @@ First, get access to the organization you will use:
 - **You need a new Lago Cloud organization:** [Request access from Lago](https://getlago.com/book-a-demo). Lago's team sets up Cloud accounts; tell them which region you need and whether you are setting up a test integration.
 - **You use self-hosted Lago:** [Deploy Lago](/guide/lago-self-hosted/overview) and sign up in its web app to create your organization, or ask your team's operator for access to an existing instance. Record the API service URL.
 
-Once signed in to that organization, get its API key from **Developers → API keys**, or ask an admin to provide one. Keep it out of prompts and source control. Follow the [CLI setup and verification steps](/guide/lago-cli/coding-agents#3-connect-to-the-right-lago-organization) to connect to the correct region or self-hosted API URL.
+Once signed in to that organization, get its API key from **Developers → API keys**, or ask an admin to provide one. Keep it out of prompts and source control. Follow the [billing workflow](/guide/ai-agents/coding-agents) to connect the CLI and check usage.
 
 Use the [Lago CLI](/guide/lago-cli/overview) or [product MCP server](/guide/ai-agents/mcp-server) to read or configure a real organization. These are separate from the plugin. Your application uses a [Lago SDK or the REST API](/developers) at runtime.
 
