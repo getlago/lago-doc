@@ -71,7 +71,7 @@ Optimize billing for your customers by assigning subscriptions based on either c
     >**22 days x \$50 / 31 days = \$35.48**
 
   <Frame caption="Calendar billing cadence">
-    <img src="/guide/subscriptions/images/calendar-date-227bf60245e9d3715d3383098c88c1b0.png" />
+    <img src="/guide/subscriptions/images/calendar-date-227bf60245e9d3715d3383098c88c1b0.png" alt="Timeline of a monthly subscription billed on calendar periods." />
   </Frame>
   </Tab>
   <Tab title="Anniversary billing period">
@@ -83,7 +83,7 @@ Optimize billing for your customers by assigning subscriptions based on either c
       >The first billing period will run from August 10th to September 9th.
 
     <Frame caption="Anniversary billing cadence">
-      <img src="/guide/subscriptions/images/anniversary-date-c66bee86224946e6e00af9c0cb7eedeb.png" />
+      <img src="/guide/subscriptions/images/anniversary-date-c66bee86224946e6e00af9c0cb7eedeb.png" alt="Timeline of a monthly subscription billed on its anniversary date." />
    </Frame>
   </Tab>
 </Tabs>
@@ -105,12 +105,12 @@ By default, the subscription starts the day it is created. However, you can deci
 
     **Example 1:** Start date in the past and subscription fee to be paid in advance
     <Frame caption="Illustration for start date in the past and subscription fee in advance">
-      <img src="/guide/subscriptions/images/subscription-past-advance-0bedeeb9f9918608568ea7db6479e4ef.png" />
+      <img src="/guide/subscriptions/images/subscription-past-advance-0bedeeb9f9918608568ea7db6479e4ef.png" alt="Timeline of a subscription starting in the past, with the subscription fee paid in advance." />
     </Frame>
 
     **Example 2:** Start date in the past and subscription fee to be paid in arrears
-    <Frame caption="Illustration for start date in the past and subscription fee in advance">
-      <img src="/guide/subscriptions/images/subscription-past-arrears-b4f22483b4ae3a358c0b27305e49a766.png" />
+    <Frame caption="Illustration for start date in the past and subscription fee in arrears">
+      <img src="/guide/subscriptions/images/subscription-past-arrears-b4f22483b4ae3a358c0b27305e49a766.png" alt="Timeline of a subscription starting in the past, with the subscription fee paid in arrears." />
     </Frame>
   </Tab>
   <Tab title="Start date in the future">
@@ -122,12 +122,12 @@ By default, the subscription starts the day it is created. However, you can deci
 
     **Example 3:** Start date in the future and subscription fee to be paid in advance
     <Frame caption="Illustration for start date in the future and subscription fee in advance">
-      <img src="/guide/subscriptions/images/subscription-future-advance-e0c8d632579fe11dfc530987d86ca211.png" />
+      <img src="/guide/subscriptions/images/subscription-future-advance-e0c8d632579fe11dfc530987d86ca211.png" alt="Timeline of a subscription starting in the future, with the subscription fee paid in advance." />
     </Frame>
 
     **Example 4:** Start date in the future and subscription fee to be paid in arrears
     <Frame caption="Illustration for start date in the future and subscription fee in arrears">
-      <img src="/guide/subscriptions/images/subscription-future-arrears-8b99c7c98e2f8223d6282fd5f47a665a.png" />
+      <img src="/guide/subscriptions/images/subscription-future-arrears-8b99c7c98e2f8223d6282fd5f47a665a.png" alt="Timeline of a subscription starting in the future, with the subscription fee paid in arrears." />
     </Frame>
   </Tab>
 </Tabs>
@@ -197,11 +197,13 @@ We recommend that you give each subscription a name when assigning multiple plan
 ## Invoice consolidation
 When a customer is subscribed to multiple plans, Lago can either group all subscription charges into a **single consolidated invoice** or issue a **separate invoice for each subscription**.
 
-By default, Lago automatically consolidates subscriptions into a single invoice when they meet both of these conditions:
-- They are billed on the same day; and
-- They share the same payment method.
+By default, Lago consolidates subscriptions into a single invoice when they are billed on the same day and share all of the following:
+- The same payment method;
+- The same currency;
+- The same billing entity; and
+- The same PO number (`purchase_order_number`).
 
-This reduces the number of invoices your customers receive and simplifies payment reconciliation. In the example below, a customer is subscribed to three plans — two billed monthly and one billed yearly — and Lago groups all charges that fall on the same billing date into a single invoice:
+This reduces the number of invoices your customers receive and simplifies payment reconciliation. In the example below, a customer is subscribed to three plans, two billed monthly and one billed yearly, and Lago groups all charges that fall on the same billing date into a single invoice:
 
 |                   | Month 1  | Month 2  | Month 3  | Month 4  | (...) | Month 13 |
 | ----------------- | -------- | -------- | -------- | -------- | ----- | -------- |
@@ -210,7 +212,7 @@ This reduces the number of invoices your customers receive and simplifies paymen
 | Plan C (yearly)   | $500     | -        | -        | -        | (...) | $500     |
 | **Total invoice** | **$600** | **$100** | **$100** | **$100** | (...) | **$600** |
 
-If you'd prefer to keep a specific subscription on its own invoice — for example, to bill a different cost center, track a contract independently, or simplify internal reporting — you can disable consolidation for that subscription. To do so, set the `consolidate_invoice` field to `false` on the subscription, either from the dashboard or via the API. Lago will then issue a standalone invoice for that subscription, even when other subscriptions for the same customer are billed on the same day.
+To keep a specific subscription on its own invoice, for example to bill a different cost center, track a contract independently, or simplify internal reporting, disable consolidation for that subscription. Set the `consolidate_invoice` field to `false` on the subscription, either from the dashboard or via the API. Lago then issues a standalone invoice for that subscription, even when other subscriptions for the same customer are billed on the same day.
 
 <Info>
 The `consolidate_invoice` setting applies at the **subscription level**, so you can mix consolidated and standalone subscriptions for the same customer. You can update this setting at any time.
@@ -228,8 +230,8 @@ Self-Hosted Premium.
 
 </Info>
 
-By assigning a subscription to a customer, you gain the flexibility to customize certain aspects of the initially selected plan. 
-This enables you to maintain a consistent plan structure for all customers while tailoring individualized discounts through price adjustments per customer.
+When you assign a plan to a customer, you can customize parts of it for that subscription.
+You keep one plan structure for every customer, and adjust prices per customer where you need to.
 
 <Tabs>
   <Tab title="Dashboard">
@@ -241,7 +243,7 @@ This enables you to maintain a consistent plan structure for all customers while
   4. Plan trial period
   5. Plan taxes
   6. Charges properties (please note that the charge model cannot be modified)
-  7. Charge group definitions & properties (if applicable)
+  7. Filters and their properties (if applicable)
   8. Charge minimum spending
   9. Charge taxes
   10. Charge invoice display name
@@ -279,13 +281,11 @@ This enables you to maintain a consistent plan structure for all customers while
             {
               "id": "cac4cff7-e2d9-41e2-83e5-7947d91f0eb5",
               "invoice_display_name": "Cards - custom price",
-              "billable_metric_code": "cards",
               "min_amount_cents": 0,
               "properties": {
                 "amount": "10"
               },
-              "group_properties": [],
-              "taxes": []
+              "tax_codes": []
             }
           ],
           "fixed_charges": [
@@ -307,13 +307,13 @@ This enables you to maintain a consistent plan structure for all customers while
   Fixed charges are also overridden under `plan_overrides`, using the `fixed_charges` array. Sending only `units` (and `apply_units_immediately` if needed) updates the quantity without creating a plan override. Passing a price or `properties` creates one. See [Update a fixed charge via the API](/guide/plans/charges/fixed-charges#update-a-fixed-charge-via-the-api).
 </Info>
 
-It's crucial to note that all overridden plans will remain associated with the initial plan but won't be visible in the plans list. 
-To access an overridden plan, simply click on the specific subscription item in the customer details view.
+An overridden plan stays linked to the initial plan, but it does not appear in the plans list.
+To open it, click the subscription in the customer details view.
 
-Moreover, all invoices generated from this subscription will be based on the overridden plan, not the initial plan. 
-Additionally, any coupons restricted to a plan code will apply to both the initial and overridden plans.
+All invoices generated from this subscription are based on the overridden plan, not the initial plan.
+Coupons restricted to a plan code apply to both the initial plan and its overrides.
 
-Importantly, any changes made to the initial plans will not impact the subscriptions linked to overridden plans.
+By default, changes made to the initial plan do not reach subscriptions linked to an overridden plan. To propagate them, update the plan with `cascade_updates` set to `true`. See [Editing plans](/guide/plans/overview#editing-plans).
 
 ## Deleting a plan
 You could [delete a plan](/api-reference/plans/destroy) linked to existing subscriptions.
