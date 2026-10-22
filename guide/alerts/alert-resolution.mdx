@@ -32,44 +32,67 @@ When one evaluation clears several thresholds (a large top-up, a large correctio
 Thresholds are paired by `code`. This is why a threshold must have a code to opt in.
 
 ## Configure resolution
-Add `notify_on` to a threshold:
+Resolution is set per threshold. Every existing threshold starts at **False** (triggered only), so nothing changes until you opt a threshold in.
 
-| Value | Behavior |
-|---|---|
-| `["triggered"]` | Default. Sends `alert.triggered` only. |
-| `["triggered", "resolved"]` | Also sends `alert.resolved` when the threshold recovers. |
+<Tabs>
+  <Tab title="Dashboard">
+    Usage alerts and credits consumption alerts share the same thresholds table. To opt a threshold in:
 
-`triggered` is always required. Duplicates are dropped and values are stored in the order above.
+    1. Open the alert form from the **Alerts** tab of a subscription (**Create alerts**) or of a wallet (**Create alert**), or edit an existing alert;
+    2. Give the threshold a **Threshold code**;
+    3. Set **Notify when resolved** to **True** on that threshold; and
+    4. Click **Create alert** or **Save edits**.
 
-```bash Subscription alert with resolution on the hard threshold
-LAGO_URL="https://api.getlago.com"
-API_KEY="__YOUR_API_KEY__"
+    The form checks the rules before saving:
+    - A threshold set to True needs a code: "Add a threshold code to notify when this threshold is resolved".
+    - That code must be unique within the alert: "This code is used by another threshold. Use a unique code to notify when resolved".
+    - On the recurring threshold, **Notify when resolved** stays at **False** and cannot be changed.
 
-curl --location --request POST "$LAGO_URL/api/v1/subscriptions/:external_id/alerts" \
-  --header "Authorization: Bearer $API_KEY" \
-  --header 'Content-Type: application/json' \
-  --data-raw '{
-    "alert": {
-      "alert_type": "billable_metric_current_usage_units",
-      "code": "image_quota",
-      "name": "Image quota",
-      "billable_metric_code": "images",
-      "thresholds": [
-        { "code": "warn", "value": "8000" },
-        { "code": "hard", "value": "10000", "notify_on": ["triggered", "resolved"] }
-      ]
-    }
-  }'
-```
+    As soon as one threshold is set to True, the form reminds you that your webhook endpoints must listen to `alert.resolved`, with a link to **Webhooks** that opens in a new tab, so your draft stays open.
 
-The same field works on wallet alerts (`POST /api/v1/customers/:customer_external_id/wallets/:wallet_code/alerts`), on update, and on batch creation.
+    On a wallet, the **Alerts** tab shows the **Notify when resolved** value of each threshold, recurring threshold included.
+  </Tab>
+  <Tab title="API">
+    Add `notify_on` to a threshold:
 
-### Updating `notify_on`
+    | Value | Behavior |
+    |---|---|
+    | `["triggered"]` | Default. Sends `alert.triggered` only. |
+    | `["triggered", "resolved"]` | Also sends `alert.resolved` when the threshold recovers. |
+
+    `triggered` is always required. Duplicates are dropped and values are stored in the order above.
+
+    ```bash Subscription alert with resolution on the hard threshold
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/subscriptions/:external_id/alerts" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "alert": {
+          "alert_type": "billable_metric_current_usage_units",
+          "code": "image_quota",
+          "name": "Image quota",
+          "billable_metric_code": "images",
+          "thresholds": [
+            { "code": "warn", "value": "8000" },
+            { "code": "hard", "value": "10000", "notify_on": ["triggered", "resolved"] }
+          ]
+        }
+      }'
+    ```
+
+    The same field works on wallet alerts (`POST /api/v1/customers/:customer_external_id/wallets/:wallet_code/alerts`), on update, and on batch creation.
+  </Tab>
+</Tabs>
+
+### Updating `notify_on` through the API
 - **Omitted**: the current setting is kept, matched by threshold `code`. A threshold whose code changes starts from the default.
 - **`null`**: resets to the default `["triggered"]`.
 - **A string instead of a list** (`"resolved"`): rejected with `value_is_invalid`.
 
-### Validation
+### API validation
 | Request | Error |
 |---|---|
 | `notify_on` without `triggered` (`["resolved"]`, `[]`) | `thresholds:notify_on` → `triggered_is_mandatory` |
@@ -78,7 +101,11 @@ The same field works on wallet alerts (`POST /api/v1/customers/:customer_externa
 | `resolved` on a threshold without a code | `thresholds:code` → `value_is_mandatory` |
 
 ### Subscribe your webhook endpoint
-`alert.resolved` is a new webhook type. An endpoint that receives all events gets it automatically. An endpoint filtered with `event_types` must add `alert.resolved` to the list. See [webhook messages](/api-reference/webhooks/messages).
+`alert.resolved` is a new webhook type. An endpoint that receives all events gets it automatically. An endpoint that listens to selected events must add it:
+- **Dashboard**: **Developers** > **Webhooks**, edit the endpoint, and check `alert.resolved` in the **Alerts** category.
+- **API**: add `alert.resolved` to the endpoint's `event_types`.
+
+See [webhook messages](/api-reference/webhooks/messages).
 
 ## The `alert.resolved` webhook
 
@@ -161,7 +188,7 @@ Usage measured before a renewal but processed after it still counts toward the p
 
 ## Limitations
 - Recurring thresholds cannot opt in to resolution. One recurring threshold stands for an unbounded series of lines, so a resolution could not say which one cleared.
-- Thresholds must have a `code`, unique within the alert, to opt in.
+- Thresholds must have a `code`, unique within the alert, to opt in. The Dashboard blocks the save until both are true.
 - A threshold resolves on its own line. There is no separate resolve margin (hysteresis): a top-up of 0.01 above a `critical` threshold at 0 sends `alert.resolved`. Pick the threshold value accordingly.
 - Usage alerts are evaluated as events are processed, about every minute. Wallet alerts are evaluated on each balance movement, within seconds. Edits resolve immediately.
 - The API does not expose a per-threshold state. To reconcile after missed webhooks, compare the current usage or balance with your thresholds, or use the `in_alarm_thresholds` of the last `alert.resolved` you received.
