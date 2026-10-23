@@ -73,7 +73,9 @@ To edit a billing entity:
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
-    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/{code}" \
+    BILLING_ENTITY_CODE="acme_corp"
+
+    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/$BILLING_ENTITY_CODE" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -89,6 +91,28 @@ To edit a billing entity:
     </CodeGroup>
   </Tab>
 </Tabs>
+
+---
+
+## Billing entity settings
+
+A billing entity carries the settings that Lago applies to the invoices it issues:
+
+| Setting | Field |
+|---|---|
+| Entity details, logo and [invoice footer](/guide/invoicing/invoicing-settings/overview#add-a-custom-footer) | `legal_name`, `legal_number`, `tax_identification_number`, the address fields, `logo`, `billing_configuration.invoice_footer` |
+| Default currency and timezone | `default_currency`, `timezone` |
+| [Invoice numbering](/guide/invoicing/invoicing-settings/invoice-numbering) | `document_numbering`, `document_number_prefix` |
+| [Grace period](/guide/invoicing/invoicing-settings/grace-period) | `billing_configuration.invoice_grace_period` |
+| [Net payment term](/guide/invoicing/invoicing-settings/net-payment-term) | `net_payment_term` |
+| [Document language](/guide/invoicing/invoicing-settings/overview#translate-invoices) | `billing_configuration.document_locale` |
+| [Zero-amount invoices](/guide/invoicing/invoicing-settings/empty-invoices) | `finalize_zero_amount_invoice` |
+| [Taxes](/guide/invoicing/invoicing-settings/taxes) | `tax_codes`, `eu_tax_management` |
+| [Invoice custom sections](/guide/invoicing/invoicing-settings/overview#add-a-custom-invoice-section) | `invoice_custom_section_codes` |
+| [Emails](/guide/emails) | `email`, `email_settings` |
+| [E-invoicing](/guide/invoicing/e-invoicing/overview) | `einvoicing` |
+
+`tax_codes` and `invoice_custom_section_codes` are only accepted when you update a billing entity, not when you create one.
 
 ---
 
