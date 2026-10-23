@@ -42,14 +42,16 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
       <CodeGroup>
       ```bash Create a feature
       curl --request POST \
-      --url https://api.getlago.com/api/v1/features \
-      --header 'Authorization: Bearer <token>' \
-      --header 'Content-Type: application/json' \
-      --data '{
-      "code": "seats",
-      "name": "Number of seats",
-      "description": "Number of users that can be added to the account"
-    }'
+        --url https://api.getlago.com/api/v1/features \
+        --header 'Authorization: Bearer __YOUR_API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data '{
+          "feature": {
+            "code": "seats",
+            "name": "Number of seats",
+            "description": "Number of users that can be added to the account"
+          }
+        }'
       ```
       </CodeGroup>
   </Tab>
@@ -65,7 +67,9 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
     - **`boolean`** – The privilege value is either `true` or `false`.
     - **`integer`** – The privilege value is a numeric limit (e.g., `10 GPUs`).
     - **`string`** – The privilege value is freeform text.
-    - **`select`** – The privilege value is chosen from a predefined list of options.
+    - **`select`** – The privilege value is chosen from a predefined list of options, which you list in `config.select_options`.
+
+    `value_type` defaults to `string` and cannot be changed once the privilege exists.
 
     At this stage, you're only defining the **type** of each privilege. The actual values will be set later, when the feature is entitled to a specific plan or subscription.
 
@@ -82,31 +86,41 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
       <CodeGroup>
       ```bash Create feature with privileges
       curl --request POST \
-      --url https://api.getlago.com/api/v1/features \
-      --header 'Authorization: Bearer <token>' \
-      --header 'Content-Type: application/json' \
-      --data '{
-      "code": "seats",
-      "name": "Number of seats",
-      "description": "Number of users that can be added to the account",
-      "privileges": [
-        {
-          "code": "max",
-          "name": "Maximum seats",
-          "value_type": "integer"
-        },
-        {
-          "code": "min",
-          "name": "Minimum seats",
-          "value_type": "integer"
-        },
-        {
-          "code": "allow_admin_user",
-          "name": "Allow admin user",
-          "value_type": "boolean"
-        }
-      ]
-    }'
+        --url https://api.getlago.com/api/v1/features \
+        --header 'Authorization: Bearer __YOUR_API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data '{
+          "feature": {
+            "code": "seats",
+            "name": "Number of seats",
+            "description": "Number of users that can be added to the account",
+            "privileges": [
+              {
+                "code": "max",
+                "name": "Maximum seats",
+                "value_type": "integer"
+              },
+              {
+                "code": "min",
+                "name": "Minimum seats",
+                "value_type": "integer"
+              },
+              {
+                "code": "allow_admin_user",
+                "name": "Allow admin user",
+                "value_type": "boolean"
+              },
+              {
+                "code": "tier",
+                "name": "Seat tier",
+                "value_type": "select",
+                "config": {
+                  "select_options": ["standard", "admin"]
+                }
+              }
+            ]
+          }
+        }'
       ```
       </CodeGroup>
   </Tab>
@@ -141,21 +155,26 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
       <CodeGroup>
       ```bash Create plan entitlements
       curl --request POST \
-      --url https://api.getlago.com/api/v1/plans/{code}/entitlements \
-      --header 'Authorization: Bearer <token>' \
-      --header 'Content-Type: application/json' \
-      --data '{
-      "seats": {
-        "max": 20,
-        "min": 10,
-        "allow_admin_user": false
-      },
-      "sso": {
-        "provider": "okta"
-      }
-    }'
+        --url https://api.getlago.com/api/v1/plans/{code}/entitlements \
+        --header 'Authorization: Bearer __YOUR_API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data '{
+          "entitlements": {
+            "seats": {
+              "max": 20,
+              "min": 10,
+              "allow_admin_user": false
+            },
+            "sso": {
+              "provider": "okta"
+            }
+          }
+        }'
       ```
       </CodeGroup>
+
+      `POST` replaces every entitlement on the plan. Use `PATCH` on the same
+      path to change only the features you send.
   </Tab>
 </Tabs>
 
@@ -172,20 +191,22 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
   <Tab title="API">
       <CodeGroup>
       ```bash Override subscription entitlements
-    curl --request PATCH \
-      --url https://api.getlago.com/api/v1/subscriptions/{external_id}/entitlements \
-      --header 'Authorization: Bearer <token>' \
-      --header 'Content-Type: application/json' \
-      --data '{
-      "seats": {
-        "max": 30,
-        "min": 20,
-        "allow_admin_user": true
-      },
-      "sso": {
-        "provider": "okta"
-      }
-    }'
+      curl --request PATCH \
+        --url https://api.getlago.com/api/v1/subscriptions/{external_id}/entitlements \
+        --header 'Authorization: Bearer __YOUR_API_KEY__' \
+        --header 'Content-Type: application/json' \
+        --data '{
+          "entitlements": {
+            "seats": {
+              "max": 30,
+              "min": 20,
+              "allow_admin_user": true
+            },
+            "sso": {
+              "provider": "okta"
+            }
+          }
+        }'
       ```
       </CodeGroup>
   </Tab>
@@ -197,6 +218,6 @@ You can retrieve the current list of entitled features for a subscription by cal
 ```bash
 curl --request GET \
   --url https://api.getlago.com/api/v1/subscriptions/{external_id}/entitlements \
-  --header 'Authorization: Bearer <token>'
+  --header 'Authorization: Bearer __YOUR_API_KEY__'
 ```
 You can also track entitlement changes through the `subscription.updated` webhook.
