@@ -35,7 +35,7 @@ Data flows from Lago into NetSuite along three paths:
 - **Payments.** When a payment is recorded in Lago, it's pushed to the RESTlet and created as a NetSuite Customer Payment, applied to the matching invoice so it shows as paid.
 - **Catalog.** One click on the configuration record pulls your Lago catalog (plans, taxes, coupons, add-ons, billable metrics, billing entities) into NetSuite as reference objects, so you build mappings from dropdowns instead of copying IDs.
 
-**Authentication.** NetSuite calls Lago using an API key stored as a NetSuite secret, so the key never appears in scripts, logs, or records. Lago calls the RESTlet using NetSuite's standard token-based authentication, scoped to the restricted **Lago Integration Role** the bundle installs.
+**Authentication.** NetSuite calls Lago using an API key stored as a NetSuite secret, so the key never appears in scripts, logs, or records. Lago calls the RESTlet using NetSuite's standard [token-based authentication](#set-up-token-based-authentication), scoped to the restricted **Lago Integration Role** the bundle installs.
 
 ## Setup
 
@@ -60,15 +60,60 @@ Go to **Customization > SuiteBundler > Search & Install Bundles**, locate the La
   <Step title="Step 2: Install the bundle">
     From **Customization > SuiteBundler > Search & Install Bundles**, install the Lago bundle. This adds the scripts, records, role, and custom fields listed above.
   </Step>
-  <Step title="Step 3: Confirm the deployment is Released">
-    Open **Customization > Scripting > Script Deployments**, find the `Lago Service` deployment (`customdeploy_lago_service`), and make sure its status is `Released`. The deployment page shows the **custom RESTlet endpoint URL** that Lago uses to reach your account.
+</Steps>
+
+{/* TODO screenshot: Lago bundle install */}
+
+### Set up token-based authentication
+
+Installing the bundle creates the **Lago Integration Role**, but not the credentials that use it. Lago signs every call to the RESTlet with NetSuite's token-based authentication (TBA), which needs four values: a **Client ID** and **Client Secret** from an integration record, and a **Token ID** and **Token Secret** from an access token issued for that integration, a user, and the role.
+
+Create all four in NetSuite, then enter them in Lago.
+
+<Steps>
+  <Step title="Step 1: Assign the Lago Integration Role to an integration user">
+    Go to **Lists > Employees > Employees**, open the employee that will own the connection, and click **Edit**. On the **Access** subtab, add **Lago Integration Role** to the **Roles** sublist, then save.
+
+    Use a dedicated integration employee rather than a person's own login. The role is web-services-only, so it can't sign in to the NetSuite UI, and the connection keeps working when people change teams or leave.
+  </Step>
+  <Step title="Step 2: Create the integration record">
+    Go to **Setup > Integration > Manage Integrations > New**, give the record a name (for example, `Lago Integration`), and leave **State** as `Enabled`.
+
+    Under **Authentication**, tick **Token-Based Authentication** and clear every other box: **TBA: Issuetoken Endpoint**, **TBA: Authorization Flow**, **Authorization Code Grant**, **Client Credentials (Machine to Machine) Grant**, and the OAuth 2.0 **Scope** boxes (**Restlets**, **REST Web Services**, **SuiteAnalytics Connect**). Save.
+
+    <Warning>
+    NetSuite displays the **Client ID** and **Client Secret** only once, on the confirmation page immediately after you save. Copy both before you navigate away. They can't be retrieved later, and replacing a lost pair means creating a new integration record.
+    </Warning>
+
+    <Frame caption="Integration record with token-based authentication as the only enabled method">
+      <img src="/integrations/images/netstuite-tba-integration.png" />
+    </Frame>
+  </Step>
+  <Step title="Step 3: Create an access token">
+    Go to **Setup > Users/Roles > Access Tokens > New**, or click **Manage Access Tokens** in the **Settings** portlet of your NetSuite home page. Set:
+
+    - **Application Name**: the integration record from step 2;
+    - **User**: the integration user from step 1; and
+    - **Role**: **Lago Integration Role**.
+
+    NetSuite fills in the **Token Name** for you. Save, then copy the **Token ID** and **Token Secret**. **These are also shown only once.**
+
+    <Frame caption="Manage Access Tokens on the NetSuite home page">
+      <img src="/integrations/images/create-netsuite-token.png" />
+    </Frame>
+  </Step>
+  <Step title="Step 4: Enter the credentials in Lago">
+    Open the NetSuite connection in Lago and enter:
+
+    - your **NetSuite account ID**;
+    - the **Client ID** and **Client Secret** from step 2;
+    - the **Token ID** and **Token Secret** from step 3; and
+    - the **custom RESTlet endpoint URL**, shown on the `Lago Service` deployment (`customdeploy_lago_service`) under **Customization > Scripting > Script Deployments**. Confirm the deployment status is `Released` while you're there.
   </Step>
 </Steps>
 
-{/* TODO screenshot: Lago bundle install / Released Lago Service deployment with endpoint URL */}
-
 <Info>
-The credentials Lago uses to call the RESTlet (token-based authentication under the Lago Integration Role) are configured with your Lago contact during onboarding. The steps below configure everything on the NetSuite side.
+An access token is tied to one integration, one user, and one role. If you later change the role on the user, or disable the integration record, the token stops working and you need to issue a new one.
 </Info>
 
 ### Add your Lago API key
@@ -256,28 +301,3 @@ sequenceDiagram
   R-->>R: Schedule Jan, Feb, Mar recognition
   Note over R: Revenue recognized straight-line across the service period
 ```
-
-{/*
-## Changelog vs. previous version
-NOT FOR PUBLICATION — reviewer diff aid only. Remove before merge.
-
-Source of truth: getlago/lago-netsuite-sdf — docs/OVERVIEW.md, docs/ARCHITECTURE.md, CLAUDE.md, and the SDF code.
-
-Update (this revision), incorporating OVERVIEW.md + ARCHITECTURE.md:
-- Reframed "How it works" as three Lago -> NetSuite data flows (documents, payments, catalog) with a big-picture mermaid, and added the authentication paragraph (NetSuite -> Lago via the API-key secret; Lago -> NetSuite via token-based auth under the Lago Integration Role). This resolves the prior open item about inbound auth.
-- CORRECTED payments: the supported flow is Lago -> NetSuite (payment recorded in Lago -> NetSuite Customer Payment applied to the invoice). The NetSuite -> Lago direction (Lago_Payment_Sync, gated by the Sync Payments toggle) is still in development per ARCHITECTURE.md; now labeled as such. The previous revision wrongly presented payments as a supported two-way sync.
-- Enriched Invoices: one line per fee, negative discount lines (coupons/credit notes/prepaid), taxes reconciled to the cent, links back to Lago.
-- Added "Optional: grouped charge lines" (charge grouping + grouping rules record).
-- Credit Notes: noted automatic application to the original invoice when the credit note is an offset.
-- Added "Reliability and reconciliation" (no duplicates, totals match, out-of-order retry queue, File Cabinet audit trail) with a small retry-queue mermaid.
-- Install list now mentions the async processing queue and the charge-grouping-rules record. Added Token-Based Authentication to the required features (inbound auth).
-
-Earlier revision (bundle-install rewrite) already:
-- Replaced the legacy ramda.min.js + pasted-script + hand-deploy flow, the manual Tax Nexus/Type/Code creation, taxable items, Location removal, the Lago-side mapping UI, and the TBA/OAuth walkthrough with the config-record-in-NetSuite model.
-- Documented bundle output (scripts, records, role, custom fields) and the API-key secret.
-- Kept the PREMIUM ADD-ON callout, the rev rec section, and the integration-logs webhook. Kept only the sync-customers and sync-invoices screenshots; new steps use TODO placeholders. No bundle source/ID/location anywhere.
-
-OPEN ITEMS for reviewer:
-- Script ID: CLAUDE.md lists the RESTlet as customscript_lago_service_rl; the SDF object XML uses customscript_lago_service (no suffix). Doc follows the XML (authoritative for what deploys). Confirm which is live.
-- Confirm the "Setup > Company > API Secrets" menu path for the NetSuite secret (OVERVIEW/ARCHITECTURE call it a "NetSuite secret" / "customer secret" but don't give the menu path).
-*/}
