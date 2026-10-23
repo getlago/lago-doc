@@ -38,17 +38,27 @@ title: "Customer management"
             "city": "Woodland Hills",
             "country": "US",
             "currency": "EUR",
+            "customer_type": "company",
             "email": "dinesh@piedpiper.test",
             "legal_name": "Coleman-Blair",
             "legal_number": "49-008-2965",
             "tax_identification_number": "EU123456789",
             "logo_url": "http://hooli.com/logo.png",
             "name": "Gavin Belson",
+            "net_payment_term": 30,
             "phone": "1-171-883-3711 x245",
             "state": "CA",
             "timezone": "Europe/Paris",
             "url": "http://hooli.com",
             "zipcode": "91364",
+            "shipping_address": {
+               "address_line1": "5230 Penfield Ave",
+               "address_line2": "",
+               "city": "Woodland Hills",
+               "state": "CA",
+               "zipcode": "91364",
+               "country": "US"
+            },
             "tax_codes": [],
             "billing_configuration": {
                "invoice_grace_period": 3,
@@ -86,9 +96,9 @@ When creating a billing object for the customer (subscription, coupon, one-off i
 
 Note that coupons and prepaid credits only apply to invoices sharing the same currency.
 
-## Companies vs Individuals
-When creating or updating a customer, you can specify whether the customer is a `company` or an `individual` by setting the customer type. 
-By default, if no customer type is specified, the customer will be created without a defined type, and you will need to assign one manually.
+## Companies vs individuals
+Set `customer_type` to `company` or `individual` when you create or update a customer.
+The field is optional. When you leave it out, the customer has no type and you assign one later.
 
 ## Assign objects to a customer
 
@@ -119,7 +129,7 @@ During the billing period, the customer's current usage is visible in the
 <Tabs>
   <Tab title="Dashboard">
    <Frame caption="Fetch customer's current usage">
-      <img src="/guide/images/customer-current-usage.png" />
+      <img src="/guide/images/customer-current-usage.png" alt="Current usage report in the Analytics tab of the customer view" />
     </Frame>
   </Tab>
   <Tab title="API">
@@ -150,7 +160,7 @@ The "**Billing overview**" lets you see at a glance where a customer stands in t
 <Tabs>
   <Tab title="Dashboard">
    <Frame caption="Check a customer's billing status">
-      <img src="/guide/images/customer-billing-overview.png" />
+      <img src="/guide/images/customer-billing-overview.png" alt="Billing overview of a customer, with gross revenue and total overdue" />
     </Frame>
   </Tab>
   <Tab title="API">
@@ -185,10 +195,11 @@ The "**Billing overview**" lets you see at a glance where a customer stands in t
 You may delete a customer linked to existing objects (i.e. applied coupons, wallets, subscriptions, add-ons).
 
 If you do so:
-- All [subscriptions](/guide/subscriptions/assign-plan) associated with this customer account will be immediately terminated (this action may trigger the generation of invoices and/or credit notes);
-- All [coupons](/guide/coupons) applied to this customer account will be immediately terminated;
-- The customer's active [wallet](/guide/wallet-and-prepaid-credits) will be immediately terminated and all remaining credits will be voided; and
-- All `draft` invoices associated with this customer account will be immediately finalized.
+- All active [subscriptions](/guide/subscriptions/assign-plan) associated with this customer account are terminated immediately (this action may trigger the generation of invoices and/or credit notes);
+- All `pending` subscriptions are canceled;
+- All [coupons](/guide/coupons) applied to this customer account are terminated immediately;
+- The customer's active [wallets](/guide/wallet-and-prepaid-credits) are terminated immediately and all remaining credits are voided; and
+- All `draft` invoices associated with this customer account are finalized.
 
 `finalized` invoices and [credit notes](/guide/invoicing/credit-notes/overview) associated with the deleted customer remain available in the **"Invoices"** section of the user interface and can also be retrieved via the API.
 
