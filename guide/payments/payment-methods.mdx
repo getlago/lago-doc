@@ -10,8 +10,8 @@ description: "Customer’s payment instrument (card, bank account, direct debit 
 A payment method in Lago is a stored reference to a customer’s payment instrument (card, bank account, direct debit mandate, etc.), managed by an external Payment Service Provider (PSP).
 
 Lago does not store raw payment details. Instead, it stores:
-- A **provider_customer_id**, linking the Lago customer to their PSP record (e.g., cus_abc123 in Stripe)
-- A **provider_method_id**, which identifies the specific payment instrument stored in the PSP
+- A `provider_customer_id`, linking the Lago customer to their PSP record (for example, `cus_abc123` in Stripe)
+- A `provider_method_id`, which identifies the specific payment instrument stored in the PSP
 
 When a payment is required (invoice, wallet top-up, etc.), Lago delegates the charge to the PSP using the stored `provider_customer_id` and targets the appropriate `provider_method_id`. The PSP then processes the payment using the selected payment method.
 
@@ -25,7 +25,7 @@ This is the primary path for new customers. When a customer is created in Lago w
 1. Creates a corresponding customer record in the PSP.
 2. Emits a `customer.checkout_url_generated` webhook containing a checkout URL.
 3. You redirect the customer to this URL.
-4. The customer completes the form — no funds are collected at this stage.
+4. The customer completes the form. No funds are collected at this stage.
 5. Once confirmed, the PSP securely stores the payment method for future transactions.
 
 The checkout URL expires after **24 hours**.
@@ -35,7 +35,7 @@ For **GoCardless**, the checkout flow collects a direct debit mandate rather tha
 ### 2. Syncing an existing PSP customer
 
 If the customer already exists in the PSP with a payment method on file, you can link them to Lago without going through the checkout flow.
-By setting `sync_with_provider` to `false` and providing the existing `provider_customer_id`, Lago retrieves the default payment method stored in the PSP and attach it to the customer. No checkout URL is generated.
+By setting `sync_with_provider` to `false` and providing the existing `provider_customer_id`, Lago retrieves the default payment method stored in the PSP and attaches it to the customer. No checkout URL is generated.
 This is useful when migrating customers from another billing system, or when the customer and their mandate/card already exist in Adyen or GoCardless.
 
 ### 3. Generate a new checkout URL
@@ -46,7 +46,7 @@ Once the customer is connected to a PSP, you can generate a new checkout URL at 
     To generate a new checkout URL:
       1. Navigate to the customer's information tab;
       2. In the **Payment methods** section, click **Add a payment method**;
-      3. Click **Generate link** — Lago requests a new checkout URL from the PSP;
+      3. Click **Generate link**, so Lago requests a new checkout URL from the PSP;
       4. Copy the generated URL and share it with your customer.
 
     The checkout URL expires after **24 hours**.
@@ -83,7 +83,7 @@ You can define a payment method when creating:
 
 If no payment method is specified, Lago falls back to the default payment method defined in Lago (not necessarily the PSP default).
 You can also select **Manual payment** as a payment method.
-For example, a subscription can use a stored card, while a one-off invoice is marked as manual — you'll have to record a manual payment to mark the invoice as paid.
+For example, a subscription can use a stored card while a one-off invoice is marked as manual. You then record a manual payment to mark that invoice as paid.
 
 <Note>
 **Manual payment does not exempt an invoice from dunning.** It only stops the automatic charge when the invoice is finalized. If that invoice later becomes overdue and the customer is enrolled in a dunning campaign, Lago can still attempt an automatic payment for the overdue balance through the customer's payment provider. This also applies to a billing object that was switched to **Manual payment** because its payment method became inactive. See [automatic dunning](/guide/dunning/automatic-dunning) to learn how to exclude a customer from these attempts.
@@ -91,8 +91,8 @@ For example, a subscription can use a stored card, while a one-off invoice is ma
 
 ### Inactive payment methods
 You can mark a payment method as **inactive**. It can no longer be selected or attached to a billing object.
-If the default payment method becomes inactive, Lago will automatically switch the related billing object to **Manual payment**. This prevents unintended charges using another stored method. You must then update the billing object with a valid payment method.
+If the default payment method becomes inactive, Lago automatically switches the related billing object to **Manual payment**. This prevents unintended charges using another stored method. You must then update the billing object with a valid payment method.
 
 ### Multiple subscriptions with different payment methods
 By default, Lago groups multiple subscription invoices for the same customer into a single invoice when they are generated on the same day.
-Now that each subscription can have its own payment method, Lago automatically splits invoices by payment method — and groups invoices accordingly.
+Because each subscription can have its own payment method, Lago splits the invoices by payment method and groups together the subscriptions that share one.
