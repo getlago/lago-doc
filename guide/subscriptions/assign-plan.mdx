@@ -17,7 +17,7 @@ description: "A subscription is created when a plan is assigned to a customer.
     8. Set a subscription end date (end date of the subscription - [see below](#subscription-end-date) - optional);
     9. Define a PO number to be used on invoices generated from this subscription;
     10. Choose whether the subscription should be renewed at the beginning of the period or on its anniversary date (see [below](#billing-cycles)); and
-    11. Click **"Add plan"** to confirm;
+    11. Click **"Add plan"** to confirm.
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -54,7 +54,7 @@ Want to hold activation until the first payment clears, so you never open AR for
 </Info>
 
 ## Billing cycles
-Optimize billing for your customers by assigning subscriptions based on either calendar dates or anniversary dates (the day they signed up).
+Bill your customers on calendar dates or on the anniversary date of the subscription (the day they signed up).
 
 <Tabs>
   <Tab title="Calendar billing period">
@@ -214,6 +214,25 @@ This reduces the number of invoices your customers receive and simplifies paymen
 
 To keep a specific subscription on its own invoice, for example to bill a different cost center, track a contract independently, or simplify internal reporting, disable consolidation for that subscription. Set the `consolidate_invoice` field to `false` on the subscription, either from the dashboard or via the API. Lago then issues a standalone invoice for that subscription, even when other subscriptions for the same customer are billed on the same day.
 
+<CodeGroup>
+```bash Keep a subscription on its own invoice
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "subscription": {
+    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+    "plan_code": "premium",
+    "external_id": "my_sub_12345789",
+    "consolidate_invoice": false
+  }
+}'
+```
+</CodeGroup>
+
 <Info>
 The `consolidate_invoice` setting applies at the **subscription level**, so you can mix consolidated and standalone subscriptions for the same customer. You can update this setting at any time.
 </Info>
@@ -316,7 +335,7 @@ Coupons restricted to a plan code apply to both the initial plan and its overrid
 By default, changes made to the initial plan do not reach subscriptions linked to an overridden plan. To propagate them, update the plan with `cascade_updates` set to `true`. See [Editing plans](/guide/plans/overview#editing-plans).
 
 ## Deleting a plan
-You could [delete a plan](/api-reference/plans/destroy) linked to existing subscriptions.
+You can [delete a plan](/api-reference/plans/destroy) that is linked to existing subscriptions.
 
 If you do so, the subscriptions associated with this plan will be immediately terminated. This action may trigger the generation of invoices and/or credit notes.
 
