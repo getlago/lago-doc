@@ -73,7 +73,9 @@ To edit a billing entity:
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
-    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/{code}" \
+    BILLING_ENTITY_CODE="acme_corp"
+
+    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/$BILLING_ENTITY_CODE" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -89,6 +91,26 @@ To edit a billing entity:
     </CodeGroup>
   </Tab>
 </Tabs>
+
+---
+
+## Billing entity settings
+
+A billing entity carries the settings that Lago applies to the invoices it issues:
+
+- Entity details: legal name and number, tax identification number, address, logo and [invoice footer](/guide/invoicing/invoicing-settings/overview#add-a-custom-footer)
+- Default currency and timezone
+- [Invoice numbering](/guide/invoicing/invoicing-settings/invoice-numbering)
+- [Grace period](/guide/invoicing/invoicing-settings/grace-period)
+- [Net payment term](/guide/invoicing/invoicing-settings/net-payment-term)
+- [Document language](/guide/invoicing/invoicing-settings/overview#translate-invoices)
+- [Zero-amount invoices](/guide/invoicing/invoicing-settings/empty-invoices)
+- [Taxes](/guide/invoicing/invoicing-settings/taxes)
+- [Invoice custom sections](/guide/invoicing/invoicing-settings/overview#add-a-custom-invoice-section)
+- [Emails](/guide/emails)
+- [E-invoicing](/guide/invoicing/e-invoicing/overview)
+
+Through the API, taxes and invoice custom sections can only be set when you [update a billing entity](/api-reference/billing-entities/update), not when you [create one](/api-reference/billing-entities/create). The [billing entity object](/api-reference/billing-entities/object) lists every field.
 
 ---
 
@@ -109,7 +131,7 @@ When creating a customer, you can assign it to a billing entity in two ways:
 - Through the Dashboard by selecting the billing entity.
 - Via API by passing the `billing_entity_code` in the customer creation payload.
 
-If no billing entity is specified via API, the customer will automatically be assigned to the **default** billing entity to avoid breaking changes.
+If you do not pass `billing_entity_code`, Lago assigns the customer to the **default** billing entity.
 
 <Info>
   The billing entity assigned to a customer acts as their **default billing entity**.
