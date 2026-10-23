@@ -89,8 +89,8 @@ Docker images are always updated to the last stable version in the
 [releases list](https://github.com/getlago/lago/releases).
 
 <Warning>
-  We recommend avoiding the usage of `latest` tag, you should use the last
-  tagged version, you can track the latest versions on Dockerhub
+  Avoid the `latest` tag. Use the most recent tagged version instead. You can
+  track the published tags on Docker Hub.
 </Warning>
 
 - lago-api :
@@ -229,7 +229,7 @@ DATABASE_URL=postgresql://${POSTGRES_USER:-lago}:${POSTGRES_PASSWORD:-changeme}@
 
 Therefore, you do not need to set `DATABASE_URL` explicitly in this setup.
 
-Although it is possible to use the Docker Compose with an external Postgres instance, the bundled `docker-compose.yml` also ships a `db` service which is configured using the `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_PORT` variables. When using the bundled `db` service, we suggest to change the default `POSTGRES_PASSWORD` value.
+Although it is possible to use the Docker Compose with an external Postgres instance, the bundled `docker-compose.yml` also ships a `db` service which is configured using the `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_PORT` variables. When using the bundled `db` service, we suggest changing the default `POSTGRES_PASSWORD` value.
 
 <Warning>
   Note that it is still possible to override `DATABASE_URL` when using the Docker Compose. The caveat is that the bundled `db` service will be configured using the `POSTGRES_*` variables, possibly causing conflicts. So we recommend using the `POSTGRES_*` over `DATABASE_URL` when using the bundled `db` service.
@@ -264,7 +264,7 @@ Total connections to Postgres ≈ `DATABASE_POOL × (api/worker/etc.)`. Keep thi
 
 #### Statement-level safeguards
 
-These three opt-in variables are applied to every Lago Rails connection (API, workers, clock, Rake tasks). They are unset by default, which means Postgres queries runs with no timeout unless explicitly set.
+These three opt-in variables are applied to every Lago Rails connection (API, workers, clock, Rake tasks). They are unset by default, which means Postgres queries run with no timeout unless explicitly set.
 
 | Environment Variable              | `DATABASE_URL` variable               | Effect when set                                                                      |
 | --------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------ |
@@ -284,7 +284,7 @@ DATABASE_URL="postgresql://user:password@host:port/database?statement_timeout=15
   These timeouts apply to **every** process that boots the Rails app, including Sidekiq workers, the clock container, and Rake tasks such as migrations. Long-running background jobs and schema migrations can be killed if you set aggressive limits globally. Apply tight caps to the web tier and set them higher on workers, clock and migration entrypoints.
 </Warning>
 
-We recommend to set the timeouts lower than your HTTP-layer timeout so Postgres cancels the query before the client gives up.
+We recommend setting the timeouts lower than your HTTP-layer timeout so Postgres cancels the query before the client gives up.
 
 #### Enabling SSL
 
@@ -511,7 +511,7 @@ When using a dedicated Redis setup that you manage yourself, you can achieve hig
 
 You can enable Sentinel for the Sidekiq queue, the cache, or both. Each consumer reads its own variables, so mixing modes is supported (for example, Sidekiq through Sentinel and the cache through a static URL).
 
-If you'd like to use Redis Sentinel, we recommend that you properly read through its documentation and define monitoring and alerting on Sentinel events. Furthermore we suggest to the test failover (e.g., by simulating consecutive master failures) thoroughly and regularly during low-traffic/maintenance periods or on a staging environment to make sure your setup works as expected.
+If you'd like to use Redis Sentinel, we recommend that you properly read through its documentation and define monitoring and alerting on Sentinel events. Furthermore, we suggest testing failover (e.g., by simulating consecutive master failures) thoroughly and regularly during low-traffic/maintenance periods or on a staging environment to make sure your setup works as expected.
 
 <Warning>
   Redis also provides high availability through Redis Cluster, but Sidekiq doesn't support it. Sentinel is the only recommended HA solution for self-hosted Lago deployments using dedicated Redis.
@@ -544,12 +544,12 @@ If `LAGO_REDIS_CACHE_URL` is also set, Lago only reuses its connection options, 
 
 #### Best practices
 
-- **Bring your own Redis in production.** The bundled `redis` service in `docker-compose.yml` is intended for local trials. For production, run a managed or dedicated Redis (or multiple Redis instance fronted by Sentinel) and point Lago at it.
+- **Bring your own Redis in production.** The bundled `redis` service in `docker-compose.yml` is intended for local trials. For production, run a managed or dedicated Redis (or several Redis instances fronted by Sentinel) and point Lago at it.
 - **Use separate Redis instances for the cache and the queue in production.** This prevents a surge in one workload (e.g., heavy Sidekiq activity) from impacting the other (e.g., API cache performance). It also allows you to properly configure each Redis instance according to its needs (memory, eviction policy, etc.).
 - **Use managed instances or Redis Sentinel for HA.** A single Redis master is a single point of failure. For production loads with availability requirements, use Sentinel or a managed Redis service that provides equivalent automatic failover.
 - **Encrypt connections.** Use the `rediss://` scheme in `REDIS_URL` / `LAGO_REDIS_CACHE_URL` to enable TLS to your Redis nodes.
 
-<a id="ssl-support"></a> { /* Old anchor kept to avoid breaking existing links */ }
+<span id="ssl-support"></span> { /* Old anchor kept to avoid breaking existing links */ }
 ### Enabling SSL on the Frontend
 
 Lago Front application can be configured to support SSL certificates. You have
@@ -584,7 +584,7 @@ volumes:
   support
 
 ```shell
-docker-compose up front
+docker compose up front
 ```
 
 #### Let's Encrypt Certificate
@@ -622,7 +622,7 @@ volumes:
 - You can now start the front application with the signed certificate support
 
 ```shell
-docker-compose up front
+docker compose up front
 ```
 
 ### Storage
@@ -637,8 +637,8 @@ We currently support :
 - Google Cloud Service Cloud Storage
 
 <Warning>
-  If you use S3 compatibles endpoints, you should set the `LAGO_AWS_S3_REGION`
-  to a default value (e.g., `us-east-1`), it is required to work properly!
+  If you use S3 compatible endpoints, you must set `LAGO_AWS_S3_REGION` to a
+  default value (e.g., `us-east-1`). It is required to work properly.
 </Warning>
 
 #### AWS S3
@@ -693,7 +693,7 @@ api-worker:
     - gcs_keyfile.json:/app/gcs_keyfile.json
 ```
 
-### SMTP Configuration[](#smtp-configuration)
+### SMTP configuration
 
 In order to use the email feature, you need to configure some environment variables.
 
@@ -703,13 +703,13 @@ In order to use the email feature, you need to configure some environment variab
 
 | Name                 | Description                                                                      |
 | -------------------- | -------------------------------------------------------------------------------- |
-| `LAGO_FROM_EMAIL`    | Required to send emails (i.e: [noreply@getlago.com](mailto:noreply@getlago.com)) |
+| `LAGO_FROM_EMAIL`    | Required to send emails (e.g. [noreply@getlago.com](mailto:noreply@getlago.com)) |
 | `LAGO_SMTP_ADDRESS`  | Address of the SMTP server                                                       |
 | `LAGO_SMTP_PORT`     | Port of the SMTP Server                                                          |
 | `LAGO_SMTP_USERNAME` | Username of the SMTP Server                                                      |
 | `LAGO_SMTP_PASSWORD` | Password of the SMTP Server                                                      |
 
-#### Authentication and TLS overrides[](#authentication-and-tls-overrides)
+#### Authentication and TLS overrides
 
 By default, Lago authenticates against your SMTP server with the `login` method and upgrades the connection with STARTTLS. Keep these defaults: they work with every hosted email provider (SendGrid, Mailgun, Amazon SES, Gmail SMTP and the like) and they keep your messages and your credentials encrypted in transit.
 
@@ -732,11 +732,11 @@ A few things worth knowing before you change them:
 
 To check the settings your instance actually uses, run the diagnostics task and read its SMTP section:
 
-```
-docker-compose exec api bundle exec rails lago:diagnostics
+```shell
+docker compose exec api bundle exec rails lago:diagnostics
 ```
 
-#### Single Sign On using Google authentication[](#single-sign-on-using-google-authentication)
+#### Single sign-on using Google authentication
 
 In order to enable Google authentication for single sign on, you have to set those variables.
 
