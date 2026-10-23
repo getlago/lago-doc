@@ -10,15 +10,48 @@ With Lago, invoice numbers are automatically generated each time an invoice is f
 - **Per customer**:
   Generates a unique invoice sequence for each customer.
 	This method ensures isolated and traceable numbering per customer, which can simplify customer-level reporting and accounting.
-- **Entity-wide numbering**: 
+- **Entity-wide numbering**:
 	Uses a single, continuous sequence across all customers within a billing entity.
-	This option streamlines invoice tracking at the entity level. The numbering increments monthly, using a YYYYMM pattern to help segment invoices by period.
+	The invoice number also carries the year and the month (`YYYYMM`), so you can segment invoices by period. The sequence itself does not restart each month.
 
 ## Invoice prefix customization
 
 Lago also allows full control over the prefix applied to documents like invoices and credit notes.
 By default, the prefix combines:
-- The first three letters of your billing entity’s name, and
-- The last four digits of your entity ID.
+- The first three letters of your billing entity's name, and
+- The last four characters of your entity ID.
 
-You can override this with a custom prefix to match your internal conventions.
+Both are uppercased, so a billing entity named "Acme Corporation" gets a prefix such as `ACM-9F3C`. You can override this with a custom prefix of 1 to 10 characters to match your internal conventions.
+
+## Examples
+
+For a billing entity whose prefix is `ACM-9F3C`, an invoice finalized in January 2026 is numbered:
+
+| Setting | Invoice number | Reading |
+|---|---|---|
+| Per customer | `ACM-9F3C-005-003` | third invoice of the customer whose sequence is `005` |
+| Entity-wide | `ACM-9F3C-202601-001` | first invoice of the billing entity, finalized in January 2026 |
+
+A `draft` invoice has no sequential number yet. It is shown as `ACM-9F3C-DRAFT` until you finalize it.
+
+## Configure numbering through the API
+
+Set `document_numbering` to `per_customer` or `per_billing_entity`, and `document_number_prefix` to the prefix you want:
+
+<CodeGroup>
+```bash Set the numbering of a billing entity
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+BILLING_ENTITY_CODE="acme_corp"
+
+curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/$BILLING_ENTITY_CODE" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "billing_entity": {
+      "document_numbering": "per_billing_entity",
+      "document_number_prefix": "ACM"
+    }
+  }'
+```
+</CodeGroup>
