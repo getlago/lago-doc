@@ -12,44 +12,41 @@ Lago calculates subscription and usage charges, generates invoices, and connects
 [Events](/guide/events/ingesting-usage) provide information about your customers'
 consumption, with the highest level of granularity. Any product feature for
 which you want to charge your customers should correspond to a specific event.
-An event can be triggered by an action or can be sent periodically. Lago is able
-to ingest events at scale while preventing duplicates.
+An event can be triggered by an action or can be sent periodically. Lago ingests
+events at scale while preventing duplicates.
 
 ### 2. Metrics aggregation
 
 The aggregation process consists of converting events into
-[billable metrics](/guide/billable-metrics/create-billable-metrics). There are 6 aggregation types:
+[billable metrics](/guide/billable-metrics/create-billable-metrics). There are 6
+[aggregation types](/guide/billable-metrics/aggregation-types/overview):
 
-| Aggregation       | Description                                                                                            | Type                  |
-| ----------------- | ------------------------------------------------------------------------------------------------------ | --------------------- |
-| `COUNT`           | Counts the number of times an incoming event occurs                                                    | Metered               |
-| `COUNT UNIQUE`    | Returns the number of unique values of a predefined property for incoming events                       | Metered or Recurring  |
-| `LATEST`          | Returns the latest value of a predefined property for incoming events                                 | Metered               |
-| `MAX`             | Returns the maximum value of a predefined property for incoming events                                 | Metered               |
-| `SUM`             | Calculates the sum of a predefined property for incoming events                                        | Metered or Recurring  |
-| `WEIGHTED SUM`    | Calculates the sum of a predefined property for incoming events prorated based on time used per period | Metered or Recurring  |
-
-
-
+| Aggregation    | Description                                                                                            | Type                 |
+| -------------- | ------------------------------------------------------------------------------------------------------ | -------------------- |
+| `COUNT`        | Counts the number of times an incoming event occurs                                                    | Metered              |
+| `COUNT UNIQUE` | Returns the number of unique values of a predefined property for incoming events                       | Metered or Recurring |
+| `LATEST`       | Returns the latest value of a predefined property for incoming events                                  | Metered              |
+| `MAX`          | Returns the maximum value of a predefined property for incoming events                                 | Metered              |
+| `SUM`          | Calculates the sum of a predefined property for incoming events                                        | Metered or Recurring |
+| `WEIGHTED SUM` | Calculates the sum of a predefined property for incoming events prorated based on time used per period | Metered or Recurring |
 
 ### 3. Pricing and packaging
 
-Creating [plans](/guide/plans/overview) allows you to define how much your customers
-should pay for using your product. You can then combine plans and billable
-metrics to implement any billing model (i.e. subscription-based, usage-based, or
-hybrid). Billable metrics may be priced differently depending on the associated
-plan.
+[Plans](/guide/plans/overview) define how much your customers pay for using your
+product. Combine plans and billable metrics to implement any billing model:
+subscription-based, usage-based, or hybrid. Billable metrics may be priced
+differently depending on the associated plan.
 
 ### 4. Invoicing
 
 Lago automatically generates [invoices](/guide/invoicing/overview) for each customer
 according to the plan model: the subscription fee can be billed at the beginning
-or at the end of the billing period, and each usage-based charge is billed `in
-advance` or `in arrears` depending on how you configure it. Invoices include
-fees, taxes and customer information.
+or at the end of the billing period, and each usage-based charge is billed
+`in advance` or `in arrears` depending on how you configure it. Invoices
+include fees, taxes and customer information.
 
 ### 5. Payments
 
 When an invoice is emitted and finalized, it's ready for payment collection.
 Connect payment providers through [native integrations](/guide/payments/payment-providers) or
-trigger payments on any PSPs using the invoice payload created by Lago.
+trigger payments on any PSP using the invoice payload created by Lago.
