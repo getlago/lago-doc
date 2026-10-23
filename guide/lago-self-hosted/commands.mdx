@@ -12,26 +12,34 @@ These commands run in a Rails console (`rails c`) inside a Docker container name
 docker compose exec api rails c
 ```
 
-## Dry-run invoice in the future
+## Bill a subscription for a future date
 
-Use this to simulate a dry run invoice for a future date. Ensure to specify the correct subscription `external_id` and the targeted invoice issuance date.
+Use this to queue the billing of a subscription for a later issuance date. The job
+generates a real invoice, it is not a preview. Specify the correct subscription
+`external_id`, the targeted invoice issuance date, and an `invoicing_reason`.
 
 ```ruby
 # In the rails Console
 subscription = Subscription.find_by(external_id: 'YOUR_SUB_EXTERNAL_ID')
-date = DateTime.parse('2024-10-01').to_i
+timestamp = DateTime.parse('2024-10-01').to_i
 
-BillSubscriptionJob.perform_later([subscription], date)
+BillSubscriptionJob.perform_later([subscription], timestamp, invoicing_reason: :subscription_periodic)
 ```
 
-## Issue invoice immediately
+<Info>
+  `invoicing_reason` is required. It accepts `subscription_starting`,
+  `subscription_periodic`, `subscription_terminating`, `in_advance_charge`,
+  `in_advance_charge_periodic` and `progressive_billing`.
+</Info>
 
-Use this to issue an invoice immediately. Ensure to specify the correct subscription `external_id` and the current date.
+## Issue an invoice immediately
+
+Use this to issue an invoice right away. Specify the correct subscription `external_id`.
 
 ```ruby
 # In the rails Console
 subscription = Subscription.find_by(external_id: 'YOUR_SUB_EXTERNAL_ID')
-timestamp = DateTime.parse('2024-04-01').to_i
+timestamp = Time.current.to_i
 BillSubscriptionJob.perform_now([subscription], timestamp, invoicing_reason: :subscription_periodic)
 ```
 
