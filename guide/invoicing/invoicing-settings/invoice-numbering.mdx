@@ -22,3 +22,36 @@ By default, the prefix combines:
 - The last four characters of your entity ID.
 
 Both are uppercased, so a billing entity named "Acme Corporation" gets a prefix such as `ACM-9F3C`. You can override this with a custom prefix of 1 to 10 characters to match your internal conventions.
+
+## Examples
+
+For a billing entity whose prefix is `ACM-9F3C`, an invoice finalized in January 2026 is numbered:
+
+| Setting | Invoice number | Reading |
+|---|---|---|
+| Per customer | `ACM-9F3C-005-003` | third invoice of the customer whose sequence is `005` |
+| Entity-wide | `ACM-9F3C-202601-001` | first invoice of the billing entity, finalized in January 2026 |
+
+A `draft` invoice has no sequential number yet. It is shown as `ACM-9F3C-DRAFT` until you finalize it.
+
+## Configure numbering through the API
+
+Set `document_numbering` to `per_customer` or `per_billing_entity`, and `document_number_prefix` to the prefix you want:
+
+<CodeGroup>
+```bash Set the numbering of a billing entity
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+BILLING_ENTITY_CODE="acme_corp"
+
+curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/$BILLING_ENTITY_CODE" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "billing_entity": {
+      "document_numbering": "per_billing_entity",
+      "document_number_prefix": "ACM"
+    }
+  }'
+```
+</CodeGroup>
