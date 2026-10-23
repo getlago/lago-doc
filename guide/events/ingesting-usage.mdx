@@ -21,7 +21,7 @@ flowchart LR
 ## Designing your events
 
 <Frame caption="Event structure">
-      <img src="/guide/events/images/events-structure.png" />
+      <img src="/guide/events/images/events-structure.png" alt="The structure of a Lago event, with the transaction id, the subscription id, the metric code, the timestamp and the properties" />
 </Frame>
 
 A well-designed event captures what happened, who it happened for, and the dimensions you need for pricing. Getting this right upfront saves you from reworking your integration later.
@@ -66,7 +66,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
       - If both are new to Lago, the event is ingested
       - If both have already been received, the new event **replaces** the previous one
       - If the `transaction_id` has been received but with a different `timestamp`, the two events are distinct and both are billed
-      Always send `timestamp` explicitly on this pipeline. When you omit it, Lago sets it to the ingestion time, which differs on every call — so a retry without an explicit `timestamp` is stored and billed as a separate event.
+      Always send `timestamp` explicitly on this pipeline. When you omit it, Lago sets it to the ingestion time, which differs on every call, so a retry without an explicit `timestamp` is stored and billed as a separate event.
     </Warning>
   </Accordion>
 
@@ -93,7 +93,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
   <Accordion title="properties (optional)">
     Key-value pairs carrying the data your pricing needs: token counts, regions, instance types, anything you price on. Properties can be any JSON supported datatype including `strings`, `integers`, `floats`, `uuids`, or `timestamps`.
 
-    Lago ignores properties that don't match a billable metric, so **include dimensions you might price on in the future** — extra fields cost nothing but give you pricing flexibility later.
+    Lago ignores properties that don't match a billable metric, so **include dimensions you might price on in the future**. Extra fields cost nothing but give you pricing flexibility later.
 
     Events sent to a `UNIQUE COUNT` billable metric accept an `operation_type` property to control whether the unique value is added to or removed from the count:
     - `add`: Adds the unique value. **Optional**: Lago adds by default if `operation_type` is omitted.
@@ -202,7 +202,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     **Billable metric setup:** For per-transaction flat fees, use `COUNT` aggregation on the `transactions` metric with charge filters on `payment_method` (different rates for card vs. ACH vs. wire). For percentage-based fees, use a custom expression like `event.properties.amount_cents * 0.029` or set up pricing tiers in your charge configuration.
 
     <Info>
-      A major global payments company runs Lago self-hosted, processing **thousands of transactions per second**. They started on Postgres (validated at 10K events/sec) and later migrated to ClickHouse + Kafka for higher throughput — same event format, same pricing config, zero billing logic changes.
+      A major global payments company runs Lago self-hosted, processing **thousands of transactions per second**. They started on Postgres (validated at 10K events/sec) and later migrated to ClickHouse + Kafka for higher throughput, with the same event format, the same pricing config and zero billing logic changes.
     </Info>
 
     **Currency handling:** Include `currency` in properties and use charge filters or custom expressions to handle multi-currency pricing. For FX, you can either convert at the event level (include `amount_usd_cents` as a derived property) or let Lago handle it through metric expressions.
@@ -233,7 +233,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     **Billable metric setup:** For tiered pricing (first 10K requests free, then $0.001/request), use `COUNT` aggregation. For pricing by category, use charge filters on `category` (e.g., "standard" vs. "premium"). For pricing by response size, use `SUM` aggregation on `response_bytes`.
 
     <Tip>
-      **Should you bill failed requests?** If you want to exclude 4xx/5xx responses, add a billable metric filter that only counts events where `status_code` is in the 200 range. Include `status_code` in every event either way — it's useful for analytics even if you don't price on it.
+      **Should you bill failed requests?** If you want to exclude 4xx/5xx responses, add a billable metric filter that only counts events where `status_code` is in the 200 range. Include `status_code` in every event either way. It is useful for analytics even if you don't price on it.
     </Tip>
 
     **Volume consideration:** API platforms often have the highest event frequency. A platform serving 100M API calls/day generates ~1,150 events/sec. The REST API handles this easily. Above 10K requests/sec, consider Kafka or client-side pre-aggregation (one event per app per endpoint per hour).
@@ -262,7 +262,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     **Billable metric setup:** For storage, use `MAX` or `LATEST` aggregation on `gb_stored` to bill on peak or end-of-period usage. For bandwidth, use `SUM` on `gb_transferred`.
 
     <Tip>
-      **Snapshot events vs. delta events:** For storage billing, periodic snapshots (one event per day with total GB stored) are simpler and more reliable than tracking every write/delete. This is also a natural pre-aggregation pattern — one event per day per customer instead of thousands.
+      **Snapshot events vs. delta events:** For storage billing, periodic snapshots (one event per day with total GB stored) are simpler and more reliable than tracking every write/delete. This is also a natural pre-aggregation pattern: one event per day per customer instead of thousands.
     </Tip>
   </Tab>
 
@@ -408,9 +408,9 @@ For the full list of available ingestion sources, see [Metering ingestion source
     ```
 
     <Warning>
-      **Batches are atomic.** If a single event is invalid, Lago rejects the entire batch with a `422` and persists nothing. The valid events in the same request are dropped too. "Invalid" covers a missing `transaction_id` or `code`, a `timestamp` Lago cannot parse (`invalid_format`), a custom expression that fails to evaluate, and — on the Postgres event store only — a duplicate `transaction_id` (`value_already_exist`). The response reports failures by the event's **index in the array you sent**, not by `transaction_id`. Keep your array order so you can trace an index back to its source event. Validate and de-duplicate before batching.
+      **Batches are atomic.** If a single event is invalid, Lago rejects the entire batch with a `422` and persists nothing. The valid events in the same request are dropped too. "Invalid" covers a missing `transaction_id` or `code`, a `timestamp` Lago cannot parse (`invalid_format`), a custom expression that fails to evaluate, and, on the Postgres event store only, a duplicate `transaction_id` (`value_already_exist`). The response reports failures by the event's **index in the array you sent**, not by `transaction_id`. Keep your array order so you can trace an index back to its source event. Validate and de-duplicate before batching.
 
-      An `external_subscription_id` that matches no subscription does not fail the batch: those events are ingested and skipped at post-processing. On the ClickHouse event store, duplicate `transaction_ids` do not fail the batch either — they are accepted with a 200 and resolved by deduplication instead. Don't rely on a 422 to catch duplicates; de-duplicate before you send.
+      An `external_subscription_id` that matches no subscription does not fail the batch: those events are ingested and skipped at post-processing. On the ClickHouse event store, duplicate `transaction_ids` do not fail the batch either: they are accepted with a 200 and resolved by deduplication instead. Don't rely on a 422 to catch duplicates; de-duplicate before you send.
     </Warning>
   </Tab>
 </Tabs>
@@ -515,7 +515,7 @@ The SDK emits one event per non-zero token dimension (input, output, cached inpu
 
 ### Kafka / Redpanda configuration
 
-Kafka ingestion requires the **ClickHouse event store** (see [Architecture](/guide/events/usage-performances#architecture-how-lago-processes-events-at-scale)). Self-hosted instances enable it with `LAGO_CLICKHOUSE_ENABLED` and `LAGO_DEFAULT_EVENT_STORE=clickhouse` — see [Configuring the event store](/guide/lago-self-hosted/docker#configuring-the-event-store).
+Kafka ingestion requires the **ClickHouse event store** (see [Architecture](/guide/events/usage-performances#architecture-how-lago-processes-events-at-scale)). Self-hosted instances enable it with `LAGO_CLICKHOUSE_ENABLED` and `LAGO_DEFAULT_EVENT_STORE=clickhouse`. See [Configuring the event store](/guide/lago-self-hosted/docker#configuring-the-event-store).
 
 <AccordionGroup>
   <Accordion title="Lago Cloud">
@@ -652,7 +652,7 @@ Design your IDs to be **deterministic** (derived from source data), not random. 
   </Accordion>
 
   <Accordion title="Events for terminated subscriptions">
-    Events for subscriptions that have been terminated are ingested, but ignored during post-processing. This is a safety mechanism — you don't need to stop your event pipeline the instant a subscription ends.
+    Events for subscriptions that have been terminated are ingested, but ignored during post-processing. This is a safety mechanism: you don't need to stop your event pipeline the instant a subscription ends.
     You can still send usage events with timestamp before the subscription `terminated_at` if you want to amend a draft invoice.
   </Accordion>
 </AccordionGroup>
