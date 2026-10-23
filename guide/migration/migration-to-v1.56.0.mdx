@@ -1,0 +1,104 @@
+---
+title: "Migration to v1.56.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about a change in Lago v1.56.0: **the `/api/v1` list endpoints now limit the page size**. A request with a `per_page` above the limit, or with an invalid `page` or `per_page`, is rejected with a `422` error instead of being served.
+
+# What are the changes?
+
+## A maximum page size on `/api/v1`
+
+Every request on an `/api/v1` path that sends `page` or `per_page` is checked before any data is read. It returns a `422` with the `value_is_out_of_range` code on the parameter when:
+
+- `per_page` is above the limit. A `per_page` equal to the limit is accepted.
+- `page` or `per_page` is not a plain positive number: `0`, a negative value, a decimal (`1.5`), text (`abc`), or a form such as `010`, `+5`, `1_000` or `0x10`.
+
+```json
+{
+  "status": 422,
+  "error": "Unprocessable Entity",
+  "code": "validation_errors",
+  "error_details": {
+    "per_page": ["value_is_out_of_range"]
+  }
+}
+```
+
+The limit is **200 by default**. Requests that send no `page` or `per_page`, or send them empty, behave as before: the default page size stays 100.
+
+The limit can be changed in two ways:
+
+- **For the whole instance**, with the `LAGO_API_PAGINATION_MAX_PAGE_SIZE` environment variable.
+- **For one organization**, with the new `pagination_max_page_size` column of the `organizations` table. When it is set, it wins over the environment variable, higher or lower.
+
+## What does not change
+
+- The response of a valid request is unchanged.
+- The GraphQL API used by the Lago front-end is not affected.
+
+# Why are we doing this?
+
+Until now, nothing limited `per_page` on `/api/v1`. A single request such as `GET /api/v1/invoices?per_page=1000000000` loaded the whole table in one response, and held a database connection and a worker for as long as it took. On a large instance, a few of these requests slowed the API down for every other client. A negative or zero `page` was also read as page 1 without any error.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions. The Lago Team sets the limit for the organizations that need larger pages.
+</Note>
+
+<Warning>
+If you're using a version below `v1.54.0`, please first follow the migration steps for [v1.54.0](/guide/migration/migration-to-v1.54.0).
+Only after completing those should you proceed to v1.56.0.
+</Warning>
+
+## 1. Check the page size your integrations send
+
+Before upgrading, look for `/api/v1` requests that send a `per_page` above 200 (in your API access logs, your load balancer logs, or the code of your integrations).
+
+If none of them do, no action is needed: install v1.56.0 as usual.
+
+## 2. Raise the limit before upgrading, if needed
+
+If some integrations send a `per_page` above 200, choose one of the options below **before** installing v1.56.0. Otherwise these requests start failing with a `422` as soon as the new version runs.
+
+### Option A: raise the limit for the whole instance
+
+Set the environment variable on the **API** container, then restart it:
+
+```bash
+LAGO_API_PAGINATION_MAX_PAGE_SIZE=1000
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `LAGO_API_PAGINATION_MAX_PAGE_SIZE` | `200` | Largest `per_page` accepted on `/api/v1` list endpoints. A missing, invalid or non-positive value falls back to `200`. |
+
+The value is read on every request, so a later change only needs a restart, not a new release.
+
+### Option B: raise the limit for one organization
+
+After installing v1.56.0 (the column is added by the database migrations), open a Rails console on your API server and set the limit of the organization:
+
+```bash
+bundle exec rails console
+```
+
+```ruby
+Organization.find("ORGANIZATION_ID").update!(pagination_max_page_size: 1000)
+```
+
+The value must be a positive whole number. Set it back to `nil` to use the instance limit again.
+
+<Tip>
+To upgrade without any failed request, set `LAGO_API_PAGINATION_MAX_PAGE_SIZE` to a high value (for example `100000`) before installing v1.56.0. Then set `pagination_max_page_size` for the organizations that need large pages. Finally, lower the environment variable (or remove it to use the default of 200) and restart the API.
+</Tip>
+
+# Get Involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
