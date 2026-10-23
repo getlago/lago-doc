@@ -40,8 +40,9 @@ Each security log includes the following properties:
 - **User**: The organization member who performed the action (linked to their email);
 - **Log type**: The category of the event (e.g., `user`, `role`, `api_key`);
 - **Log event**: The specific event that was triggered (e.g., `user.invited`, `api_key.rotated`);
-- **Logged at**: The timestamp of the event; and
-- **Resources**: Contextual data related to the event (e.g., role assigned, webhook events, export type).
+- **Logged at**: The timestamp of the event;
+- **Resources**: Contextual data related to the event (e.g., role assigned, webhook events, export type); and
+- **Device info**: Device details attached to the event, when there are any.
 
 ## Tracked events
 Below is the exhaustive list of security events tracked by Lago.
@@ -106,13 +107,22 @@ Below is the exhaustive list of security events tracked by Lago.
 | `billing_entity.created` | \{\{email\}\} created a new billing entity \{\{billingEntity.name\}\} |
 | `billing_entity.updated` | \{\{email\}\} updated the billing entity \{\{billingEntity.name\}\} |
 
+### Organization
+
+| Event key | Message |
+| --- | --- |
+| `organization.authentication_methods_updated` | The allowed login methods of the organization were updated |
+
+<Info>The resources of `organization.authentication_methods_updated` list the login methods that were added and the ones that were deleted.</Info>
+
 ## Filtering security logs
 You can filter security logs using the following criteria, either through the UI or via the API:
 
-- **Log date**: Filter by `from` and `to` dates;
-- **User**: Filter by the user who performed the action (multi-select);
-- **Log type**: Filter by category — one or more of `user`, `role`, `api_key`, `webhook_endpoint`, `export`, `integration`, `billing_entity` (multi-select); and
-- **Log event**: Filter by specific event key, such as `billing_entity.created` or `webhook_endpoint.deleted` (multi-select).
+- **Log date**: Filter by `from_date` and `to_date`;
+- **User**: Filter by the users who performed the action, with `user_ids` (multi-select);
+- **API key**: Filter by the API keys the events relate to, with `api_key_ids` (multi-select);
+- **Log type**: Filter by category, with `log_types`, using one or more of `user`, `role`, `api_key`, `webhook_endpoint`, `export`, `integration`, `billing_entity` and `organization` (multi-select); and
+- **Log event**: Filter by specific event key, with `log_events`, such as `billing_entity.created` or `webhook_endpoint.deleted` (multi-select).
 
 ## Exporting security logs
 Security logs can only be exported via the API endpoint (`/api/v1/security_logs`). There is no CSV export or log streaming option available at this time.
