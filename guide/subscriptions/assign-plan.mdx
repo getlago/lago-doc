@@ -214,6 +214,25 @@ This reduces the number of invoices your customers receive and simplifies paymen
 
 To keep a specific subscription on its own invoice, for example to bill a different cost center, track a contract independently, or simplify internal reporting, disable consolidation for that subscription. Set the `consolidate_invoice` field to `false` on the subscription, either from the dashboard or via the API. Lago then issues a standalone invoice for that subscription, even when other subscriptions for the same customer are billed on the same day.
 
+<CodeGroup>
+```bash Keep a subscription on its own invoice
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+--header "Authorization: Bearer $API_KEY" \
+--header 'Content-Type: application/json' \
+--data-raw '{
+  "subscription": {
+    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+    "plan_code": "premium",
+    "external_id": "my_sub_12345789",
+    "consolidate_invoice": false
+  }
+}'
+```
+</CodeGroup>
+
 <Info>
 The `consolidate_invoice` setting applies at the **subscription level**, so you can mix consolidated and standalone subscriptions for the same customer. You can update this setting at any time.
 </Info>
