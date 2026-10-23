@@ -25,8 +25,9 @@ Credits consumption alerts help you monitor wallet balances and notify your cust
         5. Click on the **"Add an alert"** button;
         6. Select the type of alert (e.g., Wallet Ongoing Balance);
         7. Set the progressive thresholds and code for the alert;
-        8. Define the optional recurring threshold for the alert; and
-        9. Click on the **"Create alert"** button to confirm.
+        8. Optionally, set **Notify when resolved** to **True** on a threshold to also receive `alert.resolved` (see [alert resolution](/guide/alerts/alert-resolution));
+        9. Define the optional recurring threshold for the alert; and
+        10. Click on the **"Create alert"** button to confirm.
 
       <Info>
         Unlike usage alerts where thresholds are increasing, wallet alert thresholds must be **decreasing**: each new threshold must be lower than the previous one. You can define up to 20 thresholds per alert, including one optional recurring threshold.
@@ -129,6 +130,9 @@ After configuring an alert, you can listen for the `alert.triggered` webhook mes
   }
 }
 ```
+
+## Alert resolution
+To also be notified when the value is back on the safe side of a threshold, opt the threshold in with `notify_on: ["triggered", "resolved"]` and listen for `alert.resolved`. See [alert resolution](/guide/alerts/alert-resolution).
 
 ## Limitations
 - Credits consumption alerts are a **premium** feature;

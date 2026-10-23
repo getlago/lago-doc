@@ -19,8 +19,9 @@ Usage alerts notify you when a subscription's usage crosses thresholds you defin
         3. Click on the **Add an alert** button;
         4. Select the type of alert (e.g., Lifetime Usage Amount);
         5. Set the progressive thresholds and code for the alert;
-        6. Define the optional recurring threshold for the alert; and
-        7. Click on the **"Create alert"** button to confirm.
+        6. Optionally, set **Notify when resolved** to **True** on a threshold to also receive `alert.resolved` (see [alert resolution](/guide/alerts/alert-resolution));
+        7. Define the optional recurring threshold for the alert; and
+        8. Click on the **"Create alert"** button to confirm.
 
       <Info>
         The alert threshold `code` helps distinguish between different types of alert notifications. For example, some notifications may indicate a `soft` limit, while others may trigger a `hard` limit, each with different levels of urgency or action required.
@@ -141,6 +142,9 @@ After configuring an alert and starting to ingest usage, you can listen for the 
   }
 }
 ```
+
+## Alert resolution
+To also be notified when the value is back on the safe side of a threshold, opt the threshold in with `notify_on: ["triggered", "resolved"]` and listen for `alert.resolved`. See [alert resolution](/guide/alerts/alert-resolution).
 
 ## Limitations
 - Alerts only evaluate usage data reported after their creation;
