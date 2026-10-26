@@ -2,7 +2,7 @@
 title: "Zapier"
 ---
 
-Here is a typical use case of using Lago with Zapier to build alerting automation.
+Here is a typical use case of Lago and Zapier for alerting automation.
 
 ## Invoice alerting example (with Zapier)
 
@@ -10,7 +10,7 @@ Here is a typical use case of using Lago with Zapier to build alerting automatio
   <img src="/integrations/alerting/images/invoice-alerting-flow-6c86d0faab38b7740a20925797099c70.png" />
 </Frame>
 
-In this example, we are going to **build an alert anytime a new invoice is emitted**. To create this workflow, we are using:
+In this example, you **build an alert that fires whenever a new invoice is emitted**. This workflow uses:
 1. Lago's webhook when a new invoice is emitted;
 2. Zapier as an automation tool, to catch, transform and send the data; and
 3. Slack as the "receiver" to alert your team anytime a new invoice is created.
@@ -20,7 +20,7 @@ In this example, we are going to **build an alert anytime a new invoice is emitt
 </Frame>
 
 ## 1. Catch a webhook when a new invoice is emitted
-Lago automatically creates an invoice when a billable period is over. The invoice's payload gives you a detailed view of what has been invoiced. The first action we need to perform is to catch this invoice with a webhook:
+Lago automatically creates an invoice when a billable period is over. The invoice's payload gives you a detailed view of what has been invoiced. The first action is to catch this invoice with a webhook:
 
 1. In Zapier, create a new Zap;
 2. Use the **Webhooks by Zapier** as the trigger of this Zap;
@@ -30,7 +30,7 @@ Lago automatically creates an invoice when a billable period is over. The invoic
 
 
 ## 2. Run a script to transform the webhook
-In Zapier, create a second action by clicking the `+` icon. This new event action is used to format the webhook with a breakdown of fields that can be used in a message.
+In Zapier, create a second action by clicking the `+` icon. This event action formats the webhook into a breakdown of fields you can use in a message.
 
 1. Select **Code by Zapier** as a new *Event Action*;
 2. Click on **Javascript** as the event code language to run;
@@ -56,7 +56,7 @@ if(obj.object_type == "invoice"){
 ## 3. Send a message to a Slack channel
 Once you have the breakdown of fields returned by the invoice payload, use them to build a Slack message.
 
-In Zapier, create a third action by clicking the `+` icon. This new event action is used to send a message to Slack by using the fields of the invoice payload.
+In Zapier, create a third action by clicking the `+` icon. This event action sends a message to Slack with the fields of the invoice payload.
 
 1. Select **Slack** as a new app action;
 2. Select the **Send Channel Message** action;
@@ -64,7 +64,7 @@ In Zapier, create a third action by clicking the `+` icon. This new event action
 4. Choose the targeted **Slack Channel**; and
 5. Create a message by using the fields returned by the payload.
 
-By testing and validating the entire Zap, a Slack message is sent anytime a new invoice is emitted by Lago. You can use the same message example as detailed below:
+Once you test and validate the entire Zap, a Slack message is sent whenever Lago emits a new invoice. You can use the same message example as detailed below:
 
 <Frame caption="Slack message template in Zapier">
   <img src="/integrations/alerting/images/slack-message-example-228799226dec5760962b69c5e7816daf.png" />

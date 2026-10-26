@@ -2,11 +2,11 @@
 title: "n8n"
 ---
 
-Here is a typical use case of using Lago and n8n to build alerting automation.
+Here is a typical use case of Lago and n8n for alerting automation.
 
 ## Overconsumption alerting example (with n8n)
 
-When one of your customers is overconsuming during a period, you might need to warn them. This might happen for Cloud or API products. Automatic billing does not mean that your customers should have a bad surprise when opening their invoices.
+When a customer overconsumes during a period, you might need to warn them. This happens with cloud or API products. Automatic billing should not leave your customers with a bad surprise when they open their invoices.
 
 Here is a full workflow to create an alerting system based on your customers' current usage, using [n8n](https://n8n.io/), an automation tool for developers.
 
@@ -15,41 +15,41 @@ Here is a full workflow to create an alerting system based on your customers' cu
 </Frame>
 
 
-In this example, we are going to build an alert anytime a usage threshold is exceeded. Here is a summary of this workflow:
+In this example, you build an alert that fires whenever a usage threshold is exceeded. Here is a summary of this workflow:
 1. Use a **Cron** expression to call the Lago API every X minutes/hours/days;
 2. Call the [**Current usage**](/api-reference/customer-usage/get-current) endpoint available in Lago to fetch your customers' current usage;
-3. Create an **IF statement** to condition the trigger (in our case, messages are triggered above a specific overconsumption); and
-4. **Send a message** whenever this threshold is reached. You could use an emailing tool, Slack or a CRM. In our case, we are using Slack.
+3. Create an **IF statement** to condition the trigger (here, messages are triggered above a specific overconsumption); and
+4. **Send a message** whenever this threshold is reached. You could use an emailing tool, Slack or a CRM. This example uses Slack.
 
-## 1st Node - CRON expression to repeat tasks at a defined interval
-The first node is repeatedly and automatically triggering the automation at a defined interval.
+## 1st node - CRON expression to repeat tasks at a defined interval
+The first node triggers the automation automatically at a defined interval.
 1. Add a new **Node**;
 2. Select **CRON** as a new application node;
-3. The **Mode** is set to `Every X`; and
-4. The **Value** is defined to `10` and the **Unit** to `Minutes`.
+3. Set the **Mode** to `Every X`; and
+4. Set the **Value** to `10` and the **Unit** to `Minutes`.
 
-This will trigger the flow automatically every 10 minutes. Change the value and the units to your preferred interval.
+The flow then runs every 10 minutes. Change the value and the unit to your preferred interval.
 
 <Frame caption="Cron expression">
   <img src="/integrations/alerting/images/cron-alerting-a3cc55668cedb59003c788201dcfaf16.png" />
 </Frame>
 
-## 2nd Node - Catch customers' current usage with an HTTP Request
-This node is used to fetch current usage from the Lago API, using an HTTP request.
+## 2nd node - Catch customers' current usage with an HTTP request
+This node fetches current usage from the Lago API with an HTTP request.
 1. Add a new **Node**;
 2. Select **HTTP Request** as a new application node;
 3. Fetch [customers' current usage](/api-reference/customer-usage/get-current) from Lago API, with `external_subscription_id` as a query parameter;
 4. Set the `Authorization` header to `Bearer __YOUR_API_KEY__` and the `Content-Type` header to `application/json`; and
-5. Execute the node to fetch the payload from Lago's API.
+5. Execute the node to fetch the payload from the Lago API.
 
 <Frame caption="Customer current usage">
   <img src="/integrations/alerting/images/current-usage-http-request-f534e90c3cc02f462a65c859218ac063.png" />
 </Frame>
 
-## 3rd Node - IF conditional statement to trigger messages under conditions
-This node is used to trigger the alert only when your customers exceed a usage threshold. Those limits depend on your product and your paying features.
+## 3rd node - IF conditional statement to trigger messages under conditions
+This node triggers the alert only when your customers exceed a usage threshold. Those limits depend on your product and your paid features.
 
-In our present use case, we want to trigger an alert **when the total consumption of usage-based features goes over $200**. You could also use the `units` of a charge or another useful value from the payload.
+In this example, the alert fires **when the total consumption of usage-based features goes over $200**. You could also use the `units` of a charge or another useful value from the payload.
 
 1. Add a new **Node**;
 2. Select **IF** as a new application node;
@@ -57,18 +57,15 @@ In our present use case, we want to trigger an alert **when the total consumptio
 4. **Value 1** is the parameter of your condition, here `customer_usage.total_amount_cents`;
 5. **Operation** is the comparison you want to apply. Select `Larger or Equal` and set **Value 2** to `20000`: `total_amount_cents` is expressed in cents, so a $200 threshold is `20000`.
 
-It is important to mention that:
-- You can add as many conditions as you need;
-- You could add an action when the condition is `FALSE`.
+You can add as many conditions as you need, and you can add an action for the `FALSE` branch.
 
 <Frame caption="Customer current usage with if statement">
   <img src="/integrations/alerting/images/if-statement-current-usage-4186fee96e606f9554fa1bbcd6f07f5b.png" />
 </Frame>
 
 
-## 4th Node - Send an alert message to Slack
-This last node is used to trigger the message. In the example, we use a Slack channel, but you could even decide to send an email directly to your customers when they pass the limits of usage.
-
+## 4th node - Send an alert message to Slack
+This last node sends the message. This example uses a Slack channel, but you could also send an email directly to your customers when they pass their usage limits.
 
 1. Add a new **Node**;
 2. Select **Slack** as a new application node;
@@ -77,7 +74,7 @@ This last node is used to trigger the message. In the example, we use a Slack ch
 5. **Define a message** and use the variables of your payload to give context to your customers about their current usage.
 
 <Tip>
-On top of connecting your Slack account, don't forget to authorize the application's bot to post messages to the targeted channel.
+After you connect your Slack account, authorize the application's bot to post messages in the targeted channel.
 </Tip>
 
 <Frame>
