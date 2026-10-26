@@ -32,7 +32,7 @@ When you create a webhook endpoint, you choose between two signature options. La
   </Tab>
   <Tab title="API">
     <CodeGroup>
-    ```bash Choosing the webhook signature
+    ```bash Create a webhook endpoint
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
@@ -41,12 +41,16 @@ When you create a webhook endpoint, you choose between two signature options. La
       --header 'Content-Type: application/json' \
       --data-raw '{
         "webhook_endpoint": {
+          "name": "Production endpoint",
           "webhook_url": "https://foo.bar",
-          "signature_algo": "hmac"
+          "signature_algo": "hmac",
+          "event_types": ["invoice.created", "invoice.payment_failure"]
         }
       }'
     ```
     </CodeGroup>
+
+    Leave `event_types` out to receive every event type.
   </Tab>
 </Tabs>
 
