@@ -2,37 +2,24 @@
 title: "Webhooks"
 ---
 
-When using Lago, the app generates [several events](/api-reference/webhooks/messages) that you can listen to and use to trigger workflows. Each time an event is generated, you can view it in the Lago application using the webhook logs. This allows you to take a closer look at the generated events, detect possible errors, and retry them.
+Lago generates [several events](/api-reference/webhooks/messages) that you can listen to and use to trigger workflows. Every event appears in the webhook logs of the Lago app, where you can inspect it, detect errors and retry it.
 
 ## Adding a webhook URL
 
-To add a webhook endpoint via the Lago app, follow these steps:
-1. Go to the **Developers** section via the sidebar;
-2. Open the **Webhooks** tab;
-3. Click **Add a webhook**;
-4. Enter the webhook name and URL;
-5. Choose the webhook signature between HMAC and JWT;
-6. Define the events you want to listen to by selecting the relevant checkboxes; and
-7. Click **Add webhook** to confirm.
-
-<Info>
-Note that you can add up to 10 webhook endpoints.
-</Info>
-
-## The webhook signature
-When you create a webhook endpoint, you choose between two signature options.
 <Tabs>
   <Tab title="Dashboard">
-    - The first is `JWT`, with a possibly lengthy payload header and potential size limits;
-    - The second is `HMAC`, which features a shorter payload header and no size restrictions.
-
-  <Frame caption="Webhook endpoint signature">
-    <img src="/guide/images/webhook-signature.png" />
-  </Frame>
+    To add a webhook endpoint via the Lago app, follow these steps:
+    1. Go to the **Developers** section via the sidebar;
+    2. Open the **Webhooks** tab;
+    3. Click **Add an endpoint**;
+    4. Enter the webhook name and URL;
+    5. Choose the webhook signature between HMAC and JWT;
+    6. Define the events you want to listen to by selecting the relevant checkboxes; and
+    7. Click **Create endpoint** to confirm.
   </Tab>
   <Tab title="API">
     <CodeGroup>
-    ```bash Choosing the webhook signature
+    ```bash Create a webhook endpoint
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
@@ -41,20 +28,44 @@ When you create a webhook endpoint, you choose between two signature options.
       --header 'Content-Type: application/json' \
       --data-raw '{
         "webhook_endpoint": {
+          "name": "Production endpoint",
           "webhook_url": "https://foo.bar",
-          "signature_algo": "hmac"
+          "signature_algo": "hmac",
+          "event_types": ["invoice.created", "invoice.payment_failure"]
         }
       }'
     ```
     </CodeGroup>
+
+    Leave `event_types` out to receive every event type.
+  </Tab>
+</Tabs>
+
+<Info>
+You can add up to 10 webhook endpoints.
+</Info>
+
+## The webhook signature
+When you create a webhook endpoint, you choose between two signature options. Lago uses `JWT` when you do not choose one.
+<Tabs>
+  <Tab title="Dashboard">
+    - `JWT` embeds the payload in the signature header, so the header can grow large and some servers reject it;
+    - `HMAC` sends a short signature header, so header size is never an issue.
+
+  <Frame caption="Webhook endpoint signature">
+    <img src="/guide/images/webhook-signature.png" alt="Webhook endpoint settings with the HMAC and JWT signature options" />
+  </Frame>
+  </Tab>
+  <Tab title="API">
+    Set `signature_algo` to `jwt` or `hmac` in the [create call](#adding-a-webhook-url).
   </Tab>
 </Tabs>
 
 ## Locate your HMAC signature token
-To find your HMAC signature token, navigate to **Developers > Webhooks** and locate the **HMAC Signature Token**. Then, reveal and copy the key.
+To find your HMAC signature token, go to **Developers > Webhooks** and locate the **HMAC signature token**. Then reveal and copy the key.
 
 <Frame caption="Locate your HMAC signature token">
-  <img src="/guide/images/hmac-signature-token.png" />
+  <img src="/guide/images/hmac-signature-token.png" alt="HMAC signature token in the Webhooks tab, with the reveal option open" />
 </Frame>
 
 ## Accessing the webhook logs
@@ -62,17 +73,17 @@ To find your HMAC signature token, navigate to **Developers > Webhooks** and loc
 Once a webhook is registered in the app, you can access the webhook logs:
 1. Go to the **Developers** section via the sidebar;
 2. Open the **Webhooks** tab;
-3. Click on the webhook endpoint to see the list of events;
+3. Click the webhook endpoint, then open the **Deliveries** tab to see the list of events;
 4. Filter events by dates, types, HTTP status and status; and
-5. Click the reload icon to see new events (optional).
+5. Click **Refresh** to load new events (optional).
 
 <Frame caption="Webhook logs">
-  <img src="/guide/images/webhook-logs.png" />
+  <img src="/guide/images/webhook-logs.png" alt="List of webhook deliveries with the filters panel open" />
 </Frame>
 
 ## Accessing a specific event
 
-You can see the details of a specific event by clicking on it. Depending on the event status, you will have access to two or three main blocks:
+Click an event to see its details. Depending on the event status, Lago shows two or three main blocks:
 
 1. **A list of properties, including:**
     1. **Timestamp:** the timestamp of the event;
@@ -82,7 +93,7 @@ You can see the details of a specific event by clicking on it. Depending on the 
     5. **Response:** the response code (i.e. acknowledgment of receipt);
     6. **Number of retries:** if the event failed, the number of retries attempted;
 2. **A JSON snippet with the arguments sent by Lago; and**
-3. **If the event failed, an error response will be included.**
+3. **The error response, when the event failed.**
 
 ## Errors and retries
 
