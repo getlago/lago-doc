@@ -16,9 +16,10 @@ Automatic dunning uses campaigns that can be applied billing entity-wide or tail
 1. Assign a name, code, and description for easy identification.
 2. Set an overdue balance threshold with its designated currency.
 3. Add additional currencies for thresholds as needed.
-4. Specify the delay between attempts.
+4. Specify the delay between attempts, in days.
 5. Define the number of attempts for the campaign.
-6. Apply this campaign to a billing entity or a customer.
+6. Add the email addresses to put in copy of every dunning email of the campaign.
+7. Apply this campaign to a billing entity or a customer.
 
 
 ### Overdue balance threshold
@@ -68,7 +69,7 @@ Dunning applies to every overdue invoice, whatever payment method was set to col
 Once the invoice is overdue, a dunning campaign groups all of the customer's overdue invoices (one payment request per currency and per billing entity) and attempts a single automatic payment for the combined outstanding amount, using the payment provider set on the customer. If the customer has no default payment method stored in Lago, Lago falls back to a payment method already saved for that customer at the provider (with Stripe, the first one attached to the Stripe customer).
 
 ### Prevent automatic charges for a customer
-To make sure a customer is never charged on any payment method when one of their invoices becomes overdue, remove them from the dunning campaign by enabling **Exclude from dunning campaign** on the customer. They will stop receiving dunning emails as well.
+To make sure a customer is never charged on any payment method when one of their invoices becomes overdue, open **Edit dunning behavior for this customer** on the customer and select **Deactivate dunning**. No dunning attempt is triggered for them, so they stop receiving dunning emails as well.
 
 Leaving the customer's **default payment provider empty** also prevents the charge and keeps the dunning emails, but it is not a guarantee: if a payment provider is set on that customer later, dunning can charge them again.
 

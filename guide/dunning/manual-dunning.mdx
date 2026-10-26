@@ -39,7 +39,7 @@ This feature is only available to users with a premium license. Please **[contac
       LAGO_URL="https://api.getlago.com"
       API_KEY="__YOUR_API_KEY__"
 
-      curl --location --request POST "$LAGO_URL/api/v1/payment_requests/" \
+      curl --location --request POST "$LAGO_URL/api/v1/payment_requests" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -73,6 +73,6 @@ Dunning applies to every overdue invoice, whatever payment method was set to col
 Once the invoice is overdue, a dunning campaign groups all of the customer's overdue invoices (one payment request per currency and per billing entity) and attempts a single automatic payment for the combined outstanding amount, using the payment provider set on the customer. If the customer has no default payment method stored in Lago, Lago falls back to a payment method already saved for that customer at the provider (with Stripe, the first one attached to the Stripe customer).
 
 ### Prevent automatic charges for a customer
-To make sure a customer is never charged on any payment method when one of their invoices becomes overdue, remove them from the dunning campaign by enabling **Exclude from dunning campaign** on the customer. They will stop receiving dunning emails as well.
+To make sure a customer is never charged on any payment method when one of their invoices becomes overdue, open **Edit dunning behavior for this customer** on the customer and select **Deactivate dunning**. No dunning attempt is triggered for them, so they stop receiving dunning emails as well.
 
 Leaving the customer's **default payment provider empty** also prevents the charge and keeps the dunning emails, but it is not a guarantee: if a payment provider is set on that customer later, dunning can charge them again.
