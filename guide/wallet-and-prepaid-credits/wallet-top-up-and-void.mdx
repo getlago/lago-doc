@@ -120,6 +120,36 @@ A fixed recurring top-up adds a predetermined number of credits to the wallet, e
 
 A target recurring top-up adds a variable number of credits to the wallet to reach a target balance. The number of credits comes from the gap between the ongoing balance at the moment of the trigger and the target balance.
 
+Set the target with `target_ongoing_balance`. It must be greater than or equal to `threshold_credits` when the rule is triggered by a threshold.
+
+```bash Set a target recurring top-up on creation
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/wallets" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "wallet": {
+      "external_customer_id": "hooli_1234",
+      "name": "Prepaid credits",
+      "rate_amount": "1.0",
+      "paid_credits": "100.0",
+      "granted_credits": "0.0",
+      "currency": "USD",
+      "recurring_transaction_rules": [
+        {
+          "method": "target",
+          "trigger": "threshold",
+          "threshold_credits": "20.0",
+          "target_ongoing_balance": "100.0",
+          "invoice_requires_successful_payment": false
+        }
+      ]
+    }
+  }'
+```
+
 ### Interval trigger
 
 For an `interval` trigger, specify the frequency of the automatic top-up: `weekly`, `monthly`, `quarterly`, `semiannual` or `yearly`.
