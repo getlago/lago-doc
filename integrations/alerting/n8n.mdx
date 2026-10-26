@@ -11,7 +11,7 @@ When a customer overconsumes during a period, you might need to warn them. This 
 Here is a full workflow to create an alerting system based on your customers' current usage, using [n8n](https://n8n.io/), an automation tool for developers.
 
 <Frame caption="n8n alerting workflow">
-  <img src="/integrations/alerting/images/n8n-current-usage-ffe518dc30433d5f993f3cfb67a31374.png" />
+  <img src="/integrations/alerting/images/n8n-current-usage-ffe518dc30433d5f993f3cfb67a31374.png" alt="n8n workflow with a Cron node, an HTTP Request node, an IF node and a Slack node" />
 </Frame>
 
 
@@ -31,7 +31,7 @@ The first node triggers the automation automatically at a defined interval.
 The flow then runs every 10 minutes. Change the value and the unit to your preferred interval.
 
 <Frame caption="Cron expression">
-  <img src="/integrations/alerting/images/cron-alerting-a3cc55668cedb59003c788201dcfaf16.png" />
+  <img src="/integrations/alerting/images/cron-alerting-a3cc55668cedb59003c788201dcfaf16.png" alt="n8n Cron node set to the Every X mode, with a value of 10 and a unit of Minutes" />
 </Frame>
 
 ## 2nd node - Catch customers' current usage with an HTTP request
@@ -53,7 +53,7 @@ curl --location --request GET "https://api.getlago.com/api/v1/customers/__EXTERN
 The response wraps the usage in a `customer_usage` object, so the next node reads its fields with the `customer_usage` prefix.
 
 <Frame caption="Customer current usage">
-  <img src="/integrations/alerting/images/current-usage-http-request-f534e90c3cc02f462a65c859218ac063.png" />
+  <img src="/integrations/alerting/images/current-usage-http-request-f534e90c3cc02f462a65c859218ac063.png" alt="n8n HTTP Request node with the Authorization and Content-Type headers, and the customer_usage response" />
 </Frame>
 
 ## 3rd node - IF conditional statement to trigger messages under conditions
@@ -70,7 +70,7 @@ In this example, the alert fires **when the total consumption of usage-based fea
 You can add as many conditions as you need, and you can add an action for the `FALSE` branch.
 
 <Frame caption="Customer current usage with if statement">
-  <img src="/integrations/alerting/images/if-statement-current-usage-4186fee96e606f9554fa1bbcd6f07f5b.png" />
+  <img src="/integrations/alerting/images/if-statement-current-usage-4186fee96e606f9554fa1bbcd6f07f5b.png" alt="n8n IF node comparing customer_usage.total_amount_cents with 20000" />
 </Frame>
 
 
@@ -88,9 +88,9 @@ After you connect your Slack account, authorize the application's bot to post me
 </Tip>
 
 <Frame>
-  <img src="/integrations/alerting/images/slack-alert-current-usage-247e699c94c1e5ec0f8adaac4b7abe8e.png" />
+  <img src="/integrations/alerting/images/slack-alert-current-usage-247e699c94c1e5ec0f8adaac4b7abe8e.png" alt="n8n expression editor building the alert message from the charges_usage fields" />
 </Frame>
 
 <Frame>
-  <img src="/integrations/alerting/images/slack-alert-current-usage-message-dcd840bb5aa02098873410a83eb40776.png" />
+  <img src="/integrations/alerting/images/slack-alert-current-usage-message-dcd840bb5aa02098873410a83eb40776.png" alt="Slack alert listing the billable metrics, the units consumed and the next billing period" />
 </Frame>
