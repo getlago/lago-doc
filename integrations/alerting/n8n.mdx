@@ -26,7 +26,7 @@ The first node is repeatedly and automatically triggering the automation at a de
 1. Add a new **Node**;
 2. Select **CRON** as a new application node;
 3. The **Mode** is set to `Every X`; and
-4. The **Value** is defined to `10` and the **Units** to `minutes`.
+4. The **Value** is defined to `10` and the **Unit** to `Minutes`.
 
 This will trigger the flow automatically every 10 minutes. Change the value and the units to your preferred interval.
 
@@ -38,8 +38,8 @@ This will trigger the flow automatically every 10 minutes. Change the value and 
 This node is used to fetch current usage from the Lago API, using an HTTP request.
 1. Add a new **Node**;
 2. Select **HTTP Request** as a new application node;
-3. Fetch [customers' current usage](/api-reference/customer-usage/get-current) from Lago API;
-4. Make sure to set the `API_KEY` and the `Content-Type` as headers of your request; and
+3. Fetch [customers' current usage](/api-reference/customer-usage/get-current) from Lago API, with `external_subscription_id` as a query parameter;
+4. Set the `Authorization` header to `Bearer __YOUR_API_KEY__` and the `Content-Type` header to `application/json`; and
 5. Execute the node to fetch the payload from Lago's API.
 
 <Frame caption="Customer current usage">
@@ -49,13 +49,13 @@ This node is used to fetch current usage from the Lago API, using an HTTP reques
 ## 3rd Node - IF conditional statement to trigger messages under conditions
 This node is used to trigger the alert only when your customers exceed a usage threshold. Those limits depend on your product and your paying features.
 
-In our present use case, we want to trigger an alert **when the total consumption of usage-based features goes over $200**. You could also use the `number of units` consumed or another useful value from the payload.
+In our present use case, we want to trigger an alert **when the total consumption of usage-based features goes over $200**. You could also use the `units` of a charge or another useful value from the payload.
 
 1. Add a new **Node**;
 2. Select **IF** as a new application node;
 3. Create a condition for the **TRUE** branch (when conditions are met);
-4. The **Value** is the parameter of your condition (in our case the `amount_cents` of the current usage);
-5. The **Operation** is the comparison you want to apply. `amount_cents` is expressed in cents, so a $200 threshold means the condition is met when `amount_cents` is greater than or equal to `20000`;
+4. **Value 1** is the parameter of your condition, here `customer_usage.total_amount_cents`;
+5. **Operation** is the comparison you want to apply. Select `Larger or Equal` and set **Value 2** to `20000`: `total_amount_cents` is expressed in cents, so a $200 threshold is `20000`.
 
 It is important to mention that:
 - You can add as many conditions as you need;
