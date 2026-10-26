@@ -8,7 +8,7 @@ description: "Lago syncs billing data to Salesforce in real-time."
 **PREMIUM ADD-ON** ✨
 
 This integration is only available to users with a specific paying add-on. Please
-**[contact us](mailto:hello@getlago.com)** to get access to Salesforce CRM integration.
+**[contact us](mailto:hello@getlago.com)** to get access to the Salesforce CRM integration.
 
 </Info>
 
@@ -65,7 +65,7 @@ However, rest assured that you will receive an email confirmation once the insta
 ### Webhook config: sync real-time data
 After installation in Salesforce CRM, set up a webhook URL in Salesforce to receive real-time data from Lago. 
 This involves **configuring a new "Site" in Salesforce's setup section**. 
-Note that the four main actions described below should be performed by a Salesforce Admin and is only required during the initial setup.
+Note that the four main actions described below must be performed by a Salesforce admin, and are only required during the initial setup.
 
 <Steps titleSize="h3">
   <Step title="Access the Site section in Salesforce" titleSize="h3">
@@ -85,7 +85,7 @@ Note that the four main actions described below should be performed by a Salesfo
     4. Ensure the **Site Contact** and **Default Record Owner** are filled;
     5. Set the **Default Web Address** prefix to `getPushNotification`;
     6. Choose `SiteLogin` as the **Active Site Home Page**; and
-    7. Don't forget to **save the new site**: and
+    7. Don't forget to **save the new site**; and
     8. **Activate the newly created site** by going to the Site Details and clicking the `Activate` button.
 
     <Frame caption="New site creation flow in Salesforce">
@@ -115,7 +115,7 @@ Note that the four main actions described below should be performed by a Salesfo
         <img src="/integrations/data/images/find-domain-url-salesforce.png" />
       </Frame>
 
-      Now, go to your Lago app and past this webhook into the webhook’s settings:
+      Now, go to your Lago app and paste this webhook into the webhook settings:
 
       1. Within Lago, navigate to **Developers**;
       2. Visit the **Webhooks** tab;
@@ -170,7 +170,7 @@ you can customize it directly in Salesforce:
 If your webhook endpoint is configured correctly, your **customer, subscription, and billing data flow in real time**.
 
 <Info>
-Please note that from all the version above Salesforce for Lago v2.7 - Customer, Subscriptions, and Invoices will be created in Salesforce via webhooks seamlessly
+From Salesforce for Lago v2.7 onwards, customers, subscriptions and invoices are created in Salesforce through webhooks.
 </Info>
 
 ### Sync customers to Salesforce (> v2.7)
@@ -215,12 +215,12 @@ Synchronized customer records have specific update restrictions in Salesforce to
 When using the Lago Integration Code (available for >= v2.7):
 
 The system sets `sync_with_provider` to `true`.
-This setting allows future updates from lago in Salesforce. 
+This setting allows future updates from Lago in Salesforce.
 
 
 Without the Lago Integration Code (for < v2.7):
 
-We don't keep the data in sync from lago to Salesforce. Only initial sync is available from lago to Salesforce, check below section.
+We don't keep the data in sync from Lago to Salesforce. Only the initial sync is available from Lago to Salesforce, see the section below.
 
 </Warning>
 
@@ -272,13 +272,13 @@ Note that this subscription is automatically linked to a Salesforce Account:
 Whenever an invoice is issued for a Lago Customer, the invoice details will be automatically 
 synced in real-time with Salesforce using the `Lago Invoices` custom object.
 
-Here is a list of Subscription fields that are automatically synced: 
-- Invoices Number;
+Here is a list of invoice fields that are automatically synced:
+- Invoice Number;
 - Invoice Payment Status;
 - Invoice Type (`subscription` or `one-off`);
 - Invoice Issuing Date;
 - Invoice Amount;
-- Invoice File Url; and
+- Invoice File URL; and
 - Invoice Currency.
 
 
@@ -299,7 +299,7 @@ Coupons and Applied coupons are synced to Salesforce when we click on **Start Da
   - Applied coupons are synced to `Lago Applied Coupon` custom object. 
 
 ### Schedule Sync from Lago To Salesforce
-We also provide option to schedule the data sync from Lago to Salesforce. 
+We also provide an option to schedule the data sync from Lago to Salesforce.
   - `LagoSyncScheduleable` -- a schedulable class which helps us schedule either all the data or any one of them.
   - To schedule the sync of any _ONE_ of the object:
     - Create a new instance of class by passing any one of the following string: `CUSTOMER`, `SUBSCRIPTION`, `PLAN`, `ADDON`, `INVOICE`, `CREDITNOTE`
@@ -312,7 +312,7 @@ We also provide option to schedule the data sync from Lago to Salesforce.
         //schedule(name, cron_expression, class_instance)
         System.schedule('Sync Lago Plan', schedule_cron, syncPlan);
         ```
-  - To schedule the sync of  _ALL_ the objects:
+  - To schedule the sync of _ALL_ the objects:
     - create a new instance of class by passing `true`
       - Ex: To sync **all** objects from lago to Salesforce everyday at 1PM, execute below anonymous code in Anonymous window in Developer Console. ([click here to learn more about CRON expression](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_scheduler.htm))
         ```
@@ -327,7 +327,7 @@ We also provide option to schedule the data sync from Lago to Salesforce.
 
 ## III. Actions from Salesforce to Lago
 Beyond just syncing data from Lago to Salesforce, you can also initiate actions in Lago directly from Salesforce. 
-You can leverage Salesforce `Flows` to execute actions in Lago. Lago provides several customizable templates for creating customers from Salesforce Accounts, directly assigning subscriptions to customers from Salesforce, creating one-off invoice from salesforce.
+You can leverage Salesforce `Flows` to execute actions in Lago. Lago provides several customizable templates for creating customers from Salesforce Accounts, assigning subscriptions to customers from Salesforce, and creating one-off invoices from Salesforce.
 
 ### Create customers
 #### Flow: `Lago Template - Create Customer in Lago on Account Create`
@@ -346,7 +346,7 @@ To create a customer in Lago upon the creation of a Salesforce Account, utilize 
 6. Do not forget to click the `Activate` button to activate your flow. 
 
 You have the **flexibility to modify various aspects of this flow, including the trigger conditions and field mappings**. 
-By default, the action is initiated when a Lago ID is absent. Additionally, you can customize how fields are mapped from your Salesforce instance to Lago. You can also configure `customer type` to 'Individual' or 'Company' which creating customer from Salesforce to Lago.
+By default, the action is initiated when a Lago ID is absent. Additionally, you can customize how fields are mapped from your Salesforce instance to Lago. You can also set the `customer type` to 'Individual' or 'Company' when you create a customer from Salesforce in Lago.
 
 <Frame caption="Customize the flow">
   <img src="/integrations/images/account-customer-flow.gif" />
@@ -388,7 +388,7 @@ This Flow is used to create intermediate records in Lago Objects - `Lago Subscri
     5. Click on 'Lago Override Plan' to finalize the subscription assignment.
 
     <Info>
-      By default, the lago subscription record in salesforce is created when the opportunity is `closed-won`. You can assign multiple subscriptions for the same opportunity.
+      By default, the Lago Subscription record in Salesforce is created when the opportunity is `closed-won`. You can assign multiple subscriptions for the same opportunity.
     </Info>
 
   </Step>
@@ -410,7 +410,7 @@ The default setting triggers plan assignment when `SyncToLago` checkbox is check
 
 ### Create subscriptions (lago native UI)
 
-We also have option to create subscriptions in Lago directly from Salesforce using Lago's create subscription screen.
+We also have an option to create subscriptions in Lago directly from Salesforce, using Lago's create subscription screen.
 
 1. Log into your Salesforce instance;
 2. Access the setup section via the settings gear icon in Salesforce;
@@ -433,9 +433,9 @@ Open any account which has `lago_id` populated. Click on `Lago Subscription` but
 
 ### Terminate Subscription
 
- We can terminate the subscription from Salesforce to lago only if the subscription is already synced to lago(status is _active_ or _pending_).
+We can terminate the subscription from Salesforce in Lago only if the subscription is already synced to Lago (status is _active_ or _pending_).
 
- Go to Lago Subscription record in Salesforce, and check `Terminate Subscription` checkbox.  
+Go to the Lago Subscription record in Salesforce, and check the `Terminate Subscription` checkbox.
 
     <Info>
     As soon as `Terminate Subscription` is checked it will terminate the subscription in Lago. It is handled from the backend via trigger.
@@ -444,7 +444,7 @@ Open any account which has `lago_id` populated. Click on `Lago Subscription` but
 
 ### Create one-off invoice
 
-This enables sales team to create one-off invoice in lago from Salesforce. 
+This enables sales teams to create a one-off invoice in Lago from Salesforce.
 Right from the opportunity record we add products which are related to `Lago Add-ons`, specify the quantity, description and amount.
 
 To create one-off invoice and set prices in Lago directly from Salesforce, use the provided two flows via following Lago Flow templates.
@@ -469,7 +469,7 @@ The default setting triggers create invoice when `SyncToLago` checkbox is checke
 
 ### Create one-off invoice (lago native UI)
 
-We also have option to create one off invoice in Lago directly from Salesforce using Lago's create invoice screen.
+We also have an option to create a one-off invoice in Lago directly from Salesforce, using Lago's create invoice screen.
 
 1. Log into your Salesforce instance;
 2. Access the setup section via the settings gear icon in Salesforce;
@@ -493,7 +493,7 @@ Open any account which has `lago_id` populated. Click on `Lago Invoice` button; 
 
 ### Get Invoice pdf
 
-Now we can also get invoice pdf directly from Salesforce. 
+We can also get the invoice PDF directly from Salesforce.
 
 1. Go to Lago Invoice
 2. Open any Invoice which is already synced.
@@ -520,8 +520,8 @@ The Salesforce integration allows you to manage customer coupons directly from y
 Before you begin applying coupons, you'll need to ensure your Salesforce environment is properly configured. The "Apply Coupon" action button must be available in your account page layout or lightning record page. If you don't see this button, work with your Salesforce administrator to add it through the page layout editor or lightning app builder.
 Once your environment is configured, follow these steps to apply a coupon to a customer account:
 
-1. Navigate to the Account Details> Access the account details page for the customer who will receive the coupon.
-2. Initiate Coupon Application > Click the "Apply Coupon" action button. This will open a popup dialog for coupon configuration.
+1. Navigate to the account details page for the customer who will receive the coupon.
+2. Click the "Apply Coupon" action button. A popup dialog opens for the coupon configuration.
 3. Select and Configure the Coupon. The configuration options will vary depending on the type of coupon you're applying:
   - For Fixed Amount Coupons: Enter the discount amount, select the appropriate currency, Choose the frequency for applied coupon
   <Info>
@@ -548,7 +548,7 @@ Once your environment is configured, follow these steps to apply a coupon to a c
 There may be times when you need to end a coupon's application before its natural expiration. Here's how to terminate an active coupon:
 
 1. Access the Coupon Record. Navigate to the Applied Coupon details page for the coupon you wish to terminate.
-2. Initiate Termination, locate the "Terminate Coupon" checkbox in the record.
+2. Locate the "Terminate Coupon" checkbox in the record.
 3. Confirm Termination: Check the box to initiate the termination process. Upon saving:
   - The coupon status will update from "Active" to "Terminated"
   - The change will synchronize with Lago
@@ -566,7 +566,7 @@ This coupon management system ensures that your sales team can efficiently handl
 To ensure seamless data synchronization between Lago and Salesforce, every action and data transfer is meticulously logged. 
 These logs are accessible directly through the Lago package for comprehensive debugging and analysis:
 
-1. Navigate to 'Lago Base Configuration': This is your starting point for accessing the debugging tools. and
+1. Navigate to 'Lago Base Configuration', the starting point for the debugging tools; and
 2. Access Logs: Click on the 'Logs' tab to view a detailed record of all activities.
 
 You can refresh logs to keep your data current or delete unnecessary logs to maintain clarity and efficiency in the debugging process.
