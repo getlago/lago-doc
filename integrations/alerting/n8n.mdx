@@ -42,6 +42,16 @@ This node fetches current usage from the Lago API with an HTTP request.
 4. Set the `Authorization` header to `Bearer __YOUR_API_KEY__` and the `Content-Type` header to `application/json`; and
 5. Execute the node to fetch the payload from the Lago API.
 
+The node calls the same request as this one:
+
+```bash
+curl --location --request GET "https://api.getlago.com/api/v1/customers/__EXTERNAL_CUSTOMER_ID__/current_usage?external_subscription_id=__EXTERNAL_SUBSCRIPTION_ID__" \
+  --header "Authorization: Bearer __YOUR_API_KEY__" \
+  --header "Content-Type: application/json"
+```
+
+The response wraps the usage in a `customer_usage` object, so the next node reads its fields with the `customer_usage` prefix.
+
 <Frame caption="Customer current usage">
   <img src="/integrations/alerting/images/current-usage-http-request-f534e90c3cc02f462a65c859218ac063.png" />
 </Frame>
