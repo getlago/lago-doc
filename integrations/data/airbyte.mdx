@@ -58,6 +58,15 @@ This populates your Lago billing data into the warehouse (Snowflake in this exam
 ## 4. Query Lago billing data
 Once the data lands in your destination, you can query it. Here is a query calculating your monthly revenue with Lago:
 
+```sql
+SELECT
+    DATE_TRUNC('MONTH', issuing_date::datetime) AS month,
+    SUM(amount_cents) / 100 AS MRR
+FROM lago.public.invoices
+GROUP BY 1
+ORDER BY 1 DESC
+```
+
 <Frame caption="Query in Snowflake">
   <img src="/integrations/data/images/example-billing-query-snowflake-a4cf76e6bca92363215567a0e4e51f06.png" />
 </Frame>
