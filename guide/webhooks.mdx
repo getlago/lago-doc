@@ -9,22 +9,22 @@ When using Lago, the app generates [several events](/api-reference/webhooks/mess
 To add a webhook endpoint via the Lago app, follow these steps:
 1. Go to the **Developers** section via the sidebar;
 2. Open the **Webhooks** tab;
-3. Click **Add a webhook**;
+3. Click **Add an endpoint**;
 4. Enter the webhook name and URL;
 5. Choose the webhook signature between HMAC and JWT;
 6. Define the events you want to listen to by selecting the relevant checkboxes; and
-7. Click **Add webhook** to confirm.
+7. Click **Create endpoint** to confirm.
 
 <Info>
 Note that you can add up to 10 webhook endpoints.
 </Info>
 
 ## The webhook signature
-When you create a webhook endpoint, you choose between two signature options.
+When you create a webhook endpoint, you choose between two signature options. Lago uses `JWT` when you do not choose one.
 <Tabs>
   <Tab title="Dashboard">
-    - The first is `JWT`, with a possibly lengthy payload header and potential size limits;
-    - The second is `HMAC`, which features a shorter payload header and no size restrictions.
+    - `JWT` embeds the payload in the signature header, so the header can grow large and some servers reject it;
+    - `HMAC` sends a short signature header, so header size is never an issue.
 
   <Frame caption="Webhook endpoint signature">
     <img src="/guide/images/webhook-signature.png" />
@@ -51,7 +51,7 @@ When you create a webhook endpoint, you choose between two signature options.
 </Tabs>
 
 ## Locate your HMAC signature token
-To find your HMAC signature token, navigate to **Developers > Webhooks** and locate the **HMAC Signature Token**. Then, reveal and copy the key.
+To find your HMAC signature token, go to **Developers > Webhooks** and locate the **HMAC signature token**. Then reveal and copy the key.
 
 <Frame caption="Locate your HMAC signature token">
   <img src="/guide/images/hmac-signature-token.png" />
@@ -62,9 +62,9 @@ To find your HMAC signature token, navigate to **Developers > Webhooks** and loc
 Once a webhook is registered in the app, you can access the webhook logs:
 1. Go to the **Developers** section via the sidebar;
 2. Open the **Webhooks** tab;
-3. Click on the webhook endpoint to see the list of events;
+3. Click the webhook endpoint, then open the **Deliveries** tab to see the list of events;
 4. Filter events by dates, types, HTTP status and status; and
-5. Click the reload icon to see new events (optional).
+5. Click **Refresh** to load new events (optional).
 
 <Frame caption="Webhook logs">
   <img src="/guide/images/webhook-logs.png" />
