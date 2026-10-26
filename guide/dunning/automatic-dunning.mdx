@@ -11,7 +11,7 @@ This feature is available upon request only. Please **[contact us](mailto:hello@
 
 ## Create campaigns
 
-Automatic dunning uses campaigns that can be applied billing entity-wide or tailored to individual customers. Create multiple campaigns to suit varying thresholds or cadences, all aimed at recovering overdue payments. To set up a new campaign, go to Settings > Dunning and follow these steps:
+Automatic dunning uses campaigns. Apply a campaign to a whole billing entity, or tailor it to individual customers. Create several campaigns to cover different thresholds or cadences. To set up a campaign, go to Settings > Dunning and follow these steps:
 
 1. Assign a name, code, and description for easy identification.
 2. Set an overdue balance threshold with its designated currency.
@@ -25,7 +25,7 @@ Automatic dunning uses campaigns that can be applied billing entity-wide or tail
 ### Overdue balance threshold
 
 You can define thresholds for all supported currencies. When a customer reaches the specified threshold in their invoiced currency, the dunning campaign is triggered.
-If a customer’s invoiced currency is not supported in the campaign, they will not be eligible for it.
+If a customer’s invoiced currency is not supported in the campaign, they are not eligible for it.
 
 ### Attempts & delay
 
@@ -34,7 +34,7 @@ A dunning campaign begins when the overdue balance threshold is reached. Subsequ
 
 ### Apply dunning to a billing entity
 
-Setting a campaign at the billing entity level applies it to all customers that inherit the billing entity’s dunning behavior — except those who either:
+Setting a campaign at the billing entity level applies it to all customers that inherit the billing entity’s dunning behavior, except those who either:
 
 - Have a specific campaign assigned to them, or
 - Have dunning deactivated.
@@ -44,22 +44,22 @@ Alternatively, you can leave the billing entity without a campaign and assign du
 
 ## Automatic dunning on customer
 
-If a campaign is set for the billing entity, it will automatically apply to all customers attached to it. However, you can override this at the customer level by either assigning a different dunning campaign or deactivating dunning for that specific customer.
+A campaign set on the billing entity applies to all the customers attached to it. You can override this on a customer, by assigning a different dunning campaign or by deactivating dunning for that customer.
 
 ### Change from one campaign to another
-If you change the default campaign or assign a different campaign to a customer, any ongoing dunning process will stop. The new campaign will take precedence and start from the beginning.
+If you change the default campaign or assign a different campaign to a customer, any ongoing dunning process stops. The campaign you assign takes precedence and starts from the beginning.
 
 
 ## Dunning behavior
 <Tabs>
   <Tab title="Customer connected to a PSP">
-    1. **Automatic payment attempt**: Lago will initiate a payment intent for the specified amount via the connected PSP.
-    2. **Failed payment**: If the payment fails, an email will be sent to the customer with a payment request and a URL to complete the payment (excluding GoCardless).
-    3. **Successful payment**: Upon success, the attached invoices will automatically reflect a “succeeded” payment status.
+    1. **Automatic payment attempt**: Lago initiates a payment intent for the specified amount through the connected PSP.
+    2. **Failed payment**: If the payment fails, Lago sends the customer an email with a payment request and a URL to complete the payment (excluding GoCardless).
+    3. **Successful payment**: On success, the attached invoices automatically reflect a `succeeded` payment status.
   </Tab>
   <Tab title="Customer not connected to a PSP">
-    1. **Payment request email**: An email will be sent to the customer requesting payment for the overdue balance.
-    2. **Manual update**: Once the payment is received, you must manually update the payment status of the relevant invoices.
+    1. **Payment request email**: Lago sends the customer an email requesting payment of the overdue balance.
+    2. **Manual update**: Once the payment is received, update the payment status of the relevant invoices manually.
   </Tab>
 </Tabs>
 
@@ -74,11 +74,11 @@ To make sure a customer is never charged on any payment method when one of their
 Leaving the customer's **default payment provider empty** also prevents the charge and keeps the dunning emails, but it is not a guarantee: if a payment provider is set on that customer later, dunning can charge them again.
 
 ## Edit a dunning campaign
-You can edit all details of a dunning campaign, but note that changes may directly impact customers linked to the campaign and could trigger new dunning attempts.
+You can edit every detail of a dunning campaign. Changes affect the customers linked to the campaign and can trigger new dunning attempts.
 
 ## Delete a dunning campaign
-Deleting a dunning campaign will immediately stop the current campaign for all associated customers, and no further dunning attempts will be made. If the deleted campaign is not the default, customers linked to it will revert to the billing entity’s settings and may be enrolled in the default dunning campaign, if one is set.
+Deleting a dunning campaign immediately stops the campaign for all the customers linked to it, and no further dunning attempt is made. If the deleted campaign is not the default one, those customers revert to the billing entity’s settings, and join the default dunning campaign when one is set.
 
 ## Need more than a fixed sequence?
 
-A campaign runs the same attempts and delays for every customer. If you need the next step to depend on the account, the **[Dunning Agent](/guide/ai-agents/dunning-agent)** reads twelve months of payment history first: it waits on customers still inside their usual payment lag, chases the net amount after a partial payment, sends a card-fix link when a charge failed, and escalates large or unanswered accounts to a person. It runs alongside campaigns.
+A campaign runs the same attempts and delays for every customer. If you need the next step to depend on the account, the **[Dunning Agent](/guide/ai-agents/dunning-agent)** reads twelve months of payment history first. It waits on customers still inside their usual payment lag, chases the net amount after a partial payment, sends a card-fix link when a charge failed, and escalates large or unanswered accounts to a person. It runs alongside campaigns.
