@@ -4,16 +4,15 @@ title: "Migration to v1.56.0"
 
 Dear Lago Community, 👋
 
-We're writing to inform you about a change in Lago v1.56.0: **the `/api/v1` list endpoints now limit the page size**. A request with a `per_page` above the limit, or with an invalid `page` or `per_page`, is rejected with a `422` error instead of being served.
+We're writing to inform you about a change in Lago v1.56.0: **the `/api/v1` list endpoints now limit the page size**. A request with a `per_page` above the limit is rejected with a `422` error instead of being served.
 
 # What are the changes?
 
 ## A maximum page size on `/api/v1`
 
-Every request on an `/api/v1` path that sends `page` or `per_page` is checked before any data is read. It returns a `422` with the `value_is_out_of_range` code on the parameter when:
+Every request on an `/api/v1` path that sends `per_page` is checked before any data is read. When `per_page` is above the limit, it returns a `422` with the `value_is_out_of_range` code on `per_page`. A `per_page` equal to the limit is accepted.
 
-- `per_page` is above the limit. A `per_page` equal to the limit is accepted.
-- `page` or `per_page` is not a plain positive number: `0`, a negative value, a decimal (`1.5`), text (`abc`), or a form such as `010`, `+5`, `1_000` or `0x10`.
+A `page` or `per_page` that is not a positive number (`0`, a negative value, text) is not rejected. As before, it falls back to the first page or the default page size.
 
 ```json
 {
@@ -40,7 +39,7 @@ The limit can be changed in two ways:
 
 # Why are we doing this?
 
-Until now, nothing limited `per_page` on `/api/v1`. A single request such as `GET /api/v1/invoices?per_page=1000000000` loaded the whole table in one response, and held a database connection and a worker for as long as it took. On a large instance, a few of these requests slowed the API down for every other client. A negative or zero `page` was also read as page 1 without any error.
+Until now, nothing limited `per_page` on `/api/v1`. A single request such as `GET /api/v1/invoices?per_page=1000000000` loaded the whole table in one response, and held a database connection and a worker for as long as it took. On a large instance, a few of these requests slowed the API down for every other client.
 
 # What should self-hosted users do?
 
