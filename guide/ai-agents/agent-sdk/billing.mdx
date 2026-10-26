@@ -11,7 +11,7 @@ Both modes ship the same normalized usage. The difference is only where the arit
 
 | Pick **token mode** when | Pick **price mode** when |
 |---|---|
-| You bill in your own units — credits, requests, seats — and tokens are just the input | You resell LLM access at a margin and want the dollar cost to follow the rate card automatically |
+| You bill in your own units (credits, requests, seats) and tokens are only the input | You resell LLM access at a margin and want the dollar cost to follow the rate card automatically |
 | You want billing to be independent of any third-party price source | You want your revenue to track your provider invoice without maintaining a price table |
 | Your workload is audio-heavy or very long-context (see [Known limits](#known-limits)) | Your workload is text, and the models you use are in the price sources |
 | You use Bedrock Claude, Databricks or Snowflake Cortex, which the SDK always bills in tokens | You want the cost broken down by token type on the invoice |
@@ -95,8 +95,8 @@ For a mixed OpenAI / Anthropic / Gemini estate:
 |---|---|---|---|
 | Standard input | `llm_input_tokens` | none | The prompt total on every provider |
 | Cached input discount | `llm_cached_input_tokens` | `provider != anthropic` | Already inside `llm_input_tokens`, so charge a **negative** or reduced-rate adjustment, never an addition |
-| Anthropic cached input | `llm_cached_input_tokens` | `provider = anthropic` | Additive — charge it at Anthropic's cache-read rate |
-| Anthropic cache writes | `llm_cache_creation_tokens` | `provider = anthropic` | Additive — charge at the premium cache-creation rate |
+| Anthropic cached input | `llm_cached_input_tokens` | `provider = anthropic` | Additive. Charge it at Anthropic's cache-read rate |
+| Anthropic cache writes | `llm_cache_creation_tokens` | `provider = anthropic` | Additive. Charge at the premium cache-creation rate |
 | Standard output | `llm_output_tokens` | none | Completion total on every provider |
 | Gemini reasoning | `llm_reasoning_tokens` | `provider = gemini` | Additive on Gemini only. Do **not** add it on OpenAI |
 
@@ -107,7 +107,7 @@ See [Charges with filters](/guide/plans/charges/charges-with-filters) for the fi
 </Warning>
 
 <Tip>
-  Price mode resolves all of this for you — it applies the correct per-field prices itself, so none of the above has to be encoded in your plan.
+  Price mode resolves all of this for you. It applies the correct per-field prices itself, so none of the above has to be encoded in your plan.
 </Tip>
 
 ## Price mode
@@ -116,8 +116,8 @@ See [Charges with filters](/guide/plans/charges/charges-with-filters) for the fi
 
 - **OpenRouter's public model list** for native OpenAI, Anthropic, Mistral, and Gemini clients. No credentials.
 - **The AWS Bedrock Price List Bulk API** for Bedrock, parsed per region. No credentials.
-- **Cloudflare's own model catalog** for Workers AI. Needs a Cloudflare account id and API token — see [Cloudflare AI Gateway](/guide/ai-agents/agent-sdk/cloudflare#workers-ai-is-priced-from-cloudflares-own-catalog).
-- **Ramp Router's own model catalog** for calls through Router: the rates Router bills, rather than a public listing. The catalog is account-scoped, and `wrap()` reads the Router key from the client you pass in — see [Ramp Router](/guide/ai-agents/agent-sdk/ramp-router#price-mode).
+- **Cloudflare's own model catalog** for Workers AI. Needs a Cloudflare account id and API token. See [Cloudflare AI Gateway](/guide/ai-agents/agent-sdk/cloudflare#workers-ai-is-priced-from-cloudflares-own-catalog).
+- **Ramp Router's own model catalog** for calls through Router: the rates Router bills, rather than a public listing. The catalog is account-scoped, and `wrap()` reads the Router key from the client you pass in. See [Ramp Router](/guide/ai-agents/agent-sdk/ramp-router#price-mode).
 
 Tables refresh in the background on the queue thread, so your LLM call is never slowed down waiting on a price.
 
@@ -137,11 +137,11 @@ The exception is a cost the SDK did not compute. When a gateway reports its own 
 
 ### Markup
 
-Set `markup` to resell at a profit — `1.2` means the customer pays your cost plus 20%. It applies per priced field, and both the pre-markup `base_cost` and post-markup `value` land on every event so the margin stays auditable. Override it for one call with `extra_lago={"markup": 1.5}`.
+Set `markup` to resell at a profit. `1.2` means the customer pays your cost plus 20%. It applies per priced field, and both the pre-markup `base_cost` and post-markup `value` land on every event so the margin stays auditable. Override it for one call with `extra_lago={"markup": 1.5}`.
 
 ## Known limits
 
-**Price mode prices five fields: `input`, `output`, `cache_read`, `cache_write`, and `reasoning`.** Tool calls carry no unit price, so they produce no cost event — meter those in token mode if you bill on them. The 5-minute / 1-hour cache-write splits are priced separately only where the price source publishes a rate for each, which today is Ramp Router; everywhere else the whole `cache_write` count bills at the single write rate.
+**Price mode prices five fields: `input`, `output`, `cache_read`, `cache_write`, and `reasoning`.** Tool calls carry no unit price, so they produce no cost event. Meter those in token mode if you bill on them. The 5-minute / 1-hour cache-write splits are priced separately only where the price source publishes a rate for each, which today is Ramp Router; everywhere else the whole `cache_write` count bills at the single write rate.
 
 **Audio and image tokens are priced at the text rate.** They sit inside `input`/`output`, so they are billed, but at the model's text price rather than its modality price. Providers often charge considerably more for audio. If your workload is audio-heavy, bill it in token mode using `llm_audio_input_tokens` and `llm_audio_output_tokens` and set your own rate.
 
