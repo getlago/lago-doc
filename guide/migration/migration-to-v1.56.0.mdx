@@ -4,7 +4,10 @@ title: "Migration to v1.56.0"
 
 Dear Lago Community, 👋
 
-We're writing to inform you about a change in Lago v1.56.0: **the `/api/v1` list endpoints now limit the page size**. A request with a `per_page` above the limit is rejected with a `422` error instead of being served.
+We're writing to inform you about two changes in Lago v1.56.0:
+
+- **The `/api/v1` list endpoints now limit the page size.** A request with a `per_page` above the limit is rejected with a `422` error instead of being served.
+- **Customer text fields now have a maximum length.** Creating or updating a customer with a longer value is rejected with a `422` error.
 
 # What are the changes?
 
@@ -32,19 +35,47 @@ The limit can be changed in two ways:
 - **For the whole instance**, with the `LAGO_API_PAGINATION_MAX_PAGE_SIZE` environment variable.
 - **For one organization**, with the new `pagination_max_page_size` column of the `organizations` table. When it is set, it wins over the environment variable, higher or lower.
 
-## What does not change
+What does not change:
 
 - The response of a valid request is unchanged.
 - The GraphQL API used by the Lago front-end is not affected.
+
+## A maximum length on customer text fields
+
+Creating or updating a customer now checks the length of its text fields, on the API, in the Lago app and in the customer portal:
+
+| Field | Maximum length |
+|---|---|
+| `address_line1`, `address_line2` (billing and shipping) | 500 characters |
+| `firstname`, `lastname`, `legal_name`, `tax_identification_number`, `zipcode`, `city`, `state` (billing and shipping) | 255 characters |
+
+`name` already had a 255 character limit. A longer value returns a `422` with the `value_is_too_long` code on the field (the shipping fields are reported as `shipping_city`, `shipping_address_line1` and so on):
+
+```json
+{
+  "status": 422,
+  "error": "Unprocessable Entity",
+  "code": "validation_errors",
+  "error_details": {
+    "legal_name": ["value_is_too_long"]
+  }
+}
+```
+
+Only the values that change are checked. A customer that already holds a longer value keeps it, and can still be updated as long as that field is not changed. These limits cannot be raised.
+
+The customer portal also rejects a changed value that holds a line break, a tab or an invisible character, with the `invalid_characters` code. The API and the Lago app still accept these characters.
 
 # Why are we doing this?
 
 Until now, nothing limited `per_page` on `/api/v1`. A single request such as `GET /api/v1/invoices?per_page=1000000000` loaded the whole table in one response, and held a database connection and a worker for as long as it took. On a large instance, a few of these requests slowed the API down for every other client.
 
+Customer text fields had no length limit either, and the customer portal let end customers write long, multi-line text into them. These values are shown on invoices and in the Lago app, and are read by the AI assistant. The limits keep them to the size of a real name or address.
+
 # What should self-hosted users do?
 
 <Note>
-Cloud users do not need to follow these instructions. The Lago Team sets the limit for the organizations that need larger pages.
+Cloud users do not need to follow steps 1 and 2. The Lago Team sets the page size limit for the organizations that need larger pages.
 </Note>
 
 <Warning>
@@ -93,6 +124,10 @@ The value must be a positive whole number. Set it back to `nil` to use the insta
 <Tip>
 To upgrade without any failed request, set `LAGO_API_PAGINATION_MAX_PAGE_SIZE` to a high value (for example `100000`) before installing v1.56.0. Then set `pagination_max_page_size` for the organizations that need large pages. Finally, lower the environment variable (or remove it to use the default of 200) and restart the API.
 </Tip>
+
+## 3. Check the customer values your integrations send
+
+This step applies to Cloud and self-hosted users. Look for integrations that create or update customers with text longer than the limits above, for example a long legal name or an address sent in a single field. Shorten these values before sending them, or split an address across `address_line1` and `address_line2`. Otherwise these requests fail with a `422` once v1.56.0 runs.
 
 # Get Involved
 
