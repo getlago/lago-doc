@@ -9,7 +9,7 @@ Lago automatically generates an invoice for each purchase. Taxes do not apply to
 credit purchases, which are considered as advance payments.
 
 Payment must be made in order for credits to be added to the customer's wallet
-(i.e. the status of the invoice must be `succeeded`).
+(the payment status of the top-up invoice must be `succeeded`).
 
 <Info>
   If a paid top-up is made, Lago will automatically round the top-up credits to the nearest cent to comply with decimal rounding rules for amounts.
@@ -21,11 +21,11 @@ Payment must be made in order for credits to be added to the customer's wallet
     To top up a wallet through the user interface:
 
     1. Open the **"Wallets"** tab and click **"Edit wallet"** on the right;
-    2. Select **"Top up credit"**;
+    2. Select **"Top up credits"**;
     3. Enter the number of credits to be purchased and/or granted for free;
     4. Define transaction metadata (optional & available only via API);
     5. Determine whether the wallet transaction generates an invoice after a top-up or only following a successful payment; and
-    6. Click **"Top up credit"** to confirm.
+    6. Click **"Top up credits"** to confirm.
 
     <Info>Coupons **do not apply** to credit purchases and top-ups.</Info>
 
@@ -40,7 +40,7 @@ Payment must be made in order for credits to be added to the customer's wallet
       --header 'Content-Type: application/json' \
       --data-raw '{
         "wallet_transaction": {
-          "wallet_id": "wallet_1234567890",
+          "wallet_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
           "paid_credits": "20.0",
           "granted_credits": "10.0",
           "invoice_requires_successful_payment": false,
@@ -78,7 +78,7 @@ You can deduct an exact number of credits from the wallet's balance. Note that t
 
   </Tab>
   <Tab title="API">
-    ```bash Top up a credit wallet
+    ```bash Void credits from a wallet
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
@@ -87,7 +87,7 @@ You can deduct an exact number of credits from the wallet's balance. Note that t
       --header 'Content-Type: application/json' \
       --data-raw '{
         "wallet_transaction": {
-          "wallet_id": "wallet_1234567890",
+          "wallet_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
           "voided_credits": "20.0",
           "metadata": [
             {
@@ -136,7 +136,7 @@ Once the interval is defined, the system will automatically perform a top-up:
   <Tab title="Dashboard">
     To set up an `interval` recurring top-up through the user interface:
     1. Create or edit a wallet;
-    2. Trigger on the option `Activate recurring top-up`;
+    2. Click **"Add a recurring top-up rule"**;
     3. Select `interval` as recurring type;
     4. Define your interval;
     5. Define when the rule should start; and
@@ -184,13 +184,13 @@ Once the interval is defined, the system will automatically perform a top-up:
 
 ### Threshold trigger
 
-With a `threshold` trigger, set a specific number of `credits` that will trigger an automatic top-up. Lago monitors the `ongoing balance`, and if it falls below the defined credit threshold, an automatic top-up is initiated.
+With a `threshold` trigger, set a specific number of `credits` that will trigger an automatic top-up. Lago monitors the `ongoing balance`, and if it falls to or below the defined credit threshold, an automatic top-up is initiated.
 
 <Tabs>
   <Tab title="Dashboard">
     To set up a `threshold` recurring top-up through the user interface:
     1. Create or edit a wallet;
-    2. Trigger on the option `Activate recurring top-up`;
+    2. Click **"Add a recurring top-up rule"**;
     3. Select `threshold` as recurring type;
     4. Define the credits threshold; and
     5. Define transaction metadata for the top-ups (optional & available only via API);

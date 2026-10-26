@@ -54,7 +54,7 @@ When several wallets share the same priority, the wallet that expires soonest is
           "paid_credits": "100.0",
           "granted_credits": "50.0",
           "currency": "USD",
-          "expiration_at": "2022-07-07",
+          "expiration_at": "2022-07-07T23:59:59Z",
           "invoice_requires_successful_payment": false,
           "transaction_metadata": [
             {
@@ -87,8 +87,8 @@ Self-Hosted Premium.
 
 Keep track of your wallet's real-time balance. Lago provides two types of balances for your wallet:
 
-1. **Balance:** invoiced balance, which reflects the remaining prepaid credits in your wallet. It updates each time an invoice is finalized for the customer.
-2. **Ongoing Balance:** balance accounted for current usage, including taxes and draft invoices offering a real-time estimate of your balance's consumption. It refreshes every minute, or whenever an invoice is finalized for the customer.
+1. **Balance:** the invoiced balance, which reflects the prepaid credits left in the wallet. It updates each time an invoice is finalized for the customer.
+2. **Ongoing balance:** the balance that accounts for current usage, including taxes and draft invoices. It estimates the consumption of the balance close to real time, and also updates each time an invoice is finalized for the customer.
 
 ## Application scope
 
@@ -113,7 +113,7 @@ Total                    $16.00
 
 <Info>Prepaid credits do not apply to one-off invoices.</Info>
 
-By default, prepaid credits apply to all fee types—subscriptions, charges, and commitments. You can refine this behavior by configuring limitation rules directly in the wallet.
+By default, prepaid credits apply to every fee type. You can refine this behavior by configuring limitation rules directly in the wallet. The [create a wallet](/api-reference/wallets/create) endpoint lists the fee types a wallet can be restricted to.
 
 <Tabs>
   <Tab title="Dashboard">
@@ -144,7 +144,7 @@ By default, prepaid credits apply to all fee types—subscriptions, charges, and
           "granted_credits": 50.0,
           "currency": "USD",
           "applies_to": {
-            "fee_type": ["charge", "commitment", "subscription"]
+            "fee_types": ["charge", "commitment", "subscription"]
           }
         }
       }'
