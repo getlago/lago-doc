@@ -1,0 +1,97 @@
+---
+title: "Core concepts"
+description: "Governance entities, attribution keys, roll-ups and unattributed usage."
+---
+
+<Info>
+  **PREMIUM ADD-ON** ✨
+
+  Governance is available upon request only. Please [**contact us**](mailto:hello@getlago.com) to get access to this premium feature.
+</Info>
+
+## Governance entities
+
+A governance entity is one dimension you attribute usage to. You define entities once for your organization, and they apply to every customer.
+
+An entity has one of two roles:
+
+- **Hierarchical**: nests under a parent and rolls up into it. Use it for reporting lines, such as `department` → `team` → `user`.
+- **Flat**: has no parent and cuts across the tree. Use it for API keys, models or endpoints.
+
+```json
+[
+  { "code": "department", "role": "hierarchical", "parent_code": null,         "attribution_keys": ["department_id"] },
+  { "code": "team",       "role": "hierarchical", "parent_code": "department", "attribution_keys": ["team_id"] },
+  { "code": "user",       "role": "hierarchical", "parent_code": "team",       "attribution_keys": ["user_id", "userId", "uid"] },
+  { "code": "api_key",    "role": "flat",         "parent_code": null,         "attribution_keys": ["api_key"] }
+]
+```
+
+In the API, a governance entity is a `usage_attribution_type`.
+
+## Values
+
+Values are the members of an entity: `rnd` for `department`, `alice` for `user`, `key_1` for `api_key`.
+
+You don't create values. Lago reads them from your events, and a new value appears the first time an event carries it.
+
+## Attribution keys
+
+Attribution keys are the event properties that carry an entity's value. An entity can have up to 4 keys, so services that send different property names still land on the same value:
+
+| Source | Sends | Attributed to |
+| --- | --- | --- |
+| Chat app | `"user_id": "alice"` | `alice` |
+| Older SDK | `"userId": "alice"` | `alice` |
+| Batch jobs | `"uid": "alice"` | `alice` |
+
+Lago uses the first key it finds in the event, in the order you listed them.
+
+## Hierarchy and roll-ups
+
+Hierarchical entities form a tree. Usage rolls up from the bottom to the top:
+
+```text
+Subscription: $4,248
+|
+|-- Department rnd: $3,250
+|   |
+|   |-- Team eng: $3,250
+|       |
+|       |-- User alice: $2,000
+|       |-- User bob: $1,250
+|
+|-- Department sales: $499
+|   |
+|   |-- Team emea: $499
+|
+|-- No department: $499
+```
+
+Each event counts once, at every level it carries. Team `eng` is the sum of its users, department `rnd` is the sum of its teams, and every level adds up to the subscription total.
+
+Flat entities sit outside the tree. You can read them across the whole subscription, or under any node, for example the API keys used by team `eng`.
+
+## Unattributed usage
+
+Usage with no value for an entity is unattributed at that level. It shows as a **No department**, **No team** or **No user** row, and as `unattributed` in the API.
+
+Unattributed usage is never dropped. It's what keeps every level adding up to the total, and it shows you which events are missing a tag.
+
+## Units and amounts
+
+You read attributed usage in one of two ways:
+
+- **Units**: consumption per charge, such as tokens or API calls.
+- **Amounts**: the same usage priced with the plan, in the plan currency.
+
+Amounts are a breakdown of usage, before coupons, credits, minimums and taxes. See [limitations](/guide/governance/query#limitations).
+
+<CardGroup cols={2}>
+  <Card title="Set up governance" icon="sitemap" href="/guide/governance/setting-up">
+    Define your entities.
+  </Card>
+  <Card title="Send attributed events" icon="paper-plane" href="/guide/governance/sending-events">
+    Tag events with entity values.
+  </Card>
+</CardGroup>
