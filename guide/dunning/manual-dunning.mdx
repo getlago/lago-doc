@@ -4,7 +4,7 @@ description: "Dunning refers to the process of communicating with customers to r
 ---
 
 ## Overdue balance payment
-When a customer has some invoices past their due date, their [overdue balance](https://docs.getlago.com/guide/customers/customer-management#monitor-the-customers-billing-status) becomes positive, and you have the ability to request its payment manually.
+When a customer has some invoices past their due date, their [overdue balance](/guide/customers/customer-management#monitor-the-customers-billing-status) becomes positive, and you can request its payment manually.
 
 <Info>
 **Premium feature ✨**
@@ -15,31 +15,31 @@ This feature is only available to users with a premium license. Please **[contac
 
 <Tabs>
   <Tab title="Dashboard">
-    In the customer view, a "request payment” link appears within the overdue balance warning. 
+    In the customer view, a **Request payment** link appears within the overdue balance warning.
 
     <Frame caption="Request payment for the overdue balance">
-      <img src="/guide/images/customer-request-overdue-balance-payment.png" />
+      <img src="/guide/images/customer-request-overdue-balance-payment.png" alt="Overdue balance warning on a customer, with the Request payment link" />
     </Frame>
 
-    By clicking on it, a panel opens so you can:
+    Click it to open a panel where you can:
     - Review the invoices included in the overdue balance,
-    - Review the email which will be sent in case the payment fails, or if no payment provider is linked
+    - Review the email sent if the payment fails, or if no payment provider is linked,
     - Confirm you want to request the payment.
 
     <Frame caption="Preview the overdue balance payment request">
-      <img src="/guide/images/customer-overdue-balance-payment-preview.png" />
+      <img src="/guide/images/customer-overdue-balance-payment-preview.png" alt="Payment request panel listing the overdue invoices and the email preview" />
     </Frame>
 
 
   </Tab>
   <Tab title="API">
-      You can create a payment request for the overdue balance from the API, targeting the invoices you want to be paid.
+      You can create a payment request for the overdue balance from the API, targeting the invoices you want paid.
       <CodeGroup>
       ```bash Create a payment request
       LAGO_URL="https://api.getlago.com"
       API_KEY="__YOUR_API_KEY__"
 
-      curl --location --request POST "$LAGO_URL/api/v1/payment_requests/" \
+      curl --location --request POST "$LAGO_URL/api/v1/payment_requests" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -54,16 +54,16 @@ This feature is only available to users with a premium license. Please **[contac
   </Tab>
 </Tabs>
 
-## Dunning behaviour
+## Dunning behavior
 <Tabs>
   <Tab title="Customer connected to a PSP">
-    1. **Automatic payment attempt**: Lago will initiate a payment intent for the specified amount via the connected PSP.
-    2. **Failed payment**: If the payment fails, an email will be sent to the customer with a payment request and a URL to complete the payment (excluding GoCardless).
-    3. **Successful payment**: Upon success, the attached invoices will automatically reflect a “succeeded” payment status.
+    1. **Automatic payment attempt**: Lago initiates a payment intent for the specified amount through the connected PSP.
+    2. **Failed payment**: If the payment fails, Lago sends the customer an email with a payment request and a URL to complete the payment (excluding GoCardless).
+    3. **Successful payment**: On success, the attached invoices automatically reflect a `succeeded` payment status.
   </Tab>
   <Tab title="Customer not connected to a PSP">
-    1. **Payment request email**: An email will be sent to the customer requesting payment for the overdue balance.
-    2. **Manual update**: Once the payment is received, you must manually update the payment status of the relevant invoices
+    1. **Payment request email**: Lago sends the customer an email requesting payment of the overdue balance.
+    2. **Manual update**: Once the payment is received, update the payment status of the relevant invoices manually.
   </Tab>
 </Tabs>
 
@@ -73,6 +73,6 @@ Dunning applies to every overdue invoice, whatever payment method was set to col
 Once the invoice is overdue, a dunning campaign groups all of the customer's overdue invoices (one payment request per currency and per billing entity) and attempts a single automatic payment for the combined outstanding amount, using the payment provider set on the customer. If the customer has no default payment method stored in Lago, Lago falls back to a payment method already saved for that customer at the provider (with Stripe, the first one attached to the Stripe customer).
 
 ### Prevent automatic charges for a customer
-To make sure a customer is never charged on any payment method when one of their invoices becomes overdue, remove them from the dunning campaign by enabling **Exclude from dunning campaign** on the customer. They will stop receiving dunning emails as well.
+To make sure a customer is never charged on any payment method when one of their invoices becomes overdue, open **Edit dunning behavior for this customer** on the customer and select **Deactivate dunning**. No dunning attempt is triggered for them, so they stop receiving dunning emails as well.
 
 Leaving the customer's **default payment provider empty** also prevents the charge and keeps the dunning emails, but it is not a guarantee: if a payment provider is set on that customer later, dunning can charge them again.

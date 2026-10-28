@@ -1,5 +1,6 @@
 ---
-title: "Overview"
+title: "Plans: price subscriptions, usage and hybrid models"
+sidebarTitle: "Overview"
 description: "If Billable metrics are made to measure customer usage, Plans are made to
 apply prices to this usage."
 ---
@@ -49,6 +50,10 @@ To bill a customer, a plan must be assigned to a subscription.
          - Automatically triggers invoices when cumulative usage reaches predefined thresholds.
   </Tab>
   <Tab title="API">
+      Create a plan with `POST /api/v1/plans`. Entitlements are not part of this
+      payload: attach them with the
+      [plan entitlement endpoints](/api-reference/entitlements/plan-entitlements/create-plan-entitlement).
+
       <CodeGroup>
       ```bash Startup plan example
       LAGO_URL="https://api.getlago.com"
@@ -59,70 +64,45 @@ To bill a customer, a plan must be assigned to a subscription.
       --header 'Content-Type: application/json' \
       --data-raw '{
          "plan": {
-            "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
             "name": "Startup",
             "invoice_display_name": "Startup plan",
-            "created_at": "2023-06-27T19:43:42Z",
             "code": "startup",
             "interval": "monthly",
-            "description": "",
+            "description": "Plan for early stage startups.",
             "amount_cents": 10000,
             "amount_currency": "USD",
             "trial_period": 5,
             "pay_in_advance": true,
             "bill_charges_monthly": null,
             "bill_fixed_charges_monthly": null,
+            "tax_codes": ["french_standard_vat"],
             "minimum_commitment": {
-               "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-               "plan_code": "premium",
                "amount_cents": 100000,
                "invoice_display_name": "Minimum Commitment (C1)",
-               "interval": "monthly",
-               "created_at": "2022-04-29T08:59:51Z",
-               "updated_at": "2022-04-29T08:59:51Z",
-               "taxes": [
-               {
-                  "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-                  "name": "TVA",
-                  "code": "french_standard_vat",
-                  "description": "French standard VAT",
-                  "rate": 20,
-                  "created_at": "2023-07-06T14:35:58Z"
-               }
-               ]
+               "tax_codes": ["french_standard_vat"]
             },
             "charges": [
                {
-               "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a91",
-               "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a91",
-               "billable_metric_code": "requests",
-               "created_at": "2023-06-27T19:43:42Z",
+               "billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a91",
                "charge_model": "package",
+               "invoice_display_name": "Requests",
                "invoiceable": true,
-               "invoice_display_name": "Setup",
                "pay_in_advance": false,
-               "regroup_paid_fees": null,
                "prorated": false,
                "min_amount_cents": 3000,
                "properties": {
                   "amount": "30",
                   "free_units": 100,
                   "package_size": 1000
-               },
-               "filters": []
+               }
                },
                {
-               "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a92",
-               "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a92",
-               "billable_metric_code": "cpu",
-               "created_at": "2023-06-27T19:43:42Z",
+               "billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a92",
                "charge_model": "graduated",
+               "invoice_display_name": "CPU",
                "invoiceable": true,
-               "invoice_display_name": "Setup",
                "pay_in_advance": false,
-               "regroup_paid_fees": null,
                "prorated": false,
-               "min_amount_cents": 0,
                "properties": {
                   "graduated_ranges": [
                      {
@@ -138,22 +118,18 @@ To bill a customer, a plan must be assigned to a subscription.
                      "per_unit_amount": "0.4"
                      }
                   ]
-               },
-               "filters": []
+               }
                },
                {
-               "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a93",
-               "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a93",
-               "billable_metric_code": "seats",
-               "created_at": "2023-06-27T19:43:42Z",
+               "billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a93",
                "charge_model": "standard",
+               "invoice_display_name": "Seats",
                "invoiceable": true,
-               "invoice_display_name": "Setup",
                "pay_in_advance": true,
-               "regroup_paid_fees": null,
                "prorated": false,
-               "min_amount_cents": 0,
-               "properties": {},
+               "properties": {
+                  "amount": "0"
+               },
                "filters": [
                   {
                      "invoice_display_name": "Europe",
@@ -185,17 +161,12 @@ To bill a customer, a plan must be assigned to a subscription.
                ]
                },
                {
-               "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a94",
-               "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a94",
-               "billable_metric_code": "storage",
-               "created_at": "2023-06-27T19:43:42Z",
+               "billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a94",
                "charge_model": "volume",
+               "invoice_display_name": "Storage",
                "invoiceable": true,
-               "invoice_display_name": "Setup",
                "pay_in_advance": false,
-               "regroup_paid_fees": null,
                "prorated": false,
-               "min_amount_cents": 0,
                "properties": {
                   "volume_ranges": [
                      {
@@ -211,38 +182,29 @@ To bill a customer, a plan must be assigned to a subscription.
                      "per_unit_amount": "0.5"
                      }
                   ]
-               },
-               "filters": []
+               }
                },
                {
-               "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a95",
-               "lago_billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a95",
-               "billable_metric_code": "payments",
-               "created_at": "2023-06-27T19:43:42Z",
+               "billable_metric_id": "1a901a90-1a90-1a90-1a90-1a901a901a95",
                "charge_model": "percentage",
+               "invoice_display_name": "Payments",
                "invoiceable": false,
-               "invoice_display_name": "Setup",
                "pay_in_advance": true,
                "regroup_paid_fees": "invoice",
                "prorated": false,
-               "min_amount_cents": 0,
                "properties": {
                   "rate": "1",
                   "fixed_amount": "0.5",
                   "free_units_per_events": 5,
                   "free_units_per_total_aggregation": "500"
-               },
-               "filters": []
+               }
                }
             ],
             "fixed_charges": [
                {
-               "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-               "lago_add_on_id": "2b802b80-2b80-2b80-2b80-2b802b802b80",
+               "add_on_id": "2b802b80-2b80-2b80-2b80-2b802b802b80",
                "code": "setup_fee",
-               "invoice_display_name": "Setup Fee",
-               "add_on_code": "setup",
-               "created_at": "2026-01-15T10:30:00Z",
+               "invoice_display_name": "Setup fee",
                "charge_model": "standard",
                "pay_in_advance": true,
                "prorated": false,
@@ -250,26 +212,12 @@ To bill a customer, a plan must be assigned to a subscription.
                   "amount": "500"
                },
                "units": 1,
-               "lago_parent_id": null,
-               "taxes": [
-                  {
-                     "lago_id": "3c703c70-3c70-3c70-3c70-3c703c703c70",
-                     "name": "VAT",
-                     "code": "vat_20",
-                     "rate": 20,
-                     "description": "Standard VAT rate",
-                     "applied_to_organization": true,
-                     "created_at": "2026-01-01T00:00:00Z"
-                  }
-               ]
+               "tax_codes": ["vat_20"]
                },
                {
-               "lago_id": "4d604d60-4d60-4d60-4d60-4d604d604d60",
-               "lago_add_on_id": "5e505e50-5e50-5e50-5e50-5e505e505e50",
+               "add_on_id": "5e505e50-5e50-5e50-5e50-5e505e505e50",
                "code": "support_tier",
-               "invoice_display_name": "Support Tier",
-               "add_on_code": "premium_support",
-               "created_at": "2026-01-15T10:30:00Z",
+               "invoice_display_name": "Support tier",
                "charge_model": "graduated",
                "pay_in_advance": false,
                "prorated": true,
@@ -289,17 +237,12 @@ To bill a customer, a plan must be assigned to a subscription.
                      }
                   ]
                },
-               "units": 1,
-               "lago_parent_id": null,
-               "taxes": []
+               "units": 1
                },
                {
-               "lago_id": "6f406f40-6f40-6f40-6f40-6f406f406f40",
-               "lago_add_on_id": "7a307a30-7a30-7a30-7a30-7a307a307a30",
+               "add_on_id": "7a307a30-7a30-7a30-7a30-7a307a307a30",
                "code": "storage",
-               "invoice_display_name": "Storage Allocation",
-               "add_on_code": "cloud_storage",
-               "created_at": "2026-01-15T10:30:00Z",
+               "invoice_display_name": "Storage allocation",
                "charge_model": "volume",
                "pay_in_advance": false,
                "prorated": false,
@@ -319,76 +262,19 @@ To bill a customer, a plan must be assigned to a subscription.
                      }
                   ]
                },
-               "units": 50,
-               "lago_parent_id": null,
-               "taxes": []
-               }
-            ],
-            "taxes": [
-               {
-               "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
-               "name": "TVA",
-               "code": "french_standard_vat",
-               "description": "French standard VAT",
-               "rate": 20,
-               "created_at": "2023-07-06T14:35:58Z"
+               "units": 50
                }
             ],
             "usage_thresholds": [
                {
-               "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
                "threshold_display_name": "Threshold 1",
                "amount_cents": 10000,
-               "recurring": true,
-               "created_at": "2023-06-27T19:43:42Z",
-               "updated_at": "2023-06-27T19:43:42Z"
-               }
-            ],
-            "entitlements": [
-               {
-               "entitlement": {
-                  "code": "seats",
-                  "name": "Number of seats",
-                  "description": "Number of users of the account",
-                  "privileges": [
-                     {
-                     "code": "max",
-                     "name": "Maximum",
-                     "value_type": "integer",
-                     "config": {},
-                     "value": 10
-                     },
-                     {
-                     "code": "max_admins",
-                     "name": "Max Admins",
-                     "value_type": "integer",
-                     "config": {},
-                     "value": 5
-                     },
-                     {
-                     "code": "root",
-                     "name": "Allow root user",
-                     "value_type": "boolean",
-                     "config": {},
-                     "value": true
-                     },
-                     {
-                     "code": "provider",
-                     "name": "SSO Provider",
-                     "value_type": "select",
-                     "value": "google",
-                     "config": {
-                        "select_options": ["google", "okta"]
-                     }
-                     }
-                  ]
-               }
+               "recurring": true
                }
             ],
             "metadata": {
                "external_id": "ext-123",
-               "synced_at": "2024-01-15",
-               "source": null
+               "synced_at": "2024-01-15"
             }
          }
       }'

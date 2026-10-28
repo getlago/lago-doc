@@ -9,6 +9,10 @@ Usage alerts notify you when a subscription's usage crosses thresholds you defin
 2. Alert customers with skyrocketing usage to prevent unexpected costs or overages on their bills; or
 3. Implement entitlement logic to halt usage tracking when a customer reaches their predefined limit, ensuring accurate billing and compliance.
 
+<Info>
+  Usage alerts are a **premium** feature. Free users cannot create alerts on a subscription.
+</Info>
+
 ## Create an alert
 <Tabs>
   <Tab title="Dashboard">
@@ -16,8 +20,8 @@ Usage alerts notify you when a subscription's usage crosses thresholds you defin
 
         1. Access the specific subscription view;
         2. Click on the **Alerts** tab;
-        3. Click on the **Add an alert** button;
-        4. Select the type of alert (e.g., Lifetime Usage Amount);
+        3. Click on the **Create alerts** button;
+        4. Select the type of alert (e.g., Lifetime usage amount);
         5. Set the progressive thresholds and code for the alert;
         6. Optionally, set **Notify when resolved** to **True** on a threshold to also receive `alert.resolved` (see [alert resolution](/guide/alerts/alert-resolution));
         7. Define the optional recurring threshold for the alert; and
@@ -28,7 +32,7 @@ Usage alerts notify you when a subscription's usage crosses thresholds you defin
       </Info>
 
       <Frame caption="Create an alert">
-        <img src="/guide/images/create-alerts.png" />
+        <img src="/guide/images/create-alerts.png" alt="The Alerts on subscription form, with the alert name, the alert type and the threshold triggers" />
       </Frame>
 
   </Tab>
@@ -102,13 +106,17 @@ Usage alerts notify you when a subscription's usage crosses thresholds you defin
 
 
 ## Alert types
-Lago supports the following usage alert types:
+Lago supports the following usage alert types. You can also create multiple alerts at once by sending an `alerts` array to the same create endpoint, or delete all alerts for a subscription in a single API call.
 
-- **Lifetime Usage Amount** (`lifetime_usage_amount`): Triggered when a subscription's lifetime usage exceeds predefined thresholds.
-- **Current Usage Amount** (`current_usage_amount`): Triggered when a subscription's usage exceeds predefined thresholds for the current billing period.
-- **Billable Metric Current Usage Amount** (`billable_metric_current_usage_amount`): Triggered when the usage of a specific billable metric exceeds predefined thresholds for the current billing period.
-- **Billable Metric Current Usage Units** (`billable_metric_current_usage_units`): Triggered when the number of units of a specific billable metric exceeds predefined thresholds for the current billing period.
-- **Billable Metric Lifetime Usage Units** (`billable_metric_lifetime_usage_units`): Triggered when the lifetime number of units of a specific billable metric exceeds predefined thresholds.
+- **Lifetime usage amount** (`lifetime_usage_amount`): Triggered when a subscription's lifetime usage exceeds predefined thresholds.
+- **Current usage amount** (`current_usage_amount`): Triggered when a subscription's usage exceeds predefined thresholds for the current billing period.
+- **Billable metric current usage amount** (`billable_metric_current_usage_amount`): Triggered when the usage of a specific billable metric exceeds predefined thresholds for the current billing period.
+- **Billable metric current usage units** (`billable_metric_current_usage_units`): Triggered when the number of units of a specific billable metric exceeds predefined thresholds for the current billing period.
+- **Billable metric lifetime usage units** (`billable_metric_lifetime_usage_units`): Triggered when the lifetime number of units of a specific billable metric exceeds predefined thresholds.
+
+<Info>
+  The two lifetime alert types also need a premium add-on. `lifetime_usage_amount` needs the lifetime usage add-on or [progressive billing](/guide/plans/progressive-billing), and `billable_metric_lifetime_usage_units` needs the granular lifetime usage add-on. Without it, creating the alert fails with a `feature_not_available` error.
+</Info>
 
 ## Alert notifications
 After configuring an alert and starting to ingest usage, you can listen for the `alert.triggered` webhook message. These webhooks serve as notifications sent to your system, indicating when an alert threshold has been crossed, along with all the relevant alert details.

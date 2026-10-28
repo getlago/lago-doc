@@ -10,14 +10,14 @@ description: "Sync Lago billing data to QuickBooks Online via n8n."
 ## Overview
 
 Sync your Lago billing data to QuickBooks Online automatically using this community-maintained integration.
-It uses n8n as middleware to transform Lago webhooks into QuickBooks API calls — so your accounting records stay in sync with your billing, without lifting a finger.
+It uses n8n as middleware to transform Lago webhooks into QuickBooks API calls, so your accounting records stay in sync with your billing.
 
 ## How it works
 
 The integration uses **[n8n](https://n8n.io/)** (a workflow automation platform) as middleware between Lago and [QuickBooks Online](https://quickbooks.intuit.com/).
 
 <Info>
-**Bring your own n8n** — This integration requires your own [n8n](https://n8n.io/) account (self-hosted or [Cloud](https://n8n.io/cloud/)).
+**Bring your own n8n.** This integration requires your own [n8n](https://n8n.io/) account (self-hosted or [Cloud](https://n8n.io/cloud/)).
 n8n is a third-party service with its own pricing. You are responsible for managing and paying for your instance.
 </Info>
 
@@ -68,7 +68,7 @@ graph LR
   <Accordion title="Required accounts" icon="key" defaultOpen>
     1. **Lago account** with API and webhook endpoints access
     2. **QuickBooks Online account** (Essentials, Plus, or Advanced)
-    3. **n8n instance** — [n8n Cloud](https://n8n.io/cloud/) or [self-hosted](https://docs.n8n.io/hosting/)
+    3. **n8n instance**: [n8n Cloud](https://n8n.io/cloud/) or [self-hosted](https://docs.n8n.io/hosting/)
   </Accordion>
 
   <Accordion title="QuickBooks developer setup" icon="screwdriver-wrench">
@@ -123,7 +123,7 @@ graph LR
     4. Click **Connect my account**, authorize in QuickBooks, then **Save**
 
     <Warning>
-    The workflow expects the credential to be named **exactly** `QuickBooks OAuth2`. All 14 QuickBooks nodes reference it by name — use a different name and you'll need to update each one manually.
+    The workflow expects the credential to be named **exactly** `QuickBooks OAuth2`. All 14 QuickBooks nodes reference it by name, so a different name means updating each one manually.
     </Warning>
   </Step>
 
@@ -148,10 +148,10 @@ graph LR
 
     | Field | Required | Description |
     |-------|----------|-------------|
-    | `LAGO_WEBHOOK_SECRET` | Yes | From Lago → Settings → Webhooks → Secret |
+    | `LAGO_WEBHOOK_SECRET` | Yes | From Lago → Developers → Webhooks → HMAC signature token |
     | `QB_ENVIRONMENT` | Yes | `sandbox` for testing, `production` for live |
     | `QB_REALM_ID` | Yes | Your QuickBooks company ID (see below) |
-    | `QB_DEFAULT_ITEM_ID` | Yes | Default QuickBooks Item ID — see [Item mapping](#item-mapping) |
+    | `QB_DEFAULT_ITEM_ID` | Yes | Default QuickBooks Item ID, see [Item mapping](#item-mapping) |
     | `QB_DISCOUNT_ACCOUNT_ID` | No | Account ID for discounts/credits |
     | `BYPASS_SIGNATURE` | No | Skip signature verification (dev only) |
 
@@ -164,7 +164,7 @@ graph LR
       </Accordion>
       <Accordion title="How to find your QB_DEFAULT_ITEM_ID">
         Go to QuickBooks → **Settings** → **Products and Services**, click an item, and grab the ID from the URL:
-        `https://qbo.intuit.com/app/item?id=1` — here, the Item ID is `1`.
+        `https://qbo.intuit.com/app/item?id=1`. Here, the Item ID is `1`.
       </Accordion>
     </AccordionGroup>
 
@@ -200,15 +200,15 @@ graph LR
   </Step>
 
   <Step title="Configure Lago webhooks" icon="webhook">
-    1. In Lago, go to **Settings** → **Webhooks** → **Add a webhook endpoint**
+    1. In Lago, go to **Developers** → **Webhooks** → **Add a webhook endpoint**
     2. Paste the n8n webhook URL from the previous step
     3. Enable **HMAC signature** (strongly recommended)
-    4. Copy the **Signature secret** and paste it into the `LAGO_WEBHOOK_SECRET` field in n8n
+    4. Copy the **HMAC signature token** and paste it into the `LAGO_WEBHOOK_SECRET` field in n8n
     5. Set `BYPASS_SIGNATURE: false` for production
   </Step>
 
   <Step title="Activate the workflow" icon="play">
-    In n8n, toggle the workflow to **Active** (top right). Done — the workflow is now listening for Lago webhooks.
+    In n8n, toggle the workflow to **Active** (top right). The workflow now listens for Lago webhooks.
   </Step>
 </Steps>
 
@@ -216,7 +216,7 @@ graph LR
 
 Item mapping connects Lago billing items to QuickBooks products/services, so you can track revenue by product line.
 
-When Lago sends an invoice, each fee includes an `item.code` (e.g., `"premium_plan"`). The workflow looks it up in `ITEM_MAPPINGS` and uses the matched QuickBooks Item ID — or falls back to `ITEM_FALLBACK_ID` if there's no match.
+When Lago sends an invoice, each fee includes an `item.code` (e.g., `"premium_plan"`). The workflow looks it up in `ITEM_MAPPINGS` and uses the matched QuickBooks Item ID, or falls back to `ITEM_FALLBACK_ID` if there is no match.
 
 <Steps>
   <Step title="Find your QuickBooks Item IDs">
@@ -242,12 +242,12 @@ When Lago sends an invoice, each fee includes an `item.code` (e.g., `"premium_pl
 </Steps>
 
 <Tip>
-**Keep it simple** — You can map everything to a single QB item, group items by category, or go one-to-one. Pick the granularity that matches your accounting needs.
+**Keep it simple.** You can map everything to a single QB item, group items by category, or go one-to-one. Pick the granularity that matches your accounting needs.
 </Tip>
 
 ## Tax mapping
 
-The integration uses QuickBooks' **tax override** feature — Lago's exact tax amounts show up in QuickBooks, regardless of QB's own tax rates. No recalculation, no rounding surprises.
+The integration uses QuickBooks' **tax override** feature, so Lago's exact tax amounts show up in QuickBooks whatever QB's own tax rates are. No recalculation, no rounding surprises.
 
 Under the hood:
 - Line items are marked `TAX` or `NON` based on Lago data
@@ -277,9 +277,9 @@ Under the hood:
 </Steps>
 
 <Accordion title="Troubleshooting tax issues" icon="bug">
-  **Tax amount doesn't match** — Verify `QB_TAX_CODE_ID` is set and points to a taxable code (not "NON").
+  **Tax amount doesn't match.** Verify `QB_TAX_CODE_ID` is set and points to a taxable code (not "NON").
 
-  **QuickBooks recalculates tax** — Ensure `minorversion=70` is in the API URL. The workflow includes this by default — check the node settings if you've modified things.
+  **QuickBooks recalculates tax.** Ensure `minorversion=70` is in the API URL. The workflow includes it by default, so check the node settings if you have modified them.
 </Accordion>
 
 ## Understanding the flow
@@ -307,7 +307,7 @@ graph TD
       A[Transform Customer Data] --> B[Lookup Customer in QB] --> C[Prepare Upsert] --> D[Create/Update Customer]
     ```
 
-    Deduplicates by `DisplayName` — updates if found, creates if not.
+    Deduplicates by `DisplayName`: updates if found, creates if not.
   </Accordion>
 
   <Accordion title="Invoice Created" icon="file-invoice" defaultOpen>
@@ -365,7 +365,7 @@ graph TD
 </CardGroup>
 
 <Tip>
-**Monitoring** — In n8n, go to **Executions** to view all workflow runs. Click any execution to see detailed logs per node.
+**Monitoring.** In n8n, go to **Executions** to view all workflow runs. Click any execution to see detailed logs per node.
 </Tip>
 
 ## Scaling
