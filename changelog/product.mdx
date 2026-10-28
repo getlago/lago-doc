@@ -8,12 +8,29 @@ Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024
 
 <Update
   label="October 2026"
-  tags={["Self-hosted"]}
+  tags={["Self-hosted", "API"]}
   rss={{
     title: "October 2026 - Lago Helm chart 2.0",
     description: "The Helm chart Lago runs in production, published: independent subcharts and one Deployment per Sidekiq queue."
   }}
 >
+  ## API lists return at most 200 records per page
+
+  Until now, `/api/v1` list endpoints accepted any `per_page`. One request with a very large value could load a whole table in one response and slow the API for everyone on the same deployment.
+
+  **List requests now accept up to 200 records per page.** The default stays at 100.
+
+  - **Above the limit, an error.** A `per_page` above 200 returns a `422` with `value_is_out_of_range` on `per_page`. Nothing is cut off silently.
+  - **Below it, no change.** Requests without `per_page`, or with 200 or less, behave as before. A value such as `0` still falls back to the default.
+  - **More records, more pages.** To read a full list, request the next page until `meta.next_page` is `null`.
+  - **Self-hosted limit.** `LAGO_API_PAGINATION_MAX_PAGE_SIZE` sets the limit for your instance. Raise it before upgrading if your integrations send larger pages today.
+
+  [Learn more](/api-reference/pagination)
+
+  <Info>
+  **Check your integrations.** A script or connector that sends `per_page=1000` now gets a `422` instead of a long list. Lower the value and read the next pages.
+  </Info>
+
   ## Helm chart 2.0: scale each Lago component on its own
 
   The 1.x Helm chart was a monolith. One Sidekiq worker ran every queue, so a slow billing run could starve webhook delivery.
