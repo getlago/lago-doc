@@ -193,7 +193,7 @@ Bedrock's request shape is validated strictly by AWS, so the override rides on t
 | `reasoning`      | folded into `output` | folded into `output` |
 | `tool_calls`     | server-side tools only (`usage.serverToolUsage`) | ✓ (Anthropic families) |
 
-On `Converse`, `tool_calls` counts only Bedrock's own server-side tool invocations, which is the one number the API reports. Client-side tool calls you execute yourself are not counted — meter those on your own side if you bill on them.
+On `Converse`, `tool_calls` counts only Bedrock's own server-side tool invocations, which is the one number the API reports. Client-side tool calls you execute yourself are not counted. Meter those on your own side if you bill on them.
 
 The `provider` property on each event is derived from `modelId`, so a single Bedrock client produces events tagged `anthropic`, `amazon`, `meta`, `mistral`, `cohere`, `openai`, `qwen`, `google`, `minimax`, `nvidia`, or `zai`. That makes `provider` a useful charge filter when you resell several model families through one Bedrock account.
 
@@ -213,7 +213,7 @@ In price mode, Bedrock is priced from the **AWS Bedrock Price List Bulk API**, p
 
 **AWS's public bulk price data has a gap.** It lists Titan, Llama, Mistral, Cohere, and older Claude models, but at time of writing not the current Claude 3.5/3.7/4 models. Bedrock calls for models absent from AWS's data fall back to token-count events and fire `on_error` with a `PricingUnavailableError`. Native Anthropic clients are priced through OpenRouter and unaffected.
 
-**Legacy Mistral models report no usage at all through `InvokeModel`.** Mistral 7B, Mixtral 8x7B, and Mistral Large 24.02 return no token counts, so the SDK logs a warning and emits nothing — there is nothing to bill on. Use `Converse` with those models, or a current model, if you need to meter them.
+**Legacy Mistral models report no usage at all through `InvokeModel`.** Mistral 7B, Mixtral 8x7B, and Mistral Large 24.02 return no token counts, so the SDK logs a warning and emits nothing. There is nothing to bill on. Use `Converse` with those models, or a current model, if you need to meter them.
 
 **Only `Converse` and `InvokeModel` are instrumented**, in both their streaming and non-streaming forms. Two other billable Bedrock Runtime operations pass through unmetered: `start_async_invoke` (asynchronous inference) and `apply_guardrail`. If you use either, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
 

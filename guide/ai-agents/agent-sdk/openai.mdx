@@ -179,7 +179,7 @@ The wrapper strips `extra_lago` / `lago` before forwarding, so OpenAI's strict r
 
 Not exposed by either API: `cache_write`, `cache_write_5m`, `cache_write_1h`. OpenAI auto-caches without surfacing creation counts, so you only ever see cache reads. `image_input` is not surfaced separately either.
 
-On OpenAI everything is a subset: `reasoning` sits inside `completion_tokens`, and `cache_read` and `audio_input` sit inside `prompt_tokens`. Bill `llm_input_tokens` and `llm_output_tokens` as the totals — [Bill in tokens](/guide/ai-agents/agent-sdk/billing#subsets-and-additive-fields) shows the metric setup that handles this across providers.
+On OpenAI everything is a subset: `reasoning` sits inside `completion_tokens`, and `cache_read` and `audio_input` sit inside `prompt_tokens`. Bill `llm_input_tokens` and `llm_output_tokens` as the totals. [Bill in tokens](/guide/ai-agents/agent-sdk/billing#subsets-and-additive-fields) shows the metric setup that handles this across providers.
 
 <Note>
   **Reasoning tokens** populate automatically on o-series models (`o1`, `o4-mini`, and friends). OpenAI was the first provider to expose the metric separately.
@@ -195,19 +195,19 @@ In price mode, OpenAI models are priced from **OpenRouter's public model list**,
 
 ## What is and isn't instrumented
 
-`wrap()` patches exactly two methods — `chat.completions.create` and `responses.create` — on both the sync `OpenAI` and async `AsyncOpenAI` clients.
+`wrap()` patches exactly two methods (`chat.completions.create` and `responses.create`) on both the sync `OpenAI` and async `AsyncOpenAI` clients.
 
 **The `.stream()` helpers are covered.** `chat.completions.stream(...)` and `responses.stream(...)` pass `self.create` into their stream manager, which resolves to the patched method, so they bill normally.
 
 **`parse()` is not.** Both `chat.completions.parse` and `responses.parse` issue their own request instead of calling `create`, so the patch never sees them.
 
 <Warning>
-  `parse()` is the easy one to miss. It looks like a `create` variant and returns the same usage, but it is not instrumented — a workload built on structured outputs would bill nothing.
+  `parse()` is the easy one to miss. It looks like a `create` variant and returns the same usage, but it is not instrumented. A workload built on structured outputs would bill nothing.
 </Warning>
 
 Other billable surfaces on the client are also unmetered: `embeddings`, `images`, `audio`, `batches`, `videos`, `realtime`, `conversations`, and `beta`. If you use any of them, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
 
-**Audio tokens are captured but not priced separately.** They are reported as `llm_audio_input_tokens` and `llm_audio_output_tokens`, and in price mode they are billed at the model's text rate. Providers often charge considerably more for audio — see [Known limits](/guide/ai-agents/agent-sdk/billing#known-limits).
+**Audio tokens are captured but not priced separately.** They are reported as `llm_audio_input_tokens` and `llm_audio_output_tokens`, and in price mode they are billed at the model's text rate. Providers often charge considerably more for audio. See [Known limits](/guide/ai-agents/agent-sdk/billing#known-limits).
 
 ## Next steps
 
