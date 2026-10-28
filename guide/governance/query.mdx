@@ -1,0 +1,222 @@
+---
+title: "Query attributed usage"
+description: "Read a subscription's usage and spend per governance entity, in the app or with the API."
+---
+
+<Info>
+  **PREMIUM ADD-ON** ✨
+
+  Governance is available upon request only. Please [**contact us**](mailto:hello@getlago.com) to get access to this premium feature.
+</Info>
+
+Attributed usage is read per subscription, one level of the tree at a time. The default time range is the current billing period.
+
+<Tabs>
+<Tab title="Dashboard">
+
+Open a subscription and click **Attribution**.
+
+### By hierarchy
+
+Set **Group rows by** to **Hierarchical**. Click a row to expand the level below it.
+
+To see a flat key inside the tree, pick it in **List by** and choose the level in **Under**. Here, each user expands into the API keys they used:
+
+<Frame caption="Hierarchical, with API keys listed under each user">
+  <img src="/guide/governance/images/attribution-hierarchy-api-keys-under-user.webp" alt="The Attribution tab: department R&D, team Engineering, user alice expanded into two API keys and a No API Key row" />
+</Frame>
+
+### By a flat key
+
+Set **Group rows by** to **Flat** and pick the key in **List by**. You get one row per value across the whole subscription, without the tree:
+
+<Frame caption="Flat, by API key">
+  <img src="/guide/governance/images/attribution-by-flat-key.webp" alt="The Attribution tab grouped by API key, with one row per key and a No API Key row" />
+</Frame>
+
+### Controls
+
+| Control | Description |
+| --- | --- |
+| **Group rows by** | **Hierarchical** to read the tree, or **Flat**. |
+| **List by** | Show a flat entity, such as API keys, under each row. |
+| **Under** | The level the flat entity is listed under. |
+| **Charges** | The charges to show. With one charge selected, each of its filters gets its own column. |
+| **Show** | **Units** or **Amounts**. |
+| **Time range** | Current billing period, previous billing period, or a custom range of up to 31 days. |
+
+<Frame caption="One charge split by its filters">
+  <img src="/guide/governance/images/attribution-split-charge.webp" alt="The Attribution tab with the Tokens charge split into Opus, Sonnet, Haiku and Default columns" />
+</Frame>
+
+</Tab>
+<Tab title="API">
+
+`GET /api/v1/customers/:external_customer_id/attributed_usage`
+
+```bash
+curl --get "$LAGO_URL/api/v1/customers/cust_123/attributed_usage" \
+  --header "Authorization: Bearer $API_KEY" \
+  --data-urlencode "external_subscription_id=sub_123" \
+  --data-urlencode "group_by=department" \
+  --data-urlencode "basis=amount"
+```
+
+### Response
+
+```json
+{
+  "attributed_usage": {
+    "external_subscription_id": "sub_123",
+    "group_by": "department",
+    "basis": "amount",
+    "from_datetime": "2026-10-01T00:00:00Z",
+    "to_datetime": "2026-10-31T23:59:59Z",
+    "currency": "USD",
+    "rows": [
+      {
+        "value": "rnd",
+        "rank": 1,
+        "amount_cents": 325000,
+        "events_count": 2,
+        "charges_usage": [
+          { "charge_code": "llm_tokens", "units": "35.0", "amount_cents": 325000, "events_count": 2 }
+        ]
+      },
+      {
+        "value": "sales",
+        "rank": 2,
+        "amount_cents": 49900,
+        "events_count": 1,
+        "charges_usage": [
+          { "charge_code": "fine_tuning_jobs", "units": "1.0", "amount_cents": 49900, "events_count": 1 }
+        ]
+      }
+    ],
+    "unattributed": { "amount_cents": 49900, "events_count": 1, "charges_usage": [...] },
+    "totals": { "amount_cents": 424800, "events_count": 4, "charges_usage": [...] }
+  },
+  "meta": { "current_page": 1, "next_page": null, "prev_page": null, "total_pages": 1, "total_count": 2 }
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `rows` | One row per value of the `group_by` entity. |
+| `rows[].value` | The entity value, such as `rnd`. |
+| `rows[].rank` | Position of the row: by amount on the `amount` basis, by event count on the `units` basis. |
+| `rows[].amount_cents` | Amount in cents. `null` on the `units` basis. |
+| `rows[].charges_usage` | Units, amount and event count per charge. |
+| `unattributed` | Usage with no value for the entity. Never ranked. |
+| `totals` | `rows` plus `unattributed`. |
+
+### By hierarchy
+
+Read one level at a time, filtering on the parent. Grouping by a child without its parent returns `parent_filter_required`.
+
+To list a flat key under a node, group by the flat key and filter on that node. The last example returns the API keys used by `alice`.
+
+<CodeGroup>
+```bash Teams in rnd
+curl --get "$LAGO_URL/api/v1/customers/cust_123/attributed_usage" \
+  --header "Authorization: Bearer $API_KEY" \
+  --data-urlencode "external_subscription_id=sub_123" \
+  --data-urlencode "group_by=team" \
+  --data-urlencode "filters[department][]=rnd"
+```
+
+```bash Users in eng
+curl --get "$LAGO_URL/api/v1/customers/cust_123/attributed_usage" \
+  --header "Authorization: Bearer $API_KEY" \
+  --data-urlencode "external_subscription_id=sub_123" \
+  --data-urlencode "group_by=user" \
+  --data-urlencode "filters[team][]=eng"
+```
+
+```bash API keys under alice
+curl --get "$LAGO_URL/api/v1/customers/cust_123/attributed_usage" \
+  --header "Authorization: Bearer $API_KEY" \
+  --data-urlencode "external_subscription_id=sub_123" \
+  --data-urlencode "group_by=api_key" \
+  --data-urlencode "filters[user][]=alice"
+```
+</CodeGroup>
+
+Filters also scope `totals`, so each level adds up to its parent row.
+
+### By a flat key
+
+Group by the flat key with no filter. You get one row per value across the whole subscription.
+
+```bash
+curl --get "$LAGO_URL/api/v1/customers/cust_123/attributed_usage" \
+  --header "Authorization: Bearer $API_KEY" \
+  --data-urlencode "external_subscription_id=sub_123" \
+  --data-urlencode "group_by=api_key"
+```
+
+### Split a charge
+
+Add `split_charge_code` to break one charge down by its [filters](/guide/plans/charges/charges-with-filters). Each row then returns one `charges_usage` line per filter value.
+
+```bash
+curl --get "$LAGO_URL/api/v1/customers/cust_123/attributed_usage" \
+  --header "Authorization: Bearer $API_KEY" \
+  --data-urlencode "external_subscription_id=sub_123" \
+  --data-urlencode "group_by=user" \
+  --data-urlencode "filters[team][]=eng" \
+  --data-urlencode "basis=amount" \
+  --data-urlencode "split_charge_code=llm_tokens"
+```
+
+| User | Opus | Sonnet | Total |
+| --- | --- | --- | --- |
+| alice | \$2,000 | \$0 | \$2,000 |
+| bob | \$0 | \$1,250 | \$1,250 |
+
+### Parameters
+
+| Parameter | Description |
+| --- | --- |
+| `external_subscription_id` | Required. An active subscription of the customer. |
+| `group_by` | Required. The code of one entity. |
+| `filters[<code>][]` | Values to keep. Several values for one entity are combined with OR, several entities with AND. Up to 20 values per entity. |
+| `basis` | `units` (default) or `amount`. |
+| `from_datetime`, `to_datetime` | ISO 8601. Both or neither, up to 31 days apart. |
+| `charge_codes[]` | Charges to include. Defaults to all supported charges. |
+| `split_charge_code` | One charge to split by its filters. |
+| `search_term` | Keeps the values that match. |
+| `page`, `per_page` | Pagination. `per_page` defaults to 50, up to 100. |
+
+</Tab>
+</Tabs>
+
+## Amounts and charge models
+
+Amounts are available for the [standard](/guide/plans/charges/charge-models/standard) charge model. Other charge models return units only.
+
+A standard charge is linear: every unit costs the same, so each team's share of the amount is its share of the units. Graduated, volume, package and percentage charges aren't linear. The price of a unit depends on the total usage of the subscription, so there is no single correct way to split the amount between teams or users.
+
+For example, with a graduated price of \$1 for the first 1,000 units and \$0.50 above, two teams that each send 1,000 units cost \$1,500 together. Neither team is the one that crossed the tier, so neither owns the cheaper units.
+
+## Time range
+
+A query covers up to 31 days. By default, it reads the current billing period. Attributed usage is computed on demand from your events, and the cap keeps every query fast.
+
+For a quarterly or yearly billing period, the default view reads the last 31 days of the period. To cover a longer period, run one query per month and add the results.
+
+## Limitations
+
+- Supports billable metrics with a `COUNT` or `SUM` aggregation that aren't recurring.
+- Amounts are a breakdown of usage, before coupons, credits, minimums and taxes. They can differ from the invoice.
+- One level per request, up to 3 flat entities in `filters`, one split charge with up to 10 filters.
+- A large query can fail with `too_many_groups` or `query_timeout`. Narrow the time range or add filters.
+
+<CardGroup cols={2}>
+  <Card title="Core concepts" icon="book" href="/guide/governance/core-concepts">
+    Entities, attribution keys and roll-ups.
+  </Card>
+  <Card title="Send attributed events" icon="paper-plane" href="/guide/governance/sending-events">
+    Tag events with entity values.
+  </Card>
+</CardGroup>
