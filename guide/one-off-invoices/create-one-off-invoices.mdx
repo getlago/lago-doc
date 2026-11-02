@@ -9,7 +9,7 @@ To create a one-off invoice for a specific customer:
 1. Select the customer from the list of customers
 2. Click the **Actions** button in the upper-right corner, then select **Create one-off invoice**
 
-## Adding add-ons to one-off invoices
+## Add add-ons to the invoice
 Once you have started the flow, add one or several add-ons to the invoice:
 
 <Tabs>
@@ -27,39 +27,42 @@ Once you have started the flow, add one or several add-ons to the invoice:
     </Frame>
   </Tab>
   <Tab title="API">
-  ```bash Assign add-ons to create a one-off invoice
-  LAGO_URL="https://api.getlago.com"
-  API_KEY="__YOUR_API_KEY__"
-  curl --location --request POST "$LAGO_URL/api/v1/invoices" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "invoice": {
-        "external_customer_id": "hooli_1234",
-        "currency": "USD",
-        "billing_entity_code": "default",
-        "purchase_order_number": "po-1234",
-        "fees": [
-          {
-            "add_on_code": "setup_fee",
-            "units": 1,
-            "unit_amount_cents": 50000,
-            "description": "Implementation fee with a solution engineer",
-            "from_datetime": "2025-01-01T00:00:00Z",
-            "to_datetime": "2025-12-31T23:59:59Z"
-          },
-          {
-            "add_on_code": "customer_success",
-            "units": 2,
-            "unit_amount_cents": 100000,
-            "description": "One off customer success fee",
-            "from_datetime": "2025-01-01T00:00:00Z",
-            "to_datetime": "2025-12-31T23:59:59Z"
-          }
-        ]
-      }
-    }'
-  ```
+    <CodeGroup>
+    ```bash Assign add-ons to create a one-off invoice
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/invoices" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "invoice": {
+          "external_customer_id": "hooli_1234",
+          "currency": "USD",
+          "billing_entity_code": "default",
+          "purchase_order_number": "po-1234",
+          "fees": [
+            {
+              "add_on_code": "setup_fee",
+              "units": 1,
+              "unit_amount_cents": 50000,
+              "description": "Implementation fee with a solution engineer",
+              "from_datetime": "2025-01-01T00:00:00Z",
+              "to_datetime": "2025-12-31T23:59:59Z"
+            },
+            {
+              "add_on_code": "customer_success",
+              "units": 2,
+              "unit_amount_cents": 100000,
+              "description": "One off customer success fee",
+              "from_datetime": "2025-01-01T00:00:00Z",
+              "to_datetime": "2025-12-31T23:59:59Z"
+            }
+          ]
+        }
+      }'
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>
 
