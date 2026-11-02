@@ -168,7 +168,7 @@ What to check:
 
 - **Integrations that store `file_url` or `xml_url`** (in a database, a CRM, an ERP, an email). A stored link stops working after its expiry date. Store the document ID and fetch a fresh link when it is needed, or download the file when you receive it.
 - **Reverse proxies or firewalls that only allow some paths on the API host.** Allow `/documents/` on `LAGO_API_URL`. With local disk storage, the download is then redirected to `/rails/active_storage/...` on the same host, so keep that path allowed too.
-- **`LAGO_LEGACY_DOCUMENT_URLS_EXPIRE_AT`**, only if you want the old links to stop working. The value is read when the API starts. A value that is not a valid date (for example `2027-01-31` or `2027-01-31T00:00:00Z`, read as UTC) stops the API from starting.
+- **`LAGO_LEGACY_DOCUMENT_URLS_EXPIRE_AT`**, only if you want the old links to stop working. The value is a date such as `2027-01-31` or `2027-01-31T00:00:00Z` (read as UTC), read when the API starts. A value that is not a valid date stops the API from starting.
 
 ## Login limits behind a reverse proxy
 
@@ -192,7 +192,7 @@ The GraphQL API no longer describes its schema (`__schema`, `__type` queries) in
 
 An event with a `timestamp` before 1970 or from the year 2300 now returns a `422` with the `value_is_out_of_range` code on `timestamp` (one error per event in a batch).
 
-Two optional variables reject events too far in the past or the future, for example a timestamp sent in milliseconds instead of seconds. Both are off when not set, and are read when the API starts.
+Two optional variables, `LAGO_EVENTS_MAX_PAST_DAYS` and `LAGO_EVENTS_MAX_FUTURE_HOURS`, reject events too far in the past or the future, for example a timestamp sent in milliseconds instead of seconds. Both are off when not set, and are read when the API starts.
 
 ## The gRPC token endpoint was removed
 
