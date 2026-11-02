@@ -76,6 +76,30 @@ You must manually specify the amount to authorize, as the final amount (includin
 }
 ```
 
+The `authorization` object sits next to `subscription`, not inside it:
+
+<CodeGroup>
+```bash Create a subscription with pre-authorization
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+  "authorization": {
+    "amount_cents": 5000,
+    "amount_currency": "EUR"
+  },
+  "subscription": {
+    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+    "plan_code": "premium",
+    "external_id": "my_sub_12345789"
+  }
+}'
+```
+</CodeGroup>
+
 ### Success response
 
 The response contains an `authorization` object describing the Stripe Payment Intent, alongside the created subscription.
