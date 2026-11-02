@@ -1,7 +1,6 @@
 ---
 title: "Assign a plan to a customer"
-description: "A subscription is created when a plan is assigned to a customer. 
-    You can assign a plan to a customer at any time (i.e. when the customer record is created or later on)."
+description: "A subscription is created when you assign a plan to a customer. You can do this at any time, when you create the customer or later on."
 ---
 
 <Tabs>
@@ -43,7 +42,7 @@ description: "A subscription is created when a plan is assigned to a customer.
   </Tab>
 </Tabs>
 
-When a subscription is active, Lago will automatically generate invoices for the customer according to the [plan model](/guide/plans/plan-model). It will also start monitoring the customer's consumption, which means that you can start pushing [events](/guide/events/ingesting-usage) related to this subscription.
+When a subscription is active, Lago generates invoices for the customer according to the [plan model](/guide/plans/plan-model). It also starts monitoring the customer's consumption, so you can start pushing [events](/guide/events/ingesting-usage) related to this subscription.
 
 <Info>
 The subscription date displayed in the app is based on the organization's timezone.
@@ -94,9 +93,9 @@ By default, the subscription starts the day it is created. However, you can deci
 <Tabs>
   <Tab title="Start date in the past">
     If the start date of the subscription is in the past, the subscription is considered active.
-    
+
     <Info>
-    Lago will not generate any invoices for past periods already completed.
+    Lago does not generate invoices for past periods that are already completed.
     </Info>
 
     The invoicing process varies depending on the [plan model](/guide/plans/plan-model) and [billing cycle](#billing-cycles):
@@ -137,7 +136,7 @@ By default, if no subscription end date is specified, **the subscription will au
 
 However, if you define an end date, the subscription will terminate on that date without renewal. This is valuable for contracts with specific termination dates.
 
-Keep in mind, 45 days and 15 days before the subscription ends, a webhook alert, called `subscription.termination_alert`, will remind you. You then have two choices:
+45 days and 15 days before the subscription ends, Lago sends a `subscription.termination_alert` webhook to remind you. You then have two choices:
 1. Allow the subscription to continue until the end date and finalize it; or
 2. Adjust the subscription end date if the contract has been renegotiated.
 
@@ -184,15 +183,15 @@ Keep in mind, 45 days and 15 days before the subscription ends, a webhook alert,
 </Tabs>
 
 ## Multiple plans
-You may create several subscriptions for a customer by assigning them multiple plans. This can be particularly useful if your application allows customers to create different projects or workspaces (e.g. Free plan for Workspace 1, Free plan for Workspace 2, Premium plan for Workspace 3, etc.).
+You can create several subscriptions for a customer by assigning them multiple plans. This can be particularly useful if your application allows customers to create different projects or workspaces (e.g. Free plan for Workspace 1, Free plan for Workspace 2, Premium plan for Workspace 3, etc.).
 
 <Warning>
 When assigning multiple plans to a customer, you must specify the `external_subscription_id` for each event or create [batch events](/api-reference/events/batch).
 </Warning>
 
-It is possible to subscribe a customer to multiple plans using different billing cycles (e.g. a subscription based on calendar dates and another based on the anniversary date).
+You can subscribe a customer to multiple plans using different billing cycles, for example one based on calendar dates and another based on the anniversary date.
 
-We recommend that you give each subscription a name when assigning multiple plans to a customer. The subscription names will make it easier to differentiate each plan and will also be displayed on the invoices.
+Give each subscription a name when you assign multiple plans to a customer. The names make each plan easier to tell apart, and they appear on the invoices.
 
 ## Invoice consolidation
 When a customer is subscribed to multiple plans, Lago can either group all subscription charges into a **single consolidated invoice** or issue a **separate invoice for each subscription**.
@@ -254,14 +253,14 @@ You keep one plan structure for every customer, and adjust prices per customer w
 
 <Tabs>
   <Tab title="Dashboard">
-  To perform plan overrides, assign a plan to a customer and you’ll be able to make modifications to the following elements:
+  To override a plan, assign it to a customer. You can then change:
 
   1. Subscription invoice display name
   2. Subscription fee
   3. Plan currency
   4. Plan trial period
   5. Plan taxes
-  6. Charges properties (please note that the charge model cannot be modified)
+  6. Charge properties (the charge model cannot be changed)
   7. Filters and their properties (if applicable)
   8. Charge minimum spending
   9. Charge taxes
