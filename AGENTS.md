@@ -16,6 +16,7 @@ Use this repository to improve Lago's public developer documentation. Preserve t
 - Keep API keys and customer data out of examples.
 - Explain approval and validation boundaries for financial or destructive actions.
 - Keep agent-discovery pages machine-readable without adding them to visible navigation unless requested.
+- Write headings in sentence case ("Migration steps", not "Migration Steps"). Product names and code keep their own case.
 
 ## Validation
 

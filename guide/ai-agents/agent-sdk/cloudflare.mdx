@@ -3,7 +3,7 @@ title: "Cloudflare AI Gateway"
 description: "Bill LLM usage routed through Cloudflare AI Gateway. Live instrumentation on the wrapped client, or backfill from the gateway's own Logs API."
 ---
 
-Cloudflare AI Gateway is a proxy, not a provider. It sits in front of OpenAI, Anthropic, Mistral, Gemini, and Cloudflare's own Workers AI, and it caches, logs, and meters everything passing through.
+Cloudflare AI Gateway is a proxy, not a provider. It sits in front of OpenAI, Anthropic, Mistral, Gemini, TypeSafe's Jev, and Cloudflare's own Workers AI, and it caches, logs, and meters everything passing through.
 
 That changes two things for billing. Some responses never reach the provider at all, so they cost nothing and must not be billed. And Cloudflare already meters the real cost of every call it forwards, which is more accurate than any price a third party can compute.
 
@@ -118,6 +118,18 @@ Workers AI is Cloudflare's own inference, reached through the gateway's OpenAI-c
 An OpenAI-shaped client can point at real OpenAI or at Workers AI, and the client type alone cannot tell you which. The SDK resolves it from the model string the response reports: an id starting with `@cf/` is Workers AI's naming convention and never a real OpenAI model, so those events are stamped `provider: "workers-ai"` and priced from Cloudflare's catalog rather than OpenRouter.
 
 That distinction is worth real money, not just correctness. Cloudflare's catalog is the rate the gateway actually bills at. OpenRouter lists other hosts' prices for the same open-weight models, and on a live check its figure for one model came out around 3.5x lower than what Cloudflare charged. Pricing Workers AI off OpenRouter would not be a naming mismatch, it would be the wrong number.
+
+### Jev routes through the gateway like any other model
+
+Cloudflare added TypeSafe's [Jev](https://developers.cloudflare.com/ai/models/typesafe/jev/) to its catalog in September 2026, so gateway traffic can reach it without any change on the Lago side. Nothing about the integration is Jev-specific: it is a model behind the proxy, and the gateway meters it the same way it meters everything else.
+
+What makes it worth calling out is the price. Jev charges for input and nothing for output, at rates well below conversational LLMs, because its responses are short structured decisions rather than prose. Moving a classification, routing, or scoring step off a frontier model and onto something in that class changes unit economics sharply — and because your billing reads the model that actually served each request, your customer pricing does not have to be rewritten to follow.
+
+That is the general case. A gateway means the model behind a request is a deployment decision, not a billing decision.
+
+<Warning>
+  **Verify the resolved model id before trusting the rollup.** Workers AI detection keys off an id starting with `@cf/`. Cloudflare publishes Jev under the slug `typesafe/jev`, and a resolved id that does not carry the `@cf/` prefix will not be stamped `provider: "workers-ai"` — it falls through to token events rather than being priced from Cloudflare's catalog. That is a price miss, not a wrong charge, but check one log entry against the counter in Lago before relying on it.
+</Warning>
 
 <Note>
   **Workers AI pricing needs credentials.** OpenRouter and the AWS price list are public. Cloudflare's model catalog is not, so price mode needs a Cloudflare account id and an API token:

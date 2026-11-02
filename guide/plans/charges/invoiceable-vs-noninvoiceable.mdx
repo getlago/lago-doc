@@ -18,10 +18,10 @@ similar scenarios.
 
 By setting the invoiceable parameter to false, a fee is created by default, and a webhook `fee.created` is sent immediately upon any changes in usage without generating an invoice. However, you can configure the charge invoicing strategy via `regroup_paid_fees`:
 
-1. `null`: Fees generated never appear on invoices (default behaviour).
+1. `null`: Fees generated never appear on invoices (default behavior).
 2. `invoice`: Groups all paid fees into one invoice at the end of the billing period.
 
-Please note that if `invoice`, all fees generated with a `payment_status` different from `succeeded` won’t appear on invoice generated at the end of the billing period. They will appear on next ones if you manually edit their `payment_status` to `succeeded`.
+With `invoice`, fees whose `payment_status` is not `succeeded` do not appear on the invoice generated at the end of the billing period. They appear on a later invoice if you set their `payment_status` to `succeeded`.
 
 The invoice generated consolidates paid fees, is marked as paid, and will not be emailed to your end customer if the email feature is activated.
 
@@ -34,12 +34,12 @@ The invoice generated consolidates paid fees, is marked as paid, and will not be
     5. Select the option that best suits your needs from the three available choices.
 
       <Frame  caption="Configure the charge invoicing strategy">
-        <img src="/guide/plans/images/instant-charge.png"/>
+        <img src="/guide/plans/images/instant-charge.png" alt="Invoicing strategy options for a charge billed in advance"/>
       </Frame>
 
   </Tab>
   <Tab title="API">
-    Use the `invoiceable : false` for a charge paid in advance:
+    Set `invoiceable` to `false` on a charge paid in advance:
     
     <CodeGroup>
     ```bash Define a charge as invoiceable or not {23}
@@ -67,7 +67,6 @@ The invoice generated consolidates paid fees, is marked as paid, and will not be
             "pay_in_advance": true,
             "invoiceable": false,
             "regroup_paid_fees": "invoice",
-            "min_amount_cents": 100,
             "properties": {
               "rate": "0.5",
               "fixed_amount": "1",

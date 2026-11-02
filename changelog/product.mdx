@@ -7,6 +7,68 @@ rss: "true"
 Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024) · [2023](/changelog/product-2023) · [2022](/changelog/product-2022)
 
 <Update
+  label="October 2026"
+  tags={["Self-hosted", "API"]}
+  tags={["Usage & metering", "Wallets & credits", "Self-hosted"]}
+  rss={{
+    title: "October 2026 - Alert resolution and Lago Helm chart 2.0",
+    description: "alert.resolved tells you when usage or a wallet balance is back under a threshold. Plus the Helm chart Lago runs in production, published."
+  }}
+>
+  ## API lists return at most 200 records per page
+
+  Until now, `/api/v1` list endpoints accepted any `per_page`.
+
+  **List requests now accept up to 200 records per page.** The default stays at 100.
+
+  - **Above the limit, an error.** A `per_page` above 200 returns a `422` with `value_is_out_of_range` on `per_page`. Nothing is cut off silently.
+  - **Below it, no change.** Requests without `per_page`, or with 200 or less, behave as before. A value such as `0` still falls back to the default.
+  - **More records, more pages.** To read a full list, request the next page until `meta.next_page` is `null`.
+  - **Self-hosted limit.** `LAGO_API_PAGINATION_MAX_PAGE_SIZE` sets the limit for your instance. Raise it before upgrading if your integrations send larger pages today.
+
+  [Learn more](/api-reference/pagination)
+
+  <Info>
+  **Check your integrations.** A script or connector that sends `per_page=1000` now gets a `422` instead of a long list. Lower the value and read the next pages.
+  </Info>
+  ## Alert resolution: know when it is safe to unblock
+
+  <Frame>
+    <img src="/changelog/images/20261013-alert-resolution.webp" loading="lazy" />
+  </Frame>
+
+  Lago alerts only announced the breach. A customer hit a usage cap or emptied a wallet, your system blocked them, and then nothing. Unblocking meant polling usage on a timer, or a customer who had just paid waiting on support.
+
+  **Alert resolution** sends `alert.resolved` when the value is back on the safe side of a threshold.
+
+  - **Opt in per threshold.** Set **Notify when resolved** to True on the `hard` cap, in the Dashboard or with `notify_on`, and leave the `warn` nudge alone. Existing thresholds stay off.
+  - **One event per state change.** A threshold in alarm cannot trigger again until it resolves, so usage hovering over the line never floods your endpoint.
+  - **Safe to automate.** `fully_resolved` is true only when no threshold is left in alarm. `reason` says whether the value recovered or you edited the threshold.
+  - **Usage and wallets.** Works on every usage and credits consumption alert type. A top-up on an empty wallet sends `alert.resolved` within seconds.
+
+  A renewal is not a recovery: usage restarting at zero sends nothing. Recurring thresholds cannot opt in, and deleting an alert in alarm sends no resolution.
+
+  [Learn more](/guide/alerts/alert-resolution)
+
+  ## Helm chart 2.0: scale each Lago component on its own
+
+  The 1.x Helm chart was a monolith. One Sidekiq worker ran every queue, so a slow billing run could starve webhook delivery.
+
+  **Helm chart 2.0** is the chart Lago runs in its own production clusters, now published. It is an umbrella over independent subcharts.
+
+  - **One Deployment per queue.** Billing, events, webhook, PDF, clock, alerts, wallets and analytics each toggle on with their own replicas and resources.
+  - **Separate subcharts.** API, frontend, PDF rendering and streaming ingestion are configured and scaled independently. Shared config lives once, under `global`.
+  - **Two install sources.** The Helm repo at `charts.getlago.com`, or OCI artifacts at `oci://ghcr.io/getlago/helm-charts/lago`.
+  - **1.x keeps working.** It is frozen at `1.28.0` and still gets fixes on the `v1` branch. Pin the version and nothing changes.
+
+  [Learn more](/guide/lago-self-hosted/kubernetes)
+
+  <Info>
+  **New install, not an upgrade.** The values schema and resource names changed, so `helm upgrade` from 1.x migrates nothing. Install 2.0 as a new release against your existing database, check it, then remove the old release. Your data lives in Postgres, not in the chart.
+  </Info>
+</Update>
+
+<Update
   label="September 2026"
   tags={["API", "AI agents"]}
   rss={{
@@ -141,7 +203,7 @@ Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024
   **Beta.** Available on request. **[Contact us](mailto:hello@getlago.com)** for access. It sends email and re-attempts real charges, so start with a dry run.
   </Info>
 
-  ## Revenue Recognition: from what you billed to what you earned <Badge color="orange" shape="pill">Alpha</Badge>
+  ## Revenue Recognition: from what you billed to what you earned <Badge color="orange" shape="pill">Private beta</Badge>
 
   <Frame>
     <img src="/changelog/images/20260813-revrec.webp" alt="Lago revenue recognition report showing recognized and deferred revenue by period." loading="eager" fetchpriority="high" />
@@ -167,7 +229,7 @@ Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024
   [Learn more](/guide/revenue-recognition/overview)
 
   <Note>
-  **Alpha.** Released gradually, account by account, so the figures get validated against real ledgers and real closes first. Reports, exports, and edge-case treatment can still change between releases, so reconcile the output before you rely on it for a statutory close.
+  **Private beta.** Released gradually, account by account, so the figures get validated against real ledgers and real closes first. Reports, exports, and edge-case treatment can still change between releases, so reconcile the output before you rely on it for a statutory close.
   </Note>
 
   ## Databricks AI Gateway: hosted models in tokens, BYOK in dollars

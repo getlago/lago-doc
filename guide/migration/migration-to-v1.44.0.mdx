@@ -10,7 +10,7 @@ We're writing to inform you about important changes in Lago v1.44.0 that will op
 
 ## Adding `last_received_event_on` on subscriptions
 
-A new `last_received_event_on` column is added to the `subscriptions` table. This field tracks the last date an event was received for each subscription, allowing Lago to skip idle subscriptions during daily usage computation — significantly reducing unnecessary processing.
+A new `last_received_event_on` column is added to the `subscriptions` table. This field tracks the last date an event was received for each subscription, allowing Lago to skip idle subscriptions during daily usage computation, which significantly reduces unnecessary processing.
 
 The backfill task will:
 - Populate `last_received_event_on` for all active subscriptions where it is currently NULL
@@ -19,7 +19,7 @@ The backfill task will:
 
 ## Fix for v1.43.0 upgrade script
 
-The `upgrade:perform_required_jobs` task has been fixed to correctly track job completion status. In v1.43.0, the script could appear to hang during the "Checking status" step — this is now resolved and the task will properly complete once all background jobs finish.
+The `upgrade:perform_required_jobs` task has been fixed to correctly track job completion status. In v1.43.0, the script could appear to hang during the "Checking status" step. This is now resolved, and the task completes once all background jobs finish.
 
 # Why are we doing this?
 
@@ -32,7 +32,7 @@ If you're using a version below `v1.20.0`, please first follow the migration ste
 Only after completing those should you proceed to v1.44.0.
 </Warning>
 
-## Migration Steps
+## Migration steps
 
 1. Install Lago v1.44.0
 2. Open a shell (bash) on your API server
@@ -73,7 +73,7 @@ bundle exec rails upgrade:perform_required_jobs
   If you already ran this task on v1.43.0 and it appeared to hang, the jobs were still enqueued and processed. Running it again on v1.44.0 will now correctly show completion.
   </Note>
 
-# Get Involved
+# Get involved
 
 If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
 

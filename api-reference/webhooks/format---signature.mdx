@@ -1,14 +1,15 @@
 ---
-title: "Format & Signature"
+title: "Format and signature"
 description:
   "Webhooks are HTTP notifications sent from Lago to your application."
 ---
 
-The messages are sent as a `POST` to the URL defined in the settings of your
-Lago workspace.
+The messages are sent as a `POST` request to every webhook endpoint defined in
+the settings of your Lago organization.
 
-If you return an error (other than a 2xx's HTTP response) or if there is a network issue, 
-the webhook will be sent again. Lago will try to send the webhook 3 times.
+If you return an error (any response other than a 2xx) or if there is a network
+issue, the message is sent again. Lago attempts each message 3 times, waiting
+longer between each attempt.
 
 ## Message format
 
@@ -17,30 +18,34 @@ the webhook will be sent again. Lago will try to send the webhook 3 times.
 ```json
 {
   "webhook_type": "__TYPE__",
-  "object_type": "OBJECT_TYPE",
-  "__OBJECT__": {}
+  "object_type": "__OBJECT_TYPE__",
+  "organization_id": "__ORGANIZATION_ID__",
+  "__OBJECT_TYPE__": {}
 }
 ```
 
-## Unique Key
+The `object_type` field names the key that carries the object. For example, an
+`invoice.created` message has `"object_type": "invoice"` and an `invoice` key.
 
-Lago sends an idempotency key (unique identifier) in the HTTP headers named `X-Lago-Unique-Key`. This key can be used
-to ensure you process a webhook only once.
+## Unique key
+
+Lago sends an idempotency key (a unique identifier) in the `X-Lago-Unique-Key` HTTP header. Use it to
+process a message only once.
 
 
 ## Signature
 
-Along with the payload the message contains both `X-Lago-Signature` and `X-Lago-Signature-Algorithm` HTTP header.
+Along with the payload, the message carries the `X-Lago-Signature` and `X-Lago-Signature-Algorithm` HTTP headers.
 
-It is used to ensure the message is coming from Lago and that the message has not been altered.
+They ensure the message comes from Lago and has not been altered.
 
-To verify the signature, you must decode the signature and compare the result with the body of the webhook.
+To verify the signature, decode it and compare the result with the body of the webhook.
 
-You can choose between two different signature algorithms during webhook endpoint creation, `hmac` or `jwt`.
-Please note that `jwt` is our original signature and is used by default.
+You choose between two signature algorithms when you create a webhook endpoint, `hmac` or `jwt`. The
+default is `jwt`.
 
 
-### JWT Signature
+### JWT signature
 
 #### 1\. Retrieve the public key
 
@@ -54,17 +59,23 @@ webhooks_public_key = client.webhooks().public_key()
 ```
 
 ```js Node.js
-import Client from "lago-nodejs-client";
+const apiKey = "__YOUR_API_KEY__";
 
-let client = new Client("__YOUR_API_KEY__");
-let webhooksPublicKey = client.webhookPublicKey();
+const response = await fetch(
+  "https://api.getlago.com/api/v1/webhooks/json_public_key",
+  { headers: { Authorization: `Bearer ${apiKey}` } }
+);
+
+const { webhook } = await response.json();
+const webhooksPublicKey = webhook.public_key;
 ```
 
 ```ruby Ruby
+require 'json'
 require 'net/http'
 
 api_key = "__YOUR_API_KEY__"
-uri = URI('https://api.getlago.com/api/v1/webhooks/public_key')
+uri = URI('https://api.getlago.com/api/v1/webhooks/json_public_key')
 
 http = Net::HTTP.new(uri.host, uri.port)
 http.use_ssl = true
@@ -76,7 +87,7 @@ response = http.send_request(
   { 'Authorization' => "Bearer #{api_key}" }
 )
 
-webhooks_public_key = response.body
+webhooks_public_key = JSON.parse(response.body).dig('webhook', 'public_key')
 ```
 
 </CodeGroup>
@@ -141,7 +152,7 @@ decoded_signature['data'] == request.body
 
 </CodeGroup>
 
-### HMAC Signature
+### HMAC signature
 
 #### Decode and validate the signature
 

@@ -18,7 +18,7 @@ The latest aggregation type selects the most recent value of a specified event p
     3. Define a name, a code and an optional description;
     4. Select **"latest"** as the aggregation type;
     5. Define the property to aggregate;
-    6. Apply dimension groups if any; and
+    6. Apply filters if any; and
     7. Click **"Add billable metric"**.
 
 <Info>
@@ -40,8 +40,7 @@ This billable metric is `metered` only, meaning it cannot be recurring, and the 
             "code": "api_requests",
             "description": "Number of API requests.",
             "aggregation_type": "latest_agg",
-            "field_name": "total_requests",
-            "group": {}
+            "field_name": "total_requests"
         }
     }'
     ```
@@ -56,7 +55,7 @@ Lago calculates the `LAST_VALUE(events.properties.property_name) OVER ([PARTITIO
 //Event received #1
 {
     "transaction_id": "transaction_1",
-    "external_customer_id": "1",
+    "external_subscription_id": "sub_1234",
     "timestamp": "2022-03-16T00:00:00Z",
     "code": "api_requests",
     "properties": {
@@ -67,7 +66,7 @@ Lago calculates the `LAST_VALUE(events.properties.property_name) OVER ([PARTITIO
 //Event received #2
 {
     "transaction_id": "transaction_2",
-    "external_customer_id": "1",
+    "external_subscription_id": "sub_1234",
     "timestamp": "2022-03-17T00:00:00Z",
     "code": "api_requests",
     "properties": {

@@ -6,9 +6,12 @@ description: "Lago aggregates your events in real time. You can add rounding rul
 ## Rounding options
 When creating or editing a billable metric, you have the option to apply rounding to the final aggregated value. By default, no rounding is applied. If you choose to enable rounding, you can select from the following options:
 
-- **Ceil**: Rounds up to the nearest integer;
-- **Floor**: Rounds down to the nearest integer; or
-- **Round**: Rounds to the nearest integer based on standard rounding rules.
+- `ceil`: Rounds up to the nearest integer;
+- `floor`: Rounds down to the nearest integer; or
+- `round`: Rounds to the nearest integer based on standard rounding rules.
+
+Over the API, the rounding option is set with `rounding_function`, and the
+precision described below with `rounding_precision`.
 
 ## Precision types
 ### No precision
@@ -25,3 +28,36 @@ Adding a positive precision rounds to a specific number of decimal places.
 Adding a negative precision rounds to a specific position to the left of the decimal.
 
 👉 *Example: 123.4567 rounded with precision -1 → `120` (rounds to the nearest ten).*
+
+## Apply rounding
+
+<Tabs>
+  <Tab title="Dashboard">
+    On the configuration page of your billable metric, enable rounding, select
+    `ceil`, `floor` or `round`, and set an optional precision.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Round the aggregated value to 2 decimal places {14,15}
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v1/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billable_metric": {
+          "name": "Storage",
+          "code": "storage",
+          "description": "Number of GB used",
+          "aggregation_type": "sum_agg",
+          "field_name": "gb",
+          "rounding_function": "round",
+          "rounding_precision": 2,
+          "recurring": false
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>

@@ -7,6 +7,8 @@ Add-ons represent non-recurring fixed charges. Once created, they can be:
 - Added to a plan as a [fixed charge](/guide/plans/charges/fixed-charges), or
 - Applied directly to a customer through a [one-off invoice](/guide/one-off-invoices/create-one-off-invoices)
 
+An add-on can carry its own [taxes](/guide/invoicing/invoicing-settings/taxes). When it does, these taxes apply to the add-on fee instead of the taxes of the customer or of the billing entity.
+
 <Tabs>
   <Tab title="Dashboard">
     To create an add-on from the dashboard:
@@ -17,7 +19,7 @@ Add-ons represent non-recurring fixed charges. Once created, they can be:
       5. Click **Add add-on** to confirm
   </Tab>
   <Tab title="API">
-  ```bash Create a Setup Fee add-on 
+  ```bash Create a setup fee add-on
   LAGO_URL="https://api.getlago.com"
   API_KEY="__YOUR_API_KEY__"
 
@@ -27,10 +29,11 @@ Add-ons represent non-recurring fixed charges. Once created, they can be:
     --data-raw '{
       "add_on": {
         "name": "Setup Fee",
-        "code": "setup",
+        "code": "setup_fee",
         "amount_cents": 50000,
         "amount_currency": "USD",
-        "description": "Charge a setup fee for new customers."
+        "description": "Charge a setup fee for new customers.",
+        "tax_codes": ["french_standard_vat"]
       }
     }'
   ```

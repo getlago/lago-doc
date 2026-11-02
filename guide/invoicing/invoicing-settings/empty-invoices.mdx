@@ -8,8 +8,10 @@ By default, Lago finalizes all invoices, including those with a total amount of 
 To support this, you can configure Lago to skip finalizing invoices that are considered **empty**.
 
 ### Empty invoices definition
-Lago considers an invoice empty if it contains no line items before applying coupons or discounts.
-If a discount brings the total amount to zero but the invoice originally contained line items, it will still be finalized, as it is not considered empty under this definition.
+Lago considers an invoice empty when the total amount of its fees is zero, before coupons, credits and discounts are applied.
+If a discount brings the total amount to zero but the fees themselves are not zero, the invoice is still finalized, because it is not empty under this definition.
+
+An empty invoice that Lago does not finalize moves to the `closed` status instead. It is not visible in the invoice list and it is not sent to the customer.
 
 ### Billing entity level
 The setting `finalize_zero_amount_invoice` is enabled (`true`) by default.
@@ -29,8 +31,9 @@ You can disable it at the billing entity level under Invoice settings. When set 
     ```bash Update the billing entity's settings
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
+    BILLING_ENTITY_CODE="acme_corp"
 
-    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/{code}" \
+    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/$BILLING_ENTITY_CODE" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{

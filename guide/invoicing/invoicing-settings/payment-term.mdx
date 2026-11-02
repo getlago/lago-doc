@@ -18,7 +18,7 @@ Lago offers six payment-term types. The examples below all use an invoice dated 
 | **End of month** | Use the last day of the month in which the invoice is dated. | End of April | **April 30, 2026** |
 | **Net days after end of month** | Go to the end of the invoice month, then add the selected number of days. | 30 days after April 30 | **May 30, 2026** |
 | **Days end of month** | Add the selected number of days to the issuing date, then go to the end of that month. | Add 30 days to reach May 10, then go to month-end | **May 31, 2026** |
-| **Month following invoice (MFI)** | Choose a day of the month and how many months after the invoice month to use. | Day 15, month offset 1 (the following month) | **May 15, 2026** |
+| **Day of month** | Choose a day of the month and how many months after the invoice month to use. | Day 15, month offset 1 (the following month) | **May 15, 2026** |
 
 <Tip>
   **The two terms that combine days and month-end use a different order.** For an invoice dated April 10, adding 30 days **after month-end** gives May 30. Adding 30 days **before moving to month-end** gives May 31. Check the example due date in the payment-term form before saving.
@@ -32,9 +32,14 @@ For example, an invoice dated April 10 with **Net 15** is due on **April 25**. W
 
 Days are calendar days, including weekends. For example, Net 30 on an invoice dated January 31, 2026 gives a due date of **March 2, 2026**.
 
+You can enter from 0 to 365 days. With 0 days, these terms match a simpler one, and the invoice shows the simpler label:
+
+- **Net 0** is shown as **Due on receipt**.
+- **0 net days after end of month** and **0 days end of month** are shown as **End of month**.
+
 ### Choose a day of the month
 
-For **Month following invoice (MFI)**, set **Day of month** and **Month offset**. The offset counts months from the invoice month; it defaults to **1**, meaning the following month.
+For **Day of month**, set **Day of month** and **Month offset**. The offset counts months from the invoice month; it defaults to **1**, meaning the following month.
 
 | Setting | Example |
 | --- | --- |
@@ -75,18 +80,19 @@ Use this setting for the standard terms offered by your billing entity, such as 
     5. Review the example due date, then save your changes.
   </Tab>
   <Tab title="API">
-    This example sets **Net 15 days** using the day-count field `net_payment_term`. An invoice dated April 10 is due April 25. This field expresses Net terms; it does not express the month-based options above. See [Update a billing entity](/api-reference/billing-entities/update) for the API contract.
+    This example sets **End of month** on a billing entity with the `payment_term` object. An invoice dated April 10 is due April 30. See [Set payment terms from the API](#set-payment-terms-from-the-api) for every term type.
 
-    ```bash Set Net 15 days on a billing entity
+    ```bash Set End of month on a billing entity
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
+    BILLING_ENTITY_CODE="acme_corp"
 
-    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/{code}" \
+    curl --location --request PUT "$LAGO_URL/api/v1/billing_entities/$BILLING_ENTITY_CODE" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
         "billing_entity": {
-          "net_payment_term": 15
+          "payment_term": { "term_type": "end_of_month" }
         }
       }'
     ```
@@ -110,9 +116,9 @@ Use a customer setting when you have agreed different terms with that customer. 
     To use the billing entity's default again, choose the inheritance option in the term selector. The customer's settings display the inherited term.
   </Tab>
   <Tab title="API">
-    This example sets **Net 15 days** for a customer. An invoice dated April 10 is due April 25. The `net_payment_term` field expresses a number of days, not a month-based term. See [Update a customer](/api-reference/customers/update) for the API contract.
+    This example sets **Net 45 days** for a customer. An invoice dated April 10 is due May 25. Send `"payment_term": null` to clear it and inherit the billing entity's term again.
 
-    ```bash Set Net 15 days on a customer
+    ```bash Set Net 45 days on a customer
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
@@ -122,7 +128,7 @@ Use a customer setting when you have agreed different terms with that customer. 
       --data-raw '{
         "customer": {
           "external_id": "hooli_1234",
-          "net_payment_term": 15
+          "payment_term": { "term_type": "net", "days": 45 }
         }
       }'
     ```
@@ -131,7 +137,7 @@ Use a customer setting when you have agreed different terms with that customer. 
 
 ## Set terms for a subscription, wallet, one-off invoice, or quote item
 
-Choose a term in the item's payment settings, or keep the inherited term. Each item can use any of the six [payment-term types](#choose-a-payment-term).
+Choose a term when you create or edit the item, or keep the inherited term. On subscriptions, wallets, and one-off invoices, the term is in **Invoicing settings**. Each item can use any of the six [payment-term types](#choose-a-payment-term).
 
 | Where you set the term | What it applies to | Example |
 | --- | --- | --- |
@@ -142,7 +148,34 @@ Choose a term in the item's payment settings, or keep the inherited term. Each i
 
 Payment terms on a quote belong to its individual billing items. A subscription and a wallet in the same quote can have different terms.
 
-Subscriptions with different effective payment terms are billed on separate invoices. See [invoice consolidation](/guide/subscriptions/assign-plan#invoice-consolidation).
+Subscriptions with different effective payment terms are billed on separate invoices. Terms that always give the same due date, such as Net 0 and Due on receipt, count as the same term. See [invoice consolidation](/guide/subscriptions/assign-plan#invoice-consolidation).
+
+## Set payment terms from the API
+
+Send a `payment_term` object on billing entities, customers, subscriptions, wallets, and one-off invoices. `term_type` sets the rule, and each type accepts only its own fields.
+
+| `term_type` | Fields | Example | Due date for an April 10, 2026 invoice |
+| --- | --- | --- | --- |
+| `due_on_receipt` | None | `{ "term_type": "due_on_receipt" }` | April 10 |
+| `net` | `days` (0 to 365) | `{ "term_type": "net", "days": 30 }` | May 10 |
+| `end_of_month` | None | `{ "term_type": "end_of_month" }` | April 30 |
+| `net_end_of_month` | `days` (0 to 365) | `{ "term_type": "net_end_of_month", "days": 30 }` | May 30 |
+| `days_end_of_month` | `days` (0 to 365) | `{ "term_type": "days_end_of_month", "days": 30 }` | May 31 |
+| `day_of_month` | `day_of_month` (1 to 31), `month_offset` (0 to 12, defaults to 1) | `{ "term_type": "day_of_month", "day_of_month": 15, "month_offset": 1 }` | May 15 |
+
+A missing field, an extra field, or a value out of range returns a `422` validation error. Send `"payment_term": null` to clear a term and inherit from the level above.
+
+Invoices expose the term they were created with in `payment_term`, next to `payment_due_date`.
+
+### Legacy `net_payment_term` field
+
+Billing entities and customers still accept and return the integer `net_payment_term` field. The organization returns it for its default billing entity.
+
+- Sending `net_payment_term: 15` alone sets `{ "term_type": "net", "days": 15 }`.
+- When a request sends both fields, `payment_term` wins.
+- In responses, `net_payment_term` returns the days for `net`, `0` for `due_on_receipt`, and `null` for the four other types. Use `payment_term` to read the full term.
+
+Subscriptions, wallets, and one-off invoices only accept `payment_term`. If you send `net_payment_term` to these endpoints, Lago ignores it and the inherited term applies.
 
 ## Invoice dates and later changes
 
@@ -155,6 +188,8 @@ In this Net 15 example, the issuing date matches finalization on **November 15**
 </Frame>
 
 If you configure the invoice to keep an earlier issuing date, payment terms count from that date instead. See [issuing date preferences](/guide/invoicing/invoicing-settings/issuing_date).
+
+The issuing date follows the customer's timezone, or the billing entity's when the customer has none. For example, an invoice finalized on April 30 at 23:00 UTC for a customer in Pacific/Auckland is dated May 1, so End of month gives May 31.
 
 Lago stores the applicable payment term when it creates an invoice. Changing a customer's, billing entity's, subscription's, or wallet's terms affects **future invoices**. Existing invoices, including drafts, keep the term they were created with.
 

@@ -12,7 +12,7 @@ The SDK wraps a `google-genai` client in place and instruments:
 Gemini is the provider with the widest modality breakdown: audio and image input tokens are reported separately, and Gemini 2.5 surfaces reasoning tokens.
 
 <Note>
-  **Only the unified SDK is supported.** The legacy `google-generativeai` package (`genai.GenerativeModel(...)` in Python, `GoogleGenerativeAI` in JavaScript) has a different surface that cannot be instrumented, so `wrap()` rejects it with a migration message rather than silently wrapping nothing — you will know immediately, not at invoice time.
+  **Only the unified SDK is supported.** The legacy `google-generativeai` package (`genai.GenerativeModel(...)` in Python, `GoogleGenerativeAI` in JavaScript) has a different surface that cannot be instrumented, so `wrap()` rejects it with a migration message rather than silently wrapping nothing. You find out immediately, not at invoice time.
 
   Migrate to `google-genai` / `@google/genai`. See [Google's migration guide](https://ai.google.dev/gemini-api/docs/migrate).
 </Note>
@@ -173,7 +173,7 @@ The wrapper strips `extra_lago` / `lago` before forwarding, so Google's request 
   Reasoning tokens populate automatically on Gemini 2.5. The model reasons internally by default, so `thoughts_token_count` shows up without you enabling anything, and it is money you are already paying Google.
 </Note>
 
-`cache_read`, `audio_input`, and `image_input` are breakdowns inside `input`, not additions to it — Google's docs are explicit that `prompt_token_count` includes cached content. [Bill in tokens](/guide/ai-agents/agent-sdk/billing#subsets-and-additive-fields) shows the metric setup that handles this.
+`cache_read`, `audio_input`, and `image_input` are breakdowns inside `input`, not additions to it. Google's docs are explicit that `prompt_token_count` includes cached content. [Bill in tokens](/guide/ai-agents/agent-sdk/billing#subsets-and-additive-fields) shows the metric setup that handles this.
 
 Unrecognized top-level usage fields land in `CanonicalUsage.extras`, which is how provider drift becomes visible instead of silently dropped.
 

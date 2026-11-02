@@ -1,14 +1,13 @@
 ---
-title: "Tracking & Analytics"
+title: "Tracking and analytics"
 ---
 
 ## Why does Lago need data?
 
-We decided to open-source the billing API we would have dreamt to use. As a
-consequence of building a self hosted product, we are not able to easily collect
-any usage metrics or insights to help us build a better product. This analytics data
-helps us understand crucial behaviors and ship better quality to serve your
-needs.
+We decided to open-source the billing API we would have wanted to use. Because
+Lago is a self-hosted product, we cannot easily collect the usage metrics and
+insights that help us build a better product. This analytics data helps us
+understand how Lago is used and ship better quality to serve your needs.
 
 We decided to track, by default, some basic behaviors and metrics that are
 important to understand the usage of Lago. We have built a minimum required
@@ -31,9 +30,8 @@ As detailed previously, we ask you to keep as much as possible those tracked
 metrics, unless you have a specific reason to opt out. Keeping the metrics
 enabled is the easiest way for Lago to get feedback based on product usage.
 
-In the case you need to remove it, we've created a very easy process to opt out.
-In the environment variables, by passing the field `LAGO_DISABLE_SEGMENT` to
-`true`, you prevent the entire tracking logic from running in your application.
+If you need to opt out, set the `LAGO_DISABLE_SEGMENT` environment variable to
+`true`. This prevents the entire tracking logic from running in your application.
 
 ## Detail of events collected by Lago
 
@@ -51,6 +49,10 @@ registration to the first invoice generated.
 - `invoice_created`: when a new invoice is emitted for a specific customer
 - `payment_status_changed`: when the payment status of an invoice changes
 - `credit_note_issued`: when a new credit note is issued for a customer
+- `refund_status_changed`: when the refund status of a credit note changes
+- `billing_entity_created`: when a new billing entity is created
+- `webhook_endpoint_created`: when a webhook endpoint is created
+- `webhook_endpoint_deleted`: when a webhook endpoint is deleted
 - `billable_metric_deleted`: when a billable metric is deleted
 - `plan_deleted`: when a plan is deleted
 - `customer_deleted`: when a customer account is deleted
@@ -70,7 +72,7 @@ won't be tracked anymore.
 
 ### billable_metric_created
 
-```javascript
+```ruby
 Analytics.track(
   user_id: 'membership/f37a6b2e-1e79-4710-b0e2-9e451b532461',
   event: 'billable_metric_created',
@@ -89,7 +91,7 @@ Analytics.track(
 
 ### customer_created
 
-```javascript
+```ruby
 Analytics.track(
   user_id: 'membership/4ad5b91f-2a42-4a58-9786-6c07fa03a3d4',
   event: 'customer_created',
@@ -106,7 +108,7 @@ Analytics.track(
 
 ### invoice_created
 
-```javascript
+```ruby
 Analytics.track(
   user_id: 'membership/f37a6b2e-1e79-4710-b0e2-9e451b532461',
   event: 'invoice_created',

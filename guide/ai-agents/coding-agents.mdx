@@ -1,0 +1,178 @@
+---
+title: "Build Lago billing with a coding agent"
+sidebarTitle: "Build with a coding agent"
+description: "Use Claude Code or Codex to build and verify one Lago billing flow in your application."
+---
+
+Build one billable flow from your application and prove the amount. Your first check is complete when Lago's usage quantity and charge match your own calculation, and retrying the same event changes neither. You can do the repository work and local tests without a Lago account. [Install the Lago plugin in Claude Code or Codex](/guide/ai-agents/for-agents#pick-your-agent) before starting.
+
+## 1. Map billing in your application
+
+Tell your agent your pricing rules. Have it inspect the repository and identify:
+
+- Who pays, what action creates usage, and which saved record proves it happened.
+- Which system owns subscriptions, calculates charges, issues invoices, and collects payments today.
+- The customer, subscription, and usage IDs that link that action to its bill.
+- One example bill and any risk of charging a customer twice.
+
+Agree on the price and which existing customers, if any, will move to Lago before editing code.
+
+**Prompt. Replace `[pricing rules]` with your billing period, currency, base fee, included usage, and overage rate:**
+
+```text
+Our pricing is [pricing rules].
+
+Inspect this repository. Show:
+- Who pays, the action, and its saved record and ID.
+- Who owns subscriptions, invoices, and payments.
+- One example bill calculated from source usage.
+- Evidence, assumptions, and duplicate-charge risks.
+Do not edit code or contact Lago.
+```
+
+## 2. Build and test locally
+
+Once you agree on the billing plan, have your agent:
+
+- Map the app's customer and subscription IDs to Lago and add server-side event delivery through a [Lago SDK or REST API](/api-reference/intro).
+- Test the example bill and a retry offline, without contacting Lago.
+- Keep current billing in place unless you agreed to change it. Review the diff and tests before any live write.
+
+On retries, reuse the saved record's original `transaction_id` **and** `timestamp`. Both matter for [duplicate protection](/guide/events/ingesting-usage#idempotency-and-deduplication) on ClickHouse-based event pipelines.
+
+**Prompt. Replace `[approved billing plan]` with the metric, billing period, price, and who will own invoices and payments:**
+
+```text
+Implement [approved billing plan] in this repository.
+- Map customer and subscription IDs from app records.
+- Send usage server-side with a Lago SDK or REST API.
+- Reuse transaction_id and timestamp on retry.
+- Test the example bill and duplicate delivery offline.
+- Keep current billing unchanged.
+- Show the diff, tests, and bill before live calls.
+```
+
+## 3. Connect to the right Lago organization
+
+First, [get access to a Lago Cloud organization or self-hosted instance and its API key](/guide/ai-agents/for-agents#connect-to-lago-when-you-are-ready). Set `LAGO_API_KEY` in your terminal or secret manager without putting it in a prompt or source control. Install the CLI where you run your agent:
+
+```bash
+brew install getlago/tap/lago
+lago version
+```
+
+On other systems, use the [CLI release archives](https://github.com/getlago/lago-cli/releases). Connect to your target:
+
+<CodeGroup>
+
+```bash Cloud US
+lago init --api-key "$LAGO_API_KEY" --region us
+```
+
+```bash Cloud EU
+lago init --api-key "$LAGO_API_KEY" --region eu
+```
+
+```bash Self-hosted
+lago init --api-key "$LAGO_API_KEY" --region self-hosted \
+  --api-url https://lago.example.com
+```
+
+</CodeGroup>
+
+For self-hosted Lago, `--api-url` is the API service's base URL, without `/api/v1`. Confirm the resolved organization and host before changing billing configuration:
+
+```bash
+lago whoami
+lago doctor
+```
+
+A CLI dry run sends nothing. `--mode test` is a CLI label, not a sandbox inside your organization. Use a separate test organization or an isolated self-hosted instance for live tests; keep demo customers and plans out of shared production billing.
+
+Inspect existing metrics and plans before proposing changes:
+
+```bash
+lago billable-metrics list --limit 50
+lago plans list --limit 50
+```
+
+Review the metric and plan requests as dry runs. For example:
+
+```bash
+# Illustrative metric; replace the name, code, and aggregation with your own.
+lago billable-metrics create --name "Completed jobs" \
+  --code completed_jobs --aggregation-type count_agg --dry-run
+# After your agent writes the plan file:
+lago plans create --input @billing/lago-plan.json --dry-run
+```
+
+Check the API URL, currency, base amount, included usage, overage price, and effective dates. A plan charge needs the **actual metric ID** after metric creation. A dry run does not compare your request with existing configuration. See the [metric](/guide/lago-cli/commands/billable-metrics) and [plan](/guide/lago-cli/commands/plans) references.
+
+Before sending usage, identify or create the [Lago customer](/guide/lago-cli/commands/customers) and an [active subscription](/guide/lago-cli/commands/subscriptions) on that plan. Use external IDs from your application. Creating a subscription can generate an invoice, so test this sequence in your isolated organization first.
+
+**Prompt. Replace `[target organization]` with the organization name and API host, and `[approved pricing]` with your reviewed price and metric:**
+
+```text
+For [target organization], run read-only CLI checks.
+Show the resolved host and organization.
+Compare the Lago catalog with [approved pricing].
+Prepare metric and plan dry runs with currency, tiers,
+effective dates, and the metric ID the plan needs.
+Show exact requests and conflicts. Make no live writes.
+```
+
+## 4. Check what Lago recorded
+
+Choose one customer and billing period. Calculate the expected **usage quantity and usage charge** from saved app records, then read Lago's current usage for that subscription:
+
+```bash
+lago customers current-usage "$CUSTOMER_EXTERNAL_ID" \
+  --external-subscription-id "$SUBSCRIPTION_EXTERNAL_ID" \
+  --apply-taxes false --output json
+```
+
+Check:
+
+- Quantity and usage charge against your calculation. If usage is zero, wait for processing and read again before investigating.
+- In an isolated test environment, retry one event with its original `transaction_id` and `timestamp`; the charge should not increase.
+- For the **full bill**, add any base fee, credits, and taxes. With Premium, [preview the invoice](/guide/invoicing/previews) and compare each line and the total. Invoice preview also requires Premium on self-hosted Lago.
+
+**Prompt. Replace `[customer ID]`, `[subscription ID]`, and `[source record ID]` with IDs from the same isolated test organization:**
+
+```text
+Use these IDs from the isolated test organization:
+- Customer: [customer ID]
+- Subscription: [subscription ID]
+- Source record: [source record ID]
+Calculate quantity and charge from the app record.
+Read Lago usage; compare quantity, charge, and period.
+Retry this event in the isolated test organization
+  with its original transaction_id and timestamp.
+Read usage again; check the charge did not rise.
+Stop on an identity or amount mismatch.
+List untested invoice parts.
+```
+
+See the [integration testing guide](/guide/integration-testing) for the rest of the billing lifecycle.
+
+## If the result differs
+
+| Symptom | First check |
+| --- | --- |
+| `lago` runs Docker Compose | Run `lago version`; remove a self-hosted shell alias shadowing the CLI. |
+| Authentication or wrong organization | Run `lago doctor` and `lago whoami`; verify API host and key. |
+| Event exists but usage is zero | Check the active subscription period, metric code, event timestamp, and aggregation property. |
+| A retry increases usage | Compare both the original `transaction_id` and `timestamp`. |
+| Usage or preview differs from expected money | Check the plan charge, billing period, customer overrides, taxes, credits, and whether the base fee was billed in advance. |
+
+**Prompt. Replace `[customer ID]`, `[billing period]`, `[expected amount]`, and `[observed amount]` with the values you are investigating:**
+
+```text
+For [customer ID] in [billing period], our app expects
+[expected amount] and Lago shows [observed amount].
+Recalculate source usage and check:
+- Plan, billing period, and customer overrides.
+- Credits, taxes, and advance fees.
+Show the first proven difference and customer impact.
+Do not change billing or send another event.
+```

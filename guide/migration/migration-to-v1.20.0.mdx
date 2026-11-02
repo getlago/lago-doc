@@ -51,8 +51,8 @@ Cloud users do not need to follow the instructions below, as the migration will 
 You can run the following SQL query to check the number of fee objects that will be removed from the database.
 If the result is greater than 1M (one million), you should perform the migration before deploying the new version.
 
-```
-SELECT count(fees.id) 
+```sql
+SELECT count(fees.id)
 FROM fees
         INNER JOIN invoices ON fees.invoice_id = invoices.id
 WHERE
@@ -78,7 +78,7 @@ WHERE
 
 To delete existing zero fees, open a Rails console in a production instance using `bundle exec rails c` and run the following script:
 
-```
+```ruby
 class FeesTax < ApplicationRecord; end
 
 sql = <<~SQL
