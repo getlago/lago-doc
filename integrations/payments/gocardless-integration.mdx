@@ -68,10 +68,10 @@ For more information about our webhooks, please refer to the
 [API documentation](/api-reference/webhooks/format---signature).
 
 ## Redirect URL after checkout
-After establishing the connection with GoCardless, set a success URL where your end customer will be directed after completing the checkout.
-Please note that if it's not defined, your end customer will be redirected to GoCardless's website.
+After you connect GoCardless, set a success URL where your end customer lands after completing the checkout.
+If you do not define one, your end customer is redirected to GoCardless's website.
 
-Please note that you can edit or delete the redirect URL, and this will only affect new checkout URLs created.
+You can edit or delete the redirect URL. The change only applies to checkout URLs created afterwards.
 
 <Warning>
   URL defined should always begin with `http://` or `https://`.
@@ -137,9 +137,9 @@ To collect payments via direct debit, a mandate must be created. To do so:
 2. Redirect your customer to the checkout page, so that they can complete the
    online form and approve the mandate.
 
-The mandate must be validated by GoCardless before the first payment can be
-processed. It can take up to six business days to validate a new mandate. For
-more information about payment timings, please consult the
+GoCardless must validate the mandate before the first payment can be processed.
+Validating a new mandate can take up to six business days. For more information
+about payment timings, see the
 [GoCardless FAQ](https://gocardless.com/faq/merchants/direct-debit/).
 
 <Warning>
@@ -169,14 +169,14 @@ If the payment fails, the status of the payment will switch from `pending` to
 </Tip>
 
 ## Regenerate checkout link on demand
-In cases where your end customer has not had the opportunity to complete the checkout process to inform their payment method
-or wishes to modify the saved payment information, you can generate a new checkout link using the designated [endpoint](/api-reference/customers/psp-checkout-url).
+If your end customer has not completed the checkout, or wants to change their saved payment information,
+generate a new checkout link with the dedicated [endpoint](/api-reference/customers/psp-checkout-url).
 
 ```bash
 POST /api/v1/customers/:customer_external_id/checkout_url
 ```
 
-Upon successful generation, the new checkout link will be available in the endpoint response, and it will not be delivered through a webhook message.
-It is important to note that the new link will inherit the same expiration setting as the original one.
+The new checkout link is returned in the endpoint response, not through a webhook message.
+It inherits the same expiration setting as the original one.
 
-It is crucial to be aware that if a customer is not associated with any payment provider, the response will contain an error message.
+If the customer is not associated with any payment provider, the response contains an error message.
