@@ -47,11 +47,11 @@ PaymentProviderCustomers::Stripe::GenerateCheckoutUrlService#call
 ```
 
 ### Payment provider class
-All payment provider subscriptions inherit from the PaymentProviderSubscription class via STI. For instance, to support Checkout.com, register a new `CheckoutComSubscription` in `app/models/payment_provider_subscriptions/checkout_com_subscription.rb`.
+All payment providers inherit from `PaymentProviders::BaseProvider` through single table inheritance. For instance, to support Checkout.com, register a new `CheckoutComProvider` in `app/models/payment_providers/checkout_com_provider.rb`.
 
 A few notes about providers:
 - Store custom provider details with `settings_accessors` instead of adding database columns;
-- Use `secret_accessors` to securely store sensitive data (e.g., API keys); and
+- Use `secrets_accessors` to securely store sensitive data (e.g., API keys); and
 - Map the new PSP's payment status values to Lago's three statuses: processing, success, and failed.
 
 ```ruby
@@ -77,7 +77,7 @@ Ensure the new Payment Provider is included in every provider switch/case statem
 ```ruby
 case type
     when 'moneyhash'
-        PaymentProviders::MoneyHashProvider.new(provider_instance)
+        PaymentProviders::MoneyhashProvider.new(provider_instance)
     when 'checkout_com'
         PaymentProviders::CheckoutComProvider.new(provider_instance)
     ...
@@ -194,7 +194,7 @@ Here is a list of files and classes you may need to create or update, each accom
 | `app/services/inbound_webhooks/validate_payload_service.rb`               | Add service mapping.                                              |
 
 #### 10. Specs
-Find all related specs in `/specs/*.rb`
+Find the related specs under `spec/`.
 
 
 ## Frontend integration (UI)
