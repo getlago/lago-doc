@@ -4,10 +4,11 @@ title: "Migration to v1.56.0"
 
 Dear Lago Community, 👋
 
-We're writing to inform you about two changes in Lago v1.56.0:
+We're writing to inform you about three changes in Lago v1.56.0:
 
 - **The `/api/v1` list endpoints now limit the page size.** A request with a `per_page` above the limit is rejected with a `422` error instead of being served.
 - **Customer text fields now have a maximum length.** Creating or updating a customer with a longer value is rejected with a `422` error.
+- **The front image listens on port `8080`.** `getlago/front` now runs nginx as a non-root user, on port `8080` (`8443` for TLS) instead of `80` (`443`). A self-hosted setup that sends traffic to port `80` of the front container no longer reaches the app.
 
 This release also makes document download links expire, and changes a few settings that self-hosted users should check. They are listed in [Other changes to check](#other-changes-to-check).
 
@@ -67,6 +68,20 @@ Creating or updating a customer now checks the length of its text fields, on the
 Only the values that change are checked. A customer that already holds a longer value keeps it, and can still be updated as long as that field is not changed. These limits cannot be raised.
 
 The customer portal also rejects a changed value that holds a line break, a tab or an invisible character, with the `invalid_characters` code. The API and the Lago app still accept these characters.
+
+## The front image runs as a non-root user on port 8080
+
+This applies to self-hosted users only.
+
+The `getlago/front` image is now built on a hardened base image ([lago-front#4359](https://github.com/getlago/lago-front/pull/4359)):
+
+| | Before v1.56.0 | From v1.56.0 |
+|---|---|---|
+| User | root | uid `65532` |
+| Listen port | `80` (`443` for TLS) | `8080` (`8443` for TLS) |
+| Files written at start (`env-config.js`, `csp.conf`, pid file) | next to the app files | `/tmp` |
+
+A non-root process cannot listen on a port below 1024, so the container port changes. The port on your host can stay `80`.
 
 # Why are we doing this?
 
@@ -130,6 +145,16 @@ To upgrade without any failed request, set `LAGO_API_PAGINATION_MAX_PAGE_SIZE` t
 ## 3. Check the customer values your integrations send
 
 This step applies to Cloud and self-hosted users. Look for integrations that create or update customers with text longer than the limits above, for example a long legal name or an address sent in a single field. Shorten these values before sending them, or split an address across `address_line1` and `address_line2`. Otherwise these requests fail with a `422` once v1.56.0 runs.
+
+## 4. Point the front service at port 8080
+
+The `docker-compose.yml` of the [Lago repository](https://github.com/getlago/lago) for v1.56.0 already does this: it publishes `${FRONT_PORT:-80}:8080`, and gives the front service `read_only: true` and a tmpfs on `/tmp`. If you run your own Compose file, Kubernetes manifests or reverse proxy:
+
+- Send traffic to container port `8080` (and `8443` for TLS). For example `80:8080` in Compose, or `loadbalancer.server.port=8080` in a Traefik label.
+- If the root filesystem of the container is read-only, give `/tmp` a writable mount (a tmpfs, or an `emptyDir` in Kubernetes).
+- If you mount your own nginx `default.conf` (for TLS), listen on `8080` and `8443`, and copy the `env-config.js` location, the dotfile rule and the `include /tmp/csp.conf` lines from `extra/nginx-selfsigned.conf` in the Lago repository. Remove `ssl_dhparam`: the image cannot load DH parameter files.
+- Make your TLS key and certificate readable by uid `65532`. `extra/init-selfsigned.sh` and `extra/init-letsencrypt.sh` in the Lago repository do this.
+- Remove any `command:` override of the front service. Use the `entrypoint:` shown in `docker-compose.yml` instead.
 
 # Other changes to check
 
