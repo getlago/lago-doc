@@ -17,8 +17,8 @@ It is modeled on the MoneyHash integration, and in most cases, you should duplic
 
 ## Backend integration (API)
 
-### API Version
-If your PSP integration supports multiple versions, ensure you specify the version—for example, we are setting it for Stripe in this [Pull Request #3300](https://github.com/getlago/lago-api/pull/3300).
+### API version
+If your PSP integration supports multiple versions, ensure you specify the version. For example, we set it for Stripe in this [Pull Request #3300](https://github.com/getlago/lago-api/pull/3300).
 
 ### SDK
 Don't hesitate to import any required gem if necessary.
@@ -46,7 +46,7 @@ PaymentProviderCustomers::Stripe::UpdateService#call
 PaymentProviderCustomers::Stripe::GenerateCheckoutUrlService#call
 ```
 
-### Payment Provider Class
+### Payment provider class
 All payment provider subscriptions inherit from the PaymentProviderSubscription class via STI. For instance, to support Checkout.com, register a new `CheckoutComSubscription` in `app/models/payment_provider_subscriptions/checkout_com_subscription.rb`.
 
 A few notes about providers:
@@ -61,11 +61,11 @@ module PaymentProviders
     PROCESSING_STATUSES = %w[].freeze
     SUCCESS_STATUSES = %w[].freeze
     FAILED_STATUSES = %w[].freeze
-	
+
 	  secrets_accessors :api_key
-	
+
 		validates :api_key, presence: true
-	
+
     def payment_type
       "checkout_com"
     end
@@ -118,7 +118,7 @@ Here is a list of files and classes you may need to create or update, each accom
 | `app/serializers/v1/customer_serializer.rb`           | Map Checkout.com customer settings for API responses.                                     |
 
 
-#### 2. GraphQL Input Types 
+#### 2. GraphQL input types
 | File                                                           | Purpose                                                                                   |
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `app/graphql/types/payment_providers/checkout_com_input.rb`    | Define GraphQL input type for Checkout.com settings.                                      |
@@ -133,14 +133,14 @@ Here is a list of files and classes you may need to create or update, each accom
 
 
 
-#### 3. Provider Handling
+#### 3. Provider handling
 | File                                                            | Purpose                                                                                     |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `app/services/payment_providers/checkout_com_service.rb`        | Entry service for handling Checkout.com logic.                                              |
 | `app/services/payment_providers/checkout_com/base_service.rb`   | Shared methods for Checkout.com-related services.                                            |
 
 
-#### 4. Customer Handling
+#### 4. Customer handling
 | File                                                              | Purpose                                                                                     |
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `app/services/payment_provider_customers/checkout_com_service.rb` | Handle customer-related logic (create, sync).                                               |
@@ -151,7 +151,7 @@ Here is a list of files and classes you may need to create or update, each accom
 
 
 
-#### 5. Payment Flows
+#### 5. Payment flows
 | File                                                            | Purpose                               |
 | --------------------------------------------------------------- | ------------------------------------- |
 | Edit `app/services/payment_providers/create_payment_factory.rb` | Add service mapping.                 |
@@ -168,7 +168,7 @@ Here is a list of files and classes you may need to create or update, each accom
 
 
 
-#### 7. Payment Requests
+#### 7. Payment requests
 | File                                                               | Purpose                                                                                     |
 | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
 | `app/jobs/payment_requests/payments/checkout_com_create_job.rb`    | Handle ad-hoc payment requests.                                                             |
@@ -176,13 +176,13 @@ Here is a list of files and classes you may need to create or update, each accom
 | `app/services/payment_requests/payments/payment_providers/factory.rb` | Add service mapping.                                                                        |
 
 
-#### 8. Checkout URL 
+#### 8. Checkout URL
 | File                                                                  | Purpose                                                       |
 | --------------------------------------------------------------------- | ------------------------------------------------------------- |
 | `app/jobs/payment_provider_customers/checkout_com_checkout_url_job.rb` | Generate hosted checkout URL for payments.                    |
 
 
-#### 9. Webhook Handling
+#### 9. Webhook handling
 | File                                                                      | Purpose                                                           |
 | ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | `app/controllers/webhooks_controller.rb`                                  | Add a new action for Checkout.com webhooks.                       |
@@ -226,7 +226,7 @@ src/
         └── [PSPName].svg
 ```
 
-Please make sure the SVG is as clean as possible and uses viewbox rather than width and height (viewBox="0 0 40 40”, refer to other images). You can use https://svgomg.net/ to help.
+Please make sure the SVG is as clean as possible and uses `viewBox` rather than width and height (`viewBox="0 0 40 40"`, refer to other images). You can use https://svgomg.net/ to help.
 
 ### Customer link
 You also need to update the customer flow to allow connection to your new PSP.

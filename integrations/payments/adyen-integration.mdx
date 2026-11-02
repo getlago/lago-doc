@@ -7,9 +7,9 @@ description:
 
 Lago's seamless integration with Adyen offers a wide range of payment options, enabling you to conveniently collect payments from your customers. Supported payment methods include:
 
-- Card payments (Visa, MasterCard, CB)
+- Card payments (Visa, Mastercard, CB)
 - Apple Pay
-- Paypal
+- PayPal
 - American Express
 - Amazon Pay
 - Google Pay
@@ -25,13 +25,13 @@ To set up the Adyen integration in Lago from our user interface, follow these st
 
 1. In the side menu of your Lago app, navigate to **Settings**;
 2. Select the **Integrations** tab;
-3. Click **"Adyen"** to create a connection; 
+3. Click **"Adyen"** to create a connection;
 4. Give a name to this connection;
 5. Assign a code for easy identification;
 6. Enter the required connection fields (described in the next section); and
 7. Click **Connect to Adyen** to confirm the integration.
 
-## Adyen Connection Fields
+## Adyen connection fields
 When connecting Lago to Adyen, you need to provide information for the following fields.
 
 <AccordionGroup>
@@ -80,7 +80,7 @@ In Adyen, to enable recurring payments for a stored payment method, follow these
   <img src="/guide/payments/images/adyen-recurring-options.png" />
 </Frame>
 
-## Setting up Adyen Webhook for listening to important events
+## Setting up the Adyen webhook for important events
 **This step is crucial and mandatory** for Lago to receive and process messages from Adyen, enabling functionalities such as customer creation/update, payment processing, and refunds. To configure Adyen webhook and establish communication with Lago, follow the steps below:
 
 1. Access your Adyen application and navigate to the **Developers** section;
@@ -97,7 +97,7 @@ To find your **connection code**, navigate to the Integrations section in Lago a
 
 **Please ensure that you complete this setup correctly, as your Adyen integration will not function without this vital step.**
 
-## Setting Adyen as a Payment Provider for a customer
+## Setting Adyen as a payment provider for a customer
 In order to facilitate automated payment collection, it is essential for the customer to exist in both the Lago and Adyen databases. Please note that in Adyen, customers are referred to as **Shoppers**.
 
 ### Adding a new customer in Adyen
@@ -121,7 +121,7 @@ Upon successful customer creation, you will receive two **[webhook messages](/ap
 2. **`customer.payment_provider_created`**: This message confirms the successful creation of the customer in Adyen, indicating that the customer's details have been added to the Adyen database.
 
 <Warning>
-You may need to enable Developers -> Additional Data -> Payment -> Recurring details for the customer to be automatically created. 
+You may need to enable Developers -> Additional Data -> Payment -> Recurring details for the customer to be automatically created.
 </Warning>
 
 <Warning>
@@ -142,8 +142,8 @@ By following these steps, you can integrate an existing customer from Adyen into
   <img src="/guide/payments/images/adyen-migration.png" />
 </Frame>
 
-## Redirect url after checkout
-After establishing the connection with Adyen, set a success URL where your end customer will be directed after completing the checkout. 
+## Redirect URL after checkout
+After establishing the connection with Adyen, set a success URL where your end customer will be directed after completing the checkout.
 Please note that if it's not defined, your end customer will be redirected to Adyen's website.
 
 Please note that you can edit or delete the redirect URL, and this will only affect new checkout URLs created.
@@ -182,25 +182,25 @@ By utilizing this provided checkout link, your customers can perform a pre-autho
 </Frame>
 
 ## Regenerate checkout link on demand
-In cases where your end customer has not had the opportunity to complete the checkout process to inform their payment method 
+In cases where your end customer has not had the opportunity to complete the checkout process to inform their payment method
 or wishes to modify the saved payment information, you can generate a new checkout link using the designated [endpoint](/api-reference/customers/psp-checkout-url).
 
 ```bash
 POST /api/v1/customers/:customer_external_id/checkout_url
 ```
 
-Upon successful generation, the new checkout link will be available in the endpoint response, and it will not be delivered through a webhook message. 
+Upon successful generation, the new checkout link will be available in the endpoint response, and it will not be delivered through a webhook message.
 It is important to note that the new link will inherit the same expiration setting as the original one.
 
 It is crucial to be aware that if a customer is not associated with any payment provider, the response will contain an error message.
 
 
-## Creating payments from Lago Invoices
+## Creating payments from Lago invoices
 When a customer has Adyen defined as their payment provider, Lago seamlessly automates the process of triggering payments in Adyen whenever a new invoice is generated.
 
 This integration ensures that payments are initiated in Adyen without any manual intervention. Lago's automatic payment creation saves time and effort, providing a streamlined experience for both you and your customers.
 
-## Creating refunds from Lago Credit Notes
+## Creating refunds from Lago credit notes
 In cases where a customer has Adyen defined as their payment provider, Lago simplifies the refund process by automatically triggering refunds in Adyen whenever a new refund is initiated through credit notes.
 
 This integration eliminates the need for manual refund processing and ensures that refunds are efficiently handled in Adyen. Lago's automated refund functionality helps you maintain accurate and timely refund transactions, enhancing customer satisfaction and operational efficiency.
