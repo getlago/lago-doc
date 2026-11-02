@@ -23,9 +23,9 @@ By default, when creating a subscription, Lago follows this process:
 2. Generates the invoice asynchronously; and
 3. Processes the payment asynchronously.
 
-This means it's possible to create an active subscription for a customer even if the payment later fails. While this behavior is intentional, it may not be ideal for all use cases.
+A subscription can therefore become active even if the payment later fails. This behavior is intentional, but it does not suit every use case.
 
-To address this, Lago offers payment pre-authorization, **allowing you to verify the validity of a payment method for a specific amount before creating the subscription.**
+Payment pre-authorization addresses this. It **checks that a payment method is valid for a given amount before the subscription is created.**
 
 <Info>
   **Important**: If the pre-authorization fails, the entire process is aborted and no subscription is created.
@@ -45,11 +45,11 @@ The exact list depends on the payment methods enabled on your Stripe account. Re
 
 Pre-authorization can fail if the card details are invalid, if the customer has insufficient funds, or if the payment method type does not support manual capture.
 
-Please note that if 3DS is required during pre-authorization, the card is considered valid and the subscription is created.
+If 3DS is required during pre-authorization, the card is considered valid and the subscription is created.
 
 ## Understanding the limitations
 
-While pre-authorization helps reduce payment failures, it cannot guarantee successful invoice payment because:
+Pre-authorization reduces payment failures, but it cannot guarantee that the invoice is paid, because:
 
 1. Conditions may change between pre-authorization and actual payment:
    - Customer's account balance may decrease
