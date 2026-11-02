@@ -16,6 +16,7 @@ Lago does not store raw payment details. Instead, it stores:
 When a payment is required (invoice, wallet top-up, etc.), Lago delegates the charge to the PSP using the stored `provider_customer_id` and targets the appropriate `provider_method_id`. The PSP then processes the payment using the selected payment method.
 
 ## How payment methods are created
+
 There are four ways a payment method can be created and stored.
 
 ### 1. Checkout URL
@@ -35,10 +36,11 @@ For **GoCardless**, the checkout flow collects a direct debit mandate rather tha
 ### 2. Syncing an existing PSP customer
 
 If the customer already exists in the PSP with a payment method on file, you can link them to Lago without going through the checkout flow.
-By setting `sync_with_provider` to `false` and providing the existing `provider_customer_id`, Lago retrieves the default payment method stored in the PSP and attaches it to the customer. No checkout URL is generated.
+When you set `sync_with_provider` to `false` and provide the existing `provider_customer_id`, Lago retrieves the default payment method stored in the PSP and attaches it to the customer. No checkout URL is generated.
 This is useful when migrating customers from another billing system, or when the customer and their mandate/card already exist in Adyen or GoCardless.
 
 ### 3. Generate a new checkout URL
+
 Once the customer is connected to a PSP, you can generate a new checkout URL at any time to capture a new payment method:
 
 <Tabs>
@@ -57,7 +59,7 @@ Once the customer is connected to a PSP, you can generate a new checkout URL at 
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
-    curl --location --request POST "$LAGO_URL/api/v1/customers/:external_id/checkout_url" \
+    curl --location --request POST "$LAGO_URL/api/v1/customers/:external_customer_id/checkout_url" \
       --header "Authorization: Bearer $API_KEY"
     ```
     </CodeGroup>
@@ -65,7 +67,8 @@ Once the customer is connected to a PSP, you can generate a new checkout URL at 
 </Tabs>
 
 
-### 4. Auto-capture from Payment link
+### 4. Auto-capture from payment link
+
 When an invoice has a `pending` or `failed` payment status, you can generate a one-off payment checkout link:
 
 ```
@@ -76,6 +79,7 @@ This path is natively supported for **Stripe** and **Adyen** integrations.
 
 
 ## How payment methods are assigned to billing objects
+
 You can define a payment method when creating:
 - A subscription
 - A one-off invoice
@@ -90,9 +94,11 @@ For example, a subscription can use a stored card while a one-off invoice is mar
 </Note>
 
 ### Inactive payment methods
+
 You can mark a payment method as **inactive**. It can no longer be selected or attached to a billing object.
 If the default payment method becomes inactive, Lago automatically switches the related billing object to **Manual payment**. This prevents unintended charges using another stored method. You must then update the billing object with a valid payment method.
 
 ### Multiple subscriptions with different payment methods
+
 By default, Lago groups multiple subscription invoices for the same customer into a single invoice when they are generated on the same day.
 Because each subscription can have its own payment method, Lago splits the invoices by payment method and groups together the subscriptions that share one.
