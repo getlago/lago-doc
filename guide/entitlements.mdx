@@ -15,15 +15,14 @@ on their subscription or contract. They cover four things:
   access restrictions.
 
 Together, these enforce product limits, manage access, and support usage-based
-billing.
-
-
-In addition to the usage-based engine for allowances and quotas, Lago lets you define Features and Entitlements.
+billing. Lago handles allowances and quotas through its usage-based engine, and
+feature gates and privileges through Features and Entitlements.
 
 ## Set up your features
+
 <Tabs>
   <Tab title="Dashboard">
-      Lago supports the creation of any type of feature to tailor your billing logic. To create a new feature:
+      You can create any type of feature to tailor your billing logic. To create a feature:
 
         1. Navigate to the **Features** section in the sidebar;
         2. Click on **Add a feature** to start a new entry;
@@ -61,7 +60,7 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
 
 <Tabs>
   <Tab title="Dashboard">
-    Additionally, you can define privileges for a specific feature. Privileges allow you to configure more granular access controls across different plans. For example, the `invite_member` feature might allow inviting 1 member on the *Free plan*, while offering unlimited invites on the *Pro plan*.
+    You can also define privileges for a specific feature. Privileges give you more granular access controls across plans. For example, the `invite_member` feature can allow 1 member on the *Free plan* and unlimited invites on the *Pro plan*.
 
     Feature privileges can be associated with the following types:
     - **`boolean`** – The privilege value is either `true` or `false`.
@@ -71,11 +70,11 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
 
     `value_type` defaults to `string` and cannot be changed once the privilege exists.
 
-    At this stage, you're only defining the **type** of each privilege. The actual values will be set later, when the feature is entitled to a specific plan or subscription.
+    At this stage, you only define the **type** of each privilege. You set the values later, when you entitle the feature to a plan or a subscription.
 
     <Info>
       You can add an unlimited number of privileges to a feature.
-    </Info>  
+    </Info>
 
     <Frame caption="Add feature privileges">
       <img src="/guide/images/add-feature-privileges.png" alt="Form adding privileges to a feature, each with a code, a name and a value type" />
@@ -130,10 +129,9 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
 
 <Tabs>
   <Tab title="Dashboard">
-    Once your features have been created, they can be added to your plans through a process called **Entitlements**. 
-    This is where you define features that are unlocked for a specific plan and the limits, values or privileges for each feature.
-
-    Entitlements define which features a customer is allowed to use based on the plan they are subscribed to. By assigning features to specific plans, you control access to functionality across your pricing tiers.
+    Once your features exist, you add them to your plans through **Entitlements**.
+    An entitlement defines which features a plan unlocks, and the limits, values or privileges of each feature.
+    By assigning features to plans, you control access to functionality across your pricing tiers.
 
     <Frame caption="Subscription and entitlement workflow">
         <img src="/guide/images/entitlements-subscription-workflow.jpg" alt="Workflow from a feature to a plan entitlement and then to a subscription" />
@@ -182,7 +180,7 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
 
 <Tabs>
   <Tab title="Dashboard">
-    Some customers may subscribe to a standard plan but negotiate custom entitlements as part of their contract.
+    Some customers subscribe to a standard plan but negotiate custom entitlements as part of their contract.
 
     **You can override any entitlement value** for a specific subscription, in the same way you override charges.
     Lago stores the override on the subscription itself, so it applies **only** to that subscription. The base plan and the other subscriptions keep their values.
@@ -213,11 +211,13 @@ In addition to the usage-based engine for allowances and quotas, Lago lets you d
 </Tabs>
 
 ## Get entitlements for a subscription
-You can retrieve the current list of entitled features for a subscription by calling the following endpoint:
+
+This endpoint returns the current list of entitled features for a subscription:
 
 ```bash
 curl --request GET \
   --url https://api.getlago.com/api/v1/subscriptions/{external_id}/entitlements \
   --header 'Authorization: Bearer __YOUR_API_KEY__'
 ```
+
 You can also track entitlement changes through the `subscription.updated` webhook.
