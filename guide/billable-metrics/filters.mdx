@@ -9,12 +9,12 @@ A filter is a `key` plus a list of allowed `values` attached to a billable metri
 
 ## Why filters matter
 
-You won't nail your pricing model on version one. As your product evolves, so will the way you measure usage. Lago's metering engine and rate engine are **decoupled**, which means you can evolve your dimensions and your pricing independently, without forcing a rewrite of either:
+You rarely get your pricing model right on the first version. As your product evolves, so does the way you measure usage. Lago's metering engine and rate engine are **decoupled**, which means you can evolve your dimensions and your pricing independently, without forcing a rewrite of either:
 
 - **Metering**: What you collect and how you slice it (the filter definition on the billable metric).
 - **Rating**: How each slice is priced (the charge on the plan).
 
-Most billing systems couple the two. Change how you measure, and you change how you charge. Lago keeps them separate, so your product team can add a new dimension (e.g. a new region) without waiting on pricing, and your finance team can add a new rate without waiting on engineering. The two teams iterate independently.
+Most billing systems couple the two. Change how you measure, and you change how you charge. Lago keeps them separate. Your product team can add a dimension (for example a new region) without waiting on pricing, and your finance team can add a rate without waiting on engineering.
 
 <Tip>
   This is different from retroactive pricing (backdating a rate on existing usage) and different from replacing events. Filters are about adding new ways to slice an existing metric, then pricing the new slices independently.
@@ -101,7 +101,7 @@ These are dimension additions on an existing metric, not new metrics. Lago handl
 3. **Add a new charge on the plan for the new filter value.** This is a separate step in the rate engine, independent from the metric change.
 4. **Invoice as usual.** New dimensions appear on the next invoice. Already-invoiced periods are not touched.
 
-The separation between steps 1–2 (metering) and step 3 (rating) is the point. You can add dimensions without committing to a new price. You can add prices without changing what you measure.
+Steps 1 and 2 (metering) stay separate from step 3 (rating). You can add dimensions without committing to a price, and add prices without changing what you measure.
 
 ### Worked example
 
@@ -123,7 +123,7 @@ The separation between steps 1–2 (metering) and step 3 (rating) is the point. 
   </Step>
 </Steps>
 
-If you had invoiced on Day 18, the US events from that period would be locked. Any events from Day 15–17 that haven't been invoiced yet still pick up the new logic.
+If you had invoiced on Day 18, the US events from that period would be locked. Any events from Day 15 to Day 17 that haven't been invoiced yet still pick up the new logic.
 
 ## What can and cannot change retroactively
 
@@ -135,10 +135,10 @@ The hard constraints are the **metric code** and the **aggregation type**. They 
 | New filter key on an existing metric | ✅ | ❌ |
 | Add an existing metric as a new charge on a plan | ✅ (past events with matching code are picked up) | ❌ |
 | New billable metric with a new code | ❌ (past events were ingested under a different code) | ❌ |
-| Price change on an existing charge | ✅ (see retroactive pricing) | Contact CS |
+| Price change on an existing charge | ✅ (see retroactive pricing) | Contact the Lago team |
 
 <Warning>
-  The single most important design decision: create the billable metric codes you might ever need at the org level on day 1, even if you don't plan to charge on them yet. Once a code exists and events are flowing, the entire rating layer is flexible retroactively (for pre-invoice events). The constraint is the metric code, not the charge.
+  Create on day one every billable metric code you might ever need, even the ones you don't plan to charge on yet. Once a code exists and events are flowing, the whole rating layer stays flexible for events that are not invoiced yet. The constraint is the metric code, not the charge.
 </Warning>
 
 ### Dimension evolution vs retroactive pricing
@@ -148,8 +148,8 @@ These solve different problems:
 |  | Dimension evolution | Retroactive pricing |
 | --- | --- | --- |
 | What changes | What you measure (new filter keys and values) | What you charge for existing measurements |
-| Self-serve | ✅ via UI or API | Pre-invoice: self-serve. Invoiced: contact CS. |
-| Affects invoiced periods | ❌ | Requires CS for corrections |
+| Self-serve | ✅ via the dashboard or the API | Pre-invoice: self-serve. Invoiced: contact the Lago team. |
+| Affects invoiced periods | ❌ | Corrections require the Lago team |
 
 ## Design guidance
 
