@@ -234,8 +234,6 @@ The database migrations run when the API starts, as usual. Two of them can take 
 
 The Docker Compose files of the [Lago repository](https://github.com/getlago/lago) now use the `ghcr.io/getlago/lago-gotenberg:8.39` image for the PDF service. If you run your own compose file, update the `pdf` service image.
 
-An optional Sidekiq worker can now send the usage alert webhooks (`alert.triggered`, `alert.resolved`, `subscription.usage_threshold_reached`, `wallet.depleted_ongoing_balance`) on their own queue. To use it, run a worker with `./scripts/start.webhook_alert.worker.sh` (see the commented `api-webhook-alert-worker` service in `docker-compose.yml`), and set `SIDEKIQ_WEBHOOK_ALERT=true` on the API and the other workers. Set the variable only when this worker runs: otherwise these webhooks are queued and never sent.
-
 ## New optional settings
 
 | Variable | Default | Description |
@@ -247,7 +245,6 @@ An optional Sidekiq worker can now send the usage alert webhooks (`alert.trigger
 | `LAGO_GRAPHQL_INTROSPECTION_ENABLED` | `false` | Set to `true` to let clients read the GraphQL schema. |
 | `LAGO_EVENTS_MAX_PAST_DAYS` | not set | Rejects events with a timestamp more than this number of days in the past. |
 | `LAGO_EVENTS_MAX_FUTURE_HOURS` | not set | Rejects events with a timestamp more than this number of hours in the future. |
-| `SIDEKIQ_WEBHOOK_ALERT` | `false` | Sends the usage alert webhooks to the dedicated webhook alert worker. |
 
 # Get Involved
 
