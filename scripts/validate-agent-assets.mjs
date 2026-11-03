@@ -6,7 +6,6 @@ const mirroredFiles = [
   ["skill.md", "skills/lago-billing/SKILL.md"],
   ["ai-catalog.json", ".well-known/ai-catalog.json"],
   ["api-catalog.json", ".well-known/api-catalog.json"],
-  ["api-catalog.json", ".well-known/api-catalog"],
 ];
 
 for (const [canonicalPath, mirrorPath] of mirroredFiles) {
