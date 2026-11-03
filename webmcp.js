@@ -13,7 +13,7 @@
       description:
         "Lago builds open-source, API-first billing infrastructure for usage metering, subscriptions, invoicing, payments, and revenue operations.",
       url: "https://getlago.com/",
-      logo: "https://doc.getlago.com/logo/light.svg",
+      logo: "https://getlago.com/docs/logo/light.svg",
       sameAs: [
         "https://github.com/getlago",
         "https://www.linkedin.com/company/getlago",
@@ -23,7 +23,7 @@
         "@type": "ContactPoint",
         contactType: "sales and support",
         email: "hello@getlago.com",
-        url: "https://doc.getlago.com/contact",
+        url: "https://getlago.com/docs/contact",
       },
       address: {
         "@type": "PostalAddress",

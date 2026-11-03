@@ -5,7 +5,7 @@ license: AGPL-3.0-only
 metadata:
   author: Lago
   version: 1.0.0
-  homepage: https://doc.getlago.com/developers
+  homepage: https://getlago.com/docs/developers
 ---
 
 # Lago billing integration
@@ -14,10 +14,10 @@ Use this skill when a task involves Lago billing architecture, API integration, 
 
 ## Start with discovery
 
-1. Read the [developer portal](https://doc.getlago.com/developers.md) for the supported entry points.
-2. Use the [same-origin OpenAPI discovery profile](https://doc.getlago.com/openapi.json) for representative operations and the [complete production OpenAPI contract](https://swagger.getlago.com/openapi.yaml) for exhaustive schemas.
+1. Read the [developer portal](https://getlago.com/docs/developers.md) for the supported entry points.
+2. Use the [same-origin OpenAPI discovery profile](https://getlago.com/docs/openapi.json) for representative operations and the [complete production OpenAPI contract](https://swagger.getlago.com/openapi.yaml) for exhaustive schemas.
 3. Read the relevant workflow guide before constructing requests. Exact API fields and current product documentation take precedence over examples or prior knowledge.
-4. Use the [Lago Docs MCP server](https://doc.getlago.com/mcp) for read-only documentation search and retrieval.
+4. Use the [Lago Docs MCP server](https://getlago.com/docs/mcp) for read-only documentation search and retrieval.
 
 ## Authentication and environment
 
@@ -49,14 +49,14 @@ Use this skill when a task involves Lago billing architecture, API integration, 
 
 ## Authoritative resources
 
-- Developer portal: https://doc.getlago.com/developers.md
-- Authentication: https://doc.getlago.com/auth.md
-- API overview: https://doc.getlago.com/api-reference/intro.md
-- API standards: https://doc.getlago.com/api-reference/api-standards.md
-- API versioning: https://doc.getlago.com/api-reference/versioning.md
-- Structured errors: https://doc.getlago.com/api-reference/errors.md
-- Usage ingestion: https://doc.getlago.com/guide/events/ingesting-usage.md
-- Webhooks: https://doc.getlago.com/guide/webhooks.md
-- Integration testing: https://doc.getlago.com/guide/integration-testing.md
-- Pricing and packaging: https://doc.getlago.com/pricing.md
+- Developer portal: https://getlago.com/docs/developers.md
+- Authentication: https://getlago.com/docs/auth.md
+- API overview: https://getlago.com/docs/api-reference/intro.md
+- API standards: https://getlago.com/docs/api-reference/api-standards.md
+- API versioning: https://getlago.com/docs/api-reference/versioning.md
+- Structured errors: https://getlago.com/docs/api-reference/errors.md
+- Usage ingestion: https://getlago.com/docs/guide/events/ingesting-usage.md
+- Webhooks: https://getlago.com/docs/guide/webhooks.md
+- Integration testing: https://getlago.com/docs/guide/integration-testing.md
+- Pricing and packaging: https://getlago.com/docs/pricing.md
 - Service status: https://status.getlago.com/
