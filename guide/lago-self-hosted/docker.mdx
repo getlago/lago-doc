@@ -20,12 +20,49 @@ description:
 ### Run the app with a one-click Docker command
 Start the app with a single Docker command in a shell:
 ```shell
-docker run -d --name lago -p 80:80 -p 3000:3000 getlago/lago:latest
+docker run -d --name lago -v lago_data:/data -p 80:80 -p 3000:3000 getlago/lago:latest
 ```
 You can now open your browser and go to [http://localhost](http://localhost) to
 connect to the application. Just after
 [signing up](#signing-up), Lago's API is exposed
 at [http://localhost:3000](http://localhost:3000).
+
+This image runs PostgreSQL, Valkey (Redis-compatible), the Lago API, worker,
+clock and UI in one container, as a nonroot user. It is for testing and
+staging. For production, use the Docker Compose setup below or the
+[Helm chart](https://github.com/getlago/lago-helm-charts).
+
+The `lago_data` volume keeps the database, the job queue and generated files
+(invoice PDFs, exports) when you remove or upgrade the container.
+
+#### Generate PDFs
+
+PDF generation runs in its own container. Start it next to Lago:
+
+```shell
+docker run -d --name lago-pdf -p 3001:3000 ghcr.io/getlago/lago-gotenberg:8.39
+docker run -d --name lago --add-host=host.docker.internal:host-gateway \
+  -v lago_data:/data -p 80:80 -p 3000:3000 getlago/lago:latest
+```
+
+Lago reaches it at `LAGO_PDF_URL`, which defaults to
+`http://host.docker.internal:3001`. Docker Desktop resolves
+`host.docker.internal` without `--add-host`.
+
+#### Upgrade from an earlier image
+
+<Warning>
+Earlier versions of this image ran as root and did not keep the database in
+`/data`. A volume they created belongs to root, and the new image stops with an
+error until you give it to the nonroot user. Run this once, then start the new
+image:
+
+```shell
+docker run --rm -u 0 -v lago_data:/data --entrypoint chown getlago/lago:latest -R 65532:65532 /data
+```
+
+For a bind mount, run `chown -R 65532:65532 <host directory>` on the host.
+</Warning>
 
 ### Run the app with advanced Docker commands
 
