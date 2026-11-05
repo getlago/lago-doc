@@ -1,0 +1,103 @@
+---
+title: "Migration to v1.57.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about a change in Lago v1.57.0 that prepares your data for **flexible payment terms**.
+
+Self-hosted users must run a rake task after installing v1.57.0. It copies the net payment term of every customer into a new format. **This task must be finished before upgrading to the release that introduces flexible payment terms.**
+
+# What are the changes?
+
+## A new format for payment terms
+
+Until now, a payment term was a number of days (`net_payment_term`) on the customer and the billing entity. Flexible payment terms add other kinds of terms, such as a due date at the end of the month or on a given day of the month. These terms are stored in a new `payment_term` field, next to `net_payment_term`.
+
+The existing number of days is copied into this new field as a net term. For example, a customer with `net_payment_term: 30` gets:
+
+```json
+{
+  "term_type": "net",
+  "days": 30
+}
+```
+
+Nothing else changes in v1.57.0: invoices keep the same due dates, and the API and the Lago app behave as before.
+
+## Billing entities are migrated automatically
+
+The database migrations copy the payment term of every billing entity when the API starts, as usual. There is nothing to do for billing entities.
+
+## Customers are migrated by a rake task
+
+The `customers` table can be large, so customers are not migrated when the API starts. A rake task starts the migration, and a background job copies the payment terms in batches of 5,000 customers.
+
+The task only fills customers that have a `net_payment_term` and no `payment_term` yet. Customers without a `net_payment_term` keep using the payment term of their billing entity, and are left as they are.
+
+# Why are we doing this?
+
+The release that introduces flexible payment terms reads the payment term of customers from the new field only. A customer that is not migrated by then would lose its own net payment term, and its invoices would use the payment term of its billing entity instead.
+
+Running the migration as a background task, separately from the upgrade, keeps the upgrade fast on large instances.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you're using a version below `v1.56.0`, please first follow the migration steps for [v1.56.0](/guide/migration/migration-to-v1.56.0).
+Only after completing those should you proceed to v1.57.0.
+</Warning>
+
+## Migration steps
+
+### 1. Install Lago v1.57.0
+
+Install the new version. The database migrations run when the API starts and migrate the billing entities.
+
+### 2. Run the customers migration task
+
+Open a shell (bash) on your API server and run:
+
+```bash
+bundle exec rails migrations:backfill_customers_payment_term
+```
+
+The task only starts the migration. The customers are migrated in the background by the Lago worker (the `worker` service in Docker Compose), which must be running.
+
+<Note>
+The task is safe to run multiple times. Customers that already have a payment term are not changed.
+</Note>
+
+### 3. Check that the migration is finished
+
+When the migration is finished, the worker logs `Finished backfilling customers.payment_term`.
+
+You can also check it from a Rails console on your API server:
+
+```bash
+bundle exec rails console
+```
+
+```ruby
+Customer.unscoped.where(payment_term: nil).where.not(net_payment_term: nil).count
+```
+
+The migration is finished when this returns `0`.
+
+If the worker logs `customers.payment_term backfill finished with rows still NULL` instead, run the task from step 2 again.
+
+### 4. Upgrade to the next releases
+
+Only upgrade to the release that introduces flexible payment terms once step 3 returns `0`.
+
+# Get involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team
