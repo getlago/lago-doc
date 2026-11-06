@@ -104,11 +104,13 @@ curl --get "$LAGO_URL/api/v1/customers/cust_123/attributed_usage" \
 | --- | --- |
 | `rows` | One row per value of the `group_by` entity. |
 | `rows[].value` | The entity value, such as `rnd`. |
-| `rows[].rank` | Position of the row: by amount on the `amount` basis, by event count on the `units` basis. |
+| `rows[].rank` | Position of the row: by amount on the `amount` basis, by units on the `units` basis. |
 | `rows[].amount_cents` | Amount in cents. `null` on the `units` basis. |
 | `rows[].charges_usage` | Units, amount and event count per charge. |
 | `unattributed` | Usage with no value for the entity. Never ranked. |
 | `totals` | `rows` plus `unattributed`. |
+| `split_filters_count` | Number of filters of the split charge. `null` without `split_charge_code`. |
+| `split_charge_units` | On rows, `unattributed` and `totals`: units of the split charge across all its filters. `null` without `split_charge_code`. |
 
 ### By hierarchy
 
@@ -174,6 +176,10 @@ curl --get "$LAGO_URL/api/v1/customers/cust_123/attributed_usage" \
 | alice | \$2,000 | \$0 | \$2,000 |
 | bob | \$0 | \$1,250 | \$1,250 |
 
+Filters come back 10 at a time, in the order of the charge, followed by one line for usage that matches no filter. `split_filters_count` gives the number of filters. Pass `split_filters_offset=10` for the next 10, and so on.
+
+Paging only changes which filter lines are returned. Rows, ranks, amounts and `totals` stay the same on every page. On the `units` basis, `split_charge_units` gives the units of the split charge across all its filters, so you don't have to add up pages.
+
 ### Parameters
 
 | Parameter | Description |
@@ -184,7 +190,8 @@ curl --get "$LAGO_URL/api/v1/customers/cust_123/attributed_usage" \
 | `basis` | `units` (default) or `amount`. |
 | `from_datetime`, `to_datetime` | ISO 8601. Both or neither, up to 31 days apart. |
 | `charge_codes[]` | Charges to include. Defaults to all supported charges. |
-| `split_charge_code` | One charge to split by its filters. |
+| `split_charge_code` | One charge to split by its filters. Must be in `charge_codes[]` when you send it. |
+| `split_filters_offset` | Index of the first filter to return, starting at 0. Defaults to 0. |
 | `search_term` | Keeps the values that match. |
 | `page`, `per_page` | Pagination. `per_page` defaults to 50, up to 100. |
 
@@ -209,7 +216,8 @@ For a quarterly or yearly billing period, the default view reads the last 31 day
 
 - Supports billable metrics with a `COUNT` or `SUM` aggregation that aren't recurring.
 - Amounts are a breakdown of usage, before coupons, credits, minimums and taxes. They can differ from the invoice.
-- One level per request, up to 3 flat entities in `filters`, one split charge with up to 10 filters.
+- One level per request, up to 3 flat entities in `filters`, one split charge per request.
+- Up to 100,000 values per entity for each customer. Past that, new values aren't tracked and grouping by the entity without a parent filter returns `too_many_values`. Use entities for stable things like users, teams or models, never for a request or transaction ID.
 - A large query can fail with `too_many_groups` or `query_timeout`. Narrow the time range or add filters.
 
 <CardGroup cols={2}>
