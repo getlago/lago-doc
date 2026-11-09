@@ -121,6 +121,10 @@ description: "Coupons let you offer discounts to your customers. Lago deducts th
       }'
     ```
     </CodeGroup>
+
+    `amount_cents` overrides the value of a fixed amount coupon for this
+    customer. For a percentage coupon, `percentage_rate` overrides its rate in
+    the same way.
   </Tab>
 </Tabs>
 
@@ -159,14 +163,52 @@ coupon in the **Coupons** tab of the customer view.
 
 ## Edit, terminate and delete coupons
 
-In the **Coupons** section, click the **ellipsis icon** at the end of a coupon
-row, or open the coupon and click **Actions**, to see all available actions:
+<Tabs>
+  <Tab title="Dashboard">
+    In the **Coupons** section, click the **ellipsis icon** at the end of a
+    coupon row, or open the coupon and click **Actions**, to see all available
+    actions:
 
-1. **Edit**: change the name, code and settings of the coupon;
-2. **Terminate**: deactivate the coupon so that it cannot be applied to any new
-   customer. Customers who already have it continue to benefit from it; and
-3. **Delete**: delete the coupon and remove it from the list. This action cannot
-   be undone.
+      1. **Edit**: change the name, code and settings of the coupon;
+      2. **Terminate**: deactivate the coupon so that it cannot be applied to
+        any new customer. Customers who already have it continue to benefit from
+        it; and
+      3. **Delete**: delete the coupon and remove it from the list. This action
+        cannot be undone.
+  </Tab>
+  <Tab title="API">
+  Both calls identify the coupon by its `code`
+  ([update](/api-reference/coupons/update),
+  [delete](/api-reference/coupons/destroy)).
+    <CodeGroup>
+    ```bash Edit a coupon
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v1/coupons/startup_deal" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "coupon": {
+          "name": "Startup Deal 2026",
+          "expiration": "time_limit",
+          "expiration_at": "2026-12-31T23:59:59Z"
+        }
+      }'
+    ```
+
+    ```bash Delete a coupon
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request DELETE "$LAGO_URL/api/v1/coupons/startup_deal" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+
+    Terminating a coupon is only available in the dashboard.
+  </Tab>
+</Tabs>
 
 <Info>
   Once a coupon has been applied to a customer, you can only edit its name,
@@ -176,12 +218,30 @@ row, or open the coupon and click **Actions**, to see all available actions:
 
 ## Remove coupons
 
-To remove a coupon that has been applied to a customer and is still active:
+<Tabs>
+  <Tab title="Dashboard">
+    To remove a coupon that has been applied to a customer and is still active:
 
-1. Select the customer;
-2. Open the **Coupons** tab and locate the coupon;
-3. Click the **bin icon** on the right; and
-4. Click **Remove coupon** to confirm.
+      1. Select the customer;
+      2. Open the **Coupons** tab and locate the coupon;
+      3. Click the **bin icon** on the right; and
+      4. Click **Remove coupon** to confirm.
+  </Tab>
+  <Tab title="API">
+  The call identifies the applied coupon by its Lago ID, which you can retrieve
+  with [list all applied coupons](/api-reference/coupons/get-all-applied)
+  ([learn more](/api-reference/coupons/destroy-applied-coupon)).
+    <CodeGroup>
+    ```bash Remove a coupon from a customer
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request DELETE "$LAGO_URL/api/v1/customers/5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba/applied_coupons/1a901a90-1a90-1a90-1a90-1a901a901a90" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
 
 The coupon disappears from the customer view immediately and is not applied to
 the next invoice.
