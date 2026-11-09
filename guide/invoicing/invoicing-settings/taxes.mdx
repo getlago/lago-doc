@@ -242,15 +242,18 @@ When generating invoices, taxes can be applied at various levels and will impact
     <CodeGroup>
     ```bash
     # Add tax to an add-on
-    {
-      "add_on": {
-        "name": "Setup fee",
-        "code": "setup_fee",
-        "amount_cents": 100000,
-        "amount_currency": "USD",
-        "tax_codes": ["french_standard_vat"]
-      }
-    }
+    curl --location --request POST "$LAGO_URL/api/v1/add_ons" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "add_on": {
+          "name": "Setup fee",
+          "code": "setup_fee",
+          "amount_cents": 100000,
+          "amount_currency": "USD",
+          "tax_codes": ["french_standard_vat"]
+        }
+      }'
     ```
     </CodeGroup>
   </Tab>

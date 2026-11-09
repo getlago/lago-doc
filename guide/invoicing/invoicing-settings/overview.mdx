@@ -57,14 +57,19 @@ You can override the entity-level setting for specific customers by either assig
         --header 'Content-Type: application/json' \
         --data-raw '{
           "customer": {
-            …
-            "skip_invoice_custom_sections": false, // If true, no invoice custom sections will be applied to the customer
-            "invoice_custom_section_codes": ["eu_bank_details"] // Leave an empty array to use the billing entity-level settings
-            …
+            "external_id": "hooli_1234",
+            "skip_invoice_custom_sections": false,
+            "invoice_custom_section_codes": ["eu_bank_details"]
           }
         }'
       ```
       </CodeGroup>
+
+      Sending the `external_id` of an existing customer updates that customer,
+      and only the fields in the payload change. Set
+      `skip_invoice_custom_sections` to `true` to apply no invoice custom
+      section to this customer. Leave `invoice_custom_section_codes` as an empty
+      array to fall back to the billing entity settings.
   </Tab>
 </Tabs>
 
@@ -102,7 +107,6 @@ If you need granularity per customer, please refer to the **custom invoice secti
         --header 'Content-Type: application/json' \
         --data-raw '{
           "billing_entity": {
-            …
             "billing_configuration": {
               "invoice_footer": "footer custom"
             }
@@ -139,7 +143,6 @@ If you need granularity per customer, please refer to the **custom invoice secti
         --header 'Content-Type: application/json' \
         --data-raw '{
           "billing_entity": {
-            …
             "billing_configuration": {
               "document_locale": "fr"
             }
