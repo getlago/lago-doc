@@ -1,0 +1,255 @@
+---
+title: "Migration to v1.56.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about three changes in Lago v1.56.0:
+
+- **The `/api/v1` list endpoints now limit the page size.** A request with a `per_page` above the limit is rejected with a `422` error instead of being served.
+- **Customer text fields now have a maximum length.** Creating or updating a customer with a longer value is rejected with a `422` error.
+- **The front image listens on port `8080`.** `getlago/front` now runs nginx as a non-root user, on port `8080` (`8443` for TLS) instead of `80` (`443`). A self-hosted setup that sends traffic to port `80` of the front container no longer reaches the app.
+
+This release also makes document download links expire, and changes a few settings that self-hosted users should check. They are listed in [Other changes to check](#other-changes-to-check).
+
+# What are the changes?
+
+## A maximum page size on `/api/v1`
+
+Every request on an `/api/v1` path that sends `per_page` is checked before any data is read. When `per_page` is above the limit, it returns a `422` with the `value_is_out_of_range` code on `per_page`. A `per_page` equal to the limit is accepted.
+
+A `page` or `per_page` that is not a positive number (`0`, a negative value, text) is not rejected. As before, it falls back to the first page or the default page size.
+
+```json
+{
+  "status": 422,
+  "error": "Unprocessable Entity",
+  "code": "validation_errors",
+  "error_details": {
+    "per_page": ["value_is_out_of_range"]
+  }
+}
+```
+
+The limit is **200 by default**. Requests that send no `page` or `per_page`, or send them empty, behave as before: the default page size stays 100.
+
+The limit can be changed in two ways:
+
+- **For the whole instance**, with the `LAGO_API_PAGINATION_MAX_PAGE_SIZE` environment variable.
+- **For one organization**, with the new `pagination_max_page_size` column of the `organizations` table. When it is set, it wins over the environment variable, higher or lower.
+
+What does not change:
+
+- The response of a valid request is unchanged.
+- The GraphQL API used by the Lago front-end is not affected.
+
+## A maximum length on customer text fields
+
+Creating or updating a customer now checks the length of its text fields, on the API, in the Lago app and in the customer portal:
+
+| Field | Maximum length |
+|---|---|
+| `address_line1`, `address_line2` (billing and shipping) | 500 characters |
+| `firstname`, `lastname`, `legal_name`, `tax_identification_number`, `zipcode`, `city`, `state` (billing and shipping) | 255 characters |
+
+`name` already had a 255 character limit. A longer value returns a `422` with the `value_is_too_long` code on the field (the shipping fields are reported as `shipping_city`, `shipping_address_line1` and so on):
+
+```json
+{
+  "status": 422,
+  "error": "Unprocessable Entity",
+  "code": "validation_errors",
+  "error_details": {
+    "legal_name": ["value_is_too_long"]
+  }
+}
+```
+
+Only the values that change are checked. A customer that already holds a longer value keeps it, and can still be updated as long as that field is not changed. These limits cannot be raised.
+
+The customer portal also rejects a changed value that holds a line break, a tab or an invisible character, with the `invalid_characters` code. The API and the Lago app still accept these characters.
+
+## The front image runs as a non-root user on port 8080
+
+This applies to self-hosted users only.
+
+The `getlago/front` image is now built on a hardened base image ([lago-front#4359](https://github.com/getlago/lago-front/pull/4359)):
+
+| | Before v1.56.0 | From v1.56.0 |
+|---|---|---|
+| User | root | uid `65532` |
+| Listen port | `80` (`443` for TLS) | `8080` (`8443` for TLS) |
+| Files written at start (`env-config.js`, `csp.conf`, pid file) | next to the app files | `/tmp` |
+
+A non-root process cannot listen on a port below 1024, so the container port changes. The port on your host can stay `80`.
+
+# Why are we doing this?
+
+Until now, nothing limited `per_page` on `/api/v1`. A single request such as `GET /api/v1/invoices?per_page=1000000000` loaded the whole table in one response, and held a database connection and a worker for as long as it took. On a large instance, a few of these requests slowed the API down for every other client.
+
+Customer text fields had no length limit either, and the customer portal let end customers write long, multi-line text into them. These values are shown on invoices and in the Lago app, and are read by the AI assistant. The limits keep them to the size of a real name or address.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow steps 1, 2 and 4. The Lago Team sets the page size limit for the organizations that need larger pages.
+</Note>
+
+<Warning>
+If you're using a version below `v1.54.0`, please first follow the migration steps for [v1.54.0](/guide/migration/migration-to-v1.54.0).
+Only after completing those should you proceed to v1.56.0.
+</Warning>
+
+## 1. Check the page size your integrations send
+
+Before upgrading, look for `/api/v1` requests that send a `per_page` above 200 (in your API access logs, your load balancer logs, or the code of your integrations).
+
+If none of them do, no action is needed: install v1.56.0 as usual.
+
+## 2. Raise the limit before upgrading, if needed
+
+If some integrations send a `per_page` above 200, choose one of the options below **before** installing v1.56.0. Otherwise these requests start failing with a `422` as soon as the new version runs.
+
+### Option A: raise the limit for the whole instance
+
+Set the environment variable on the **API** container, then restart it:
+
+```bash
+LAGO_API_PAGINATION_MAX_PAGE_SIZE=1000
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `LAGO_API_PAGINATION_MAX_PAGE_SIZE` | `200` | Largest `per_page` accepted on `/api/v1` list endpoints. A missing, invalid or non-positive value falls back to `200`. |
+
+The value is read on every request, so a later change only needs a restart, not a new release.
+
+### Option B: raise the limit for one organization
+
+After installing v1.56.0 (the column is added by the database migrations), open a Rails console on your API server and set the limit of the organization:
+
+```bash
+bundle exec rails console
+```
+
+```ruby
+Organization.find("ORGANIZATION_ID").update!(pagination_max_page_size: 1000)
+```
+
+The value must be a positive whole number. Set it back to `nil` to use the instance limit again.
+
+<Tip>
+To upgrade without any failed request, set `LAGO_API_PAGINATION_MAX_PAGE_SIZE` to a high value (for example `100000`) before installing v1.56.0. Then set `pagination_max_page_size` for the organizations that need large pages. Finally, lower the environment variable (or remove it to use the default of 200) and restart the API.
+</Tip>
+
+## 3. Check the customer values your integrations send
+
+This step applies to Cloud and self-hosted users. Look for integrations that create or update customers with text longer than the limits above, for example a long legal name or an address sent in a single field. Shorten these values before sending them, or split an address across `address_line1` and `address_line2`. Otherwise these requests fail with a `422` once v1.56.0 runs.
+
+## 4. Point the front service at port 8080
+
+The `docker-compose.yml` of the [Lago repository](https://github.com/getlago/lago) for v1.56.0 already does this: it publishes `${FRONT_PORT:-80}:8080`, and gives the front service `read_only: true` and a tmpfs on `/tmp`. If you run your own Compose file, Kubernetes manifests or reverse proxy:
+
+- Send traffic to container port `8080` (and `8443` for TLS). For example `80:8080` in Compose, or `loadbalancer.server.port=8080` in a Traefik label.
+- If the root filesystem of the container is read-only, give `/tmp` a writable mount (a tmpfs, or an `emptyDir` in Kubernetes).
+- If you mount your own nginx `default.conf` (for TLS), listen on `8080` and `8443`, and copy the `env-config.js` location, the dotfile rule and the `include /tmp/csp.conf` lines from `extra/nginx-selfsigned.conf` in the Lago repository. Remove `ssl_dhparam`: the image cannot load DH parameter files.
+- Make your TLS key and certificate readable by uid `65532`. `extra/init-selfsigned.sh` and `extra/init-letsencrypt.sh` in the Lago repository do this.
+- Remove any `command:` override of the front service. Use the `entrypoint:` shown in `docker-compose.yml` instead.
+
+# Other changes to check
+
+The environment variables below are set on the API and worker containers, like the other [environment variables](/guide/lago-self-hosted/docker#environment-variables).
+
+## Document download links now expire
+
+This applies to Cloud and self-hosted users.
+
+The download links of invoices, credit notes, payment receipts and signed order forms (`file_url`, `xml_url`, `signed_document_url`) now point to a new path, `<LAGO_API_URL>/documents/...`, and expire. Each link comes with its expiry date in a new field next to it (`file_url_expires_at`, `xml_url_expires_at`, `signed_document_url_expires_at`), in the API, GraphQL and webhook payloads.
+
+A link expires at the end of the day, 30 days after:
+
+- the payment due date of an invoice (or its issuing date when it has no due date),
+- the issuing date of a credit note,
+- the creation date of a payment receipt,
+- the signing date of an order form.
+
+A link is always valid for at least 10 days after it is generated. An organization can raise the 30 days up to 120 days with the `document_url_expiration_days` setting of the organization (API and GraphQL).
+
+An expired link returns a `410`:
+
+```json
+{
+  "status": 410,
+  "error": "Gone",
+  "code": "expired"
+}
+```
+
+A browser gets a "This link has expired." page instead. To get a valid link again, fetch the document again from the API (for example `GET /api/v1/invoices/:lago_id`).
+
+Links generated before v1.56.0 use the previous `/rails/active_storage/...` path and do not expire. They keep working until `LAGO_LEGACY_DOCUMENT_URLS_EXPIRE_AT` is set to a date in the past. After that date, these old links also return the `410`. Logos and data exports are not affected.
+
+What to check:
+
+- **Integrations that store `file_url` or `xml_url`** (in a database, a CRM, an ERP, an email). A stored link stops working after its expiry date. Store the document ID and fetch a fresh link when it is needed, or download the file when you receive it.
+- **Reverse proxies or firewalls that only allow some paths on the API host.** Allow `/documents/` on `LAGO_API_URL`. With local disk storage, the download is then redirected to `/rails/active_storage/...` on the same host, so keep that path allowed too.
+- **`LAGO_LEGACY_DOCUMENT_URLS_EXPIRE_AT`**, only if you want the old links to stop working. The value is a date such as `2027-01-31` or `2027-01-31T00:00:00Z` (read as UTC), read when the API starts. A value that is not a valid date stops the API from starting.
+
+## Login limits behind a reverse proxy
+
+Login attempts are limited per client IP address (30 attempts per minute), and per email and IP address pair. Attempts from other IP addresses no longer block a user's password login.
+
+Lago reads the client IP from the `X-Forwarded-For` header only when the request comes through a trusted proxy. Proxies on private addresses (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, loopback) are trusted by default. When a proxy has a public address (a CDN, a load balancer outside your private network), list it in `LAGO_TRUSTED_PROXIES`. Otherwise every client gets the proxy's IP, shares one counter, and one client can block logins for everyone.
+
+`LAGO_TRUSTED_PROXIES` takes a comma-separated list of IP addresses or CIDR ranges. An invalid entry stops the API from starting.
+
+The attempt counters are kept in the Sidekiq Redis (`REDIS_URL`) by default. To keep them in another Redis, set `LAGO_REDIS_THROTTLING_URL`, and `LAGO_REDIS_THROTTLING_PASSWORD` if it needs one.
+
+## WebSocket connections check the front-end origin
+
+The API now accepts WebSocket connections (used by the AI assistant) only from the origin of `LAGO_FRONT_URL`. Make sure `LAGO_FRONT_URL` is the exact URL users open the Lago app with (scheme, host and port). When it is not set, it defaults to `https://app.getlago.com`, and these features stop working on a self-hosted front end.
+
+## GraphQL introspection is off
+
+The GraphQL API no longer describes its schema (`__schema`, `__type` queries) in production. The Lago app does not need it. If a tool needs the schema from a running API, set `LAGO_GRAPHQL_INTROSPECTION_ENABLED=true` on the API.
+
+## Event timestamps out of range are rejected
+
+An event with a `timestamp` before 1970 or from the year 2300 now returns a `422` with the `value_is_out_of_range` code on `timestamp` (one error per event in a batch).
+
+Two optional variables, `LAGO_EVENTS_MAX_PAST_DAYS` and `LAGO_EVENTS_MAX_FUTURE_HOURS`, reject events too far in the past or the future, for example a timestamp sent in milliseconds instead of seconds. Both are off when not set, and are read when the API starts.
+
+## The gRPC token endpoint was removed
+
+`GET /api/v1/organizations/grpc_token` now returns a `404`. It was not used by Lago.
+
+## Database migrations that can take time
+
+The database migrations run when the API starts, as usual. Two of them can take longer on large instances:
+
+- **PostgreSQL:** a new index on `invoices` (`organization_id`, `created_at`) is built with `CREATE INDEX CONCURRENTLY`. It does not block writes, but it can take a while on a large `invoices` table. If it fails, running the migrations again builds it from the start.
+- **ClickHouse** (only when `LAGO_CLICKHOUSE_MIGRATIONS_ENABLED` is set): new indexes are added on `events_raw` (`transaction_id`) and `events_enriched` (`transaction_id`, `enriched_at`). The migrations finish right away, then ClickHouse builds the indexes in the background (`MATERIALIZE INDEX`). On large tables this can take a long time and use CPU and disk. You can follow it in the `system.mutations` table.
+
+## Docker Compose changes
+
+The Docker Compose files of the [Lago repository](https://github.com/getlago/lago) now use the `ghcr.io/getlago/lago-gotenberg:8.39` image for the PDF service. If you run your own compose file, update the `pdf` service image.
+
+## New optional settings
+
+| Variable | Default | Description |
+|---|---|---|
+| `LAGO_LEGACY_DOCUMENT_URLS_EXPIRE_AT` | not set | Date after which document links generated before v1.56.0 return a `410`. Not set: they never expire. |
+| `LAGO_TRUSTED_PROXIES` | not set | Comma-separated IP addresses or CIDR ranges of proxies with a public address, added to the private ranges trusted by default. |
+| `LAGO_REDIS_THROTTLING_URL` | `REDIS_URL` | Redis used for the login attempt counters. |
+| `LAGO_REDIS_THROTTLING_PASSWORD` | `REDIS_PASSWORD` | Password of `LAGO_REDIS_THROTTLING_URL`. Only used when that URL is set. |
+| `LAGO_GRAPHQL_INTROSPECTION_ENABLED` | `false` | Set to `true` to let clients read the GraphQL schema. |
+| `LAGO_EVENTS_MAX_PAST_DAYS` | not set | Rejects events with a timestamp more than this number of days in the past. |
+| `LAGO_EVENTS_MAX_FUTURE_HOURS` | not set | Rejects events with a timestamp more than this number of hours in the future. |
+
+# Get Involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team

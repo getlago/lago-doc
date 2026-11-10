@@ -1,0 +1,150 @@
+---
+title: "Migration to v1.57.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about two changes in Lago v1.57.0:
+
+- **Payment terms move to a new format.** Self-hosted users must run a rake task after installing v1.57.0. It copies the net payment term of every customer into the new format. **This task must be finished before upgrading to the release that introduces flexible payment terms.**
+- **The all-in-one image (`getlago/lago`) runs as a nonroot user and keeps its data in `/data`.** It now uses PostgreSQL 18 and Valkey, and no longer starts the PDF service by itself. Installations with Docker Compose or the Helm chart are not affected.
+
+# What are the changes?
+
+## A new format for payment terms
+
+Until now, a payment term was a number of days (`net_payment_term`) on the customer and the billing entity. Flexible payment terms add other kinds of terms, such as a due date at the end of the month or on a given day of the month. These terms are stored in a new `payment_term` field, next to `net_payment_term`.
+
+The existing number of days is copied into this new field as a net term. For example, a customer with `net_payment_term: 30` gets:
+
+```json
+{
+  "term_type": "net",
+  "days": 30
+}
+```
+
+Nothing else changes for payment terms in v1.57.0: invoices keep the same due dates, and the API and the Lago app behave as before.
+
+## Billing entities are migrated automatically
+
+The database migrations copy the payment term of every billing entity when the API starts, as usual. There is nothing to do for billing entities.
+
+## Customers are migrated by a rake task
+
+The `customers` table can be large, so customers are not migrated when the API starts. A rake task starts the migration, and a background job copies the payment terms in batches of 5,000 customers.
+
+The task only fills customers that have a `net_payment_term` and no `payment_term` yet. Customers without a `net_payment_term` keep using the payment term of their billing entity, and are left as they are.
+
+## The all-in-one image runs as a nonroot user
+
+This applies to self-hosted users who run the all-in-one image `getlago/lago`, started with the [one-click Docker command](/guide/lago-self-hosted/docker#run-the-app-with-a-one-click-docker-command). This image is for testing and staging. Installations with Docker Compose or the Helm chart are not affected.
+
+| | Before v1.57.0 | From v1.57.0 |
+|---|---|---|
+| User | root | uid `65532` |
+| Database | PostgreSQL 17 | PostgreSQL 18 |
+| Job queue | Redis | Valkey (Redis-compatible) |
+| Database, job queue and generated files (invoice PDFs, exports) | inside the container | in `/data` |
+| PDF generation | started by the image through the Docker socket | a separate `lago-gotenberg` container |
+
+- **Data is kept in `/data`.** Mount a volume on `/data` to keep the database, the job queue and generated files when you remove or upgrade the container. Earlier images kept them inside the container, so they are not moved to the new image: it starts with an empty database.
+- **PDF generation runs in its own container.** A nonroot user cannot use the Docker socket, so the image no longer starts the PDF service. Run `ghcr.io/getlago/lago-gotenberg:8.39` next to it. Lago reaches it at `LAGO_PDF_URL`, which defaults to `http://host.docker.internal:3001`.
+- **The container stops cleanly.** On `docker stop`, a running background job gets up to 25 seconds to go back to the queue before Postgres stops. Start the container with `--stop-timeout 40`: with the Docker default of 10 seconds, Docker kills every process, Postgres included.
+
+# Why are we doing this?
+
+The release that introduces flexible payment terms reads the payment term of customers from the new field only. A customer that is not migrated by then would lose its own net payment term, and its invoices would use the payment term of its billing entity instead.
+
+Running the migration as a background task, separately from the upgrade, keeps the upgrade fast on large instances.
+
+The all-in-one image was the last Lago image built on Debian. It ran every process as root, and a security scan (Trivy) found 1 critical and 99 high vulnerabilities in it. It is now built on the same hardened base images as the other Lago images, with no known high or critical vulnerability. Its data was also lost every time the container was recreated.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions as the migration will be performed by the Lago Team.
+</Note>
+
+<Warning>
+If you're using a version below `v1.56.0`, please first follow the migration steps for [v1.56.0](/guide/migration/migration-to-v1.56.0).
+Only after completing those should you proceed to v1.57.0.
+</Warning>
+
+## Migrate the customer payment terms
+
+### 1. Install Lago v1.57.0
+
+Install the new version. The database migrations run when the API starts and migrate the billing entities.
+
+### 2. Run the customers migration task
+
+Open a shell (bash) on your API server and run:
+
+```bash
+bundle exec rails migrations:backfill_customers_payment_term
+```
+
+The task only starts the migration. The customers are migrated in the background by the Lago worker (the `worker` service in Docker Compose), which must be running.
+
+<Note>
+The task is safe to run multiple times. Customers that already have a payment term are not changed.
+</Note>
+
+### 3. Check that the migration is finished
+
+When the migration is finished, the worker logs `Finished backfilling customers.payment_term`.
+
+You can also check it from a Rails console on your API server:
+
+```bash
+bundle exec rails console
+```
+
+```ruby
+Customer.unscoped.where(payment_term: nil).where.not(net_payment_term: nil).count
+```
+
+The migration is finished when this returns `0`.
+
+If the worker logs `customers.payment_term backfill finished with rows still NULL` instead, run the task from step 2 again.
+
+### 4. Upgrade to the next releases
+
+Only upgrade to the release that introduces flexible payment terms once step 3 returns `0`.
+
+## Upgrade the all-in-one image
+
+Skip this section if you do not run `getlago/lago`.
+
+### 1. Give an existing `/data` volume to the nonroot user
+
+If you mounted a volume on `/data` with an earlier image, it belongs to root, and the new image stops with an error until you give it to the nonroot user. Run this once, before starting the new image:
+
+```shell
+docker run --rm -u 0 -v lago_data:/data --entrypoint chown getlago/lago:v1.57.0 -R 65532:65532 /data
+```
+
+For a bind mount, run `chown -R 65532:65532 <host directory>` on the host.
+
+### 2. Start the PDF service and Lago
+
+```shell
+docker run -d --name lago-pdf -p 3001:3000 ghcr.io/getlago/lago-gotenberg:8.39
+docker run -d --name lago --stop-timeout 40 --add-host=host.docker.internal:host-gateway \
+  -v lago_data:/data -p 80:80 -p 3000:3000 getlago/lago:v1.57.0
+```
+
+Docker Desktop resolves `host.docker.internal` without `--add-host`.
+
+<Note>
+The new image starts with an empty database, and customers created from v1.57.0 already have their payment term in the new format. The customers migration task has nothing to migrate in the all-in-one image.
+</Note>
+
+# Get involved
+
+If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
+
+Thanks for your understanding and continued support.
+
+The Lago Team

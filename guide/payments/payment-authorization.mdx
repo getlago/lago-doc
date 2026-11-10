@@ -3,8 +3,14 @@ title: "Payment pre-authorization"
 description: "Learn how to validate payment methods before creating, upgrading, or downgrading customer subscriptions."
 ---
 
+<Info>
+**PREMIUM ADD-ON** ✨
+
+This feature is available upon request only. Please **[contact us](mailto:hello@getlago.com)** to get access to this premium feature.
+</Info>
+
 <Warning>
-  **Stripe Integration Only**
+  **Stripe integration only**
 
   While Lago supports multiple payment providers, payment pre-authorization is currently only available with Stripe.
 </Warning>
@@ -17,9 +23,9 @@ By default, when creating a subscription, Lago follows this process:
 2. Generates the invoice asynchronously; and
 3. Processes the payment asynchronously.
 
-This means it's possible to create an active subscription for a customer even if the payment later fails. While this behavior is intentional, it may not be ideal for all use cases.
+A subscription can therefore become active even if the payment later fails. This behavior is intentional, but it does not suit every use case.
 
-To address this, Lago offers payment pre-authorization, **allowing you to verify the validity of a payment method for a specific amount before creating the subscription.**
+Payment pre-authorization addresses this. It **checks that a payment method is valid for a given amount before the subscription is created.**
 
 <Info>
   **Important**: If the pre-authorization fails, the entire process is aborted and no subscription is created.
@@ -39,11 +45,11 @@ The exact list depends on the payment methods enabled on your Stripe account. Re
 
 Pre-authorization can fail if the card details are invalid, if the customer has insufficient funds, or if the payment method type does not support manual capture.
 
-Please note that if 3DS is required during pre-authorization, the card is considered valid and the subscription is created.
+If 3DS is required during pre-authorization, the card is considered valid and the subscription is created.
 
 ## Understanding the limitations
 
-While pre-authorization helps reduce payment failures, it cannot guarantee successful invoice payment because:
+Pre-authorization reduces payment failures, but it cannot guarantee that the invoice is paid, because:
 
 1. Conditions may change between pre-authorization and actual payment:
    - Customer's account balance may decrease
@@ -69,6 +75,30 @@ You must manually specify the amount to authorize, as the final amount (includin
   }
 }
 ```
+
+The `authorization` object sits next to `subscription`, not inside it:
+
+<CodeGroup>
+```bash Create a subscription with pre-authorization
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+  "authorization": {
+    "amount_cents": 5000,
+    "amount_currency": "EUR"
+  },
+  "subscription": {
+    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+    "plan_code": "premium",
+    "external_id": "my_sub_12345789"
+  }
+}'
+```
+</CodeGroup>
 
 ### Success response
 

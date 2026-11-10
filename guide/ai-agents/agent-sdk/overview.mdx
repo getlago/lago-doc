@@ -317,7 +317,7 @@ your code ──────▶ │ wrapped client │ ──────▶ pro
   </Step>
 
   <Step title="Wire up on_error">
-    Instrumentation failures are silent by design — the SDK will never break your LLM call to tell you about one. That makes the error hook the only way to find out something is wrong, so set it on day one rather than later.
+    Instrumentation failures are silent by design. The SDK never breaks your LLM call to tell you about one. That makes the error hook the only way to find out something is wrong, so set it on day one rather than later.
 
     <CodeGroup>
       ```python Python
@@ -346,7 +346,7 @@ your code ──────▶ │ wrapped client │ ──────▶ pro
   </Step>
 
   <Step title="Register billable metrics in Lago">
-    Before events count toward charges, register matching billable metrics in your Lago tenant. The SDK ships with default metric codes — [Billing](/guide/ai-agents/agent-sdk/billing) lists all eleven and shows the plan setup that prices them correctly.
+    Before events count toward charges, register matching billable metrics in your Lago tenant. The SDK ships with default metric codes. [Billing](/guide/ai-agents/agent-sdk/billing) lists all eleven and shows the plan setup that prices them correctly.
 
     Follow [Create a billable metric](/api-reference/billable-metrics/create) to create them, then attach charges in your plan. For a full worked example, see the [per-token pricing template](/templates/per-token/openai).
   </Step>
@@ -354,7 +354,7 @@ your code ──────▶ │ wrapped client │ ──────▶ pro
 
 ## What the SDK does not cover
 
-`wrap()` instruments the chat and completion surfaces, not everything a provider client can do. Embeddings, image and video generation, audio endpoints, batch APIs, and — on OpenAI and Anthropic — the `parse()` structured-output helpers all pass through unmetered.
+`wrap()` instruments the chat and completion surfaces, not everything a provider client can do. Embeddings, image and video generation, audio endpoints, batch APIs, and (on OpenAI and Anthropic) the `parse()` structured-output helpers all pass through unmetered.
 
 Each provider page has a "what is and isn't instrumented" section with the exact list. For anything the wrappers miss, including providers with no wrapper at all, build a `CanonicalUsage` yourself and pass it to [`sdk.emit()`](/guide/ai-agents/agent-sdk/reference#billing-a-provider-the-sdk-does-not-wrap).
 
@@ -373,7 +373,7 @@ Each provider page has a "what is and isn't instrumented" section with the exact
 
 Make one call through the wrapped client and call `flush()`. In the Lago dashboard, open **Developers → Events** and confirm an event arrives with the expected metric `code` and `properties`, then check that the customer's usage counter moved.
 
-If nothing arrives, look at `on_error` first — instrumentation failures are silent by design. The usual causes are an unregistered metric code, no resolvable `external_subscription_id`, and an API key without write access.
+If nothing arrives, look at `on_error` first. Instrumentation failures are silent by design. The usual causes are an unregistered metric code, no resolvable `external_subscription_id`, and an API key without write access.
 
 ## Resources
 

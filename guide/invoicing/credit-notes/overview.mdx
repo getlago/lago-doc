@@ -68,35 +68,36 @@ Prepaid credit invoices follow specific rules:
 
   </Tab>
   <Tab title="API">
-  ```bash Create a credit note
-  LAGO_URL="https://api.getlago.com"
-  API_KEY="__YOUR_API_KEY__"
+    <CodeGroup>
+    ```bash Create a credit note
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
 
     curl --location --request POST "$LAGO_URL/api/v1/credit_notes" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json' \
-    --data-raw '{
-      "credit_note": {
-        "invoice_id": "__LAGO_INVOICE_ID__",
-        "reason": "duplicated_charge",
-        "credit_amount_cents": 10,
-        "refund_amount_cents": 5,
-        "offset_amount_cents": 0,
-        "items": [
-          {
-            "fee_id": "__LAGO_FEE_ID__",
-            "amount_cents": 10
-          },
-          {
-            "fee_id": "__LAGO_FEE_ID__",
-            "amount_cents": 5
-          }
-        ]
-      }
-    }'
-
-```
-</Tab>
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "credit_note": {
+          "invoice_id": "__LAGO_INVOICE_ID__",
+          "reason": "duplicated_charge",
+          "credit_amount_cents": 10,
+          "refund_amount_cents": 5,
+          "offset_amount_cents": 0,
+          "items": [
+            {
+              "fee_id": "__LAGO_FEE_ID__",
+              "amount_cents": 10
+            },
+            {
+              "fee_id": "__LAGO_FEE_ID__",
+              "amount_cents": 5
+            }
+          ]
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
 </Tabs>
 
 Once created, the credit note:
@@ -107,7 +108,7 @@ You can issue **multiple credit notes** on a single invoice.
 Each credit note has a unique number and can be downloaded as a PDF.
 
 <Frame caption="Credit note detail">
-<img src="/guide/images/credit-note-39fd904adb8cc192e4e78320171c388f.png" />
+<img src="/guide/images/credit-note-39fd904adb8cc192e4e78320171c388f.png" alt="Detail view of a credit note" />
 </Frame>
 
 
@@ -155,8 +156,8 @@ Prepaid credits          $30.00
 Total                    $16.00
 ```
 
-When a credit note wallet is created, its initial `credit_status` is set to `available`. 
-Once the wallet balance reaches zero, the status automatically changes to consumed.
+When a credit note wallet is created, its initial `credit_status` is set to `available`.
+Once the wallet balance reaches zero, the status automatically changes to `consumed`.
 
 
 ## Void available credit
@@ -179,14 +180,16 @@ You can still void any remaining credit linked to a specific credit note when ne
     </Warning>
   </Tab>
   <Tab title="API">
-  ```bash Void a credit note
-  LAGO_URL="https://api.getlago.com"
-  CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
-  API_KEY="__YOUR_API_KEY__"
+    <CodeGroup>
+    ```bash Void a credit note
+    LAGO_URL="https://api.getlago.com"
+    CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+    API_KEY="__YOUR_API_KEY__"
 
-  curl --location --request PUT "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/void" \
-    --header "Authorization: Bearer $API_KEY" \
-    --header 'Content-Type: application/json'
-  ```
+    curl --location --request PUT "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/void" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json'
+    ```
+    </CodeGroup>
   </Tab>
 </Tabs>

@@ -20,8 +20,8 @@ Both SDKs expose the same surface with idiomatic naming. Python takes seconds, J
 | `bedrock_default_region`  | `bedrockDefaultRegion`    | `us-east-1`                      | Region for Bedrock prices when the model id carries no region prefix |
 | `cloudflare_account_id`   | `cloudflareAccountId`     | `None` / `undefined`             | Required, with the token below, to price Workers AI |
 | `cloudflare_api_token`    | `cloudflareApiToken`      | `None` / `undefined`             | Cloudflare API token for the model catalog |
-| `mistral_api_key`         | `mistralApiKey`           | `None` / `undefined`             | Usually unnecessary — wrapping a Mistral client auto-detects the key it already carries. Set it only when pricing Mistral usage without ever calling `wrap()` |
-| `ramp_router_api_key`     | `rampRouterApiKey`        | `None` / `undefined`             | Usually unnecessary — wrapping an OpenAI or Anthropic client pointed at Ramp Router reads the key it already carries. Set it only when pricing Router usage without ever calling `wrap()`; an explicit value always wins over a learned one |
+| `mistral_api_key`         | `mistralApiKey`           | `None` / `undefined`             | Usually unnecessary. Wrapping a Mistral client auto-detects the key it already carries. Set it only when pricing Mistral usage without ever calling `wrap()` |
+| `ramp_router_api_key`     | `rampRouterApiKey`        | `None` / `undefined`             | Usually unnecessary. Wrapping an OpenAI or Anthropic client pointed at Ramp Router reads the key it already carries. Set it only when pricing Router usage without ever calling `wrap()`; an explicit value always wins over a learned one |
 | `verify_ssl`              | `verifySsl`               | `True` / `true`                  | TLS verification for requests to `api_url`. Only disable against a local dev instance with a self-signed certificate |
 | `flush_interval_seconds`  | `flushIntervalMs`         | `1.0` / `1000`                   | How often the background worker flushes |
 | `max_batch_size`          | `maxBatchSize`            | `100`                            | Max events per request. Lago's hard cap is 100 |
@@ -31,16 +31,16 @@ Both SDKs expose the same surface with idiomatic naming. Python takes seconds, J
 | `on_error`                | `onError`                 | `None` / `undefined`             | Callback for instrumentation failures |
 
 <Tip>
-  The Python constructor also takes `api_key`, `api_url` and `default_subscription_id` directly. When you pass both a constructor argument and a `config`, the constructor argument wins — so set `api_url` on the constructor, not only on the config.
+  The Python constructor also takes `api_key`, `api_url` and `default_subscription_id` directly. When you pass both a constructor argument and a `config`, the constructor argument wins, so set `api_url` on the constructor, not only on the config.
 </Tip>
 
 ## Choosing a subscription
 
 Lago needs to know which customer to bill. The SDK resolves `external_subscription_id` in this order:
 
-1. **Per-call override** — highest precedence
-2. **Context-bound** — set once per request handler, propagating across async boundaries via `contextvars` (Python) and `AsyncLocalStorage` (Node)
-3. **Default at init** — the fallback
+1. **Per-call override:** highest precedence
+2. **Context-bound:** set once per request handler, propagating across async boundaries via `contextvars` (Python) and `AsyncLocalStorage` (Node)
+3. **Default at init:** the fallback
 
 <CodeGroup>
   ```python Python
@@ -98,7 +98,7 @@ Per-call `dimensions` are merged with any set at `wrap()` time, with the per-cal
 
 ## Billing a provider the SDK does not wrap
 
-`emit()` and `CanonicalUsage` are public. Together they let you bill anything — a provider with no wrapper, an endpoint `wrap()` does not patch, or usage read from a log after the fact.
+`emit()` and `CanonicalUsage` are public. Together they let you bill anything: a provider with no wrapper, an endpoint `wrap()` does not patch, or usage read from a log after the fact.
 
 <CodeGroup>
   ```python Python
@@ -143,11 +143,11 @@ Per-call `dimensions` are merged with any set at `wrap()` time, with the per-cal
 
 Both SDKs export the same classes:
 
-- `LagoSDKError` — base class for every SDK-raised error
-- `LagoApiError` — non-2xx from Lago. Carries `status` and `body`
-- `LagoConfigError` — invalid configuration at init
-- `UnknownClientError` — `wrap()` was called on a client the SDK does not recognize. Subclasses `LagoConfigError`
-- `PricingUnavailableError` — price mode could not resolve a price. Surfaced through `on_error`, never raised at the call site
+- `LagoSDKError`: base class for every SDK-raised error
+- `LagoApiError`: non-2xx from Lago. Carries `status` and `body`
+- `LagoConfigError`: invalid configuration at init
+- `UnknownClientError`: `wrap()` was called on a client the SDK does not recognize. Subclasses `LagoConfigError`
+- `PricingUnavailableError`: price mode could not resolve a price. Surfaced through `on_error`, never raised at the call site
 
 Because instrumentation failures are silent by design, wire `on_error` on day one:
 

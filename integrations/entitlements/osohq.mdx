@@ -2,17 +2,19 @@
 title: "Oso"
 ---
 
-[Oso](https://www.osohq.com/) is an authorization-as-a-service provider partnering with Lago to offer entitlements. You can use either the open-source version (available on [Github](https://github.com/osohq/oso)) or the cloud-hosted version. To create entitlements with Lago, you must open an account on Oso.
+[Oso](https://www.osohq.com/) is an authorization-as-a-service provider partnering with Lago to offer entitlements. You can use the open-source version (available on [GitHub](https://github.com/osohq/oso)) or the cloud-hosted version. To use Oso with Lago, you must open an account on Oso.
 
 For more information, refer to [Oso's documentation](https://www.osohq.com/docs).
 
 
-## Define available features and plan's quota
+## Define available features and plan quotas
+
 First, define the available features for each plan. For instance, the Basic plan has a limited set of features, while the Premium plan offers the full range.
 
-In addition to this, you can use Lago to bill metering and overage. This information can then be passed directly to Oso's `plan_quota` and `quota_used` to limit usage for a specific feature.
+You can also use Lago to bill metering and overage. Pass that information to Oso's `plan_quota` and `quota_used` to limit the usage of a specific feature.
 
 ## Example
+
 [Oso's documentation](https://www.osohq.com/docs) explains the following entitlements example.
 
 ```ruby
@@ -60,7 +62,7 @@ has_permission(user: User, "create_repository", org: Organization) if
  
  
  
-test "members can create repositorys if they have quota" {
+test "members can create repositories if they have quota" {
     setup {
         quota_used(Organization{"apple"}, Feature{"repository"}, 5);
         quota_used(Organization{"netflix"}, Feature{"repository"}, 10);
