@@ -1,7 +1,7 @@
 ---
 title: "Prepaid credits and wallets: bill usage against a balance"
 sidebarTitle: "Overview"
-description: "Since usage-based charges can be calculated at the end of the billing period, you often need to wait to collect payments. With prepaid credits, you can now unlock recurring revenue opportunities for pay-as-you-go pricing models."
+description: "Usage-based charges are billed at the end of the billing period, so payment comes late. Prepaid credits let you collect it up front and draw the balance down as usage arrives."
 ---
 
 Prepaid credits increase predictability. You collect payments in advance, then monitor how the balance of your customers' wallets evolves.
@@ -26,12 +26,10 @@ When several wallets share the same priority, the wallet that expires soonest is
     5. Set the credit value (e.g. 1 credit = $5);
     6. Define the wallet priority;
     7. Enter the number of credits to be purchased and/or granted for free;
-    8. Define transaction metadata (optional & available only via API);
-    9. Determine whether the wallet transaction generates an invoice after a top-up or only following a successful payment;
-    10. Define a PO number to be used on invoices generated from this wallet;
-    11. Set the [expiration date](#expiration-date-and-termination) (optional);
-    12. In **Invoicing settings**, keep the inherited [payment term](#payment-terms) or choose one for this wallet; and
-    13. Click **"Add wallet & credits"** to confirm.
+    8. Determine whether the wallet transaction generates an invoice after a top-up or only following a successful payment;
+    9. Define a PO number to be used on invoices generated from this wallet;
+    10. Set the [expiration date](#expiration-date-and-termination) (optional); and
+    11. Click **"Add wallet & credits"** to confirm.
 
     <Info>
       The currency of the wallet can differ from the default currency of the customer.
@@ -120,8 +118,8 @@ Subtotal (excl. tax)     $60.00
 Tax (10%)                $ 6.00
 -------------------------------
 Subtotal (incl. tax)     $66.00
-Credit notes             $20.00
-Prepaid credits          $30.00
+Credit notes            -$20.00
+Prepaid credits         -$30.00
 -------------------------------
 Total                    $16.00
 ```
@@ -134,9 +132,10 @@ By default, prepaid credits apply to every fee type. You can refine this behavio
   <Tab title="Dashboard">
     To limit the scope of prepaid credits through the user interface:
     1. Create or edit an existing wallet;
-    2. In the **"Limit wallet credits to specific objects"** section, add one or more object limitations;
-    3. You can also limit wallet prepaid credits to specific billable metrics; and
-    4. Keep in mind: selecting all items has the same effect as selecting none. For this reason, we recommend leaving all options unselected unless a specific restriction is needed.
+    2. In the **"Limit wallet credits to specific objects"** section, add one or more object limitations; and
+    3. Limit the prepaid credits to specific billable metrics, if you need to.
+
+    <Info>Selecting every item has the same effect as selecting none. Leave the options unselected unless you need a restriction.</Info>
 
     <Frame caption="Limit wallet prepaid credits to specific objects">
       <img src="/guide/images/wallet-application-scope.png" alt="Wallet form section limiting prepaid credits to specific objects" />
@@ -207,8 +206,7 @@ With this option enabled, the invoice is issued on the day the payment succeeds 
   </Tab>
 </Tabs>
 
-For a single transaction, you can ignore wallet limits at any time by adding the `ignore_paid_top_up_limits` flag to the payload, or by enabling the **Skip top-up limits for this transaction** option in the UI.
-This applies to both single transactions and automatic top-ups (recurring wallet transactions).
+You can ignore these limits on a top-up by adding the `ignore_paid_top_up_limits` flag to the payload, or by enabling **"Skip top-up limits for this transaction"** in the dashboard. It works on single top-ups and on automatic ones (recurring wallet transactions).
 
 <Frame caption="Skip wallet limits for a single transaction">
   <img src="/guide/images/skip-wallet-limits.png" alt="Top-up form with the option to skip the top-up limits for this transaction" />
