@@ -160,7 +160,9 @@ See [webhook messages](/api-reference/webhooks/messages).
 ## Edge cases
 | Situation | What Lago sends |
 |---|---|
-| An alert is created, or a threshold opts in, while the value is already past it | Nothing. The alarm is recorded silently, and its recovery is announced. You can receive `alert.resolved` with no earlier `alert.triggered`. |
+| A usage alert is created while usage is already past one of its thresholds | `alert.triggered` for every threshold already passed, on the alert's first evaluation. Its recovery is announced like any other. |
+| A wallet alert is created while the balance is already past one of its thresholds | Nothing. The alarm is recorded silently, and its recovery is announced. You can receive `alert.resolved` with no earlier `alert.triggered`. |
+| An existing threshold opts in while it is already in alarm | Nothing at opt-in. Its recovery is announced. |
 | A threshold opts out (`notify_on: ["triggered"]`) while in alarm | Nothing, now or later. That alarm never sends a resolution. Lift your block yourself. |
 | The alert is deleted while in alarm | Nothing. |
 | The subscription or wallet is terminated while in alarm | Nothing. |

@@ -7,7 +7,7 @@ Lago turns usage into invoices. You send events describing what your customers c
 
 This page is your complete integration guide: how to **design** your events for billing, **send** them through any delivery method, and **handle** edge cases like retries and late arrivals.
 
-For a visual explanation of what happens after an event reaches Lago, [follow the usage ingestion pipeline](https://getlago.com/platform/usage-metering/ingestion) from API intake through deduplication and aggregation to the wallet's ongoing balance. Use this guide for the event fields, delivery methods, and retry rules you need to implement.
+For a visual explanation of what happens after an event reaches Lago, [follow the usage ingestion pipeline](https://getlago.com/platform/usage-metering/ingestion), from API intake to deduplication, aggregation and the wallet's ongoing balance. Use this guide for the event fields, delivery methods and retry rules you need to implement.
 
 ```mermaid
 flowchart LR
@@ -91,11 +91,11 @@ The guiding question: **what do you charge your customers for?** That's your eve
   </Accordion>
 
   <Accordion title="properties (optional)">
-    Key-value pairs carrying the data your pricing needs: token counts, regions, instance types, anything you price on. Properties can be any JSON supported datatype including `strings`, `integers`, `floats`, `uuids`, or `timestamps`.
+    Key-value pairs carrying the data your pricing needs: token counts, regions, instance types, anything you price on. A property value can be any JSON value, so `strings`, `integers`, `floats`, `uuids` and `timestamps` all work.
 
     Lago ignores properties that don't match a billable metric, so **include dimensions you might price on in the future**. Extra fields cost nothing but give you pricing flexibility later.
 
-    Events sent to a `UNIQUE COUNT` billable metric accept an `operation_type` property to control whether the unique value is added to or removed from the count:
+    Events sent to a `COUNT UNIQUE` billable metric accept an `operation_type` property to control whether the unique value is added to or removed from the count:
     - `add`: Adds the unique value. **Optional**: Lago adds by default if `operation_type` is omitted.
     - `remove`: Removes the unique value from the count. **Required** whenever you want to explicitly remove a unit.
 

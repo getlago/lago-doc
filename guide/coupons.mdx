@@ -1,7 +1,7 @@
 ---
 title: "Coupons"
-description: "Coupons allow you to offer discounts to your customers. When you apply a coupon to a customer, 
-  its value will be deducted from their next subscription invoice(s)."
+description: "Coupons let you offer discounts to your customers. Lago deducts the
+  value of a coupon from the customer's next subscription invoices."
 ---
 
 <Info>
@@ -14,18 +14,18 @@ description: "Coupons allow you to offer discounts to your customers. When you a
   <Tab title="Dashboard">
     To create a coupon through the user interface:
 
-      1. Access the **"Coupons"** section via the side menu;
-      2. Click **"Add a coupon"**;
+      1. Access the **Coupons** section via the side menu;
+      2. Click **Add a coupon**;
       3. Choose a name and a code for your coupon;
-      4. Select the type of coupon (i.e. fixed amount or percentage);
-      5. Define its value and frequency (i.e. will be applied once, over several
-        periods or forever);
-      6. Choose if the coupon can be applied several times to the same customer
-        account or not;
-      7. Choose whether or not to set an expiration date (i.e. date after which the
-        coupon can no longer be redeemed);
+      4. Select the type of coupon, fixed amount or percentage;
+      5. Define its value and its frequency: once, over several periods or
+        forever;
+      6. Choose whether the coupon can be applied several times to the same
+        customer account;
+      7. Choose whether to set an expiration date, the date after which the
+        coupon can no longer be redeemed;
       8. Select the **plan(s)** or **billable metric(s)** to which the coupon applies (applies to all plans and metrics by default); and
-      9. Click **"Add coupon"** to confirm.
+      9. Click **Add coupon** to confirm.
 
       <Info>
         The expiration date displayed in the app is based on the organization's timezone.
@@ -94,10 +94,10 @@ description: "Coupons allow you to offer discounts to your customers. When you a
   <Tab title="Dashboard">
     To apply a coupon to a customer:
       1. Select a customer from the list;
-      2. Click **"Actions"** in the upper-right corner and select **"Apply coupon"**;
+      2. Click **Actions** in the upper-right corner and select **Apply coupon**;
       3. Select a coupon;
       4. Override values and currency; and
-      5. Click **"Apply coupon"** to confirm.
+      5. Click **Apply coupon** to confirm.
   </Tab>
   <Tab title="API">
   You can also apply coupons via the API ([learn more](/api-reference/coupons/apply)).
@@ -140,16 +140,18 @@ For coupons whose value is a fixed amount:
   is fully consumed or removed; and
 - **When the coupon is recurring** and its value is higher than the invoice amount,
   any remaining unused amount is lost, even if it is the last application
-  period.
+  period; and
+- **When the coupon applies forever** and its value is higher than the invoice
+  amount, the unused amount is lost as well, and the coupon applies again on
+  every following invoice.
 
 When several coupons are applied to the customer account, Lago deducts them in this order:
-- **Coupons limited to specific billable metrics will be deducted first** (if any, and if there is at least one subscription 
-associated with the relevant metric);
-- **Coupons limited to specific plans will be deducted next** (if any, and if there is at least one subscription associated with the relevant plan); and
-- **Coupons that apply to all plans** will be deducted according to the date on which they were applied (i.e. the coupon that was applied first will be deducted first).
+- **Coupons limited to specific billable metrics come first**, if there is at least one subscription associated with the relevant metric;
+- **Coupons limited to specific plans come next**, if there is at least one subscription associated with the relevant plan; and
+- **Coupons that apply to all plans** come last, in the order in which they were applied. The coupon applied first is deducted first.
 
-You can see the remaining value / number of remaining periods for each coupon in
-the **"Overview"** tab of the customer view.
+You can see the remaining value, or the number of remaining periods, for each
+coupon in the **Overview** tab of the customer view.
 
 ![Customer account with several coupons](/guide/images/coupons-remaining.png)
 
@@ -178,9 +180,9 @@ actions:
 To remove a coupon that has been applied to a customer and is still active:
 
 1. Select the customer;
-2. Locate the coupon under **"Overview"**;
+2. Locate the coupon under **Overview**;
 3. Click the **bin icon** on the right; and
-4. Click **"Remove coupon"** to confirm.
+4. Click **Remove coupon** to confirm.
 
 The coupon disappears from the customer view immediately and is not applied to
 the next invoice.
