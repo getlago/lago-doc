@@ -1,0 +1,72 @@
+---
+title: "Send attributed events"
+description: "Tag your usage events with governance entity values."
+---
+
+<Info>
+  **PREMIUM ADD-ON** ✨
+
+  Governance is available upon request only. Please [**contact us**](mailto:hello@getlago.com) to get access to this premium feature.
+</Info>
+
+You don't need a new endpoint. Add the entity values to the `properties` of the events you already [send to Lago](/guide/events/ingesting-usage), using your attribution keys.
+
+## Tag an event
+
+```bash
+curl --location --request POST "$LAGO_URL/api/v1/events" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "event": {
+      "transaction_id": "evt_001",
+      "external_subscription_id": "sub_123",
+      "code": "llm_tokens",
+      "properties": {
+        "value": 10,
+        "model": "opus",
+        "department_id": "rnd",
+        "team_id": "eng",
+        "user_id": "alice",
+        "api_key": "key_1"
+      }
+    }
+  }'
+```
+
+Lago attributes this event to `rnd`, `eng`, `alice` and `key_1` at ingestion. `value` and `model` keep their usual billing role: the same properties serve billing and attribution.
+
+## Send every level
+
+Include the full chain on every event, for example `department_id`, `team_id` and `user_id`.
+
+<Warning>
+  Lago doesn't infer a parent from earlier events. An event with only `user_id` counts for `alice`, and is unattributed at the team and department levels.
+</Warning>
+
+## How values are read
+
+- Keys are case-sensitive and must match an attribution key exactly.
+- If an entity has several keys, Lago uses the first one found in the event.
+- Values are read as text, up to 255 characters.
+- A missing, blank, too long or nested value (object, array) is ignored. The event is unattributed for that entity.
+
+## Edge cases
+
+| Case | Result |
+| --- | --- |
+| Event sent before governance was enabled | Unattributed. There is no backfill. |
+| Attribution key added to an entity | Applies to new events only. |
+| Event without any attribution property | Billed as usual, unattributed at every level. |
+| Event sent twice with the same `transaction_id` | Billed once. Attributed usage can count it twice for a short while, until the copies are merged. |
+
+All [delivery methods](/guide/events/ingesting-usage#delivery-methods) work, including batch and streaming.
+
+<CardGroup cols={2}>
+  <Card title="Query attributed usage" icon="chart-tree-map" href="/guide/governance/query">
+    Read usage and spend per entity.
+  </Card>
+  <Card title="Core concepts" icon="book" href="/guide/governance/core-concepts">
+    Entities, attribution keys and roll-ups.
+  </Card>
+</CardGroup>
