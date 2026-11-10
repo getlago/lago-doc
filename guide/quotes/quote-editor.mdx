@@ -36,9 +36,11 @@ In the editor, a variable appears as a pill, for example `@Customer name`. In th
 | Quote currency | The quote's currency |
 | Term duration | The duration between the start and end dates |
 | Start date | The deal's start date |
-| Payment terms | The applicable net payment term |
+| Payment terms | The resolved payment term displayed in the quote |
 
 Variable values are frozen at approval. If the customer's name changes afterwards, the order form keeps the value it was approved with.
+
+Inserting a payment-terms variable displays a value in the document; configure the actual terms in the [billing item's settings](#payment-terms-for-quote-items).
 
 ## Commands for structure
 
@@ -58,8 +60,9 @@ On subscription quotes (**"Pricing for a subscription"**):
 
 1. Select a **"Plan"** from your catalog. On an amendment, the subscription context is already set;
 2. Adjust the settings cards: **"Subscription settings"** (external ID, name, anniversary or calendar billing, start and end dates), **"Invoicing & payments settings"**, **"Plan settings"**, and the **"Subscription fee"**;
-3. Override prices where needed: subscription fee, fixed charges, usage charges, minimum commitment, progressive billing; and
-4. Click **"Save edits"**.
+3. In **"Invoicing & payments settings"**, keep the inherited payment term or choose a term for this subscription;
+4. Override prices where needed: subscription fee, fixed charges, usage charges, minimum commitment, progressive billing; and
+5. Click **"Save edits"**.
 
 Only changed fields are saved as overrides; everything else follows the catalog plan. Overrides follow the same rules as subscription overrides: you can only override what is already overridable.
 
@@ -67,8 +70,9 @@ On one-off quotes (**"Pricing for one-off invoice"**):
 
 1. Click **"Add an add-on"** and select an add-on from your catalog;
 2. Set the **"Units"** and **"Unit price"** for each line;
-3. Optionally click **"Edit"** on a line to set billing period dates, invoice display name, and description, shown on the invoice PDF; and
-4. Click **"Save edits"**.
+3. Optionally click **"Edit"** on a line to set billing period dates, invoice display name, and description, shown on the invoice PDF;
+4. In the payment settings, keep the inherited payment term or choose a term for the one-off invoice; and
+5. Click **"Save edits"**.
 
 ### The `Discount` command
 
@@ -82,7 +86,22 @@ Applies a coupon. Type `/` and select `Discount` to insert it. Subscription quot
 
 Adds prepaid credits. Type `/` and select `Credits` to insert it. Subscription quotes only. Each block configures one wallet, up to 5 per quote.
 
-1. Configure the wallet through its four cards: **"Credits and wallet settings"** (name, credit rate, priority, expiration, top-up limits, PO number), **"Wallet scope limitation"**, **"Free and paid credits"**, and **"Wallet recurring top-up rule"**; and
-2. Click **"Save edits"**.
+1. Configure the wallet through its settings cards: **"Credits and wallet settings"** (name, credit rate, priority, expiration, top-up limits, PO number), **"Wallet scope limitation"**, **"Free and paid credits"**, and **"Wallet recurring top-up rule"**;
+2. In the wallet's payment settings, keep the inherited payment term or choose one for its credit-purchase invoices; and
+3. Click **"Save edits"**.
 
 The settings are the same as when [creating a wallet](/guide/wallet-and-prepaid-credits/overview) directly on a customer. The difference is timing: the wallet is only created when the order is executed.
+
+## Payment terms for quote items
+
+Set payment terms on the subscription, wallet, or one-off invoice being quoted. For a one-off invoice, the term applies to the whole invoice, not separately to each add-on line. A subscription and a wallet in the same quote can have different terms.
+
+1. Open the relevant **Pricing** or **Credits** block while the quote is a draft.
+2. In its payment settings, choose a payment-term type and enter any days or month settings it requires, or keep the inherited term.
+3. Save the block and review the quote before [approval](/guide/quotes/order-forms).
+
+For example, configure the subscription's **Pricing** block with **Net 30** and the wallet's **Credits** block with **Due on receipt**. A subscription invoice dated **April 10, 2026** is due **May 10**. A wallet-purchase invoice dated **April 10** is due that same day. Purchased credits still become available only after payment.
+
+For a one-off quote, you could instead choose **Net 15** for an implementation fee: an invoice dated **April 10** would be due **April 25**. The due date is calculated from the resulting invoice's issuing date, not the date you write or approve the quote.
+
+These settings apply to the billing items when the [order is executed](/guide/quotes/orders). See [Payment terms](/guide/invoicing/invoicing-settings/payment-term#choose-a-payment-term) for all six options and how defaults work.

@@ -8,14 +8,14 @@ Here is the full list of **aggregation types** supported by Lago.
 
 | Aggregation      | Description                                                                | Transcription                                  |
 | ---------------- | -------------------------------------------------------------------------- | ---------------------------------------------- |
-| **COUNT**        | Count the number of times an incoming event occurs                         | `COUNT(events.code)`                            |
-| **COUNT UNIQUE** | Count the number of unique values of a defined property for incoming events | `COUNT_DISTINCT(events.properties.property_name)` |
-| **LATEST**       | Get the latest value of a defined property for incoming events             | `LAST_VALUE(events.properties.property_name) OVER (ORDER BY events.timestamp)` |
-| **MAX**          | Get the maximum value of a defined property for incoming events            | `MAX(events.properties.property_name)`           |
-| **SUM**          | Sum a defined property for incoming events                                 | `SUM(events.properties.property_name)`            |
-| **WEIGHTED SUM** | Sum a defined property for incoming events, prorated based on time used per period | `SUM(events.properties.property_name) / (DATEDIFF(SECOND, timestamp.event_1, timestamp.event_2) + 1) * (DATEDIFF(SECOND, 'period_start', 'period_end') + 1)`|
-| **CUSTOM** _(deprecated)_ | Define a custom code for your aggregation. No longer supported, see [CUSTOM](/guide/billable-metrics/aggregation-types/custom-agg) | Custom code |
+| **Count**        | Count the number of times an incoming event occurs                         | `COUNT(events.code)`                            |
+| **Count unique** | Count the number of unique values of a defined property for incoming events | `COUNT_DISTINCT(events.properties.property_name)` |
+| **Latest**       | Get the latest value of a defined property for incoming events             | `LAST_VALUE(events.properties.property_name) OVER (ORDER BY events.timestamp)` |
+| **Max**          | Get the maximum value of a defined property for incoming events            | `MAX(events.properties.property_name)`           |
+| **Sum**          | Sum a defined property for incoming events                                 | `SUM(events.properties.property_name)`            |
+| **Weighted sum** | Sum a defined property for incoming events, prorated based on time used per period | `SUM(events.properties.property_name) / (DATEDIFF(SECOND, timestamp.event_1, timestamp.event_2) + 1) * (DATEDIFF(SECOND, 'period_start', 'period_end') + 1)`|
+| **Custom** _(deprecated)_ | Define a custom code for your aggregation. No longer supported, see [Custom](/guide/billable-metrics/aggregation-types/custom-agg) | Custom code |
 
-<Note>`COUNT` counts the number of times an event occurs. Every other type
+<Note>Count counts the number of times an event occurs. Every other type
 aggregates over a single property of the event. **The result of this
 aggregation is used to charge your customers.**</Note>

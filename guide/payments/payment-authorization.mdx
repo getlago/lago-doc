@@ -35,7 +35,7 @@ Payment pre-authorization addresses this. It **checks that a payment method is v
 
 Pre-authorization creates a Payment Intent in Stripe to verify that the payment amount can be collected. When successful, the amount is temporarily held on the customer's account but not captured.
 
-**Note**: The held funds are automatically released immediately after successful verification.
+Lago releases the held funds immediately after a successful verification.
 
 ### Supported payment methods
 
@@ -47,7 +47,7 @@ Pre-authorization can fail if the card details are invalid, if the customer has 
 
 If 3DS is required during pre-authorization, the card is considered valid and the subscription is created.
 
-## Understanding the limitations
+## Limitations
 
 Pre-authorization reduces payment failures, but it cannot guarantee that the invoice is paid, because:
 
@@ -99,6 +99,31 @@ curl --location --request POST "$LAGO_URL/api/v1/subscriptions" \
 }'
 ```
 </CodeGroup>
+
+### Choosing the payment method to pre-authorize
+
+Set `payment_method.payment_method_id` inside the `subscription` object to pre-authorize a specific stored payment method. The value is the Lago ID of one of the customer's [payment methods](/guide/payments/payment-methods).
+
+```json
+{
+  "authorization": {
+    "amount_cents": 5000,
+    "amount_currency": "EUR"
+  },
+  "subscription": {
+    "external_customer_id": "5eb02857-a71e-4ea2-bcf9-57d3a41bc6ba",
+    "plan_code": "premium",
+    "external_id": "my_sub_12345789",
+    "payment_method": {
+      "payment_method_id": "a1b2c3d4-e5f6-4789-a0b1-c2d3e4f5a6b7"
+    }
+  }
+}
+```
+
+When you leave `payment_method_id` out, Lago pre-authorizes the customer's default payment method. If the customer has none in Lago, Lago falls back to the payment method stored on the Stripe connection, then to the default payment method of the Stripe customer, then to their most recent card.
+
+If none of these exist, the request fails with a `customer_has_no_payment_method` validation error on `payment_method_id` and no subscription is created.
 
 ### Success response
 
