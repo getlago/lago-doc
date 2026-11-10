@@ -99,6 +99,7 @@ Resolution is set per threshold. Every existing threshold starts at **False** (t
 | Unknown value, or a string | `thresholds:notify_on` → `value_is_invalid` |
 | `resolved` on a recurring threshold | `thresholds:notify_on` → `recurring_not_supported` |
 | `resolved` on a threshold without a code | `thresholds:code` → `value_is_mandatory` |
+| `resolved` on a threshold whose code is used by another threshold | `thresholds` → `duplicate_threshold_codes` |
 
 ### Subscribe your webhook endpoint
 `alert.resolved` is a new webhook type. An endpoint that receives all events gets it automatically. An endpoint that listens to selected events must add it:
@@ -192,6 +193,6 @@ Usage measured before a renewal but processed after it still counts toward the p
 - Recurring thresholds cannot opt in to resolution. One recurring threshold stands for an unbounded series of lines, so a resolution could not say which one cleared.
 - Thresholds must have a `code`, unique within the alert, to opt in. The Dashboard blocks the save until both are true.
 - A threshold resolves on its own line. There is no separate resolve margin (hysteresis): a top-up of 0.01 above a `critical` threshold at 0 sends `alert.resolved`. Pick the threshold value accordingly.
-- Usage alerts are evaluated as events are processed, about every minute. Wallet alerts are evaluated on each balance movement, within seconds. Edits resolve immediately.
+- Usage alerts are evaluated as events are processed, close to real time. Wallet alerts are evaluated on each balance movement. Edits resolve immediately.
 - The API does not expose a per-threshold state. To reconcile after missed webhooks, compare the current usage or balance with your thresholds, or use the `in_alarm_thresholds` of the last `alert.resolved` you received.
 - Lifetime usage rarely goes down. Resolution on lifetime alerts only fires after a correction, for example a voided invoice leaving the invoiced total.

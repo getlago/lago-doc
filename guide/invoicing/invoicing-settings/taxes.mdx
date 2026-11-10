@@ -177,7 +177,7 @@ When generating invoices, taxes can be applied at various levels and will impact
 <Tabs>
   <Tab title="Dashboard">
     1. Ensure your tax objects are created  
-    2. Navigate to **Plans** > **Add a plan**  
+    2. Navigate to **Plans** > **Create a plan**  
     3. In the plan settings, click **Add a tax rate**  
     4. For usage-based charges, expand **More options** and click **Add a tax rate**  
     5. Note: taxes set at the charge level override the plan-level taxes  
@@ -230,7 +230,7 @@ When generating invoices, taxes can be applied at various levels and will impact
 <Tabs>
   <Tab title="Dashboard">
     1. Make sure taxes are set up in your account  
-    2. Go to **Add-ons** > **Add an add-on**  
+    2. Go to **Add-ons** > **Create an add-on**  
     3. In the add-on settings, click **Add a tax rate**  
     4. Complete creation and apply to customers via one-off invoices
 
@@ -242,15 +242,18 @@ When generating invoices, taxes can be applied at various levels and will impact
     <CodeGroup>
     ```bash
     # Add tax to an add-on
-    {
-      "add_on": {
-        "name": "Setup fee",
-        "code": "setup_fee",
-        "amount_cents": 100000,
-        "amount_currency": "USD",
-        "tax_codes": ["french_standard_vat"]
-      }
-    }
+    curl --location --request POST "$LAGO_URL/api/v1/add_ons" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "add_on": {
+          "name": "Setup fee",
+          "code": "setup_fee",
+          "amount_cents": 100000,
+          "amount_currency": "USD",
+          "tax_codes": ["french_standard_vat"]
+        }
+      }'
     ```
     </CodeGroup>
   </Tab>

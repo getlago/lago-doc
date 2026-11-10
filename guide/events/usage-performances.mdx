@@ -81,7 +81,7 @@ Under the hood, Lago's high-volume pipeline is built on **Kafka/Redpanda** for s
     | `LAGO_CLICKHOUSE_ENABLED=true` | Opens the ClickHouse connection (also required for activity, API and security logs). On its own, it does not move any organization to the ClickHouse event store. |
     | `LAGO_DEFAULT_EVENT_STORE=clickhouse` | Every organization **created afterwards** is created on the ClickHouse event store, with ClickHouse deduplication enabled. Existing organizations are unchanged. |
 
-    The store itself lives on the organization record (`organizations.clickhouse_events_store`), and the API returns it as the `events_store` field of the organization object. Organizations that already exist keep the store they were created with; moving one to ClickHouse means backfilling its events, then flipping the store with the `recipes:clickhouse:enable_clickhouse_events_store` rake task. See [Configuring the event store](/guide/lago-self-hosted/docker#configuring-the-event-store) for the full setup.
+    The organization object returns its store as the `events_store` field. Organizations that already exist keep the store they were created with. The supported way to move one to ClickHouse is the `recipes:clickhouse:enable_clickhouse_events_store` rake task: it compares the Postgres and ClickHouse events and usage first, and switches the store only when they match. See [Configuring the event store](/guide/lago-self-hosted/docker#configuring-the-event-store) for the full setup.
   </Tab>
 </Tabs>
 
@@ -172,14 +172,14 @@ flowchart TD
 ```
 
 <Info>
-  **When it works:** Your billable metric uses `SUM`, `COUNT`, or `MAX` aggregation.
+  **When it works:** Your billable metric uses Sum, Count, or Max aggregation.
 
   **When it doesn't:** You need per-event pricing (each event has a different amount) or per-event audit trail.
 </Info>
 
 ### Pattern 1: Dimensional roll-ups
 
-This is the most common pre-aggregation pattern. It applies when your pricing depends on one or more dimensions (region, instance type, model, tier) and you use a `SUM` or `COUNT` aggregation with charge filters in Lago.
+This is the most common pre-aggregation pattern. It applies when your pricing depends on one or more dimensions (region, instance type, model, tier) and you use a Sum or Count aggregation with charge filters in Lago.
 
 Instead of sending one event per unit of work, you aggregate all usage for each unique combination of billing dimensions into a single event per time window. Lago's charge filters still match on the dimension values in `properties`, so billing accuracy is preserved.
 
@@ -201,7 +201,7 @@ Instead of sending one event per unit of work, you aggregate all usage for each 
 }
 ```
 
-The `instance_type` and `region` fields in `properties` are the dimensions that Lago's charge filters match against. Your `SUM` aggregation runs on `hours`. Because each combination is aggregated separately, the billing output is identical to sending raw events.
+The `instance_type` and `region` fields in `properties` are the dimensions that Lago's charge filters match against. Your Sum aggregation runs on `hours`. Because each combination is aggregated separately, the billing output is identical to sending raw events.
 
 Multiple Lago customers run this pattern in production.
 
@@ -226,7 +226,7 @@ When your billable metric has no dimensional breakdown (e.g., total API calls, t
 }
 ```
 
-This works best with `SUM` or `COUNT` aggregations where no charge filters are applied. The `transaction_id` includes the hour (`T10`) to ensure uniqueness across windows.
+This works best with Sum or Count aggregations where no charge filters are applied. The `transaction_id` includes the hour (`T10`) to ensure uniqueness across windows.
 
 ### Choosing an aggregation window
 

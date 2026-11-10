@@ -95,7 +95,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
 
     Lago ignores properties that don't match a billable metric, so **include dimensions you might price on in the future**. Extra fields cost nothing but give you pricing flexibility later.
 
-    Events sent to a `COUNT UNIQUE` billable metric accept an `operation_type` property to control whether the unique value is added to or removed from the count:
+    Events sent to a Count unique billable metric accept an `operation_type` property to control whether the unique value is added to or removed from the count:
     - `add`: Adds the unique value. **Optional**: Lago adds by default if `operation_type` is omitted.
     - `remove`: Removes the unique value from the count. **Required** whenever you want to explicitly remove a unit.
 
@@ -134,7 +134,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** Create a metric `llm_tokens` with aggregation type `SUM` and a custom expression like `event.properties.tokens_in + event.properties.tokens_out`. Use `model` as a charge filter to apply different per-token rates for GPT-4, GPT-3.5, Claude, etc.
+    **Billable metric setup:** Create a metric `llm_tokens` with aggregation type Sum and a custom expression like `event.properties.tokens_in + event.properties.tokens_out`. Use `model` as a charge filter to apply different per-token rates for GPT-4, GPT-3.5, Claude, etc.
 
     <Tip>
       Include `latency_ms` and `stream` in properties even if you don't price on them today. Lago ignores unused properties, but having the data means you can add latency-based tiers or streaming surcharges later without re-instrumenting.
@@ -166,7 +166,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** Metric `compute_hours` with `SUM` aggregation on the `hours` property. Use charge filters on `instance_type` and `region` to apply dimension-specific rates. With Lago's "most specific match wins" filter algorithm, you can set a default rate and override for specific instance types without creating hundreds of separate metrics.
+    **Billable metric setup:** Metric `compute_hours` with Sum aggregation on the `hours` property. Use charge filters on `instance_type` and `region` to apply dimension-specific rates. With Lago's "most specific match wins" filter algorithm, you can set a default rate and override for specific instance types without creating hundreds of separate metrics.
 
     <Info>
       A Nasdaq-listed GPU cloud provider runs this exact pattern in production, processing **10M events/month** across **400+ machine instance types**, all billed on a single `compute_hours` metric. They pre-aggregate to one event per customer per instance type per day.
@@ -199,7 +199,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** For per-transaction flat fees, use `COUNT` aggregation on the `transactions` metric with charge filters on `payment_method` (different rates for card vs. ACH vs. wire). For percentage-based fees, use a custom expression like `event.properties.amount_cents * 0.029` or set up pricing tiers in your charge configuration.
+    **Billable metric setup:** For per-transaction flat fees, use Count aggregation on the `transactions` metric with charge filters on `payment_method` (different rates for card vs. ACH vs. wire). For percentage-based fees, use a custom expression like `event.properties.amount_cents * 0.029` or set up pricing tiers in your charge configuration.
 
     <Info>
       A major global payments company runs Lago self-hosted, processing **thousands of transactions per second**. They started on Postgres (validated at 10K events/sec) and later migrated to ClickHouse + Kafka for higher throughput, with the same event format, the same pricing config and zero billing logic changes.
@@ -230,7 +230,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** For tiered pricing (first 10K requests free, then $0.001/request), use `COUNT` aggregation. For pricing by category, use charge filters on `category` (e.g., "standard" vs. "premium"). For pricing by response size, use `SUM` aggregation on `response_bytes`.
+    **Billable metric setup:** For tiered pricing (first 10K requests free, then $0.001/request), use Count aggregation. For pricing by category, use charge filters on `category` (e.g., "standard" vs. "premium"). For pricing by response size, use Sum aggregation on `response_bytes`.
 
     <Tip>
       **Should you bill failed requests?** If you want to exclude 4xx/5xx responses, add a billable metric filter that only counts events where `status_code` is in the 200 range. Include `status_code` in every event either way. It is useful for analytics even if you don't price on it.
@@ -259,7 +259,7 @@ The guiding question: **what do you charge your customers for?** That's your eve
     }
     ```
 
-    **Billable metric setup:** For storage, use `MAX` or `LATEST` aggregation on `gb_stored` to bill on peak or end-of-period usage. For bandwidth, use `SUM` on `gb_transferred`.
+    **Billable metric setup:** For storage, use Max or Latest aggregation on `gb_stored` to bill on peak or end-of-period usage. For bandwidth, use Sum on `gb_transferred`.
 
     <Tip>
       **Snapshot events vs. delta events:** For storage billing, periodic snapshots (one event per day with total GB stored) are simpler and more reliable than tracking every write/delete. This is also a natural pre-aggregation pattern: one event per day per customer instead of thousands.
@@ -316,6 +316,9 @@ The guiding question: **what do you charge your customers for?** That's your eve
   </Card>
   <Card title="Test with a single event first">
     Send one event via the REST API and verify it appears in `GET /events/{transaction_id}` before scaling to batch or streaming delivery.
+  </Card>
+  <Card title="Carry who consumed it">
+    Add the department, team, user or API key behind each event as properties. [Governance](/guide/governance/overview) uses them to attribute usage across your customer's organization.
   </Card>
 </CardGroup>
 

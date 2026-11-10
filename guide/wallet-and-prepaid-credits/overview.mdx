@@ -72,6 +72,20 @@ When several wallets share the same priority, the wallet that expires soonest is
 
 Free credits are added to the customer's wallet instantly, while purchased credits are added to the wallet when payment is confirmed (see below).
 
+## Payment terms
+
+A wallet's payment terms determine when invoices for its purchased credits are due. They apply to credit purchases, including manual and recurring top-ups. They do not set the payment terms of subscription invoices that use those credits.
+
+When creating or editing the wallet, open **Invoicing settings**. Keep the inherited customer term, or choose a payment-term type and its days or month settings, then save. If the customer has no term of their own, the billing entity's default applies. To return to the default later, choose inheritance.
+
+For example, your customer uses **Net 30** for subscriptions, but you set their wallet to **Due on receipt**. A top-up invoice dated **April 10, 2026** is due **April 10**; a subscription invoice dated the same day is due **May 10**.
+
+See [Payment terms](/guide/invoicing/invoicing-settings/payment-term#choose-a-payment-term) for all six options and examples. Changes apply to future invoices; existing invoices retain their stored term. From the API, send `payment_term` when you [create](/api-reference/wallets/create) or [update](/api-reference/wallets/update) the wallet.
+
+<Info>
+  Giving a customer more time to pay does not make purchased credits available before payment. For example, a Net 15 top-up invoice dated April 10 is due April 25, but the credits are added only when payment is confirmed. The [invoicing after successful payment option](#invoicing-after-successful-payment-option) separately controls when the invoice is issued.
+</Info>
+
 ## Real-time wallet balance
 
 <Info>
@@ -157,6 +171,8 @@ By default, prepaid credits apply to every fee type. You can refine this behavio
 ## Invoicing after successful payment option
 
 When enabled, this option delays issuing an invoice for a wallet top-up until a successful payment is made. If disabled, the invoice is issued immediately upon the wallet top-up, whatever the payment status. This setting applies to all the transactions of the wallet, and you can override it on individual transactions or on recurring rules.
+
+With this option enabled, the invoice is issued on the day the payment succeeds and is due that same day, whatever the wallet's payment term.
 
 ## Wallet transaction limits
 <Tabs>
