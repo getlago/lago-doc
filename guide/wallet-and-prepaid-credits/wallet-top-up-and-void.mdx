@@ -11,6 +11,10 @@ credit purchases, which are considered as advance payments.
 Payment must be made in order for credits to be added to the customer's wallet
 (the payment status of the top-up invoice must be `succeeded`).
 
+The invoice uses the [wallet's payment terms](/guide/wallet-and-prepaid-credits/overview#payment-terms), falling back to the customer's or billing entity's terms when the wallet has none of its own. This applies to manual and recurring credit purchases.
+
+For example, a top-up invoice dated **April 10, 2026** with **Net 15** is due **April 25**. The credits become available when payment is confirmed, even if the customer pays before that deadline. With **Due on receipt**, the same invoice is due **April 10**. See [all payment-term options](/guide/invoicing/invoicing-settings/payment-term#choose-a-payment-term).
+
 <Info>
   On a paid top-up, Lago rounds the top-up credits to the nearest cent, to comply with the decimal rounding rules for amounts.
   This does not affect free credits.
@@ -105,7 +109,7 @@ You can deduct an exact number of credits from the balance of a wallet. This act
 ## Setup recurring top-ups
 
 <Info>
-  Recurring top-up rules require Lago Premium. For automatic collection of paid top-ups through Stripe, [connect Stripe](/guide/payments/stripe-integration) and collect a payment method for the customer. Purchased credits become available only after the purchase invoice is marked `succeeded`.
+  Recurring top-up rules require Lago Premium. For automatic collection of paid top-ups through Stripe, [connect Stripe](/integrations/payments/stripe/payments) and collect a payment method for the customer. Purchased credits become available only after the purchase invoice is marked `succeeded`.
 </Info>
 
 When you create or edit a wallet, you can enable recurring top-ups. Two methods are available, `fixed` and `target`. Both are triggered either by an `interval` or by a `threshold`.

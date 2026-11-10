@@ -35,6 +35,20 @@ You can edit or delete the redirect URL. The change only applies to checkout URL
   URL defined should always begin with `http://` or `https://`.
 </Warning>
 
+## Consent collection
+
+You can require your customers to accept your **terms of service** before paying on the Stripe checkout and payment pages that Lago generates. When this option is enabled, a mandatory "I agree to the Terms of Service" checkbox is shown on the page, and the customer cannot complete the payment until it is checked.
+
+This option is configured **per Stripe connection** and is **turned off by default**, so existing connections are not affected. To enable it, navigate to **Settings > Integrations > Stripe**, open your connection settings, and turn on **Consent collection**.
+
+<Warning>
+  Before enabling this option, you must set a **Terms of service URL** in your Stripe account, under [**Settings > Business > Public details**](https://dashboard.stripe.com/settings/public).
+
+  If **Consent collection** is enabled while no Terms of service URL is set on the Stripe account, Stripe rejects the request and **Lago is unable to generate the checkout or payment link**. Your customer will not receive a working link until the URL is added, and Lago surfaces the Stripe error in the API response and through the related payment webhooks.
+</Warning>
+
+Once enabled, consent collection applies to every Stripe checkout page Lago generates: the payment-method checkout link, invoice payment links, and payment-request links.
+
 ## Customer information
 
 To collect payments automatically, the customer must exist in both the Lago and
@@ -55,7 +69,7 @@ The customer will automatically be added to Stripe. Stripe will then return the
 customer ID, which will be stored in Lago.
 
 <Frame caption="Creation of a new customer with Stripe">
-  <img src="/guide/payments/images/stripe-customer-new.png" />
+  <img src="/guide/payments/images/stripe-customer-new.png" alt="Customer creation form with Stripe set as the payment provider and the automatic creation option enabled" />
 </Frame>
 
 ### Existing customer
@@ -72,7 +86,7 @@ information, you must:
 
 
 <Frame caption="Migration of an existing Stripe customer">
-  <img src="/guide/payments/images/stripe-customer-migration.png" />
+  <img src="/guide/payments/images/stripe-customer-migration.png" alt="Customer form with the existing Stripe customer ID filled in and the automatic creation option disabled" />
 </Frame>
 
 ## Supported payment methods
