@@ -10,8 +10,9 @@ your customers for.
 ## Example of events received
 
 You decided to charge the `Tracked Pages`. **This is your billable metric.**
-Here are the two events sent by your backend to Lago, based on the consumption
-of a customer:
+The customer is on a monthly plan, so the billing period runs from March 1 to
+March 31, 2022. Here are the two events sent by your backend to Lago, based on
+the consumption of that customer:
 
 ```json Event received #1
 {
@@ -43,11 +44,18 @@ of a customer:
 
 | Aggregation        | Code                                                     | Units to be charged |
 | ------------------ | -------------------------------------------------------- | ------------------- |
-| **COUNT**          | `COUNT(tracked_pages)`                                   | 2                   |
-| **SUM**            | `SUM(tracked_pages.properties.pageviews)`                | 30                  |
-| **MAX**            | `MAX(tracked_pages.properties.pageviews)`                | 20                  |
-| **LATEST**         | `LAST_VALUE(tracked_pages.properties.pageviews)`         | 20                  |
-| **COUNT UNIQUE** | `COUNT_DISTINCT(tracked_pages.properties.tracked_user_id)` | 1                   |
+| **Count**          | `COUNT(tracked_pages)`                                   | 2                   |
+| **Sum**            | `SUM(tracked_pages.properties.pageviews)`                | 30                  |
+| **Max**            | `MAX(tracked_pages.properties.pageviews)`                | 20                  |
+| **Latest**         | `LAST_VALUE(tracked_pages.properties.pageviews)`         | 20                  |
+| **Count unique** | `COUNT_DISTINCT(tracked_pages.properties.tracked_user_id)` | 1                   |
+| **Weighted sum** | `SUM(tracked_pages.properties.pageviews)` prorated per second | 14.84          |
+
+[Weighted sum](/guide/billable-metrics/aggregation-types/weighted-sum) is the
+only type whose result depends on the billing period, because it weights the
+running total by the time it was held. Here the total is 10 for one day
+(March 16 to March 17), then 30 for the remaining 15 days of March:
+(10 x 1 day + 30 x 15 days) / 31 days = 14.84.
 
 The amount charged to your customer depends on the aggregation type you defined
 for the `Tracked Pages` billable metric. Choose the right aggregation type for

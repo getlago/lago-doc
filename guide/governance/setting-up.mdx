@@ -1,0 +1,144 @@
+---
+title: "Set up governance"
+description: "Define your governance entities in the dashboard or with the API."
+---
+
+<Info>
+  **PREMIUM ADD-ON** ✨
+
+  Governance is available upon request only. Please [**contact us**](mailto:hello@getlago.com) to get access to this premium feature.
+</Info>
+
+Setting up governance is a one-time step: you define the entities for your organization, and they apply to every customer. Create parents before their children.
+
+<Tabs>
+<Tab title="Dashboard">
+
+### Create an entity
+
+1. Go to **Settings** > **Governance**.
+2. Click **Add a governance entity**.
+3. Fill in the fields, then click **Create governance entity**.
+
+<Frame caption="Create a governance entity">
+  <img src="/guide/governance/images/create-governance-entity.webp" alt="The Create a governance entity drawer: Teams, hierarchical, parent Departments, with four attribution keys" />
+</Frame>
+
+- **Name** and **Code**: the code is how the API refers to the entity.
+- **Description** (optional).
+- **Type**: **Hierarchical** or **Flat**.
+- **Parent** (optional): hierarchical entities only. Leave it empty for the top of the tree.
+- **Attribution keys**: the event properties that carry the value. Type a key and press enter. Up to 4.
+
+Turn on **Create more** to add several entities in a row.
+
+### View your entities
+
+The **Governance entities** list has one tab per type. The **Hierarchical** tab shows the tree, each entity indented under its parent:
+
+<Frame caption="Hierarchical entities">
+  <img src="/guide/governance/images/governance-entities-hierarchical.webp" alt="The Hierarchical tab: Departments, with Teams nested under it and Users nested under Teams" />
+</Frame>
+
+The **Flat** tab lists the entities that sit outside the tree:
+
+<Frame caption="Flat entities">
+  <img src="/guide/governance/images/governance-entities-flat.webp" alt="The Flat tab: API Keys, Endpoints and Agents" />
+</Frame>
+
+### Edit or delete an entity
+
+Open the entity's menu in the **Governance entities** list, then click **Edit entity** or **Delete entity**.
+
+</Tab>
+<Tab title="API">
+
+### Create an entity
+
+`POST /api/v1/usage_attribution_types`
+
+<CodeGroup>
+```bash Hierarchical
+curl --location --request POST "$LAGO_URL/api/v1/usage_attribution_types" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "usage_attribution_type": {
+      "code": "user",
+      "name": "User",
+      "role": "hierarchical",
+      "parent_code": "team",
+      "attribution_keys": ["user_id", "userId", "uid"]
+    }
+  }'
+```
+
+```bash Flat
+curl --location --request POST "$LAGO_URL/api/v1/usage_attribution_types" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "usage_attribution_type": {
+      "code": "api_key",
+      "name": "API key",
+      "role": "flat",
+      "attribution_keys": ["api_key"]
+    }
+  }'
+```
+</CodeGroup>
+
+```json Response
+{
+  "usage_attribution_type": {
+    "lago_id": "7b0d2f6e-3c1a-4f7b-9a52-1e8c4d6f0a21",
+    "lago_organization_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "code": "user",
+    "name": "User",
+    "description": null,
+    "attribution_keys": ["user_id", "userId", "uid"],
+    "role": "hierarchical",
+    "lago_parent_id": "c5e1b8a4-92d7-4e0f-8b3a-6f2d1c9e7a54",
+    "parent_code": "team",
+    "created_at": "2026-10-01T09:00:00Z",
+    "updated_at": "2026-10-01T09:00:00Z"
+  }
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `code` | Required. Unique in your organization. |
+| `name` | Display name. |
+| `description` | Optional. |
+| `role` | Required. `hierarchical` or `flat`. |
+| `parent_code` | Optional, hierarchical only. Must be an existing hierarchical entity. |
+| `attribution_keys` | Required. 1 to 4 event property names. A key belongs to one entity only. |
+
+### List, retrieve, update and delete
+
+| Operation | Endpoint |
+| --- | --- |
+| List | `GET /api/v1/usage_attribution_types` (filter with `role` and `search_term`) |
+| Retrieve | `GET /api/v1/usage_attribution_types/:code` |
+| Update | `PUT /api/v1/usage_attribution_types/:code` |
+| Delete | `DELETE /api/v1/usage_attribution_types/:code` |
+
+</Tab>
+</Tabs>
+
+## Rules
+
+- You can always change the name, description and attribution keys. New keys apply to new events only.
+- Once usage is attributed to an entity, its code, role and parent are locked (`usage_already_attributed`).
+- A flat entity has no parent, and an entity with children can't become flat.
+- Deleting an entity stops attribution from now on. Billing isn't affected.
+
+<CardGroup cols={2}>
+  <Card title="Send attributed events" icon="paper-plane" href="/guide/governance/sending-events">
+    Tag events with entity values.
+  </Card>
+  <Card title="Query attributed usage" icon="chart-tree-map" href="/guide/governance/query">
+    Read usage and spend per entity.
+  </Card>
+</CardGroup>

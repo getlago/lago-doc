@@ -94,6 +94,16 @@ Once you have started the flow, add one or several add-ons to the invoice:
   </Tab>
 </Tabs>
 
+## Payment terms
+
+You can choose a payment term for this invoice without changing the customer's default. In **Invoicing settings**, select a term and enter its days or month settings before issuing the invoice. If you keep inheritance, the customer's term applies. When the customer has none, the term of the billing entity selected for this invoice applies.
+
+For example, your customer's subscription invoices use **Net 30**, but you agree **Net 15** for a one-off setup fee. Set Net 15 on the setup-fee invoice. If both invoices are dated **April 10, 2026**, the setup fee is due **April 25**, while the subscription invoice is due **May 10**.
+
+See [Payment terms](/guide/invoicing/invoicing-settings/payment-term#choose-a-payment-term) for all six options and examples. The one-off invoice is issued immediately; the chosen term determines its payment deadline. Later changes to customer defaults do not change the term stored on this invoice.
+
+From the API, send `payment_term` when you [create the one-off invoice](/api-reference/invoices/create-oneoff). This endpoint does not accept the legacy `net_payment_term` field: if you send it, Lago ignores it and the inherited term applies.
+
 ## Application scope of one-off invoices
 
 - A one-off invoice can include the same add-on several times.
