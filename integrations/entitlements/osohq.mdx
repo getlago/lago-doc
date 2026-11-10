@@ -1,17 +1,72 @@
 ---
 title: "Oso"
+description: "Use Oso to enforce the entitlements you define in Lago."
 ---
 
 [Oso](https://www.osohq.com/) is an authorization-as-a-service provider partnering with Lago to offer entitlements. You can use the open-source version (available on [GitHub](https://github.com/osohq/oso)) or the cloud-hosted version. To use Oso with Lago, you must open an account on Oso.
 
 For more information, refer to [Oso's documentation](https://www.osohq.com/docs).
 
-
 ## Define available features and plan quotas
 
 First, define the available features for each plan. For instance, the Basic plan has a limited set of features, while the Premium plan offers the full range.
 
 You can also use Lago to bill metering and overage. Pass that information to Oso's `plan_quota` and `quota_used` to limit the usage of a specific feature.
+
+## Send Lago entitlements to Oso
+
+Lago holds the limits, Oso enforces them. Read the entitlements of a subscription from Lago, then write them to Oso as `plan_quota` and `quota_used` facts.
+
+<Steps>
+  <Step title="Entitle your features in Lago">
+    Create a feature for each capability you gate, give it the privileges that carry its limits, and entitle it to your plans. You can also override a value on a single subscription. See [Entitlements](/guide/entitlements) for the whole setup.
+  </Step>
+  <Step title="Read the entitlements of the subscription">
+    ```bash Get the entitlements of a subscription
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v1/subscriptions/my_sub_12345789/entitlements" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+
+    The response lists one entry per entitled feature. Each privilege carries `value`, which is the value in force for this subscription, plus the `plan_value` and the `override_value` it comes from.
+
+    ```json
+    {
+      "entitlements": [
+        {
+          "code": "repository",
+          "name": "Repositories",
+          "description": "Repositories the organization can create",
+          "privileges": [
+            {
+              "code": "max",
+              "name": "Maximum repositories",
+              "value_type": "integer",
+              "value": 10,
+              "plan_value": 10,
+              "override_value": null,
+              "config": {}
+            }
+          ],
+          "overrides": {}
+        }
+      ]
+    }
+    ```
+  </Step>
+  <Step title="Write the facts in Oso">
+    Send the privilege `value` of each feature to Oso as `plan_quota`, and the units the customer has already consumed as `quota_used`. Read those units from the [current usage](/guide/events/retrieve-usage) of the subscription.
+
+    ```ruby
+    plan_quota(Plan{"pro"}, Feature{"repository"}, 10);
+    quota_used(Organization{"hooli_1234"}, Feature{"repository"}, 4);
+    ```
+
+    Refresh the facts when the entitlements change. Lago sends a `subscription.updated` webhook when the entitlements of a subscription change, and a `plan.updated` webhook when the entitlements of a plan change.
+  </Step>
+</Steps>
 
 ## Example
 
