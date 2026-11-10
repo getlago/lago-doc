@@ -15,12 +15,12 @@ Once you have started the flow, add one or several add-ons to the invoice:
 <Tabs>
   <Tab title="Dashboard">
     1. Define a purchase order number, if needed
-    2. Click **Add an add-on** to add a line item to the invoice
-    3. Set the number of units for the add-on
-    4. Define the add-on billing period (past, present, or future)
-    5. Edit the unit price, if needed (you can set it to 0)
-    6. Edit the description displayed on the invoice
-    7. In **Invoicing settings**, keep the inherited [payment term](#payment-terms) or choose one for this invoice
+    2. Select the **Affiliated entity** and the **Invoice currency**
+    3. Click **Add an add-on** to add a line item to the invoice
+    4. Set the number of units for the add-on
+    5. Define the add-on billing period (past, present, or future)
+    6. Edit the unit price, if needed (you can set it to 0)
+    7. Edit the description displayed on the invoice
     8. Click **Create one-off invoice** to issue it
 
     <Frame caption="Adding add-ons to create a one-off invoice">
@@ -28,6 +28,8 @@ Once you have started the flow, add one or several add-ons to the invoice:
     </Frame>
   </Tab>
   <Tab title="API">
+    See the [create a one-off invoice](/api-reference/invoices/create-oneoff)
+    endpoint for the full list of fields.
     <CodeGroup>
     ```bash Assign add-ons to create a one-off invoice
     LAGO_URL="https://api.getlago.com"
@@ -42,9 +44,11 @@ Once you have started the flow, add one or several add-ons to the invoice:
           "currency": "USD",
           "billing_entity_code": "default",
           "purchase_order_number": "po-1234",
+          "skip_psp": false,
           "fees": [
             {
               "add_on_code": "setup_fee",
+              "invoice_display_name": "Implementation",
               "units": 1,
               "unit_amount_cents": 50000,
               "description": "Implementation fee with a solution engineer",
@@ -53,17 +57,40 @@ Once you have started the flow, add one or several add-ons to the invoice:
             },
             {
               "add_on_code": "customer_success",
+              "invoice_display_name": "Customer success",
               "units": 2,
               "unit_amount_cents": 100000,
               "description": "One off customer success fee",
               "from_datetime": "2025-01-01T00:00:00Z",
               "to_datetime": "2025-12-31T23:59:59Z"
             }
-          ]
+          ],
+          "invoice_custom_section": {
+            "skip_invoice_custom_sections": false,
+            "invoice_custom_section_codes": ["eu_bank_details"]
+          },
+          "payment_method": {
+            "payment_method_type": "provider",
+            "payment_method_id": "1a901a90-1a90-1a90-1a90-1a901a901a90"
+          }
         }
       }'
     ```
     </CodeGroup>
+
+    In this payload:
+
+    - `invoice_display_name` replaces the add-on name on the invoice line.
+    - `skip_psp` set to `true` creates the invoice without sending it to the
+      payment provider.
+    - `invoice_custom_section` picks the [invoice custom
+      sections](/guide/invoicing/invoicing-settings/overview#add-a-custom-invoice-section)
+      printed on the PDF. The codes you list override the sections set on the
+      customer and on the billing entity. Set
+      `skip_invoice_custom_sections` to `true` to print none of them.
+    - `payment_method` points to a payment method of this customer. Lago charges
+      it only when `skip_psp` is `false`. `payment_method_type` is `provider` or
+      `manual`.
   </Tab>
 </Tabs>
 
