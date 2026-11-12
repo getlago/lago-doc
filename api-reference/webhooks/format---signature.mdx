@@ -29,20 +29,34 @@ The `object_type` field names the key that carries the object. For example, an
 
 ## Unique key
 
-Lago sends an idempotency key (a unique identifier) in the `X-Lago-Unique-Key` HTTP header. Use it to
-process a message only once.
+Lago sends an idempotency key (a unique identifier) with each message. Use it to process a message only
+once:
+
+- endpoints signed with `jwt` or `hmac` receive it in the `X-Lago-Unique-Key` HTTP header;
+- endpoints signed with `standard_webhooks` receive it in the `webhook-id` HTTP header, in place of
+  `X-Lago-Unique-Key`.
+
+The key stays the same when Lago sends a message again, so you can drop a message whose key you have
+already processed.
 
 
 ## Signature
 
-Along with the payload, the message carries the `X-Lago-Signature` and `X-Lago-Signature-Algorithm` HTTP headers.
+Each message carries a signature. It ensures the message comes from Lago and has not been altered.
 
-They ensure the message comes from Lago and has not been altered.
+You choose the signature algorithm when you create a webhook endpoint:
 
-To verify the signature, decode it and compare the result with the body of the webhook.
+- `jwt` and `hmac` send the `X-Lago-Signature` and `X-Lago-Signature-Algorithm` HTTP headers. To verify
+  the signature, decode it and compare the result with the body of the webhook. `jwt` is the default.
+- `standard_webhooks` follows the [Standard Webhooks](https://www.standardwebhooks.com) specification. It
+  sends the `webhook-id`, `webhook-timestamp` and `webhook-signature` HTTP headers, and you verify them
+  with an off-the-shelf Standard Webhooks library. See [Standard Webhooks
+  signature](#standard-webhooks-signature).
 
-You choose between two signature algorithms when you create a webhook endpoint, `hmac` or `jwt`. The
-default is `jwt`.
+Webhook endpoints of the native v2 API (`/api/v2/webhook_endpoints`) only offer `standard_webhooks`, which
+is their default. On the v1 API and in the app, `standard_webhooks` is available on request:
+**[contact us](mailto:hello@getlago.com)** to enable it. Existing `jwt` and `hmac` endpoints keep working
+as they do today.
 
 
 ### JWT signature
@@ -199,4 +213,161 @@ decoded_signature['data'] == request.body
 
   $valid = hash_equals($signature, $base64Signature);
   ```
+</CodeGroup>
+
+### Standard Webhooks signature
+
+With `standard_webhooks`, each webhook endpoint has its own signing key, a secret that starts with
+`whsec_`. Lago signs every message with it and sends three HTTP headers:
+
+- `webhook-id`: the unique key of the message. It stays the same when the message is sent again.
+- `webhook-timestamp`: when the message was sent, in Unix seconds.
+- `webhook-signature`: `v1,` followed by the Base64 HMAC-SHA256 signature of
+  `<webhook-id>.<webhook-timestamp>.<body>`, made with the signing key.
+
+#### 1\. Get the signing key
+
+Only an API key with write access to webhook endpoints, or a user whose role can manage developer keys
+(the Admin role, or a custom role with that permission), can read the signing key. Other callers get no
+key.
+
+<Tabs>
+  <Tab title="Dashboard">
+    Go to **Developers > Webhooks**, open the webhook endpoint, then reveal and copy its signing key.
+  </Tab>
+  <Tab title="API">
+    On the v1 API, the [create](/api-reference/webhook-endpoints/create),
+    [update](/api-reference/webhook-endpoints/update) and
+    [retrieve](/api-reference/webhook-endpoints/get-specific) responses list the keys of a
+    `standard_webhooks` endpoint in `signing_keys`, oldest first. Use the `secret_key` of the most recent
+    one. On the native v2 API, add `expands[]=signing_keys` to the same calls.
+
+    ```json
+    "signing_keys": [
+      {
+        "lago_id": "1a901a90-1a90-1a90-1a90-1a901a901a92",
+        "secret_key": "whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=",
+        "created_at": "2026-11-12T10:00:00Z"
+      }
+    ]
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+  Store the signing key on your side, like any other secret, to avoid querying it for each webhook.
+</Tip>
+
+#### 2\. Verify the message
+
+Use the Standard Webhooks library of your language
+([Python](https://pypi.org/project/standardwebhooks/),
+[JavaScript](https://www.npmjs.com/package/standardwebhooks),
+[Ruby](https://rubygems.org/gems/standardwebhooks)). Pass it the raw request body, exactly as received:
+a body parsed and serialized again does not match the signature. The libraries also refuse a message whose
+`webhook-timestamp` is more than 5 minutes away from the current time, which protects you from replayed
+messages.
+
+<CodeGroup>
+
+```py Python
+from standardwebhooks import Webhook, WebhookVerificationError
+
+webhook = Webhook(LAGO_WEBHOOK_SIGNING_KEY)  # "whsec_..."
+
+try:
+    payload = webhook.verify(request.get_data(), request.headers)
+except WebhookVerificationError:
+    pass  # reject the message
+```
+
+```js Node.js
+import { Webhook } from "standardwebhooks";
+
+const webhook = new Webhook(process.env.LAGO_WEBHOOK_SIGNING_KEY); // "whsec_..."
+
+try {
+  // rawBody: the request body as a string, before any JSON parsing
+  const payload = webhook.verify(rawBody, request.headers);
+} catch (error) {
+  // reject the message
+}
+```
+
+```ruby Ruby
+require 'standardwebhooks'
+
+webhook = StandardWebhooks::Webhook.new(ENV['LAGO_WEBHOOK_SIGNING_KEY']) # "whsec_..."
+headers = %w[webhook-id webhook-timestamp webhook-signature].to_h { |name| [name, request.headers[name]] }
+
+begin
+  payload = webhook.verify(request.raw_post, headers)
+rescue StandardWebhooks::WebhookVerificationError
+  # reject the message
+end
+```
+
+</CodeGroup>
+
+To drop a message you have already processed, store its `webhook-id` and skip a message whose
+`webhook-id` you already have.
+
+#### 3\. Test your setup with a sample message
+
+This message was signed with a test key. Signing it again with your library must give the same
+`webhook-signature`. A fixed timestamp is too old for `verify`, so the check uses the `sign` method of the
+library.
+
+| Value | Sample |
+| --- | --- |
+| Signing key | `whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=` |
+| `webhook-id` | `1a901a90-1a90-1a90-1a90-1a901a901a90` |
+| `webhook-timestamp` | `1794500000` |
+| `webhook-signature` | `v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ=` |
+
+```json Body
+{"webhook_type":"customer.created","object_type":"customer","organization_id":"1a901a90-1a90-1a90-1a90-1a901a901a90","customer":{"lago_id":"1a901a90-1a90-1a90-1a90-1a901a901a91","external_id":"hooli_1234"}}
+```
+
+<CodeGroup>
+
+```py Python
+from datetime import datetime, timezone
+from standardwebhooks import Webhook
+
+body = '{"webhook_type":"customer.created","object_type":"customer","organization_id":"1a901a90-1a90-1a90-1a90-1a901a901a90","customer":{"lago_id":"1a901a90-1a90-1a90-1a90-1a901a901a91","external_id":"hooli_1234"}}'
+webhook = Webhook("whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=")
+
+signature = webhook.sign(
+    "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    datetime.fromtimestamp(1794500000, tz=timezone.utc),
+    body,
+)
+signature == "v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ="  # True
+```
+
+```js Node.js
+import { Webhook } from "standardwebhooks";
+
+const body = '{"webhook_type":"customer.created","object_type":"customer","organization_id":"1a901a90-1a90-1a90-1a90-1a901a901a90","customer":{"lago_id":"1a901a90-1a90-1a90-1a90-1a901a901a91","external_id":"hooli_1234"}}';
+const webhook = new Webhook("whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=");
+
+const signature = webhook.sign(
+  "1a901a90-1a90-1a90-1a90-1a901a901a90",
+  new Date(1794500000 * 1000),
+  body
+);
+signature === "v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ="; // true
+```
+
+```ruby Ruby
+require 'standardwebhooks'
+
+body = '{"webhook_type":"customer.created","object_type":"customer","organization_id":"1a901a90-1a90-1a90-1a90-1a901a901a90","customer":{"lago_id":"1a901a90-1a90-1a90-1a90-1a901a901a91","external_id":"hooli_1234"}}'
+webhook = StandardWebhooks::Webhook.new('whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=')
+
+signature = webhook.sign('1a901a90-1a90-1a90-1a90-1a901a901a90', 1794500000, body)
+signature == 'v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ=' # true
+```
+
 </CodeGroup>

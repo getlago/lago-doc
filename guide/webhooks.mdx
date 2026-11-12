@@ -13,7 +13,7 @@ Lago generates [several events](/api-reference/webhooks/messages) that you can l
     2. Open the **Webhooks** tab;
     3. Click **Add an endpoint**;
     4. Enter the webhook name and URL;
-    5. Choose the webhook signature between HMAC and JWT;
+    5. Choose the webhook signature: JWT, HMAC or Standard Webhooks;
     6. Define the events you want to listen to by selecting the relevant checkboxes; and
     7. Click **Create endpoint** to confirm.
   </Tab>
@@ -46,18 +46,19 @@ You can add up to 10 webhook endpoints.
 </Info>
 
 ## The webhook signature
-When you create a webhook endpoint, you choose between two signature options. Lago uses `JWT` when you do not choose one.
+When you create a webhook endpoint, you choose one of three signature options. Lago uses `JWT` when you do not choose one.
 <Tabs>
   <Tab title="Dashboard">
     - `JWT` embeds the payload in the signature header, so the header can grow large and some servers reject it;
-    - `HMAC` sends a short signature header, so header size is never an issue.
+    - `HMAC` sends a short signature header, so header size is never an issue;
+    - `Standard Webhooks` signs each message with a key of the endpoint, so you can verify it with an off-the-shelf [Standard Webhooks library](/api-reference/webhooks/format---signature#standard-webhooks-signature). It is available on request: **[contact us](mailto:hello@getlago.com)** to enable it.
 
   <Frame caption="Webhook endpoint signature">
     <img src="/guide/images/webhook-signature.png" alt="Webhook endpoint settings with the HMAC and JWT signature options" />
   </Frame>
   </Tab>
   <Tab title="API">
-    Set `signature_algo` to `jwt` or `hmac` in the [create call](#adding-a-webhook-url).
+    Set `signature_algo` to `jwt`, `hmac` or `standard_webhooks` in the [create call](#adding-a-webhook-url). `standard_webhooks` is available on request on this API. Webhook endpoints of the native v2 API (`/api/v2/webhook_endpoints`) only offer `standard_webhooks`, which is their default.
   </Tab>
 </Tabs>
 
