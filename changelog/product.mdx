@@ -8,6 +8,34 @@ Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024
 
 <Update
   label="November 2026"
+  tags={["API", "Security & access"]}
+  rss={{
+    title: "November 2026 - Standard Webhooks signatures",
+    description: "Verify Lago webhooks with a Standard Webhooks library and a signing key per endpoint."
+  }}
+>
+  ## Verify webhooks with a standard library, not a hand-written check
+
+  <Frame>
+    <img src="/changelog/images/20261112-standard-webhooks.webp" alt="Webhook endpoint settings with the Standard Webhooks signature option and the endpoint's signing key." loading="lazy" />
+  </Frame>
+
+  Checking that a webhook came from Lago meant writing your own JWT or HMAC check. A JWT signature carries the whole payload in a header that some servers reject, and nothing in an HMAC signature tells you a message is old.
+
+  **Standard Webhooks** is now a third signature option for webhook endpoints, built on the open specification of the same name.
+
+  - **A library, not custom code:** verify each message with the Standard Webhooks library for Python, JavaScript or Ruby. Pass it the raw body, three headers and your key.
+  - **One key per endpoint:** each endpoint gets its own `whsec_` signing key. Copy it from the app, or read `signing_keys` with an API key that can write webhook endpoints.
+  - **Old messages refused:** `webhook-timestamp` is part of the signature, and the libraries refuse a message sent more than 5 minutes ago.
+  - **Duplicates you can spot:** `webhook-id` stays the same when Lago sends a message again, so you can skip one you have already processed.
+
+  Webhook endpoints of the native v2 API only offer Standard Webhooks, and use it by default.
+
+  [Learn more](/api-reference/webhooks/format---signature#standard-webhooks-signature)
+</Update>
+
+<Update
+  label="November 2026"
   tags={["Invoicing", "Subscriptions", "Wallets & credits"]}
   rss={{
     title: "November 2026 - Payment terms that follow the contract",
