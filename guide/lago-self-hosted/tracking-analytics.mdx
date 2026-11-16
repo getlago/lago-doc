@@ -35,27 +35,17 @@ If you need to opt out, set the `LAGO_DISABLE_SEGMENT` environment variable to
 
 ## Detail of events collected by Lago
 
-This event flow enables Lago to understand the full activation flow, from the
-registration to the first invoice generated.
+Lago tracks the following events:
 
 - `organization_registered`: when you create your organization by signing up to Lago
 - `billable_metric_created`: whenever you create a new billable metric
 - `plan_created`: whenever you create a new plan
-- `customer_created`: whenever a customer is created in Lago
-- `subscription_created`: when a subscription is assigned to a customer
-- `coupon_created`: whenever a new coupon is created
-- `applied_coupon_created`: when a coupon is assigned to a customer
 - `add_on_created`: whenever a new add-on is created
-- `invoice_created`: when a new invoice is emitted for a specific customer
-- `payment_status_changed`: when the payment status of an invoice changes
 - `credit_note_issued`: when a new credit note is issued for a customer
 - `refund_status_changed`: when the refund status of a credit note changes
 - `billing_entity_created`: when a new billing entity is created
 - `webhook_endpoint_created`: when a webhook endpoint is created
 - `webhook_endpoint_deleted`: when a webhook endpoint is deleted
-- `billable_metric_deleted`: when a billable metric is deleted
-- `plan_deleted`: when a plan is deleted
-- `customer_deleted`: when a customer account is deleted
 
 ## Detail of data collected about your organization
 
@@ -84,40 +74,40 @@ Analytics.track(
     hosting_type: 'self',
     name: 'ATM',
     organization_id: '7c868af7-201c-4ebc-9829-ca902e289e5f',
-    version: DateTime.iso8601('2022-07-27T00:00:00.000Z')
+    version: 'v1.41.2'
   }
 )
 ```
 
-### customer_created
+### organization_registered
 
 ```ruby
 Analytics.track(
   user_id: 'membership/4ad5b91f-2a42-4a58-9786-6c07fa03a3d4',
-  event: 'customer_created',
+  event: 'organization_registered',
   properties: {
-    created_at: DateTime.iso8601('2022-08-10T09:34:37.479Z'),
-    customer_id: '29a17eed-021c-485e-b3fa-93d27db31c95',
-    hosting_type: 'cloud',
+    email: 'admin@hooli.com',
+    hosting_type: 'self',
     organization_id: '0d173830-9017-4f57-9d11-e3e83b3e38fe',
-    payment_provider: 'stripe',
-    version: DateTime.iso8601('2022-08-09T00:00:00.000Z')
+    organization_name: 'Hooli',
+    version: 'v1.41.2'
   }
 )
 ```
 
-### invoice_created
+### credit_note_issued
 
 ```ruby
 Analytics.track(
   user_id: 'membership/f37a6b2e-1e79-4710-b0e2-9e451b532461',
-  event: 'invoice_created',
+  event: 'credit_note_issued',
   properties: {
-    hosting_type: 'cloud',
+    credit_note_id: 'd1f1a1b0-2f7a-4f3e-9b2e-5f8d2c3a4b5c',
+    credit_note_method: 'credit',
+    hosting_type: 'self',
     invoice_id: '0e31afd2-8e15-49e1-a6fb-11895fa03c97',
-    invoice_type: 'subscription',
     organization_id: 'b3e35674-c3d1-4279-8ef1-271271b6cafb',
-    version: DateTime.iso8601('2022-07-27T00:00:00.000Z')
+    version: 'v1.41.2'
   }
 )
 ```
