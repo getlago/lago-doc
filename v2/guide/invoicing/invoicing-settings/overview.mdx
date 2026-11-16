@@ -1,0 +1,191 @@
+---
+title: "Customizing invoices"
+description: "Configure the logo, footer, document language and custom sections of v2 invoices per billing entity, customer or contract, with top-level /api/v2 fields."
+keywords: ["Lago", "invoicing settings", "billing entity", "invoice footer", "v2"]
+---
+
+Invoicing settings control how invoices look and behave for a [billing entity](/v2/guide/billing-entities) and the customers attached to it. Set defaults on the billing entity, then override them per customer or per contract when a customer needs something different.
+
+<Info>
+In v2, billing and invoicing settings are top-level fields on the billing entity and the customer. There is no `billing_configuration` object.
+</Info>
+
+## Where each setting lives
+
+| Setting | Billing entity field | Customer field | Contract field |
+| --- | --- | --- | --- |
+| Logo | `logo` | | |
+| Footer | `invoice_footer` | | |
+| Document language | `document_locale` | `document_locale` | |
+| Custom sections | `invoice_custom_section_codes` | `invoice_custom_section_codes`, `skip_invoice_custom_sections` | `invoice_custom_section` |
+| [Grace period](/v2/guide/invoicing/invoicing-settings/grace-period) | `invoice_grace_period` | `invoice_grace_period` | |
+| [Numbering](/v2/guide/invoicing/invoicing-settings/invoice-numbering) | `document_numbering`, `document_number_prefix` | | |
+| [Issuing date](/v2/guide/invoicing/invoicing-settings/issuing-date) | `periodic_invoice_issuing_date_anchor`, `periodic_invoice_issuing_date_adjustment` | same fields | |
+| [Empty invoices](/v2/guide/invoicing/invoicing-settings/empty-invoices) | `finalize_zero_amount_invoice` (boolean) | `finalize_zero_amount_invoice` (`inherit`, `skip`, `finalize`) | |
+| [Taxes](/v2/guide/taxes) | `tax_codes` | `tax_codes` | |
+| Email notifications | `email_settings` | | |
+| Invoice consolidation | | | `consolidate_invoice` |
+| Purchase order | | | `purchase_order_number` |
+
+## Update the entity information and logo
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Settings** in the side menu;
+    2. In **Billing entity** > **General information**, click **Edit** in the **Information** block;
+    3. Upload a logo and update the entity details; and
+    4. Click **Save edits**.
+  </Tab>
+  <Tab title="API">
+    `logo` accepts a PNG or JPEG image encoded as a base64 data URL.
+
+    <CodeGroup>
+    ```bash Update the billing entity logo and legal name
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    BILLING_ENTITY_CODE="acme_corp"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/billing_entities/$BILLING_ENTITY_CODE" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "legal_name": "Acme Corp",
+          "logo": "data:image/png;base64,aGVsbG8="
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Add a custom footer
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Settings** in the side menu;
+    2. Open **Billing entity** > **Invoicing settings**;
+    3. Click **Edit** in the **Invoice default footer** block;
+    4. Enter your text; and
+    5. Click **Save information**.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Update the invoice footer
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    BILLING_ENTITY_CODE="acme_corp"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/billing_entities/$BILLING_ENTITY_CODE" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "invoice_footer": "Acme Corp, registered in Delaware."
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Set the document language
+
+Set the default on the billing entity. A customer's `document_locale` overrides it.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Settings** in the side menu;
+    2. Open **Billing entity** > **Invoicing settings**;
+    3. Click **Edit** in the **Document language** block; and
+    4. Select the language and confirm.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Set the billing entity document language
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    BILLING_ENTITY_CODE="acme_corp"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/billing_entities/$BILLING_ENTITY_CODE" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "document_locale": "fr"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Add custom invoice sections
+
+A custom invoice section adds a titled block to the invoice, for example bank details. Assign sections by code at three levels:
+
+- **Billing entity**: `invoice_custom_section_codes` applies to every customer of the entity. An empty array removes the assignments.
+- **Customer**: `invoice_custom_section_codes` assigns sections to one customer. Set `skip_invoice_custom_sections` to `true` to show none.
+- **Contract**: `invoice_custom_section` takes `invoice_custom_section_codes` and `skip_invoice_custom_sections` for one contract.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Settings** in the side menu and open **Invoice custom sections**;
+    2. Click **Add**, then enter the name, code, title and content;
+    3. Click **Preview** to check the rendering; and
+    4. Apply the section to a billing entity or a customer.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Assign a custom section to a customer
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "skip_invoice_custom_sections": false,
+          "invoice_custom_section_codes": ["eu_bank_details"]
+        }
+      }'
+    ```
+
+    ```bash Assign a custom section to a contract
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/contracts/contract_example" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "contract": {
+          "invoice_custom_section": {
+            "invoice_custom_section_codes": ["eu_bank_details"]
+          }
+        }
+      }'
+    ```
+    </CodeGroup>
+
+    The v2 API assigns existing sections by code. Create the sections themselves in the Dashboard. On a contract, the lifecycle status determines which fields can still change. See [Contract lifecycle](/v2/guide/contracts/lifecycle).
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Grace period" icon="hourglass" href="/v2/guide/invoicing/invoicing-settings/grace-period">
+    Keep invoices in draft before finalization.
+  </Card>
+  <Card title="Invoice numbering" icon="hashtag" href="/v2/guide/invoicing/invoicing-settings/invoice-numbering">
+    Per customer or per billing entity.
+  </Card>
+  <Card title="Update a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/partially-update">
+    All billing entity fields.
+  </Card>
+  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/partially-update">
+    All customer fields.
+  </Card>
+</CardGroup>

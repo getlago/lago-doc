@@ -1,0 +1,70 @@
+---
+title: "Airbyte (ETL)"
+sidebarTitle: "Airbyte (ETL)"
+description: "Connect Lago to Airbyte with your API key to push billing data such as invoices and customers to Snowflake, BigQuery, Redshift or S3."
+keywords: ["Lago", "Airbyte", "ETL", "data warehouse", "v2"]
+---
+
+Airbyte is an open-source **data integration platform** used as an ETL. With this integration, you can connect Lago billing data to any warehouse.
+
+<Note>
+Contract-level sync details for V2 are not documented yet. The Airbyte connector streams listed below are legacy v1 objects. V2 objects (contracts, products, rate cards, rates) are not documented as Airbyte streams. Check with the Lago team before you rely on Airbyte for V2 data.
+</Note>
+
+## Destinations
+You can push Lago billing data to destinations such as Snowflake, BigQuery, Redshift, S3 buckets or Azure.
+The entire list is in Airbyte's [destinations documentation](https://docs.airbyte.com/integrations/destinations/).
+
+## Data available for extraction
+With Airbyte's native integration of Lago, you can push the following legacy (v1) billing data to warehouses:
+- billable_metrics
+- plans
+- coupons
+- add_ons
+- invoices
+- customers
+- subscriptions
+
+<Warning>
+At present this connector **only supports full refresh syncs**, meaning that each time you use the connector it syncs all available records from scratch. Use it with care if you expect a lot of records.
+</Warning>
+
+Find the full documentation of [Airbyte's native Lago integration](https://docs.airbyte.com/integrations/sources/getlago/).
+
+## 1. Connect Lago to Airbyte
+You only need your Lago private API key.
+In Airbyte:
+- Go to **Sources**;
+- Select **GetLago** as a source of data; and
+- Paste your Lago private API key.
+
+<Frame caption="Lago data source in Airbyte">
+  <img src="/integrations/data/images/lago-airbyte-source-e56dc399ab95d5f523683b5c62f3b3e5.png" alt="Airbyte source settings for GetLago, with the source name and the API key fields, next to the setup guide listing the supported streams" />
+</Frame>
+
+## 2. Select a destination
+Select any of the data destinations available in Airbyte. It can be a warehouse (BigQuery, Redshift, Snowflake...) or a file storage tool such as S3.
+
+<Frame caption="Destination in Airbyte">
+  <img src="/integrations/data/images/destination-airbyte-52676d7f8ffd515d98027fbe02eb2b05.png" alt="Airbyte connection between the GetLago source and a Snowflake destination, with its sync history" />
+</Frame>
+
+## 3. Sync billing data
+This example connects Lago billing data to a Snowflake data warehouse. You can select another destination.
+
+1. Create a **data sync** between Lago source and your destination;
+2. Define a **sync frequency**; and
+3. Activate the sync in Airbyte between Lago source and your destination.
+
+This populates your Lago billing data into the warehouse (Snowflake in this example).
+
+<Frame caption="Lago data in Snowflake">
+  <img src="/integrations/data/images/lago-data-snowflake-ec9a012ccb50edc332d6750de7246076.png" alt="Snowflake database with the Lago tables, and the columns of the invoices table" />
+</Frame>
+
+## 4. Query Lago billing data
+Once the data lands in your destination, you can query it. Here is a query calculating your monthly revenue with Lago:
+
+<Frame caption="Query in Snowflake">
+  <img src="/integrations/data/images/example-billing-query-snowflake-a4cf76e6bca92363215567a0e4e51f06.png" alt="Snowflake worksheet running the monthly revenue query, with the result shown as a chart" />
+</Frame>

@@ -1,0 +1,149 @@
+---
+title: "Fees: line items generated from contract rates"
+sidebarTitle: "Fees"
+description: "Understand v2 product fees: how each fee links to a contract, product, rate card and rate, and how to list, filter, update or delete them."
+keywords: ["Lago", "fee", "line item", "contract", "v2", "rate card"]
+---
+
+A [fee](/v2/api-reference/fees/retrieve) is a line item that Lago computes from a [rate](/v2/guide/rate-cards/rates) applied to a [contract](/v2/guide/contracts/overview). Use the fee endpoints to trace an invoice amount back to its product, rate card and rate, or to manage fees that are not invoiced yet.
+
+## Fee types
+
+The v2 fee endpoints return product fees only: `fee_type` is always `product`. Legacy fees are excluded from the list, and retrieving one returns `404`.
+
+A fee can exist before it is attached to an invoice. In that case `lago_invoice_id` is `null`.
+
+## What a fee links to
+
+Each fee carries the identifiers of the objects that produced it:
+
+| Field | Links to |
+| --- | --- |
+| `external_customer_id`, `lago_customer_id` | [Customer](/v2/guide/customers/customer-management) |
+| `external_contract_id`, `lago_contract_id` | [Contract](/v2/guide/contracts/overview) |
+| `product_code`, `product_category_code` | [Product](/v2/guide/product-catalog/products) and [category](/v2/guide/product-catalog/product-categories) |
+| `product_filter_code`, `filters` | [Product filter](/v2/guide/product-catalog/product-filters) |
+| `rate_card_code` | [Rate card](/v2/guide/rate-cards/overview) |
+| `rate_code`, `lago_rate_override_id` | [Rate](/v2/guide/rate-cards/rates), or the contract [override](/v2/guide/contracts/overrides) that replaced it |
+| `lago_true_up_fee_id`, `lago_true_up_parent_fee_id` | The related true-up fee, or the parent fee of a true-up fee |
+| `event_transaction_id` | The event behind an advance-billed fee |
+
+Related products, filters and rates can point to deleted catalog records for historical fees.
+
+## Amounts
+
+| Field | Meaning |
+| --- | --- |
+| `units` | Quantity, as a decimal string. |
+| `unit_amount_cents`, `precise_unit_amount_cents` | Unit price, rounded and precise. |
+| `amount_cents` | Fee amount. |
+| `sub_total_excluding_taxes_amount_cents` | Amount after discounts and before tax. |
+| `taxes_amount_cents` | Tax on the fee. |
+| `total_amount_cents` | Amount including tax. |
+| `from_datetime`, `to_datetime` | Billed period, when available. |
+| `billing_timing` | `advance` or `arrears`, inherited from the rate card. |
+
+### Example
+
+In the [running example](/v2/guide/invoicing/overview#worked-example), 2,000 API calls at $0.01 produce this fee on `api_calls_usd`:
+
+| Field | Value |
+| --- | --- |
+| `product_code` | `api_calls_product` |
+| `rate_card_code` | `api_calls_usd` |
+| `rate_code` | `calls_standard` |
+| `units` | `"2000.0"` |
+| `amount_cents` | `2000` |
+| `billing_timing` | `arrears` |
+
+With a 20% tax assigned, `taxes_amount_cents` is `400` and `total_amount_cents` is `2400`.
+
+## List and retrieve fees
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open an invoice from **Invoices** or from the customer view; and
+    2. Review the fee lines in the invoice detail.
+  </Tab>
+  <Tab title="API">
+    The list is cursor-paginated, newest first. Filters include `lago_invoice_id`, `external_customer_id`, `external_contract_id`, `product_code`, `rate_card_code`, `payment_status`, `currency`, `event_transaction_id`, and date bounds on creation, success, failure and refund.
+
+    <CodeGroup>
+    ```bash List the fees of a contract
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v2/fees?external_contract_id=contract_example&rate_card_code=api_calls_usd" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+
+    ```bash Retrieve a fee with its rate and taxes
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    FEE_ID="__YOUR_FEE_ID__"
+
+    curl --location --request GET "$LAGO_URL/api/v2/fees/$FEE_ID?expands[]=rate&expands[]=applied_taxes" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+
+    Supported expansions on retrieval: `applied_taxes`, `invoice`, `product`, `product_filter`, `rate_card`, `rate`, `contract` and `customer`. Only one expansion level is supported.
+  </Tab>
+</Tabs>
+
+## Update a fee payment status
+
+`payment_status` is the only editable field: `pending`, `succeeded`, `failed` or `refunded`. An invoiced fee cannot be updated and returns `422 invoiced_fee`.
+
+<CodeGroup>
+```bash Set an uninvoiced fee as paid
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+FEE_ID="__YOUR_FEE_ID__"
+
+curl --location --request PATCH "$LAGO_URL/api/v2/fees/$FEE_ID" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "fee": {
+      "payment_status": "succeeded"
+    }
+  }'
+```
+</CodeGroup>
+
+## Delete a fee
+
+Only uninvoiced fees can be deleted. A fee already attached to an invoice returns `422 invoiced_fee`.
+
+<Warning>
+Deleting a fee removes a billable amount. It cannot be undone. Check the fee identifier and review the change before you run it in production.
+</Warning>
+
+<CodeGroup>
+```bash Delete an uninvoiced fee
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+FEE_ID="__YOUR_FEE_ID__"
+
+curl --location --request DELETE "$LAGO_URL/api/v2/fees/$FEE_ID" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
+    How fees are grouped and totaled.
+  </Card>
+  <Card title="Credit notes" icon="file-invoice-dollar" href="/v2/guide/invoicing/credit-notes/overview">
+    Credit a fee on a finalized invoice.
+  </Card>
+  <Card title="List fees (API)" icon="code" href="/v2/api-reference/fees/list">
+    Filters and response schema.
+  </Card>
+  <Card title="Update a fee (API)" icon="code" href="/v2/api-reference/fees/partially-update">
+    Change the payment status of an uninvoiced fee.
+  </Card>
+</CardGroup>

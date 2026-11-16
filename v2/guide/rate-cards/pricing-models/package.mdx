@@ -1,0 +1,79 @@
+---
+title: "Package rate model"
+sidebarTitle: "Package"
+description: "The Lago v2 package rate model charges a fixed amount per bundle of units. Configure amount and package_size, with a 2,000-call example at $1 per 100 calls."
+keywords: ["Lago", "package pricing", "bundles", "package_size", "rate model", "v2"]
+---
+
+The package rate model charges a fixed amount for each bundle of units, such as $1 per 100 API calls. Use it when you sell usage in blocks rather than per unit.
+
+## How it works
+
+A package has a size (`package_size`) and a price (`amount`). The fee is the number of packages consumed × `amount`.
+
+## Configure the rate
+
+Set `rate_model` to `package`. `rate_properties` takes:
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `amount` | Yes | Price of one package, as a decimal string. |
+| `package_size` | Yes | Units in one package, as an integer. |
+| `free_units` | No | Free units per billing period, as an integer. |
+
+<CodeGroup>
+```bash Create a package rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "calls_package",
+      "effective_from": "2027-07-01T00:00:00Z",
+      "rate_model": "package",
+      "rate_properties": {
+        "amount": "1",
+        "package_size": 100,
+        "free_units": 0
+      },
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
+
+## Example
+
+At $1 per package of 100 calls, with no free units:
+
+| Quantity | Packages | Calculation | Amount before tax |
+| --- | --- | --- | --- |
+| 2,000 calls | 20 | 20 × $1.00 | $20.00 |
+
+2,000 calls fill exactly 20 packages, so the fee matches the standard $0.01 per call. Quantities that leave a partial package, and non-zero `free_units`, can change the result compared with unit pricing. Test those boundaries in a test environment before you rely on them.
+
+## Availability
+
+- Fixed products: not available.
+- Metered products: available for Count, Count unique, Latest, Max, Sum and Weighted sum, except with prorated recurring metrics. Advance billing is available only for Count, non-prorated Count unique and non-prorated Sum.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
+<CardGroup cols={2}>
+  <Card title="Standard" icon="equals" href="/v2/guide/rate-cards/pricing-models/standard">
+    One unit price.
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Compare every rate model.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="The rate object" icon="code" href="/v2/api-reference/rates/object">
+    `rate_properties` fields.
+  </Card>
+</CardGroup>

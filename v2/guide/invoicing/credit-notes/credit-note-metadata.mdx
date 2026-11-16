@@ -1,0 +1,128 @@
+---
+title: "Credit note metadata"
+sidebarTitle: "Credit note metadata"
+description: "Add, merge, replace and delete key-value metadata on finalized credit notes with /api/v2, for example ERP or government document references."
+keywords: ["Lago", "credit note metadata", "metadata", "v2", "ERP"]
+---
+
+Credit note metadata is a set of key-value pairs stored on a [credit note](/v2/guide/invoicing/credit-notes/overview). Use it to keep references from external systems, such as an ERP document ID or a sync flag, next to the credit note.
+
+## Limits
+
+- At most 50 keys per credit note.
+- Keys up to 100 characters.
+- Values up to 255 characters. Values must be strings or `null`.
+- The credit note must be finalized.
+
+## Endpoints
+
+| Method and path | Effect |
+| --- | --- |
+| `POST /credit_notes` with `metadata` | Sets metadata at creation. |
+| `POST /credit_notes/{credit_note_id}/metadata` | Replaces all metadata. |
+| `PUT` or `PATCH /credit_notes/{credit_note_id}/metadata` | Merges keys into existing metadata. |
+| `PUT` or `PATCH /credit_notes/{lago_id}` with `metadata` | Merges keys. |
+| `DELETE /credit_notes/{credit_note_id}/metadata` | Clears all metadata. |
+| `DELETE /credit_notes/{credit_note_id}/metadata/{key}` | Deletes one key and returns the remaining metadata. |
+
+The metadata endpoints return only the metadata object, or `null`. To read metadata with the credit note, retrieve it with `expands[]=metadata`.
+
+## Add or merge metadata
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the credit note detail page;
+    2. Click **Add metadata** or **Edit metadata**;
+    3. Enter your key-value pairs; and
+    4. Click **Save**.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Merge metadata keys
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID/metadata" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "metadata": {
+          "erp_reference": "CN-0001",
+          "synced_to_erp": "true"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Replace all metadata
+
+`POST` overwrites the whole set. Keys you omit are removed. Omitted `metadata` defaults to an empty object.
+
+<CodeGroup>
+```bash Replace all metadata
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+
+curl --location --request POST "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID/metadata" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "metadata": {
+      "erp_reference": "CN-0001"
+    }
+  }'
+```
+</CodeGroup>
+
+## Delete metadata
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the credit note detail page;
+    2. Click **Edit metadata**;
+    3. Click the trash icon next to the key; and
+    4. Click **Save**.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Delete one key
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+
+    curl --location --request DELETE "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID/metadata/synced_to_erp" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+
+    ```bash Delete all metadata
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+
+    curl --location --request DELETE "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID/metadata" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Credit notes" icon="file-invoice-dollar" href="/v2/guide/invoicing/credit-notes/overview">
+    Issue, estimate and void credit notes.
+  </Card>
+  <Card title="Merge metadata (API)" icon="code" href="/v2/api-reference/credit-notes/metadata/partially-merge">
+    Request and response schema.
+  </Card>
+  <Card title="Replace metadata (API)" icon="code" href="/v2/api-reference/credit-notes/metadata/replace">
+    Request and response schema.
+  </Card>
+  <Card title="Delete a metadata key (API)" icon="code" href="/v2/api-reference/credit-notes/metadata/delete-key">
+    Request and response schema.
+  </Card>
+</CardGroup>

@@ -1,0 +1,63 @@
+---
+title: "Invoice numbering"
+sidebarTitle: "Invoice numbering"
+description: "Choose per-customer or per-billing-entity document numbering in v2 and set a custom document number prefix with the billing entity endpoint."
+keywords: ["Lago", "invoice numbering", "document prefix", "billing entity", "v2"]
+---
+
+Invoice numbering defines how Lago builds the `number` of each finalized invoice. Configure it on the [billing entity](/v2/guide/billing-entities) so numbers match your accounting conventions.
+
+## Settings
+
+| Field | Values | Effect |
+| --- | --- | --- |
+| `document_numbering` | `per_customer` | One sequence per customer. |
+| | `per_billing_entity` | One continuous sequence across all customers of the billing entity. |
+| `document_number_prefix` | string or `null` | Prefix applied to document numbers. |
+
+## Configure numbering
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Settings** in the side menu;
+    2. Open **Billing entity** > **Invoicing settings**;
+    3. Edit the **Document numbering** and **Document prefix** blocks; and
+    4. Save your changes.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Use one sequence per billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    BILLING_ENTITY_CODE="acme_corp"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/billing_entities/$BILLING_ENTITY_CODE" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "document_numbering": "per_billing_entity",
+          "document_number_prefix": "ACM"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Invoicing settings" icon="gear" href="/v2/guide/invoicing/invoicing-settings/overview">
+    All invoicing settings and where they live.
+  </Card>
+  <Card title="Billing entities" icon="building" href="/v2/guide/billing-entities">
+    Manage the entities that issue invoices.
+  </Card>
+  <Card title="Update a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/partially-update">
+    Request and response schema.
+  </Card>
+  <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
+    Invoice statuses and actions.
+  </Card>
+</CardGroup>

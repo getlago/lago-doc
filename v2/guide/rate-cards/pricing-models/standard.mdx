@@ -1,0 +1,71 @@
+---
+title: "Standard rate model"
+sidebarTitle: "Standard"
+description: "The Lago v2 standard rate model bills the same price for every unit. Configure rate_properties.amount and see the $100 + 2,000 × $0.01 = $120 worked example."
+keywords: ["Lago", "standard pricing", "rate model", "unit price", "rate_properties", "v2"]
+---
+
+The standard rate model charges the same price for every unit: billable quantity × `amount`. Use it for flat recurring fees on fixed products and for simple per-unit usage pricing on metered products.
+
+## How it works
+
+Amount = quantity × unit price. `amount` accepts decimal unit prices, such as `"0.0004"`.
+
+## Configure the rate
+
+Set `rate_model` to `standard` and `rate_properties.amount` to the unit price, as a decimal string in the rate card's currency. `amount` is required.
+
+<CodeGroup>
+```bash Create a standard rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "calls_standard",
+      "effective_from": "2027-01-01T00:00:00Z",
+      "rate_model": "standard",
+      "rate_properties": { "amount": "0.01" },
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
+
+## Example
+
+The running example uses two standard rates, one per product, over one full month:
+
+| Fee | Rate | Quantity | Calculation | Amount before tax |
+| --- | --- | --- | --- | --- |
+| Monthly service | `amount: "100"` | 1 unit | 1 × $100.00 | $100.00 |
+| API calls | `amount: "0.01"` | 2,000 calls | 2,000 × $0.01 | $20.00 |
+| **Total** | | | | **$120.00** |
+
+A zero quantity gives a zero amount, unless the rate has a [spending minimum](/v2/guide/rate-cards/spending-minimums). The baseline has none.
+
+## Availability
+
+- Fixed products: available, arrears and advance, with or without proration.
+- Metered products: available for every aggregation except prorated recurring Weighted sum. Advance billing is unavailable with Latest, Max and Weighted sum.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
+<CardGroup cols={2}>
+  <Card title="Graduated" icon="stairs" href="/v2/guide/rate-cards/pricing-models/graduated">
+    Tiered unit prices.
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Compare every rate model.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="The rate object" icon="code" href="/v2/api-reference/rates/object">
+    `rate_model` and `rate_properties`.
+  </Card>
+</CardGroup>

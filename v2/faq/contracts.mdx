@@ -1,0 +1,71 @@
+---
+title: "Contracts FAQ"
+description: "Short answers on Lago v2: what a contract is, contracts vs subscriptions, rate cards vs charges, running v1 and v2 together and API v2 beta status."
+keywords: ["Lago", "contracts", "rate cards", "API v2", "subscriptions", "v2"]
+---
+
+This page answers the questions teams ask most about Lago's v2 billing engine. Use it to decide between contracts and subscriptions, and to map v1 concepts to v2 objects.
+
+## What is a contract?
+
+A [contract](/v2/guide/contracts/overview) applies a plan's billing terms to one customer and starts that customer's billing timeline. It has an `external_id`, an `external_customer_id`, an optional `plan_code`, a `started_at`, an optional `billing_anchor_date` and an optional `ended_at`. Its status is `pending`, `active`, `canceled` or `terminated`.
+
+## How is a contract different from a subscription?
+
+A contract is the v2 counterpart of a v1 subscription. Both connect a customer to an offer. The differences:
+
+| | Subscription (v1) | Contract (v2) |
+|---|---|---|
+| Offer | Plan with charges | Plan with applied rate cards, or no plan |
+| Usage events | `external_subscription_id` | `external_contract_id` |
+| Price changes | Update the plan's charges | New rate with an `effective_from` date |
+| Phased pricing | Not available | Rate phases with a `rate_override`, counted in billing cycles |
+| Per-customer changes | Overrides at creation | Contract overrides while the contract is `pending` |
+
+v2 events reject `external_subscription_id` with `422`. Legacy (v1): [subscriptions](/guide/subscriptions/assign-plan).
+
+## How are rate cards different from charges?
+
+A v1 charge put the metric, pricing model and price on the plan. v2 splits that into reusable objects:
+
+- A [product](/v2/guide/product-catalog/products) is what you sell, `fixed` or `metered`.
+- A [rate card](/v2/guide/rate-cards/overview) targets one product or one product filter and holds `currency`, `billing_timing` and `proration`.
+- A [rate](/v2/guide/rate-cards/rates) holds `rate_model`, `rate_properties`, the billing interval and `effective_from`.
+- A [plan](/v2/guide/plans/overview) applies rate cards. One rate card can be applied to many plans.
+
+A new active rate flows to every plan and contract that does not override it.
+
+## Can I use v1 and v2 together?
+
+Both API versions are documented side by side. v1 (`/api/v1`) covers subscriptions. v2 (`/api/v2`) covers the product catalog and contracts, and requires the product catalog to be enabled on your organization. Some `/api/v2` paths fall back to v1 controllers. Only the actions documented in the v2 reference are supported. See [contracts vs subscriptions](/v2/guide/introduction/contracts-vs-subscriptions) to choose.
+
+## Is API v2 in beta?
+
+Yes. The v2 specification is version `2.0.0-beta`, and v2 endpoints return the `X-Lago-Endpoint-Status: beta` header. Base URLs are `https://api.getlago.com/api/v2` (US) and `https://api.eu.getlago.com/api/v2` (EU). See the [API v2 introduction](/v2/api-reference/intro).
+
+## Can I edit a contract after it starts?
+
+Not yet. You can configure contract overrides only while the contract is `pending`, through `rate_override` on its rate phases. Review the configuration before `started_at`. See [contract overrides](/v2/guide/contracts/overrides).
+
+## Can I change a plan once customers use it?
+
+A plan locks once a contract uses it. To change a price for everyone, add a new rate on the rate card. See [manage plan changes](/v2/guide/plans/manage-plan-changes).
+
+## Are there SDKs for API v2?
+
+Not yet. The official Python, Ruby and JavaScript clients do not expose v2 methods. v2 code samples use cURL.
+
+<CardGroup cols={2}>
+  <Card title="Contracts vs subscriptions" icon="code-compare" href="/v2/guide/introduction/contracts-vs-subscriptions">
+    Glossary and migration notes from v1 to v2.
+  </Card>
+  <Card title="Your first invoice" icon="file-invoice" href="/v2/guide/introduction/your-first-invoice">
+    From product to contract to invoice.
+  </Card>
+  <Card title="Create a contract (API)" icon="code" href="/v2/api-reference/contracts/create">
+    `POST /api/v2/contracts`
+  </Card>
+  <Card title="Contract object" icon="brackets-curly" href="/v2/api-reference/contracts/object">
+    Fields and statuses.
+  </Card>
+</CardGroup>

@@ -1,0 +1,289 @@
+---
+title: "Bill per token: replicate Mistral pricing with contracts"
+sidebarTitle: "Clone Mistral pricing"
+description: "Rebuild Mistral's per-token pricing in Lago v2 with a metered product, one product filter per model and token type, package rates and a contract."
+keywords: ["Lago", "per-token pricing", "Mistral", "product filters", "contract", "v2"]
+---
+
+import SetupLago from "/snippets/v2/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/v2/templates/create-customer.mdx";
+import CreateContract from "/snippets/v2/templates/create-contract.mdx";
+import ContractUsage from "/snippets/v2/templates/contract-usage.mdx";
+
+This template builds token-based billing like Mistral's with Lago v2: one metered product, priced per model and token type through product filters. It suits LLM and generative AI companies whose price depends on the model used and on input versus output tokens.
+
+Legacy (v1): [Clone Mistral pricing with subscriptions](/templates/per-token/mistral).
+
+## Pricing structure
+
+Mistral prices tokens per million, with a different price per model and per token type.
+
+| Model           | Input             | Output            |
+|-----------------|-------------------|-------------------|
+| mistral-small   | $1 / 1M tokens    | $3 / 1M tokens    |
+| mistral-medium  | $2.7 / 1M tokens  | $8.1 / 1M tokens  |
+| mistral-large   | $4 / 1M tokens    | $12 / 1M tokens   |
+
+## How it maps to v2
+
+| Pricing element | v2 object |
+|---|---|
+| Token usage | Billable metric `mistral_tokens` (`sum_agg` on `tokens`) with `model` and `type` dimensions |
+| What you sell | Metered product `mistral_tokens_product` |
+| Model and token type combinations | Six product filters |
+| Price per million tokens | One rate card per filter, with a `package` rate |
+| The offer | Plan `mistral_payg` with six applied rate cards |
+| The customer agreement | Contract `contract_example` |
+
+## Get started
+
+<Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
+
+  <Step title="Create a billable metric">
+    Create one billable metric that sums tokens, with `model` and `type` dimensions.
+
+    <CodeGroup>
+      ```bash cURL highlight={6,8-21}
+      curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "AI tokens",
+            "code": "mistral_tokens",
+            "description": "Token usage across models",
+            "aggregation_type": "sum_agg",
+            "field_name": "tokens",
+            "recurring": false,
+            "filters": [
+              {
+                "key": "model",
+                "values": ["mistral-small", "mistral-medium", "mistral-large"]
+              },
+              {
+                "key": "type",
+                "values": ["input", "output"]
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/billable-metrics/create) and the [billable metrics guide](/v2/guide/billable-metrics/create-billable-metrics).
+  </Step>
+
+  <Step title="Create a metered product">
+    <CodeGroup>
+      ```bash cURL highlight={7-8}
+      curl --location --request POST "$LAGO_URL/api/v2/products" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "product": {
+            "name": "AI tokens",
+            "code": "mistral_tokens_product",
+            "product_type": "metered",
+            "billable_metric_code": "mistral_tokens"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/products/create) and the [metered products guide](/v2/guide/product-catalog/metered-products).
+  </Step>
+
+  <Step title="Create product filters">
+    Create one product filter per model and token type.
+
+    <CodeGroup>
+      ```bash cURL highlight={6,8-11}
+      curl --location --request POST "$LAGO_URL/api/v2/products/mistral_tokens_product/filters" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "filter": {
+            "name": "mistral-small input",
+            "code": "mistral_small_input",
+            "invoice_display_name": "mistral-small, input tokens",
+            "values": [
+              { "key": "model", "value": "mistral-small" },
+              { "key": "type", "value": "input" }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Repeat for each combination:
+
+    | Filter `code` | `model` | `type` |
+    |---|---|---|
+    | `mistral_small_input` | `mistral-small` | `input` |
+    | `mistral_small_output` | `mistral-small` | `output` |
+    | `mistral_medium_input` | `mistral-medium` | `input` |
+    | `mistral_medium_output` | `mistral-medium` | `output` |
+    | `mistral_large_input` | `mistral-large` | `input` |
+    | `mistral_large_output` | `mistral-large` | `output` |
+
+    Refer to the [API reference](/v2/api-reference/product-filters/create) and the [product filters guide](/v2/guide/product-catalog/product-filters).
+  </Step>
+
+  <Step title="Create a rate card per filter">
+    Each rate card targets one filter. Its initial rate uses the `package` model with a package of 1,000,000 tokens.
+
+    <CodeGroup>
+      ```bash cURL highlight={7-11,14-23}
+      curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "rate_card": {
+            "name": "mistral-small input USD",
+            "code": "mistral_small_input_usd",
+            "product_code": "mistral_tokens_product",
+            "product_filter_code": "mistral_small_input",
+            "currency": "USD",
+            "billing_timing": "arrears",
+            "proration": false,
+            "rates": [
+              {
+                "code": "mistral_small_input_standard",
+                "effective_from": "2027-01-01T00:00:00Z",
+                "rate_model": "package",
+                "rate_properties": {
+                  "amount": "1",
+                  "package_size": 1000000,
+                  "free_units": 0
+                },
+                "billing_interval_count": 1,
+                "billing_interval_unit": "month"
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Repeat for each filter:
+
+    | Rate card `code` | `product_filter_code` | `amount` per 1,000,000 tokens |
+    |---|---|---|
+    | `mistral_small_input_usd` | `mistral_small_input` | `"1"` |
+    | `mistral_small_output_usd` | `mistral_small_output` | `"3"` |
+    | `mistral_medium_input_usd` | `mistral_medium_input` | `"2.7"` |
+    | `mistral_medium_output_usd` | `mistral_medium_output` | `"8.1"` |
+    | `mistral_large_input_usd` | `mistral_large_input` | `"4"` |
+    | `mistral_large_output_usd` | `mistral_large_output` | `"12"` |
+
+    Refer to the [API reference](/v2/api-reference/rate-cards/create) and the [package model](/v2/guide/rate-cards/pricing-models/package).
+  </Step>
+
+  <Step title="Create a plan and apply the rate cards">
+    <CodeGroup>
+      ```bash cURL highlight={6-7}
+      curl --location --request POST "$LAGO_URL/api/v2/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Mistral pay as you go",
+            "code": "mistral_payg",
+            "currency": "USD"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Apply each of the six rate cards:
+
+    <CodeGroup>
+      ```bash cURL highlight={6}
+      curl --location --request POST "$LAGO_URL/api/v2/plans/mistral_payg/applied_rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "applied_rate_card": {
+            "rate_card_code": "mistral_small_input_usd"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/plan-applied-rate-cards/create) and the [plans guide](/v2/guide/plans/overview).
+  </Step>
+
+  <Step title="Create a customer">
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a contract">
+    Replace `__PLAN_CODE__` with `mistral_payg`.
+
+    <CreateContract />
+  </Step>
+
+  <Step title="Ingest usage via events">
+    Send usage events that target the contract with `external_contract_id`.
+
+    <CodeGroup>
+      ```bash cURL highlight={7-12}
+      curl --location --request POST "$LAGO_URL/api/v2/events" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "mistral_tokens",
+            "external_contract_id": "contract_example",
+            "properties": {
+              "tokens": 2000000,
+              "model": "mistral-small",
+              "type": "input"
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/events/create) and the [usage ingestion guide](/v2/guide/events/ingesting-usage).
+  </Step>
+
+  <Step title="Monitor current usage">
+    <ContractUsage />
+  </Step>
+</Steps>
+
+## Worked example
+
+Over one full monthly period, the customer sends 2,000,000 mistral-small input tokens and 3,000,000 mistral-large output tokens.
+
+| Invoice line | Quantity | Packages | Price | Amount |
+|---|---|---|---|---|
+| mistral-small, input tokens | 2,000,000 tokens | 2 | $1 per 1M | $2.00 |
+| mistral-large, output tokens | 3,000,000 tokens | 3 | $12 per 1M | $36.00 |
+| **Total before tax** | | | | **$38.00** |
+
+## What changed from v1
+
+- The v1 template prepaid usage with a wallet. The v2 API does not document wallets, so this template omits prepaid credits.
+- Charge filters become product filters, each priced by its own rate card.
+- Events target `external_contract_id` instead of `external_subscription_id`.
+
+<CardGroup cols={2}>
+  <Card title="Product filters" icon="filter" href="/v2/guide/product-catalog/product-filters">
+    Price subsets of metered usage separately.
+  </Card>
+  <Card title="Rates" icon="tag" href="/v2/guide/rate-cards/rates">
+    Schedule price changes with effective dates.
+  </Card>
+  <Card title="Contracts" icon="file-contract" href="/v2/guide/contracts/overview">
+    Apply a plan to a customer.
+  </Card>
+  <Card title="Send an event (API)" icon="code" href="/v2/api-reference/events/create">
+    `POST /api/v2/events`
+  </Card>
+</CardGroup>

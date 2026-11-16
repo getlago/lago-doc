@@ -1,0 +1,130 @@
+---
+title: "Retrieve usage"
+sidebarTitle: "Retrieve usage"
+description: "List ingested v2 events by contract, code, transaction or time window with cursor pagination, and read a contract's current usage to reconcile."
+keywords: ["Lago", "events", "current usage", "external_contract_id", "v2"]
+---
+
+Retrieving usage means checking two things: the raw events Lago accepted, and the quantities and amounts it computed from them for each contract. Use the events list to debug an integration, and [contract current usage](/v2/guide/contracts/current-usage) to see what the open billing windows will bill.
+
+## List events
+
+`GET /events` lists events with event-time filters. It is cursor-paginated and supports no expansions. The API key needs `event` read permission.
+
+| Query parameter | Effect |
+| --- | --- |
+| `external_contract_id` | Events for one contract. |
+| `code` | Events for one billable metric code. |
+| `transaction_id` | Events with this transaction identifier. |
+| `timestamp_from` | Inclusive lower bound on the event time, as an ISO 8601 date or timestamp. A date means midnight UTC. |
+| `timestamp_to` | Inclusive upper bound on the event time, as an ISO 8601 date or timestamp. A date means midnight UTC. |
+| `limit` | Records per page. Values outside the supported range return `400`. |
+| `after`, `before` | Opaque cursors from `next_cursor` and `prev_cursor`. |
+| `include_total_count` | Adds `total_count` on the first page. The count can be an estimate, flagged by `total_count_estimated: true`. |
+
+`external_subscription_id`, `created_at_from` and `created_at_to` are rejected on this endpoint.
+
+<Tabs>
+  <Tab title="Dashboard">
+    <Note>
+      Dashboard steps for the v2 events list are not documented yet. Use the API tab while API v2 is in beta.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Events for contract_example in January 2027
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v2/events?external_contract_id=contract_example&code=api_calls&timestamp_from=2027-01-01T00:00:00Z&timestamp_to=2027-01-31T23:59:59Z&limit=100" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+
+    ```bash Find one event
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v2/events?transaction_id=api_20270114_customer_example_00001" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+Each event returns `transaction_id`, `external_contract_id`, `code`, `properties`, `precise_total_amount_cents` and `timestamp` (UTC, microsecond precision).
+
+```json Response (trimmed)
+{
+  "events": [
+    {
+      "transaction_id": "api_20270114_customer_example_00001",
+      "external_contract_id": "contract_example",
+      "code": "api_calls",
+      "precise_total_amount_cents": null,
+      "properties": {},
+      "timestamp": "2027-01-14T08:40:00.000000Z"
+    }
+  ],
+  "meta": {
+    "next_cursor": null,
+    "prev_cursor": null
+  }
+}
+```
+
+### Order and pagination
+
+- ClickHouse-based organizations return enriched events ordered by `timestamp`, `external_contract_id`, `code` and `transaction_id`, all descending.
+- PostgreSQL-based organizations order by creation time and identifier, both descending.
+- Cursors are opaque. Pass `meta.next_cursor` as `after` for the next page. Never build a cursor from response fields. Keep the same filters while paging.
+
+See [Pagination](/v2/api-reference/pagination).
+
+### If an event is missing
+
+1. Newly accepted events may not appear immediately. Wait and retry.
+2. Check the request returned `200`. A `422` means the event was rejected.
+3. Check `external_contract_id` and `code` in your payload.
+4. Check the `timestamp` falls inside your `timestamp_from` and `timestamp_to` window.
+
+## Retrieve current usage
+
+`GET /contracts/{external_id}/current_usage` returns the running quantities and amounts of a contract's open billing windows, per applied rate card. The API key needs `customer_usage` read permission.
+
+```bash Current usage of contract_example
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example/current_usage" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+The data is provisional while the windows are open. See [Contract current usage](/v2/guide/contracts/current-usage) for the response fields, filters and a worked example.
+
+## Reconcile events and usage
+
+For `contract_example` in January 2027:
+
+| Check | Source | Expected |
+| --- | --- | --- |
+| Events received | `GET /events?external_contract_id=contract_example&code=api_calls` with January bounds | 2,000 events |
+| Quantity computed | Current usage, `api_calls_usd` entry, `units` and `events_count` | `"2000"` and `2000` |
+| Amount | Current usage, `api_calls_usd` entry, `amount_cents` | `2000` ($20.00) |
+| Fixed fee | Current usage, `monthly_service_usd` entry, `amount_cents` | `10000` ($100.00) |
+
+If the counts differ, look for events with the wrong `external_contract_id` or `code`, or timestamps outside the window. After the window closes, reconcile against the invoice [fees](/v2/guide/invoicing/fees).
+
+<CardGroup cols={2}>
+  <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
+    Send events with `external_contract_id`.
+  </Card>
+  <Card title="Contract current usage" icon="gauge" href="/v2/guide/contracts/current-usage">
+    Fields, filters and a worked example.
+  </Card>
+  <Card title="List events (API)" icon="code" href="/v2/api-reference/events/list">
+    `GET /events`
+  </Card>
+  <Card title="Retrieve contract current usage (API)" icon="code" href="/v2/api-reference/contracts/retrieve-current-usage">
+    `GET /contracts/{external_id}/current_usage`
+  </Card>
+</CardGroup>

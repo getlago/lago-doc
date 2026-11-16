@@ -1,0 +1,101 @@
+---
+title: "Creating products"
+description: "Create Lago v2 products, choose between fixed and metered types, link a billable metric, assign a category, and understand what you can change or delete later."
+keywords: ["Lago", "product", "fixed product", "metered product", "v2", "product catalog"]
+---
+
+A [product](/v2/api-reference/products/object) represents what your customer is charged for, such as a platform fee, API calls or compute time. Create one product per billable item, then price it with a [rate card](/v2/guide/rate-cards/overview): the product's identity stays separate from its price.
+
+## Choose a product type
+
+`product_type` is set at creation and cannot change.
+
+| Type | Quantity comes from | `billable_metric_code` | Guide |
+| --- | --- | --- | --- |
+| `fixed` | A configured quantity (`units` on the applied rate card) | Not allowed | [Fixed products](/v2/guide/product-catalog/fixed-products) |
+| `metered` | A [billable metric](/v2/guide/billable-metrics/create-billable-metrics) aggregating events | Required | [Metered products](/v2/guide/product-catalog/metered-products) |
+
+Only metered products can have [product filters](/v2/guide/product-catalog/product-filters).
+
+## Product fields
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `name` | Yes | Readable label in the catalog. |
+| `code` | Yes | Unique code within your organization, used in API references. |
+| `product_type` | Yes | `fixed` or `metered`. Immutable. |
+| `billable_metric_code` | Metered only | Billable metric that measures the quantity. Immutable. |
+| `product_category_code` | No | Optional [category](/v2/guide/product-catalog/product-categories). Omit for a standalone product. |
+| `invoice_display_name` | No | Name used on invoices. Defaults to `name` when blank. |
+| `description` | No | Internal description. |
+
+## Example
+
+In the running example, `api_services` groups two products: the fixed `monthly_service` ($100 per month) and the metered `api_calls_product` ($0.01 per call, measured by `api_calls`). In a cloud catalog, Compute and Bandwidth are metered products in a Usage rates category, Seat is a standalone metered product with role filters, and Platform fee is a standalone fixed product.
+
+## Create a product
+
+<Tabs>
+  <Tab title="Dashboard">
+    Create a product with these values:
+    1. **Name**: `API calls`
+    2. **Code**: `api_calls_product`
+    3. **Type**: metered
+    4. **Billable metric**: `api_calls`
+    5. **Product category** (optional): `api_services`
+
+    <Note>
+    The fields match the API. Screen-by-screen Dashboard steps for v2 are not documented yet.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Create a metered product
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/products" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "product": {
+          "name": "API calls",
+          "code": "api_calls_product",
+          "product_type": "metered",
+          "billable_metric_code": "api_calls",
+          "product_category_code": "api_services"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Verify the product
+
+Retrieve it with `GET /api/v2/products/api_calls_product`. Add `expands[]=billable_metric` or `expands[]=product_category` to include those objects. Check `product_type`, the category and the metric before you add pricing.
+
+To list products, use `GET /api/v2/products`. Filter by `product_type`, `product_category_code[]` or `without_product_category=true`.
+
+## Change or delete a product
+
+`PUT` and `PATCH` accept partial updates of `name`, `code`, `description`, `invoice_display_name` and `product_category_code`. The type and the billable metric cannot change. To change either, create a new product.
+
+<Warning>
+`DELETE /api/v2/products/{code}` deletes the product **and** its filters, rate cards and rates. A product attached to a plan cannot be deleted.
+</Warning>
+
+<CardGroup cols={2}>
+  <Card title="Fixed products" icon="calendar" href="/v2/guide/product-catalog/fixed-products">
+    Recurring fees with a configured quantity.
+  </Card>
+  <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
+    Usage measured by a billable metric.
+  </Card>
+  <Card title="Create a product" icon="code" href="/v2/api-reference/products/create">
+    `POST /products`
+  </Card>
+  <Card title="The product object" icon="code" href="/v2/api-reference/products/object">
+    Every product field.
+  </Card>
+</CardGroup>

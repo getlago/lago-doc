@@ -1,0 +1,95 @@
+---
+title: "Manage plan changes"
+description: "Know what you can still edit on a v2 plan, why a plan locks once a contract uses it, and how to roll out a different offer to new contracts."
+keywords: ["Lago", "plan", "plan locking", "contracts", "v2"]
+---
+
+A plan locks as soon as a contract uses it: its applied rate cards, quantities and phases can no longer change. Finish configuring a plan before you attach the first customer, and create a new plan when you need a different offer.
+
+## Before a contract uses the plan
+
+While no contract uses it, the plan is editable. You can:
+
+- Update plan fields such as `name`, `description`, `invoice_display_name` and `tax_codes`.
+- Add, update or remove applied rate cards.
+- Change `units` on an applied rate card.
+- Add, update, reorder or remove [rate phases and overrides](/v2/guide/plans/plan-phases).
+
+Review the offer and its pricing before you create the first [contract](/v2/guide/contracts/overview).
+
+## Once the plan is locked
+
+Plans attached to contracts are locked. You cannot change the plan's configuration or add rate cards to it.
+
+| Change | Locked plan |
+| --- | --- |
+| Tax codes (`tax_codes`) | Allowed. Tax codes can change after a plan is in use. |
+| Other plan fields | Subject to plan locking rules. |
+| Add, update or remove applied rate cards | Not allowed. |
+| Add, update or remove rate phases | Not allowed. |
+
+To offer different terms to new customers, create a separate plan.
+
+The lock applies to the plan, not to rate cards. Rate cards keep their own price timeline. When a new [rate](/v2/guide/rate-cards/rates) becomes active, its price applies to every plan and contract that does not override it.
+
+## Deletion
+
+The v2 API has no plan DELETE operation.
+
+## Update an editable plan
+
+<Tabs>
+  <Tab title="Dashboard">
+    <Note>
+      Dashboard steps for v2 plans are not documented yet. Use the API tab while API v2 is in beta.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    `PUT` and `PATCH` both accept partial updates. Omitted fields are unchanged.
+
+    <CodeGroup>
+    ```bash Update the plan's invoice display name
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/plans/api_monthly" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "plan": {
+          "invoice_display_name": "API monthly plan"
+        }
+      }'
+    ```
+
+    ```bash Change the fixed quantity on an applied rate card
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards/monthly_service_usd" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "applied_rate_card": {
+          "units": "2"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+<CardGroup cols={2}>
+  <Card title="Plans" icon="layer-group" href="/v2/guide/plans/overview">
+    Assemble an offer from rate cards.
+  </Card>
+  <Card title="Contract overrides" icon="sliders" href="/v2/guide/contracts/overrides">
+    Adjust one customer's terms instead of the plan.
+  </Card>
+  <Card title="Update a plan (API)" icon="code" href="/v2/api-reference/plans/update">
+    `PUT /plans/{code}`
+  </Card>
+  <Card title="Update an applied rate card (API)" icon="code" href="/v2/api-reference/plan-applied-rate-cards/update">
+    `PUT /plans/{plan_code}/applied_rate_cards/{code}`
+  </Card>
+</CardGroup>

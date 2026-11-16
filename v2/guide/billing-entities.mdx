@@ -1,0 +1,139 @@
+---
+title: "Billing entities"
+sidebarTitle: "Billing entities"
+description: "Create and update billing entities with the v2 API, set their invoicing and tax settings, and assign customers to the entity that bills them."
+keywords: ["Lago", "billing entity", "billing_entity_code", "customer", "v2"]
+---
+
+A billing entity is the legal issuer behind your invoices: it holds the legal details, currency, timezone, numbering and tax settings Lago applies to the documents it issues. Use several billing entities when you bill customers from distinct companies or under distinct invoicing configurations.
+
+<Warning>
+  Creating additional billing entities requires the relevant entitlement. Grace periods, timezones, email settings and periodic invoice settings may require a premium license.
+</Warning>
+
+## Create a billing entity
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Settings** in the side navigation bar.
+    2. In the **Your billing entities** section, click **Add an entity**.
+    3. Enter a **name** and a **unique code** for your billing entity.
+    4. Configure the entity settings as needed.
+    5. Click **Create entity** to confirm.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Create a billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billing_entities" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "code": "acme_corp",
+          "name": "Acme Corporation",
+          "default_currency": "USD",
+          "legal_name": "Acme Corporation Inc.",
+          "email": "billing@example.com",
+          "country": "US",
+          "document_numbering": "per_billing_entity",
+          "document_number_prefix": "ACM",
+          "invoice_footer": "Thank you for your business",
+          "tax_codes": []
+        }
+      }'
+    ```
+    </CodeGroup>
+
+    Billing configuration fields such as `invoice_footer`, `invoice_grace_period` and `document_locale` are top-level fields. There is no `billing_configuration` object in v2. Unlike v1, `tax_codes` and `invoice_custom_section_codes` can be set at creation.
+  </Tab>
+</Tabs>
+
+`code` must be unique among active billing entities.
+
+## Edit a billing entity
+
+You can update every field **except the code**. `PUT` and `PATCH` both accept partial updates. Omitted fields are unchanged. An empty `tax_codes` or `invoice_custom_section_codes` array removes the corresponding assignments.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Settings** in the side navigation bar.
+    2. In the **Your billing entities** section, select the relevant billing entity.
+    3. Click any section to edit its settings.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Update a billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/billing_entities/acme_corp" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "invoice_footer": "Thank you for your business",
+          "invoice_grace_period": 3
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Billing entity settings
+
+| Group | Fields |
+| --- | --- |
+| Entity details | `name`, `legal_name`, `legal_number`, `tax_identification_number`, `email`, `phone`, `address_line1`, `address_line2`, `city`, `state`, `zipcode`, `country`, `logo` (PNG or JPEG as a base64 data URL) |
+| Defaults | `default_currency`, `timezone`, `document_locale` |
+| Numbering | `document_numbering` (`per_customer` or `per_billing_entity`), `document_number_prefix` |
+| Invoicing | `invoice_footer`, `invoice_grace_period`, `finalize_zero_amount_invoice`, `periodic_invoice_issuing_date_anchor` (`current_period_end` or `next_period_start`), `periodic_invoice_issuing_date_adjustment` (`keep_anchor` or `align_with_finalization_date`) |
+| Taxes | `tax_codes`, `eu_tax_management` |
+| Documents | `invoice_custom_section_codes`, `einvoicing`, `email_settings` (enabled email notification types) |
+
+The response adds `lago_id`, `is_default` (whether this is the organization default), `logo_url` and `archived_at`. Request `taxes` or `selected_invoice_custom_sections` with `expands[]`.
+
+## Retrieve and list billing entities
+
+- `GET /billing_entities` lists active billing entities only. It is cursor-paginated.
+- `GET /billing_entities/{code}` returns the active entity with that code, or an archived one if no active entity has it.
+
+## Archive a billing entity
+
+The v2 API has no archive or delete operation for billing entities. Contact the Lago team to archive one.
+
+## Assign a billing entity to a customer
+
+Pass `billing_entity_code` when you [create or update a customer](/v2/guide/customers/customer-management). The customer list filters on `billing_entity_codes[]`, and the contract list filters on `billing_entity_ids[]`.
+
+```bash Assign a customer to acme_corp
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PATCH "$LAGO_URL/api/v2/customers/customer_example" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "customer": {
+      "billing_entity_code": "acme_corp"
+    }
+  }'
+```
+
+<CardGroup cols={2}>
+  <Card title="Customer management" icon="users" href="/v2/guide/customers/customer-management">
+    Create and update customers.
+  </Card>
+  <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
+    Documents issued by the billing entity.
+  </Card>
+  <Card title="Create a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/create">
+    `POST /billing_entities`
+  </Card>
+  <Card title="Update a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/update">
+    `PUT /billing_entities/{code}`
+  </Card>
+</CardGroup>

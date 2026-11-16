@@ -1,0 +1,124 @@
+---
+title: "Contract overrides"
+description: "Give one customer different pricing from the plan by overriding rate phases on a pending contract, then verify the effective price before it starts."
+keywords: ["Lago", "contract", "rate_override", "contract applied rate card", "v2"]
+---
+
+A contract override changes the pricing of one customer's [contract applied rate card](/v2/api-reference/contract-applied-rate-cards/object) without touching the plan. Use it when a negotiated agreement differs from the plan, and set it up while the contract is still `pending`.
+
+## How it fits together
+
+When you create a contract from a plan, the plan supplies the contract's applied rate cards with their phases and overrides. From then on, the contract holds its own copy. An override belongs to the customer's applied pricing, not to the product, its category or the rate card.
+
+Pricing overrides go through `rate_override` on the contract's [rate phases](/v2/guide/plans/plan-phases). Structural rate card fields such as `currency`, `billing_timing` and `proration` are not overridable.
+
+## Current limitation
+
+| Contract status | Can you edit overrides? |
+| --- | --- |
+| `pending` | Yes. Prepare the customer's terms before the contract starts. |
+| `active` | No. The contract's pricing cannot be edited for now. |
+
+The Lago team is working on editing and fuller override capabilities on active contracts. Create the contract with a future `started_at` when you need to adjust its terms before billing starts.
+
+## What you can change on a pending contract
+
+| Change | Endpoint |
+| --- | --- |
+| Override, add or remove a phase's pricing | `PUT`, `PATCH`, `POST` or `DELETE /contracts/{contract_external_id}/applied_rate_cards/{applied_rate_card_code}/rate_phases` |
+| Change the fixed quantity (`units`) or the card's `billing_anchor_date` | `PUT` or `PATCH /contracts/{contract_external_id}/applied_rate_cards/{code}` |
+| Attach another rate card in the same currency | `POST /contracts/{contract_external_id}/applied_rate_cards` |
+| Remove a rate card | `DELETE /contracts/{contract_external_id}/applied_rate_cards/{code}` |
+
+Only one rate card may price each product or product filter combination on a contract.
+
+## Example
+
+A customer signs the `introductory_offer` plan from [Plan phases and overrides](/v2/guide/plans/plan-phases), but negotiates $40 instead of $50 during the introductory phase. Their pending contract is `contract_intro`, starting March 1, 2027.
+
+| Phase | Plan price | Contract price |
+| --- | --- | --- |
+| `introductory` (2 cycles) | $50 per month | $40 per month |
+| `transition` (3 cycles) | $80 per month | $80 per month |
+| `ongoing` | Active rate | Active rate |
+
+Over the five finite months, the customer pays 2 × $40 + 3 × $80 = **$320 before tax**, instead of $340 on the plan. Other contracts on the plan keep $50.
+
+<Tabs>
+  <Tab title="Dashboard">
+    <Note>
+      Dashboard steps for v2 contract overrides are not documented yet. Use the API tab while API v2 is in beta.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash 1. List the contract's phases
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_intro/applied_rate_cards/monthly_service_usd/rate_phases" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+
+    ```bash 2. Override the introductory phase
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/contracts/contract_intro/applied_rate_cards/monthly_service_usd/rate_phases/introductory" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "rate_phase": {
+          "rate_override": {
+            "rate_model": "standard",
+            "rate_properties": { "amount": "40" },
+            "billing_interval_count": 1,
+            "billing_interval_unit": "month"
+          }
+        }
+      }'
+    ```
+
+    ```bash Remove an override
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/contracts/contract_intro/applied_rate_cards/monthly_service_usd/rate_phases/introductory" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "rate_phase": {
+          "rate_override": null
+        }
+      }'
+    ```
+    </CodeGroup>
+
+    `PUT` and `PATCH` accept partial updates. `rate_override: null` removes the override, so the phase inherits the active rate. It does not change the phase's duration.
+  </Tab>
+</Tabs>
+
+## Verify effective pricing
+
+Read the source rate, the applied rate card and the phase together. Keep the fixed quantity (`units`) separate from price overrides.
+
+- An active phase with an override keeps its overridden price.
+- A phase without an override follows the rate card's active rate.
+- In [current usage](/v2/guide/contracts/current-usage), `rate_source` shows `phase_override` or `rate` for each billing window.
+
+For a test agreement, compare the priced quantity and the effective unit price with the fee. A matching total alone can hide a wrong price or a wrong quantity.
+
+<CardGroup cols={2}>
+  <Card title="Plan phases and overrides" icon="timeline" href="/v2/guide/plans/plan-phases">
+    Phase rules shared by plans and contracts.
+  </Card>
+  <Card title="Contract lifecycle" icon="arrows-spin" href="/v2/guide/contracts/lifecycle">
+    When a contract stops being editable.
+  </Card>
+  <Card title="Update a contract rate phase (API)" icon="code" href="/v2/api-reference/contract-rate-phases/update">
+    `PUT .../rate_phases/{code}`
+  </Card>
+  <Card title="List contract applied rate cards (API)" icon="code" href="/v2/api-reference/contract-applied-rate-cards/list">
+    `GET /contracts/{contract_external_id}/applied_rate_cards`
+  </Card>
+</CardGroup>

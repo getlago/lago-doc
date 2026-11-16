@@ -1,0 +1,84 @@
+---
+title: "End or cancel a contract"
+description: "Cancel a pending contract or terminate an active one with DELETE, keep its billing history, and check the final fees and invoices it produced."
+keywords: ["Lago", "contract", "terminate contract", "cancel contract", "v2"]
+---
+
+Ending a contract stops future service under it while keeping the record and its billing history for reconciliation. A pending contract is canceled. An active contract is terminated.
+
+## Before you end a contract
+
+1. Retrieve the live contract and check its `status` and dates.
+2. Decide between a scheduled end and an immediate end. They are not interchangeable:
+   - A scheduled end is the contract's `ended_at`. It must be after the start and not already in the past.
+   - An immediate end is `DELETE /contracts/{external_id}`.
+3. Check the open period in [current usage](/v2/guide/contracts/current-usage) if the contract is active.
+
+## End the contract
+
+`DELETE /contracts/{external_id}` ends the contract lifecycle. It does not delete the record.
+
+| Status before | Status after | Timestamp set |
+| --- | --- | --- |
+| `pending` | `canceled` | `canceled_at` |
+| `active` | `terminated` | `terminated_at` |
+
+<Warning>
+  Ending a contract is irreversible. A pending contract becomes `canceled` and never starts billing. An active contract becomes `terminated` and stops billing from that point, which can produce final fees. Review the contract and its open usage before you send the request.
+</Warning>
+
+<Tabs>
+  <Tab title="Dashboard">
+    <Note>
+      Dashboard steps for v2 contracts are not documented yet. Use the API tab while API v2 is in beta.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash End contract_example
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request DELETE "$LAGO_URL/api/v2/contracts/contract_example" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+
+    The response returns the contract with its new `status`. The request needs `contract` write permission on the API key.
+  </Tab>
+</Tabs>
+
+## Check final billing
+
+Closing usage and fixed fees depend on timing, the billing window and the rate card's `billing_timing` and `proration`. This guide makes no general claim about a final invoice, refund or proration on termination. Check the records.
+
+1. Retrieve the ended contract with `GET /contracts/{external_id}?status=terminated` (or `status=canceled`).
+2. List the customer's [invoices](/v2/guide/invoicing/overview) and inspect their [fees](/v2/guide/invoicing/fees) and service periods.
+3. Record the expected and observed amounts.
+
+Existing invoices stay separate financial records. Ending a contract does not by itself prove that an invoice was paid, credited or refunded. To return money, use a [credit note](/v2/guide/invoicing/credit-notes/overview).
+
+```bash Retrieve the terminated contract
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example?status=terminated" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+After the contract ends, a new contract can use the same `external_id`. Only one pending or active contract can hold it at a time.
+
+<CardGroup cols={2}>
+  <Card title="Contract lifecycle" icon="arrows-spin" href="/v2/guide/contracts/lifecycle">
+    Statuses and transitions.
+  </Card>
+  <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
+    Check what was billed.
+  </Card>
+  <Card title="Delete a contract (API)" icon="code" href="/v2/api-reference/contracts/delete">
+    `DELETE /contracts/{external_id}`
+  </Card>
+  <Card title="Retrieve a contract (API)" icon="code" href="/v2/api-reference/contracts/retrieve">
+    `GET /contracts/{external_id}`
+  </Card>
+</CardGroup>

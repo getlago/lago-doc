@@ -1,0 +1,108 @@
+---
+title: "Weighted sum"
+sidebarTitle: "Weighted sum"
+description: "Sum an event property weighted by the time each value was held in the billing period with weighted_sum_agg, for GB-second style pricing in v2."
+keywords: ["Lago", "billable metric", "weighted_sum_agg", "WEIGHTED SUM", "v2"]
+---
+
+The Weighted sum aggregation (`weighted_sum_agg`) adds up the value of one event property and prorates it by the time each running total was held during the billing period. Use it for time-based capacity, such as GB-seconds of storage or provisioned memory.
+
+<Info>
+  Proration is per second per period. `weighted_interval` is required and accepts `seconds` only.
+</Info>
+
+<Frame caption="Weighted sum calculation method">
+  <img src="/guide/images/weighted-sum.png" alt="Diagram of the Weighted sum aggregation, summing a property prorated over the time it was used" />
+</Frame>
+
+## Create a weighted sum billable metric
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Access the **Billable metrics** section in the side menu.
+    2. Create a new billable metric.
+    3. Define a name, a code and an optional description.
+    4. Select **Weighted sum** as the aggregation type.
+    5. Define whether this metric is metered or recurring.
+    6. Define the property to aggregate.
+    7. Define the `weighted_interval` used for time proration (`seconds`).
+    8. Apply filters if any.
+    9. Click **Add billable metric**.
+
+    <Info>
+      This metric can be metered or recurring. See [Recurring vs metered](/v2/guide/billable-metrics/recurring-vs-metered).
+    </Info>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+          "billable_metric": {
+            "name": "GB seconds",
+            "code": "gb_seconds",
+            "description": "Gigabytes prorated per second used per period",
+            "aggregation_type": "weighted_sum_agg",
+            "weighted_interval": "seconds",
+            "field_name": "gb",
+            "recurring": false
+          }
+        }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Calculation example
+
+Lago calculates `SUM(events.properties.gb) / (DATEDIFF(SECOND, timestamp.event_1, timestamp.event_2) + 1) * (DATEDIFF(SECOND, 'period_start', 'period_end') + 1)` for the two events below, sent to `contract_example` in January 2027.
+
+```json
+// Event received #1
+{
+  "transaction_id": "transaction_1",
+  "external_contract_id": "contract_example",
+  "code": "gb_seconds",
+  "timestamp": 1800057600,
+  "properties": {
+    "gb": 20
+  }
+}
+
+// Event received #2
+{
+  "transaction_id": "transaction_2",
+  "external_contract_id": "contract_example",
+  "code": "gb_seconds",
+  "timestamp": 1800144000,
+  "properties": {
+    "gb": 10
+  }
+}
+```
+
+The first event arrives on January 16, the second on January 17. January has 2,678,400 seconds. The first 20 GB is held for one day (86,400 seconds). The running total of 30 GB (20 + 10) is then held for 15 days (1,296,000 seconds) until the end of the month:
+
+- (20 / 2,678,400) × 86,400 = 0.64516129032
+- (30 / 2,678,400) × 1,296,000 = 14.5161290323
+- 0.64516129032 + 14.5161290323 = **15.1612903226 units**
+
+<CardGroup cols={2}>
+  <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">
+    The same events under every aggregation type.
+  </Card>
+  <Card title="Rounding" icon="arrow-up-1-9" href="/v2/guide/billable-metrics/rounding">
+    Round a fractional result before pricing.
+  </Card>
+  <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
+    `POST /billable_metrics`
+  </Card>
+  <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
+    Send events with `external_contract_id`.
+  </Card>
+</CardGroup>

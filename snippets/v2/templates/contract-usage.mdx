@@ -1,0 +1,11 @@
+Track usage across the contract's open billing periods.
+
+<CodeGroup>
+    ```bash cURL highlight={1}
+    curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example/current_usage" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json'
+    ```
+</CodeGroup>
+
+The response returns `amount_cents`, `taxes_amount_cents`, `total_amount_cents` and a `rate_cards` array with usage per applied rate card. Pending contracts have no usage. Totals can span several invoices, so this is not a preview of one invoice. Filter with `rate_card_code`, `product_code`, `product_filter_code` or `product_type`. Refer to the [API reference](/v2/api-reference/contracts/retrieve-current-usage) to get current usage.

@@ -1,0 +1,297 @@
+---
+title: "Bill per token: replicate OpenAI pricing with contracts"
+sidebarTitle: "Clone OpenAI pricing"
+description: "Rebuild OpenAI's per-token pricing in Lago v2 with a metered product, product filters per model and token type, package rates and a contract."
+keywords: ["Lago", "per-token pricing", "OpenAI", "product filters", "contract", "v2"]
+---
+
+import SetupLago from "/snippets/v2/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/v2/templates/create-customer.mdx";
+import CreateContract from "/snippets/v2/templates/create-contract.mdx";
+import ContractUsage from "/snippets/v2/templates/contract-usage.mdx";
+
+This template builds token-based billing with Lago v2: one metered product, priced separately per model and token type through product filters. It suits LLM and generative AI companies whose price depends on the model and on whether tokens are input or output.
+
+Legacy (v1): [Clone OpenAI pricing with subscriptions](/templates/per-token/openai).
+
+## Pricing structure
+
+OpenAI prices tokens per 1,000, with a different price per model and per token type.
+
+| Model       | Input                | Output               |
+|-------------|----------------------|----------------------|
+| 8K context  | $0.03 / 1,000 tokens | $0.06 / 1,000 tokens |
+| 32K context | $0.06 / 1,000 tokens | $0.12 / 1,000 tokens |
+
+## How it maps to v2
+
+| Pricing element | v2 object |
+|---|---|
+| Token usage | Billable metric `openai_tokens` (`sum_agg` on `tokens`) with `model` and `type` dimensions |
+| What you sell | Metered product `ai_tokens` |
+| Model and token type combinations | Four product filters on `ai_tokens` |
+| Price per 1,000 tokens | One rate card per filter, with a `package` rate |
+| The offer | Plan `openai_payg` with four applied rate cards |
+| The customer agreement | Contract `contract_example` |
+
+## Get started
+
+<Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
+
+  <Step title="Create a billable metric">
+    Create one billable metric that sums tokens. Declare the `model` and `type` dimensions so product filters can use them.
+
+    1. Set `aggregation_type` to `sum_agg`
+    2. Set `field_name` to `tokens`
+    3. Set `recurring` to `false`
+    4. Add `filters` for `model` and `type`
+
+    <CodeGroup>
+      ```bash cURL highlight={6,8-21}
+      curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "AI tokens",
+            "code": "openai_tokens",
+            "description": "Token usage across models",
+            "aggregation_type": "sum_agg",
+            "field_name": "tokens",
+            "recurring": false,
+            "filters": [
+              {
+                "key": "model",
+                "values": ["8k", "32k"]
+              },
+              {
+                "key": "type",
+                "values": ["input", "output"]
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/billable-metrics/create) and the [billable metrics guide](/v2/guide/billable-metrics/create-billable-metrics).
+  </Step>
+
+  <Step title="Create a metered product">
+    Create the product you sell. A metered product requires `billable_metric_code`. Neither the type nor the metric can change after creation.
+
+    <CodeGroup>
+      ```bash cURL highlight={7-8}
+      curl --location --request POST "$LAGO_URL/api/v2/products" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "product": {
+            "name": "AI tokens",
+            "code": "ai_tokens",
+            "product_type": "metered",
+            "billable_metric_code": "openai_tokens"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/products/create) and the [metered products guide](/v2/guide/product-catalog/metered-products).
+  </Step>
+
+  <Step title="Create product filters">
+    Create one product filter per model and token type. Each filter value must be a key and a configured value of the billable metric.
+
+    <CodeGroup>
+      ```bash cURL highlight={6,8-11}
+      curl --location --request POST "$LAGO_URL/api/v2/products/ai_tokens/filters" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "filter": {
+            "name": "8K input",
+            "code": "tokens_8k_input",
+            "invoice_display_name": "8K context, input tokens",
+            "values": [
+              { "key": "model", "value": "8k" },
+              { "key": "type", "value": "input" }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Repeat for the other three combinations:
+
+    | Filter `code` | `model` | `type` |
+    |---|---|---|
+    | `tokens_8k_input` | `8k` | `input` |
+    | `tokens_8k_output` | `8k` | `output` |
+    | `tokens_32k_input` | `32k` | `input` |
+    | `tokens_32k_output` | `32k` | `output` |
+
+    Refer to the [API reference](/v2/api-reference/product-filters/create) and the [product filters guide](/v2/guide/product-catalog/product-filters).
+  </Step>
+
+  <Step title="Create a rate card per filter">
+    Create one rate card per filter. The rate card targets the filter with `product_filter_code` and holds the currency and billing timing. Its initial rate uses the `package` model: `amount` per `package_size` tokens.
+
+    <CodeGroup>
+      ```bash cURL highlight={7-11,14-23}
+      curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "rate_card": {
+            "name": "8K input tokens USD",
+            "code": "tokens_8k_input_usd",
+            "product_code": "ai_tokens",
+            "product_filter_code": "tokens_8k_input",
+            "currency": "USD",
+            "billing_timing": "arrears",
+            "proration": false,
+            "rates": [
+              {
+                "code": "tokens_8k_input_standard",
+                "effective_from": "2027-01-01T00:00:00Z",
+                "rate_model": "package",
+                "rate_properties": {
+                  "amount": "0.03",
+                  "package_size": 1000,
+                  "free_units": 0
+                },
+                "billing_interval_count": 1,
+                "billing_interval_unit": "month"
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Repeat for the other filters:
+
+    | Rate card `code` | `product_filter_code` | `amount` | `package_size` |
+    |---|---|---|---|
+    | `tokens_8k_input_usd` | `tokens_8k_input` | `"0.03"` | `1000` |
+    | `tokens_8k_output_usd` | `tokens_8k_output` | `"0.06"` | `1000` |
+    | `tokens_32k_input_usd` | `tokens_32k_input` | `"0.06"` | `1000` |
+    | `tokens_32k_output_usd` | `tokens_32k_output` | `"0.12"` | `1000` |
+
+    Refer to the [API reference](/v2/api-reference/rate-cards/create), the [rate cards guide](/v2/guide/rate-cards/overview) and the [package model](/v2/guide/rate-cards/pricing-models/package).
+  </Step>
+
+  <Step title="Create a plan and apply the rate cards">
+    Create the plan in the same currency as the rate cards.
+
+    <CodeGroup>
+      ```bash cURL highlight={6-7}
+      curl --location --request POST "$LAGO_URL/api/v2/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "OpenAI pay as you go",
+            "code": "openai_payg",
+            "currency": "USD"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Apply each of the four rate cards. Only one rate card can price each product and filter combination.
+
+    <CodeGroup>
+      ```bash cURL highlight={6}
+      curl --location --request POST "$LAGO_URL/api/v2/plans/openai_payg/applied_rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "applied_rate_card": {
+            "rate_card_code": "tokens_8k_input_usd"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/plan-applied-rate-cards/create) and the [plans guide](/v2/guide/plans/overview).
+  </Step>
+
+  <Step title="Create a customer">
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a contract">
+    Create a contract for the customer. Replace `__PLAN_CODE__` with `openai_payg`.
+
+    <CreateContract />
+  </Step>
+
+  <Step title="Ingest usage via events">
+    Send usage events that target the contract.
+
+    1. Set `code` to the billable metric code
+    2. Set `external_contract_id` to the contract's `external_id`
+    3. Send the token count in `tokens`, plus `model` and `type`
+
+    <CodeGroup>
+      ```bash cURL highlight={7-12}
+      curl --location --request POST "$LAGO_URL/api/v2/events" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "openai_tokens",
+            "external_contract_id": "contract_example",
+            "properties": {
+              "tokens": 5000,
+              "model": "8k",
+              "type": "input"
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    `external_subscription_id` is not supported on v2 events and returns `422`. Refer to the [API reference](/v2/api-reference/events/create) and the [usage ingestion guide](/v2/guide/events/ingesting-usage).
+  </Step>
+
+  <Step title="Monitor current usage">
+    <ContractUsage />
+  </Step>
+</Steps>
+
+## Worked example
+
+Over one full monthly period, the customer sends 500,000 8K input tokens and 200,000 8K output tokens. Token counts are exact multiples of the package size.
+
+| Invoice line | Quantity | Packages | Price | Amount |
+|---|---|---|---|---|
+| 8K context, input tokens | 500,000 tokens | 500 | $0.03 per 1,000 | $15.00 |
+| 8K context, output tokens | 200,000 tokens | 200 | $0.06 per 1,000 | $12.00 |
+| **Total before tax** | | | | **$27.00** |
+
+## What changed from v1
+
+- Charge filters on a plan become product filters on a metered product. Each filter gets its own rate card.
+- Prices live on rates with an `effective_from` date. A new rate changes the price for every plan and contract that does not override it.
+- Events target `external_contract_id` instead of `external_subscription_id`.
+
+<CardGroup cols={2}>
+  <Card title="Product filters" icon="filter" href="/v2/guide/product-catalog/product-filters">
+    Price subsets of metered usage separately.
+  </Card>
+  <Card title="Package model" icon="box" href="/v2/guide/rate-cards/pricing-models/package">
+    Charge a fixed amount per bundle of units.
+  </Card>
+  <Card title="Contracts" icon="file-contract" href="/v2/guide/contracts/overview">
+    Apply a plan to a customer.
+  </Card>
+  <Card title="Create a rate card (API)" icon="code" href="/v2/api-reference/rate-cards/create">
+    `POST /api/v2/rate_cards`
+  </Card>
+</CardGroup>

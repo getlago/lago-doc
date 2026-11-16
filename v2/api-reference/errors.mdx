@@ -1,0 +1,58 @@
+---
+title: "Errors"
+description: "Lago API v2 error format: HTTP status codes and the structured ApiError body with a code and field-level details for every failure."
+keywords: ["Lago API v2 errors", "ApiError", "validation_errors", "HTTP status codes"]
+---
+
+API v2 returns a standard HTTP status and a structured JSON body on every failure. The status carries the HTTP meaning. The body says what failed and on which field.
+
+## Status codes
+
+| Status | Meaning |
+| --- | --- |
+| `400` | Invalid request body, pagination or expansion. Example code: `invalid_expand`. |
+| `401` | Missing or invalid API key. Code: `unauthorized`. |
+| `403` | Feature unavailable or insufficient API key permissions. Example code: `feature_unavailable`. |
+| `404` | Unknown resource, or a resource from another organization. Code: `resource_not_found`. |
+| `422` | Invalid fields or filters. Example code: `validation_errors`. |
+| `429` | A payment provider rate limit was exceeded. |
+
+## Error body
+
+```json
+{
+  "code": "validation_errors",
+  "details": [
+    {
+      "code": "value_is_mandatory",
+      "field": "contract.external_customer_id",
+      "meta": {}
+    }
+  ]
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `code` | Code of the failure, in `snake_case`. |
+| `details` | Array of field-level failures. Empty when no detail is available. |
+| `details[].code` | Code of the field error or the reason a parameter was rejected. |
+| `details[].field` | Request field or parameter. Nested fields use dots and zero-based array indexes. A resource-level failure uses `base`. |
+| `details[].meta` | Context such as `allowed_values`, `invalid_values`, `min`, `max`, `max_length`, `resource` or provider details. Empty when not available. |
+
+Branch on `code` and `details[].code`, not on message text. Treat unknown codes as generic failures.
+
+## Payment provider rate limits
+
+When a payment provider rejects a call for rate limiting, API v2 returns `429` with the provider in `meta`:
+
+```json
+{
+  "code": "too_many_provider_requests",
+  "details": [
+    { "code": "too_many_provider_requests", "field": "base", "meta": { "provider_name": "stripe" } }
+  ]
+}
+```
+
+Retry with bounded exponential backoff. For Lago's own request limits, see [Rate limits](/api-reference/rate-limits).

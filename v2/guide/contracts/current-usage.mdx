@@ -1,0 +1,160 @@
+---
+title: "Contract current usage"
+sidebarTitle: "Current usage"
+description: "Read a contract's running usage and amounts for its open billing windows, per applied rate card, with filters, taxes and a worked $120 example."
+keywords: ["Lago", "contract", "current usage", "external_contract_id", "v2"]
+---
+
+Contract current usage returns what an active contract has consumed and owes so far in its open billing windows, broken down by applied rate card. Use it to show customers their running bill, to check that events reach the right contract, and to reconcile before an invoice is issued.
+
+## What it returns
+
+`GET /contracts/{external_id}/current_usage` reads the live pending or active contract.
+
+- Pending contracts have no usage.
+- Totals cover the open billing windows of every applied rate card. Because each card follows its own timeline, totals may span several future invoices.
+- Amounts are in cents of the contract's billing `currency`.
+- The data is provisional. The billing windows are still open and new events keep accruing.
+
+| Field | Meaning |
+| --- | --- |
+| `external_contract_id`, `external_customer_id` | The contract and its customer. |
+| `currency` | Billing currency. |
+| `amount_cents` | Amount excluding tax. |
+| `taxes_amount_cents` | Tax amount. |
+| `total_amount_cents` | Amount including tax. |
+| `rate_cards[]` | One entry per applied rate card billing window. |
+
+Each `rate_cards[]` entry carries:
+
+| Field | Meaning |
+| --- | --- |
+| `rate_card_code`, `rate_card_name` | The applied rate card. |
+| `product_code`, `product_name`, `product_type` | The product priced, `fixed` or `metered`. |
+| `product_category_code`, `product_category_name` | The product's category, or null. |
+| `product_filter_code`, `product_filter_name` | The product filter, or null. |
+| `billable_metric_code` | The metric behind a metered product, or null. |
+| `invoice_display_name` | Name displayed on invoices. |
+| `billing_timing` | `arrears` or `advance`. |
+| `rate_phase_code`, `rate_phase_name` | The phase active in this window. |
+| `rate_source` | `rate` (the rate card's rate) or `phase_override`. |
+| `rate_model`, `rate_properties` | Effective pricing used by billing. |
+| `units` | Quantity billed, as a decimal string. |
+| `events_count` | Number of matching events. |
+| `amount_cents` | Amount excluding tax for this window. |
+| `from_datetime`, `to_datetime` | Start and end of the billing window. |
+
+## Filters
+
+| Query parameter | Effect |
+| --- | --- |
+| `rate_card_code` | One applied rate card. |
+| `product_code` | One product. |
+| `product_filter_code` | One product filter. |
+| `product_type` | `fixed` or `metered`. |
+| `apply_taxes` | Whether to apply taxes. |
+
+## Retrieve current usage
+
+<Tabs>
+  <Tab title="Dashboard">
+    <Note>
+      Dashboard steps for v2 contract usage are not documented yet. Use the API tab while API v2 is in beta.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Current usage of contract_example
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example/current_usage" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+
+    ```bash Metered products only
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example/current_usage?product_type=metered" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+
+    The API key needs `customer_usage` read permission.
+  </Tab>
+</Tabs>
+
+## Worked example
+
+`contract_example` started on January 1, 2027 on plan `api_monthly`. By the end of January, the customer has sent 2,000 `api_calls` events. No tax applies. The response below is illustrative and trimmed to the fields used in the reconciliation.
+
+```json Response (illustrative, trimmed)
+{
+  "current_usage": {
+    "external_contract_id": "contract_example",
+    "external_customer_id": "customer_example",
+    "currency": "USD",
+    "amount_cents": 12000,
+    "taxes_amount_cents": 0,
+    "total_amount_cents": 12000,
+    "rate_cards": [
+      {
+        "rate_card_code": "monthly_service_usd",
+        "product_code": "monthly_service",
+        "product_type": "fixed",
+        "billable_metric_code": null,
+        "billing_timing": "arrears",
+        "rate_source": "rate",
+        "rate_model": "standard",
+        "units": "1",
+        "events_count": 0,
+        "amount_cents": 10000
+      },
+      {
+        "rate_card_code": "api_calls_usd",
+        "product_code": "api_calls_product",
+        "product_type": "metered",
+        "billable_metric_code": "api_calls",
+        "billing_timing": "arrears",
+        "rate_source": "rate",
+        "rate_model": "standard",
+        "units": "2000",
+        "events_count": 2000,
+        "amount_cents": 2000
+      }
+    ]
+  }
+}
+```
+
+| Rate card | Units | Unit price | `amount_cents` |
+| --- | --- | --- | --- |
+| `monthly_service_usd` | 1 | $100.00 | 10000 |
+| `api_calls_usd` | 2,000 | $0.01 | 2000 |
+| **Total** | | | **12000 ($120.00)** |
+
+`amount_cents` is in minor units: `12000` is $120.00. Do not multiply it by 100 again.
+
+## Troubleshoot missing usage
+
+1. Check the contract is `active`. Pending contracts have no usage.
+2. List the events for the contract with `GET /events?external_contract_id=contract_example`. See [Retrieve usage](/v2/guide/events/retrieve-usage).
+3. Check each event's `code` matches the billable metric of the metered product.
+4. Check event timestamps fall inside the window's `from_datetime` and `to_datetime`.
+5. Newly accepted events may take time to appear.
+
+<CardGroup cols={2}>
+  <Card title="Retrieve usage" icon="magnifying-glass-chart" href="/v2/guide/events/retrieve-usage">
+    List events and reconcile counts.
+  </Card>
+  <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
+    Send events with `external_contract_id`.
+  </Card>
+  <Card title="Retrieve contract current usage (API)" icon="code" href="/v2/api-reference/contracts/retrieve-current-usage">
+    `GET /contracts/{external_id}/current_usage`
+  </Card>
+  <Card title="Fees" icon="receipt" href="/v2/guide/invoicing/fees">
+    Billed results after the window closes.
+  </Card>
+</CardGroup>

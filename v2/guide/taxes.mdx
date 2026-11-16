@@ -1,0 +1,239 @@
+---
+title: "Taxes: tax rates for contracts and rate cards"
+sidebarTitle: "Taxes"
+description: "Create tax rates with /api/v2/taxes and assign them by code to rate cards, plans, customers and billing entities, with a worked contract invoice example."
+keywords: ["Lago", "taxes", "tax rate", "rate card", "v2", "VAT"]
+---
+
+A [tax](/v2/api-reference/taxes/retrieve) is a named percentage rate, such as 20% VAT, defined once for your organization. Create it first, then assign it by `code` to the objects that should carry it: rate cards, plans, customers or billing entities.
+
+Creating a tax does not assign it to anything.
+
+## The tax object
+
+| Field | Meaning |
+| --- | --- |
+| `code` | Unique within the organization, including deleted taxes. Used in every `tax_codes` array. |
+| `name` | Display name, such as `VAT`. |
+| `rate` | Percentage. `20` means 20%. Accepts a number or a decimal string, returned as a number. |
+| `description` | Internal description. `null` clears it. |
+| `deleted_at` | `null` until the tax is deleted. |
+
+## Create a tax
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Go to **Settings** > **Taxes**;
+    2. Click **Add**;
+    3. Enter a name, a unique code, an optional description and the rate; and
+    4. Save.
+  </Tab>
+  <Tab title="API">
+    `name`, `code` and `rate` are required. A code already used by another tax, including a deleted one, returns `422`.
+
+    <CodeGroup>
+    ```bash Create a 20% VAT
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/taxes" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "tax": {
+          "name": "VAT",
+          "code": "standard_vat",
+          "rate": 20,
+          "description": "Standard VAT"
+        }
+      }'
+    ```
+    </CodeGroup>
+
+    The `applied_to_organization` parameter from v1 is ignored and not returned.
+  </Tab>
+</Tabs>
+
+## Assign taxes
+
+Every object below takes a `tax_codes` array. An empty array clears the assignments.
+
+| Object | Field | Editable after use |
+| --- | --- | --- |
+| [Rate card](/v2/guide/rate-cards/overview) | `tax_codes` | Yes. Tax assignments stay editable after rates exist, even though currency, timing and proration lock. |
+| [Plan](/v2/guide/plans/overview) | `tax_codes` | Yes. Tax codes can change after the plan is used by a contract. |
+| [Customer](/v2/guide/customers/customer-management) | `tax_codes` | Yes. |
+| [Billing entity](/v2/guide/billing-entities) | `tax_codes` | Yes. |
+
+<Note>
+The v2 spec documents where taxes can be assigned. It does not document the precedence between rate card, plan, customer and billing entity assignments. Check the applied taxes on a draft invoice before relying on a combination.
+</Note>
+
+### Assign a tax to a rate card
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open **Rate cards** and select the rate card;
+    2. Click **Edit**;
+    3. In the tax section, add the tax; and
+    4. Save.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Assign VAT to the API-call rate card
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/rate_cards/api_calls_usd" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "rate_card": {
+          "tax_codes": ["standard_vat"]
+        }
+      }'
+    ```
+
+    ```bash Read the taxes of a rate card
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request GET "$LAGO_URL/api/v2/rate_cards/api_calls_usd?expands[]=taxes" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+### Assign a tax to a plan, customer or billing entity
+
+<CodeGroup>
+```bash Plan
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PATCH "$LAGO_URL/api/v2/plans/api_monthly" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "plan": {
+      "tax_codes": ["standard_vat"]
+    }
+  }'
+```
+
+```bash Customer
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PATCH "$LAGO_URL/api/v2/customers/customer_example" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "customer": {
+      "tax_codes": ["standard_vat"]
+    }
+  }'
+```
+
+```bash Billing entity
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PATCH "$LAGO_URL/api/v2/billing_entities/acme_corp" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "billing_entity": {
+      "tax_codes": ["standard_vat"]
+    }
+  }'
+```
+</CodeGroup>
+
+Plans expose `taxes` with `expands[]=taxes` on retrieval. Billing entities expose assigned taxes the same way.
+
+## Worked example
+
+`standard_vat` (20%) is assigned to both rate cards of the running example. `contract_example` records 2,000 API calls in the period.
+
+```
+monthly_service      1 x $100.00          $100.00   VAT 20%   $20.00
+api_calls_product    2,000 x $0.01         $20.00   VAT 20%    $4.00
+--------------------------------------------------------------------
+Subtotal (excl. tax)                      $120.00
+Tax                                        $24.00
+--------------------------------------------------------------------
+Total                                     $144.00
+```
+
+Each fee returns its own `taxes_amount_cents`, and `expands[]=applied_taxes` lists the `tax_code`, `tax_rate` and `amount_cents` applied. On the invoice, `taxes_amount_cents` is `2400` and `total_amount_cents` is `14400`.
+
+## Edit or delete a tax
+
+`PUT` and `PATCH` both accept partial updates. `code` can be renamed if no other tax, including a deleted one, uses the new code.
+
+`DELETE /taxes/{code}` returns the tax with a non-null `deleted_at`. Deleted taxes are no longer listed or retrievable.
+
+<Warning>
+Changing a rate or deleting a tax can affect how future fees are taxed for every object that carries it. Review the change before you run it in production.
+</Warning>
+
+<CodeGroup>
+```bash Update a tax rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PATCH "$LAGO_URL/api/v2/taxes/standard_vat" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "tax": {
+      "rate": "21"
+    }
+  }'
+```
+
+```bash Delete a tax
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request DELETE "$LAGO_URL/api/v2/taxes/standard_vat" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+## Tax providers
+
+To let a tax provider compute taxes, use a tax integration: [Anrok](/v2/integrations/taxes/anrok), [Avalara](/v2/integrations/taxes/avalara) or [Lago EU taxes](/v2/integrations/taxes/lago-eu-taxes). When provider tax processing fails, [retry taxes](/v2/guide/invoicing/overview#retry-taxes) on the invoice.
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Can I change the taxes of a rate card that already has rates?">
+    Yes. Once a rate exists, structural settings such as currency, billing timing and proration lock. Tax assignments remain editable.
+  </Accordion>
+  <Accordion title="Does creating a tax apply it to my invoices?">
+    No. A new tax is not assigned to anything. Add its code to a rate card, plan, customer or billing entity.
+  </Accordion>
+  <Accordion title="Can I reuse the code of a deleted tax?">
+    No. Codes must be unique across all taxes of the organization, including deleted ones.
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Rate cards" icon="layer-group" href="/v2/guide/rate-cards/overview">
+    Where most tax assignments live.
+  </Card>
+  <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
+    How taxes appear on invoice totals.
+  </Card>
+  <Card title="Create a tax (API)" icon="code" href="/v2/api-reference/taxes/create">
+    Request and response schema.
+  </Card>
+  <Card title="Update a rate card (API)" icon="code" href="/v2/api-reference/rate-cards/partially-update">
+    Assign `tax_codes` to a rate card.
+  </Card>
+</CardGroup>

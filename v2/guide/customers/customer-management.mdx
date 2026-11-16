@@ -1,0 +1,194 @@
+---
+title: "Customer management"
+sidebarTitle: "Customer management"
+description: "Create, update, retrieve and delete customers with the v2 API, set billing defaults, and attach them to contracts, usage and invoices."
+keywords: ["Lago", "customer", "external_customer_id", "contracts", "v2"]
+---
+
+A [customer](/v2/api-reference/customers/object) is the account you bill: it holds identity, address, tax and payment settings, and every contract and invoice points to it. Create the customer first, then attach a [contract](/v2/guide/contracts/overview) to start billing.
+
+## Create a customer
+
+`POST /customers` creates a new customer. An existing `external_id` returns `422`. It does not update that customer. Use `PUT /customers/{external_id}` to update.
+
+Billing and payment settings are top-level fields on the customer. There is no `billing_configuration` object in v2.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Access the **Customers** section in the side menu.
+    2. Click **Create a customer**.
+    3. Enter the customer's name and external ID (the unique ID from your system).
+    4. Select the customer's timezone (optional).
+    5. Enter billing information, such as company details and address (optional).
+    6. Select the default payment provider for this customer (optional).
+    7. Click **Create customer**.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Create customer_example
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "customer_example",
+          "name": "Acme Corp",
+          "customer_type": "company",
+          "email": "billing@example.com",
+          "legal_name": "Acme Corp Inc.",
+          "address_line1": "1 Main Street",
+          "city": "San Francisco",
+          "state": "CA",
+          "zipcode": "94105",
+          "country": "US",
+          "currency": "USD",
+          "billing_entity_code": "acme_corp",
+          "document_locale": "en",
+          "shipping_address": {
+            "address_line1": "1 Main Street",
+            "city": "San Francisco",
+            "state": "CA",
+            "zipcode": "94105",
+            "country": "US"
+          },
+          "metadata": [
+            {
+              "key": "crm_id",
+              "value": "123",
+              "display_on_invoice": false
+            }
+          ]
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+### Customer fields
+
+| Group | Fields |
+| --- | --- |
+| Identity | `external_id`, `name`, `firstname`, `lastname`, `customer_type` (`company` or `individual`), `account_type` (`customer` or `partner`) |
+| Contact | `email`, `phone`, `url`, `logo_url` |
+| Billing address | `address_line1`, `address_line2`, `city`, `state`, `zipcode`, `country` |
+| Shipping address | `shipping_address` object with the same address fields |
+| Legal and tax | `legal_name`, `legal_number`, `tax_identification_number`, `tax_codes` |
+| Billing settings | `currency`, `billing_entity_code`, `timezone`, `invoice_grace_period`, `document_locale`, `finalize_zero_amount_invoice` (`inherit`, `skip` or `finalize`), `periodic_invoice_issuing_date_anchor`, `periodic_invoice_issuing_date_adjustment`, `invoice_custom_section_codes`, `skip_invoice_custom_sections` |
+| Payment provider | `payment_provider`, `payment_provider_code`, `provider_customer_id`, `provider_payment_methods`, `sync`, `sync_with_provider` |
+| Integrations | `integration_customers` (one entry per integration type), `external_salesforce_id` |
+| Metadata | `metadata`, up to five entries. See [Customer metadata](/v2/guide/customers/customer-metadata). |
+
+<Info>
+  `timezone` and `invoice_grace_period` require a premium license. Without one, the value is ignored. `account_type` requires revenue share to be enabled.
+</Info>
+
+### Companies vs individuals
+
+Set `customer_type` to `company` or `individual`. The field is optional. Leave it out and set it later.
+
+## Update a customer
+
+`PUT` and `PATCH /customers/{external_id}` both accept partial updates. Omitted fields are unchanged. A missing customer returns `404`.
+
+When you send `metadata` or `integration_customers`, the array replaces the whole list. Send each existing entry with its `id` (the `lago_id` from the response) to keep or update it. Omitted entries are deleted. An empty array removes all entries.
+
+<Tabs>
+  <Tab title="Dashboard">
+    Access the **Customers** section and select the customer. The customer view lets you edit their information.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Update the billing email
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PATCH "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "email": "finance@example.com"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+<Warning>
+  Changes to `external_id` are ignored once the customer has billing objects attached, such as invoices or wallets. Treat `external_id` as permanent.
+</Warning>
+
+## Retrieve and list customers
+
+`GET /customers/{external_id}` returns the customer without relationships. Request them with `expands[]`: `metadata`, `taxes` or `integration_customers`.
+
+`GET /customers` is cursor-paginated. It filters by `search_term`, `external_id`, `customer_type`, `has_customer_type`, `has_tax_identification_number`, `currencies[]`, `countries[]`, `states[]`, `zipcodes[]`, `billing_entity_codes[]`, `account_type[]` and `metadata`. See [Pagination](/v2/api-reference/pagination).
+
+```bash Retrieve a customer with its metadata
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --globoff --request GET "$LAGO_URL/api/v2/customers/customer_example?expands[]=metadata" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+## Bill the customer
+
+Billing starts when you attach a contract to the customer. Pass the customer's `external_id` as `external_customer_id`.
+
+| Task | Where |
+| --- | --- |
+| Start billing | [Create a contract](/v2/guide/contracts/overview) |
+| Send usage | [Ingest usage](/v2/guide/events/ingesting-usage) with `external_contract_id` |
+| Monitor the open period | [Contract current usage](/v2/guide/contracts/current-usage) |
+| List invoices | `GET /customers/{customer_external_id}/invoices` ([API](/v2/api-reference/customers/list-invoices)) |
+| List credit notes | `GET /customers/{customer_external_id}/credit_notes` ([API](/v2/api-reference/customers/list-credit-notes)) |
+| List payments | `GET /customers/{customer_external_id}/payments` ([API](/v2/api-reference/customers/list-payments)) |
+| Payment methods | [Payment methods](/v2/guide/payments/payment-methods) |
+
+## Delete a customer
+
+`DELETE /customers/{external_id}` soft-deletes the customer and queues the related termination work. The response includes `deleted_at`.
+
+<Warning>
+  Deleting a customer cannot be undone. Lago queues termination work for the customer's billing objects. Review the customer's pending and active contracts and draft invoices before you send the request.
+</Warning>
+
+<Tabs>
+  <Tab title="Dashboard">
+    <Note>
+      Dashboard steps for deleting a customer are not documented yet for v2. Use the API tab while API v2 is in beta.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Delete a customer
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request DELETE "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+<CardGroup cols={2}>
+  <Card title="Customer metadata" icon="tags" href="/v2/guide/customers/customer-metadata">
+    Store extra context on the customer.
+  </Card>
+  <Card title="Billing entities" icon="building" href="/v2/guide/billing-entities">
+    Issue invoices under distinct billing configurations.
+  </Card>
+  <Card title="Create a customer (API)" icon="code" href="/v2/api-reference/customers/create">
+    `POST /customers`
+  </Card>
+  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/update">
+    `PUT /customers/{external_id}`
+  </Card>
+</CardGroup>

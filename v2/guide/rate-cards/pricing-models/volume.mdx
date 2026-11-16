@@ -1,0 +1,90 @@
+---
+title: "Volume rate model"
+sidebarTitle: "Volume"
+description: "The Lago v2 volume rate model applies one tier's unit price to every unit, based on the total quantity, plus a flat fee. Arrears only. 65,000-call example."
+keywords: ["Lago", "volume pricing", "tiered pricing", "volume_ranges", "rate model", "v2"]
+---
+
+The volume rate model defines several price tiers, then applies a single unit price to the whole quantity: the price of the tier that the total quantity falls into. Use it when crossing a threshold should lower the price of every unit, not only the units above it.
+
+## How it works
+
+The total quantity for the billing period selects one tier. That tier's `per_unit_amount` applies to all units, and its `flat_amount` is added once. The last tier has `to_value: null` and is open-ended.
+
+Volume is billed in arrears only.
+
+## Configure the rate
+
+Set `rate_model` to `volume` and describe the tiers in `rate_properties.volume_ranges`. Each tier is a `RateTierInput` with `to_value`, `per_unit_amount` and `flat_amount`. Upper bounds must increase. Do not send `from_value`. The rate card must use `billing_timing: "arrears"`.
+
+<CodeGroup>
+```bash Create a volume rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "calls_volume",
+      "effective_from": "2027-07-01T00:00:00Z",
+      "rate_model": "volume",
+      "rate_properties": {
+        "volume_ranges": [
+          { "to_value": "10000", "per_unit_amount": "0.0010", "flat_amount": "10" },
+          { "to_value": "50000", "per_unit_amount": "0.0008", "flat_amount": "10" },
+          { "to_value": "100000", "per_unit_amount": "0.0006", "flat_amount": "10" },
+          { "to_value": null, "per_unit_amount": "0.0004", "flat_amount": "10" }
+        ]
+      },
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
+
+## Example
+
+Each unit is an API call:
+
+| Tier | Up to (`to_value`) | Unit price | Flat fee |
+| --- | --- | --- | --- |
+| Tier 1 | 10,000 | $0.0010 | $10 |
+| Tier 2 | 50,000 | $0.0008 | $10 |
+| Tier 3 | 100,000 | $0.0006 | $10 |
+| Tier 4 | ∞ (`null`) | $0.0004 | $10 |
+
+With 65,000 calls in the billing period, the total falls in tier 3:
+
+| Part | Calculation | Amount |
+| --- | --- | --- |
+| Units | 65,000 × $0.0006 | $39.00 |
+| Flat fee | Tier 3 | $10.00 |
+| **Fee** | | **$49.00** |
+
+The invoice shows one API calls fee of $49.00 before tax, with `units` 65,000. With graduated tiers instead, the same 65,000 calls would be split across tiers 1 to 3.
+
+## Availability
+
+- Billing timing: arrears only, for every product type.
+- Fixed products: available, with or without proration.
+- Metered products: available for every aggregation except prorated recurring Weighted sum.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
+<CardGroup cols={2}>
+  <Card title="Graduated" icon="stairs" href="/v2/guide/rate-cards/pricing-models/graduated">
+    Each tier prices its own slice.
+  </Card>
+  <Card title="Rate cards" icon="tags" href="/v2/guide/rate-cards/overview">
+    Set `billing_timing`.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Compare every rate model.
+  </Card>
+</CardGroup>

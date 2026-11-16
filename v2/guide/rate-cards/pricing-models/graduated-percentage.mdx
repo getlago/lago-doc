@@ -1,0 +1,98 @@
+---
+title: "Graduated percentage rate model"
+sidebarTitle: "Graduated percentage"
+description: "The Lago v2 graduated percentage rate model applies percentage tiers, with optional per-tier flat fees, to a measured amount. Fields and a $5,050 worked example."
+keywords: ["Lago", "graduated percentage", "percentage tiers", "graduated_percentage_ranges", "rate model", "v2"]
+---
+
+The graduated percentage rate model defines several percentage tiers on a measured monetary amount, each with an optional flat fee. Use it for fintech-style pricing where the rate drops, or rises, as a customer's volume grows within the period.
+
+## How it works
+
+The product's billable metric measures a monetary amount, such as payment volume. The amount fills tier 1 up to its `to_value`, then tier 2, and so on. Each slice is billed at its tier's `rate`. A tier's `flat_amount` is a flat fee charged once for the whole tier, not per transaction. The last tier has `to_value: null`.
+
+## Configure the rate
+
+Set `rate_model` to `graduated_percentage` and describe the tiers in `rate_properties.graduated_percentage_ranges`. Each tier is a `RateTierInput`:
+
+| Field | Description |
+| --- | --- |
+| `to_value` | Upper bound of the tier, as a decimal string. `null` on the last tier. Bounds must increase. |
+| `rate` | Percentage applied to the slice in this tier. The only value each tier needs. |
+| `flat_amount` | Flat fee for the tier. Optional. |
+
+Do not send `from_value`.
+
+<Note>
+The v2 spec types `rate` as a decimal string without stating its unit. The example sends `"1"` for 1%. Check the resulting fee in a test environment before going live.
+</Note>
+
+<CodeGroup>
+```bash Create a graduated percentage rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/payment_volume_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "payments_graduated_percentage",
+      "effective_from": "2027-01-01T00:00:00Z",
+      "rate_model": "graduated_percentage",
+      "rate_properties": {
+        "graduated_percentage_ranges": [
+          { "to_value": "1000", "rate": "1", "flat_amount": "200" },
+          { "to_value": "10000", "rate": "2", "flat_amount": "300" },
+          { "to_value": null, "rate": "3", "flat_amount": "400" }
+        ]
+      },
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
+
+## Example
+
+This example is separate from the API-call baseline. Each unit is $1 of transaction volume on a metered product `payment_volume`:
+
+| Tier | Up to (`to_value`) | Rate | Flat fee |
+| --- | --- | --- | --- |
+| Tier 1 | 1,000 | 1% | $200 |
+| Tier 2 | 10,000 | 2% | $300 |
+| Tier 3 | ∞ (`null`) | 3% | $400 |
+
+The customer makes three transactions in the month: $500, $550 and $4,000. The tiers fill in order:
+
+| Transaction | Slices | Calculation | Amount |
+| --- | --- | --- | --- |
+| $500 | 500 in tier 1 | 500 × 1% + $200 flat fee (tier 1 reached) | $205.00 |
+| $550 | 500 in tier 1, 50 in tier 2 | 500 × 1% + 50 × 2% + $300 flat fee (tier 2 reached) | $306.00 |
+| $4,000 | 4,000 in tier 2 | 4,000 × 2% | $80.00 |
+| **Period total** | **$5,050** | | **$591.00** |
+
+The same total, by tier: tier 1 is 1,000 × 1% + $200 = $210. Tier 2 is 4,050 × 2% + $300 = $381. $210 + $381 = $591.00 before tax. Tier 3 is never reached, so its $400 flat fee is not charged.
+
+## Availability
+
+- Fixed products: not available.
+- Metered products: available with Count, Count unique, Max, Sum and Weighted sum, except with prorated recurring metrics. Not available with Latest. Advance billing is available only for Count, non-prorated Count unique and non-prorated Sum.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
+<CardGroup cols={2}>
+  <Card title="Percentage" icon="percent" href="/v2/guide/rate-cards/pricing-models/percentage">
+    One percentage on the amount.
+  </Card>
+  <Card title="Graduated" icon="stairs" href="/v2/guide/rate-cards/pricing-models/graduated">
+    Tiered unit prices.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Compare every rate model.
+  </Card>
+</CardGroup>

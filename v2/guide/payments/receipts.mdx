@@ -1,0 +1,102 @@
+---
+title: "Payment receipts"
+sidebarTitle: "Payment receipts"
+description: "List and retrieve payment receipts for v2 invoices, download the PDF or XML, and resend the receipt email to the customer with /api/v2/payment_receipts."
+keywords: ["Lago", "payment receipt", "receipt", "payments", "v2"]
+---
+
+A [payment receipt](/v2/api-reference/payment-receipts/retrieve) is the document that confirms one payment, manual or through a provider. Use receipts to give customers proof of payment and to keep an audit trail when an invoice is paid in several parts.
+
+<Info>
+Payment receipts are a premium add-on, available on request.
+</Info>
+
+## The receipt object
+
+| Field | Meaning |
+| --- | --- |
+| `number` | Receipt number. |
+| `lago_payment_id` | The payment the receipt confirms. |
+| `pdf_url`, `xml_url` | Document download URLs, `null` while unavailable. |
+| `pdf_url_expires_at`, `xml_url_expires_at` | When each URL expires. |
+| `payment` | The full payment, with `expands[]=payment`. |
+
+An invoice paid in two transfers, as in the [manual payment example](/v2/guide/payments/record-manual-payments#worked-example), has two payments and so two receipts.
+
+## List and retrieve receipts
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the payment details page; and
+    2. Download the receipt.
+  </Tab>
+  <Tab title="API">
+    The list returns every receipt of the organization, newest first. Filter with `invoice_id`, `created_at_from` and `created_at_to`. `invoice_id` also returns receipts for payments made through a payment request covering that invoice. An unknown invoice returns an empty list.
+
+    <CodeGroup>
+    ```bash List receipts for an invoice
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    INVOICE_ID="__YOUR_INVOICE_ID__"
+
+    curl --location --request GET "$LAGO_URL/api/v2/payment_receipts?invoice_id=$INVOICE_ID" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+
+    ```bash Retrieve a receipt with its payment
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    RECEIPT_ID="__YOUR_RECEIPT_ID__"
+
+    curl --location --request GET "$LAGO_URL/api/v2/payment_receipts/$RECEIPT_ID?expands[]=payment" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+
+    Receipt read access uses the invoice read permission on the API key.
+  </Tab>
+</Tabs>
+
+## Resend a receipt email
+
+<Info>
+Resending requires a premium license, valid recipients and an email configuration on the billing entity.
+</Info>
+
+The body accepts optional `to`, `cc` and `bcc` arrays. When `to` is omitted or empty, Lago uses the customer email. The response has an empty success body.
+
+<Warning>
+This sends an email to your customer. Check the recipients before you call it in production.
+</Warning>
+
+<CodeGroup>
+```bash Resend a receipt email
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+RECEIPT_ID="__YOUR_RECEIPT_ID__"
+
+curl --location --request POST "$LAGO_URL/api/v2/payment_receipts/$RECEIPT_ID/resend_email" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "to": ["billing@example.com"]
+  }'
+```
+</CodeGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Record manual payments" icon="money-check" href="/v2/guide/payments/record-manual-payments">
+    Payments that generate receipts.
+  </Card>
+  <Card title="Payment requests" icon="envelope-open-dollar" href="/v2/guide/payments/payment-requests">
+    Collect several invoices at once.
+  </Card>
+  <Card title="List payment receipts (API)" icon="code" href="/v2/api-reference/payment-receipts/list">
+    Filters and response schema.
+  </Card>
+  <Card title="Resend a receipt email (API)" icon="code" href="/v2/api-reference/payment-receipts/resend-email">
+    Request schema.
+  </Card>
+</CardGroup>

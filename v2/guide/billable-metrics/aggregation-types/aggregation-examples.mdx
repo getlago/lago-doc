@@ -1,0 +1,82 @@
+---
+title: "Aggregation examples"
+sidebarTitle: "Aggregation examples"
+description: "See how the same two usage events produce a different billable quantity under each v2 aggregation type, from count to weighted sum, side by side."
+keywords: ["Lago", "aggregation type", "billable metric", "examples", "v2"]
+---
+
+The same events give a different billable quantity under each aggregation type. Use this page to check which type matches what you want to charge before you create the metric.
+
+## Events received
+
+A tracking API company bills `tracked_pages`. The customer's contract `contract_example` has a monthly billing period, January 1 to January 31, 2027. Your backend sends two events:
+
+```json Event received #1
+{
+  "transaction_id": "1111-1111-1111-1111",
+  "external_contract_id": "contract_example",
+  "code": "tracked_pages",
+  "timestamp": 1800057600,
+  "properties": {
+    "tracked_user_id": "1234-5678-9098-7654",
+    "pageviews": 10
+  }
+}
+```
+
+```json Event received #2
+{
+  "transaction_id": "2222-2222-2222-2222",
+  "external_contract_id": "contract_example",
+  "code": "tracked_pages",
+  "timestamp": 1800144000,
+  "properties": {
+    "tracked_user_id": "1234-5678-9098-7654",
+    "pageviews": 20
+  }
+}
+```
+
+The first event is on January 16, the second on January 17.
+
+## Result per aggregation type
+
+| Aggregation | Formula | Units to be charged |
+| --- | --- | --- |
+| **Count** | `COUNT(tracked_pages)` | 2 |
+| **Sum** | `SUM(tracked_pages.properties.pageviews)` | 30 |
+| **Max** | `MAX(tracked_pages.properties.pageviews)` | 20 |
+| **Latest** | `LAST_VALUE(tracked_pages.properties.pageviews)` | 20 |
+| **Count unique** | `COUNT_DISTINCT(tracked_pages.properties.tracked_user_id)` | 1 |
+| **Weighted sum** | `SUM(tracked_pages.properties.pageviews)` prorated per second | 14.84 |
+
+[Weighted sum](/v2/guide/billable-metrics/aggregation-types/weighted-sum) is the only type whose result depends on the billing period, because it weights the running total by the time it was held. Here the total is 10 for one day (January 16 to 17), then 30 for the remaining 15 days of January: (10 × 1 day + 30 × 15 days) / 31 days = 14.84.
+
+## From quantity to invoice
+
+The rate on the metered product's rate card prices the quantity. At $0.01 per unit with a [standard](/v2/guide/rate-cards/pricing-models/standard) rate:
+
+| Aggregation | Units | Amount |
+| --- | --- | --- |
+| Count | 2 | $0.02 |
+| Sum | 30 | $0.30 |
+| Max | 20 | $0.20 |
+| Latest | 20 | $0.20 |
+| Count unique | 1 | $0.01 |
+
+Choose the aggregation type that matches what you charge for.
+
+<CardGroup cols={2}>
+  <Card title="Aggregation types" icon="calculator" href="/v2/guide/billable-metrics/aggregation-types/overview">
+    Every type and its formula.
+  </Card>
+  <Card title="Rates" icon="tag" href="/v2/guide/rate-cards/rates">
+    Price the aggregated quantity.
+  </Card>
+  <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
+    `POST /billable_metrics`
+  </Card>
+  <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
+    Send events with `external_contract_id`.
+  </Card>
+</CardGroup>

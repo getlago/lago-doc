@@ -1,0 +1,108 @@
+---
+title: "Lago EU Taxes"
+sidebarTitle: "Lago EU Taxes"
+description: "Enable Lago EU Taxes to generate standard European VAT rates and apply them to customers automatically with VIES checks and special territory rules."
+keywords: ["Lago", "EU taxes", "VAT", "VIES", "v2"]
+---
+
+Lago can detect and apply European tax rates for your customers automatically.
+
+<Info>
+  **Lago EU Taxes is a community-maintained integration.** It covers very basic European tax scenarios, but may not address every edge case or jurisdiction. If you need a complete, production-grade tax setup, we recommend using a dedicated tax provider like [Anrok](/v2/integrations/taxes/anrok) or [Avalara](/v2/integrations/taxes/avalara), which are natively integrated with Lago.
+</Info>
+
+## Enable Lago's EU Tax integration
+To activate Lago's automatic EU tax detection:
+
+1. Navigate to your Lago instance **Settings**;
+2. Select the **'Lago EU Tax Management'** integration;
+3. Enter or confirm your organization's country; and
+4. Hit **'Connect'** to activate this integration.
+
+## Automated EU tax rates detection
+When you connect the Lago EU Tax Management integration, it automatically generates a list of standard European tax rates. 
+These rates are labeled `automated` in Lago and follow the standard tax rates published for European countries.
+Each one is prefixed with `lago_`, so you can tell them apart from the rates you create yourself.
+
+<Frame caption="Automated tax rates">
+    <img src="/integrations/images/automated-tax-rates.png" />
+</Frame>
+
+## Auto-application of taxes: decision tree
+
+<Frame caption="Tax auto-application decision tree">
+    <img src="/integrations/images/lago-eu-taxes-decision-tree.jpg" />
+</Frame>
+
+Before applying standard B2B/B2C rules, Lago checks the customer's **postal code** to detect EU special territories: regions that are outside EU VAT territory or have reduced rates despite belonging to an EU member state. If a match is found, the territory-specific rate is applied and VIES validation is skipped.
+
+If no special territory is detected, Lago's next step involves verifying if a customer has a `tax_identification_number`. This check occurs whenever a customer's profile is created or updated, ensuring that the most current tax-related information is used in subsequent processes.
+
+## Special territory detection
+
+When a customer has a `zipcode` set, Lago matches it against known special territory postal code patterns. If matched, the standard country rate is overridden with the territory's exception rate.
+
+<Warning>
+  Make sure to set the **zipcode** on your customer profile. Without a postal code, Lago falls back to the standard country rate and special territory detection is skipped.
+</Warning>
+
+The following 17 territories are supported across 7 EU countries:
+
+| Country | Territory | Tax Code | Postal Code Pattern | Rate |
+|---|---|---|---|---|
+| Spain | Canary Islands | `lago_eu_es_exception_canary_islands` | 35xxx, 38xxx | 0% |
+| Spain | Ceuta | `lago_eu_es_exception_ceuta` | 51001-51005, 51070-51071, 51081 | 0% |
+| Spain | Melilla | `lago_eu_es_exception_melilla` | 52000-52006, 52070-52071, 52081 | 0% |
+| France | Guadeloupe | `lago_eu_fr_exception_guadeloupe` | 971xx | 8.5% (B2B only) |
+| France | Martinique | `lago_eu_fr_exception_martinique` | 972xx | 8.5% (B2B only) |
+| France | Guyane | `lago_eu_fr_exception_guyane` | 973xx | 0% (B2B only) |
+| France | Réunion | `lago_eu_fr_exception_reunion` | 974xx | 8.5% (B2B only) |
+| France | Mayotte | `lago_eu_fr_exception_mayotte` | 976xx | 0% (B2B only) |
+| Germany | Büsingen am Hochrhein | `lago_eu_de_exception_busingen_am_hochrhein` | 78266 | 0% |
+| Germany | Heligoland | `lago_eu_de_exception_heligoland` | 27498 | 0% |
+| Italy | Livigno | `lago_eu_it_exception_livigno` | 23041 | 0% |
+| Italy | Campione d'Italia | `lago_eu_it_exception_campione_d_italia` | 22061 | 0% |
+| Portugal | Madeira | `lago_eu_pt_exception_madeira` | 90xx-94xx | 22% |
+| Portugal | Azores | `lago_eu_pt_exception_azores` | 95xx-99xx | 18% |
+| Austria | Jungholz | `lago_eu_at_exception_jungholz` | 6691 | 19% |
+| Austria | Mittelberg | `lago_eu_at_exception_mittelberg` | 6991, 6992, 6993 | 19% |
+| Greece | Mount Athos | `lago_eu_gr_exception_mount_athos` | 63086 | 0% |
+
+<Info>
+  **France DOM-TOM exception:** For French overseas territories (Guadeloupe, Martinique, Guyane, Réunion, Mayotte), the exception rate only applies to **B2B customers** (those with a `tax_identification_number` that passes validation). B2C customers in these territories are charged the standard French rate of 20%, in line with French tax law (CGI Articles 294–296).
+</Info>
+
+### B2B tax decision process
+When a `tax_identification_number` is identified on a customer profile, Lago conducts a real-time verification 
+using the [EU's VAT Information Exchange System (VIES)](https://ec.europa.eu/taxation_customs/vies/#/vat-validation) to 
+confirm the existence of the company. 
+
+**In case the VIES check matches a valid company:**
+
+1. If the customer's company is registered in the same country as your organization, Lago applies the customer 
+country's tax rate;
+2. If the customer's company is registered in the same country as your organization, but there is a tax exception for a particular zipcode, Lago applies the tax exception of this specific zipcode; or
+3. If the customer's company is registered in a different country than your organization, Lago implements a 
+**reverse charge** mechanism, applying a 0% tax rate.
+
+### B2C tax decision process
+If the VIES check does not confirm an active company or if no `tax_identification_number` is provided, 
+Lago then assesses the `country` associated with your customer. Based on this:
+
+1. If your customer's `country` is unspecified, Lago defaults to applying your organization's country tax rate; or
+2. If your customer's `country` is within the European Union, Lago applies the tax rate corresponding to your customer's own country; or
+3. If your customer's `country` is outside the European Union, Lago applies a **tax exempt** rate at 0%.
+
+
+## Guidelines for VIES checks by Lago
+Lago performs VIES verifications under these circumstances:
+
+- The Lago EU Tax Management integration is activated;
+- A customer profile is either created or updated. Changes in customer details could influence their applicable tax rates;
+- Zipcodes are important to define tax exceptions. Make sure to define them for all your customers; and
+- When a new tax rate is identified for a customer, Lago automatically updates the customer's profile by replacing the old tax rate with the new one.
+
+## Logging VIES verifications
+Lago ensures transparency and compliance by logging each VIES check. This occurs whenever you create or update a customer. 
+For each check, Lago dispatches a webhook message. This allows you to record these validations for compliance purposes. 
+You can access and review any of these automated checks as needed.

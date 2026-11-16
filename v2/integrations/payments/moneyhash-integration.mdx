@@ -1,0 +1,85 @@
+---
+title: "MoneyHash"
+sidebarTitle: "MoneyHash"
+description: "Connect MoneyHash to Lago and collect invoice payments in Africa and the Middle East through a checkout link generated for each invoice."
+keywords: ["Lago", "MoneyHash", "payments", "payment provider", "v2"]
+---
+
+
+<Info>
+    This integration is community-maintained, and therefore Lago provides only limited support.
+</Info>
+
+
+<Note>
+V2 lists webhook event types but does not document V2 webhook payloads yet. Webhook links on this page point to the legacy (v1) webhook reference.
+</Note>
+
+## About MoneyHash
+MoneyHash is a payment infrastructure software in Africa and the Middle East.
+It helps businesses in emerging markets to improve payment performance, scale operations, cut costs and grow revenue through a single orchestration platform.
+
+## Connect MoneyHash to Lago
+
+To connect MoneyHash to Lago, navigate to your Lago UI, then go to **Integrations** > **Built by community**, and add a new **MoneyHash** connection:
+
+1. Click **Add a connection**;
+2. Type a connection **name**;
+3. Type a unique connection **code**;
+4. Paste your MoneyHash **API key**; and
+5. Paste your MoneyHash **Flow Id**.
+
+<Frame caption="Connect your MoneyHash account from Lago UI">
+  <img src="/integrations/images/moneyhash-payment-integration.png" />
+</Frame>
+
+## Create a webhook endpoint
+<Tip>
+    To complete this process, you will need:
+
+    - Your Lago **organization ID**, available in the **"API keys & ID"** tab of the
+    **"Developers"** section;
+    - The **connection code** you created during the MoneyHash setup process.
+</Tip>
+
+If you want Lago to automatically retrieve the status of the payments processed
+via MoneyHash, you must create a webhook endpoint in MoneyHash. To do so:
+
+1. Log in to your MoneyHash account;
+2. Add the following Webhook URL in the **Webhooks** section of the MoneyHash dashboard;
+3. Enter the following URL: `https://api.getlago.com/webhooks/moneyhash/{{__YOUR_ORG_ID__}}?code={{__YOUR_CONNECTION_CODE__}}` (replace `__YOUR_ORG_ID__` with your Lago organization ID and `__YOUR_CONNECTION_CODE__` with the connection code); and
+4. Save the creation of this webhook endpoint.
+
+## Collect payments via MoneyHash
+
+### Connect a Lago customer to MoneyHash
+To collect payments for your Lago invoices via MoneyHash, link a Lago customer to a MoneyHash connection.
+When creating or editing a customer in Lago, select the relevant MoneyHash connection under **Connect to external apps** to enable invoice payments.
+
+### Generate a checkout link
+Payments through MoneyHash do not start automatically when Lago generates an invoice. Generate a checkout link by calling this [endpoint](/v2/api-reference/invoices/payment-url):
+
+```bash Request
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/invoices/{lago_id}/payment_url" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+Forward the checkout link to your customer so they can pay with their preferred local method. Once the payment is processed, Lago retrieves the invoice status from MoneyHash.
+
+```json Response
+{
+  "payment_url": {
+    "lago_customer_id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    "external_customer_id": "customer_example",
+    "payment_provider": "moneyhash",
+    "lago_invoice_id": "1e501a90-938d-1a90-1a90-1a901a901a80",
+    "payment_url": "https://moneyhash.payment_link"
+  }
+}
+```
+
+### MoneyHash payment errors
+If an error occurs during the MoneyHash payment process for a Lago invoice, Lago sends an [`invoice.payment_failure`](/api-reference/webhooks/messages#param-invoice-payment-failure) webhook containing the error details.
