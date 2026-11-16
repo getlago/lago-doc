@@ -1,8 +1,8 @@
 ---
 title: "Segment"
 sidebarTitle: "Segment"
-description: "Send usage tracked in Segment to Lago V2 with a destination function that posts events to /api/v2/events using external_contract_id."
-keywords: ["Lago", "Segment", "usage events", "external_contract_id", "v2"]
+description: "Send usage tracked in Segment to Lago with a destination function that posts events to /api/v2/events using external_contract_id."
+keywords: ["Lago", "Segment", "usage events", "external_contract_id"]
 ---
 
 The Segment integration forwards product usage tracked in Segment to Lago as billable events. Use it when Segment already captures the actions you bill on and you want Lago to rate them against a contract.
@@ -42,16 +42,16 @@ Select the **Destination function**, as you want to send data from Segment to La
 
 ### Post requests to Lago events
 
-Replace the pre-written code in the editor with the function below. It catches a **Track** event from Segment, builds a Lago V2 event body and posts it to [`POST /api/v2/events`](/v2/api-reference/events/create). Each event targets a contract through `external_contract_id`.
+Replace the pre-written code in the editor with the function below. It catches a **Track** event from Segment, builds a Lago event body and posts it to [`POST /api/v2/events`](/v2/api-reference/events/create). Each event targets a contract through `external_contract_id`.
 
 ```javascript
 // Runs every time a Track call is made on Segment
 async function onTrack(event, settings) {
 
-  // Lago V2 events endpoint
+  // Lago events endpoint
   const endpoint = 'https://api.getlago.com/api/v2/events';
 
-  // Event body following the Lago V2 events schema
+  // Event body following the Lago events schema
   const body = {
     event: {
       transaction_id: event.messageId,
@@ -119,8 +119,8 @@ This video was recorded with the legacy v1 events payload. Its Segment setup ste
 <iframe width="700" height="500" src="https://www.youtube.com/embed/lyJmdh47JTE" title="Segment to Lago demo video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 <CardGroup cols={2}>
-  <Card title="Ingest usage (v2)" icon="bolt" href="/v2/guide/events/ingesting-usage">
-    How V2 events target a contract.
+  <Card title="Ingest usage" icon="bolt" href="/v2/guide/events/ingesting-usage">
+    How events target a contract.
   </Card>
   <Card title="Ingest an event" icon="code" href="/v2/api-reference/events/create">
     `POST /api/v2/events` reference.

@@ -1,8 +1,8 @@
 ---
 title: "Bill per token: replicate OpenAI pricing with contracts"
 sidebarTitle: "Clone OpenAI pricing"
-description: "Rebuild OpenAI's per-token pricing in Lago v2 with a metered product, product filters per model and token type, package rates and a contract."
-keywords: ["Lago", "per-token pricing", "OpenAI", "product filters", "contract", "v2"]
+description: "Rebuild OpenAI's per-token pricing in Lago with a metered product, product filters per model and token type, package rates and a contract."
+keywords: ["Lago", "per-token pricing", "OpenAI", "product filters", "contract"]
 ---
 
 import SetupLago from "/snippets/v2/templates/setup-lago.mdx";
@@ -10,7 +10,7 @@ import CreateCustomer from "/snippets/v2/templates/create-customer.mdx";
 import CreateContract from "/snippets/v2/templates/create-contract.mdx";
 import ContractUsage from "/snippets/v2/templates/contract-usage.mdx";
 
-This template builds token-based billing with Lago v2: one metered product, priced separately per model and token type through product filters. It suits LLM and generative AI companies whose price depends on the model and on whether tokens are input or output.
+This template builds token-based billing with Lago: one metered product, priced separately per model and token type through product filters. It suits LLM and generative AI companies whose price depends on the model and on whether tokens are input or output.
 
 Legacy (v1): [Clone OpenAI pricing with subscriptions](/templates/per-token/openai).
 
@@ -23,9 +23,9 @@ OpenAI prices tokens per 1,000, with a different price per model and per token t
 | 8K context  | $0.03 / 1,000 tokens | $0.06 / 1,000 tokens |
 | 32K context | $0.06 / 1,000 tokens | $0.12 / 1,000 tokens |
 
-## How it maps to v2
+## How it maps to Lago
 
-| Pricing element | v2 object |
+| Pricing element | Lago object |
 |---|---|
 | Token usage | Billable metric `openai_tokens` (`sum_agg` on `tokens`) with `model` and `type` dimensions |
 | What you sell | Metered product `ai_tokens` |
@@ -257,7 +257,7 @@ OpenAI prices tokens per 1,000, with a different price per model and per token t
       ```
     </CodeGroup>
 
-    `external_subscription_id` is not supported on v2 events and returns `422`. Refer to the [API reference](/v2/api-reference/events/create) and the [usage ingestion guide](/v2/guide/events/ingesting-usage).
+    `external_subscription_id` is not supported on events and returns `422`. Refer to the [API reference](/v2/api-reference/events/create) and the [usage ingestion guide](/v2/guide/events/ingesting-usage).
   </Step>
 
   <Step title="Monitor current usage">

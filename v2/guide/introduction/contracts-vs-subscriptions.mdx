@@ -1,7 +1,7 @@
 ---
 title: "Contracts vs subscriptions"
 description: "What changed between Lago v1 subscriptions and v2 contracts, a V1 to V2 glossary of objects and fields, and which API version to use for a new integration."
-keywords: ["Lago", "contracts vs subscriptions", "v2", "migration", "rate cards", "glossary"]
+keywords: ["Lago", "contracts vs subscriptions", "migration", "rate cards", "glossary"]
 ---
 
 Lago v2 replaces the subscription with the contract: a contract applies billing terms to one customer, and its pricing comes from a product catalog of products, rate cards and effective-dated rates. Use this page to map v1 concepts to v2, and to decide which API version a new integration should use.
@@ -33,7 +33,7 @@ flowchart LR
   end
   subgraph V2["v2 · Contracts"]
     direction TB
-    K["Contract"] --> P2["Plan (optional)"]
+    K["Contract"] --> P2["Plan"]
     P2 --> ARC["Applied rate cards + rate phases"]
     ARC --> RC["Rate card"]
     RC --> R["Rates (effective-dated, own interval)"]
@@ -99,7 +99,7 @@ Legacy (v1): [Assign a plan to a customer](/guide/subscriptions/assign-plan) · 
   <Accordion title="Where did the plan interval go?">
     Each rate carries `billing_interval_count` and `billing_interval_unit`. Two rate cards in the same plan can bill on different intervals, for example a yearly platform fee and monthly usage.
   </Accordion>
-  <Accordion title="Does a price change in v2 affect existing customers?">
+  <Accordion title="Does a price change affect existing customers?">
     When a new rate becomes active, every plan and contract using that rate card picks up its price, unless the plan or contract overrides the price for the current phase. See [rates](/v2/guide/rate-cards/rates).
   </Accordion>
   <Accordion title="Is there an automated migration from v1 to v2?">
@@ -117,7 +117,7 @@ Legacy (v1): [Assign a plan to a customer](/guide/subscriptions/assign-plan) · 
   <Card title="Rate cards" icon="tags" href="/v2/guide/rate-cards/overview">
     Billing settings and effective-dated rates.
   </Card>
-  <Card title="API v2 reference" icon="code" href="/v2/api-reference/intro">
+  <Card title="API reference" icon="code" href="/v2/api-reference/intro">
     Endpoints under `/api/v2`.
   </Card>
 </CardGroup>

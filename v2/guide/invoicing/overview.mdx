@@ -1,7 +1,7 @@
 ---
 title: "How invoices work"
-description: "Learn how Lago v2 invoices group contract fees, which statuses and actions they support, and how to list, retrieve and act on them through /api/v2."
-keywords: ["Lago", "invoice", "contract invoice", "v2", "fees", "billing"]
+description: "Learn how Lago invoices group contract fees, which statuses and actions they support, and how to list, retrieve and act on them through /api/v2."
+keywords: ["Lago", "invoice", "contract invoice", "fees", "billing"]
 ---
 
 An [invoice](/v2/api-reference/invoices/retrieve) is the billing document Lago generates from the fees of one or more [contracts](/v2/guide/contracts/overview). Use the invoice endpoints to read what a customer owes, follow its payment status and run the few actions a finalized or draft invoice supports.
@@ -59,7 +59,7 @@ Each line is a fee with `product_code`, `rate_card_code`, `rate_code`, `units` a
 
 ## Invoice types
 
-`invoice_type` tells you why the invoice exists. The v2 list filter accepts two values:
+`invoice_type` tells you why the invoice exists. The list filter accepts two values:
 
 | `invoice_type` | Meaning |
 | --- | --- |
@@ -194,8 +194,8 @@ curl --location --request PATCH "$LAGO_URL/api/v2/invoices/$INVOICE_ID" \
   <Accordion title="Why does GET /api/v2/invoices not return some of my invoices?">
     The v2 list returns contract invoices and invoices containing contract fees. Invoices produced only by the legacy engine are excluded, and retrieving one by `lago_id` returns `404`.
   </Accordion>
-  <Accordion title="Can I create a one-off invoice or preview an invoice in v2?">
-    No. The v2 API has no `POST /invoices` and no invoice preview endpoint. Invoices come from contracts. For an open period, read [current usage](/v2/guide/contracts/current-usage) instead of a preview.
+  <Accordion title="Can I create a one-off invoice or preview an invoice?">
+    No. The API has no `POST /invoices` and no invoice preview endpoint. Invoices come from contracts. For an open period, read [current usage](/v2/guide/contracts/current-usage) instead of a preview.
   </Accordion>
   <Accordion title="Which invoice fields can I edit?">
     Only `payment_status`, through `PUT` or `PATCH /invoices/{lago_id}`. Voided invoices reject updates. To correct amounts on a finalized invoice, issue a [credit note](/v2/guide/invoicing/credit-notes/overview).
