@@ -52,7 +52,7 @@ All payment providers inherit from `PaymentProviders::BaseProvider` through sing
 A few notes about providers:
 - Store custom provider details with `settings_accessors` instead of adding database columns;
 - Use `secrets_accessors` to securely store sensitive data (e.g., API keys); and
-- Map the new PSP's payment status values to Lago's three statuses: processing, success, and failed.
+- Map the new PSP's payment status values to Lago's three statuses: `processing`, `succeeded` and `failed`.
 
 ```ruby
 module PaymentProviders
@@ -89,7 +89,7 @@ Ideally, configure the new Payment Provider to send webhooks any time a payment 
 ```ruby
 URI.join(
   ENV["LAGO_API_URL"],
-  "webhooks/checkoutcom/#{organization_id}?code=#{URI.encode_www_form_component(payment_provider.code)}"
+  "webhooks/checkout_com/#{organization_id}?code=#{URI.encode_www_form_component(payment_provider.code)}"
 )
 ```
 
