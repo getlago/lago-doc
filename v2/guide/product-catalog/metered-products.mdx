@@ -1,0 +1,122 @@
+---
+title: "Metered products"
+description: "Bill usage in Lago with a metered product linked to a billable metric, priced by a rate card. Worked example: 2,000 API calls at $0.01 give a $20 fee."
+keywords: ["Lago", "metered product", "usage-based billing", "billable metric", "rate card"]
+---
+
+A metered product bills a quantity measured from events: a [billable metric](/v2/guide/billable-metrics/create-billable-metrics) aggregates the events sent to a contract, and the product's rate turns that quantity into an amount. Use it for anything you charge by consumption, such as API calls, compute hours or transferred GiB.
+
+## How it fits together
+
+- The **billable metric** turns events into a quantity. It does not set a price.
+- The **product** (`product_type: "metered"`) names what you sell and references the metric with `billable_metric_code`. Neither can change after creation.
+- The **rate card** and its **rate** price the quantity.
+- Optional **[product filters](/v2/guide/product-catalog/product-filters)** split the usage into subsets with their own rate cards.
+
+The metric's aggregation type limits which rate models you can use. For example, `dynamic` requires a SUM metric. See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#metered-products).
+
+## Example
+
+`api_calls_product` uses the `api_calls` COUNT metric: one matching event is one call.
+
+| Product | Rate | Quantity | Period | Amount before tax |
+| --- | --- | --- | --- | --- |
+| API calls | `standard`, `amount: "0.01"`, 1 month | 2,000 calls | Full month | $20.00 |
+
+$0.01 × 2,000 = $20. When reconciling, check the measured units and the applied rate, not only the amount.
+
+## Set up a metered product
+
+Create the billable metric first. Then:
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Create a product with **Type** metered, **Code** `api_calls_product`, **Billable metric** `api_calls` and **Product category** `api_services`.
+    2. Create a rate card `api_calls_usd` for this product: USD, arrears, proration off.
+    3. Add a standard rate `calls_standard` with an amount of 0.01 and a billing interval of 1 month.
+    4. Apply the rate card to the plan `api_monthly`.
+
+    <Note>
+    The fields match the API. Screen-by-screen Dashboard steps are not documented yet.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash 1. Create the metered product
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/products" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "product": {
+          "name": "API calls",
+          "code": "api_calls_product",
+          "product_type": "metered",
+          "billable_metric_code": "api_calls",
+          "product_category_code": "api_services"
+        }
+      }'
+    ```
+
+    ```bash 2. Create the rate card and rate
+    curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "rate_card": {
+          "name": "API calls USD",
+          "code": "api_calls_usd",
+          "product_code": "api_calls_product",
+          "currency": "USD",
+          "billing_timing": "arrears",
+          "proration": false,
+          "rates": [
+            {
+              "code": "calls_standard",
+              "effective_from": "2027-01-01T00:00:00Z",
+              "rate_model": "standard",
+              "rate_properties": { "amount": "0.01" },
+              "billing_interval_count": 1,
+              "billing_interval_unit": "month"
+            }
+          ]
+        }
+      }'
+    ```
+
+    ```bash 3. Apply it to the plan
+    curl --location --request POST "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "applied_rate_card": {
+          "rate_card_code": "api_calls_usd"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+Once a contract uses the plan, send events with `external_contract_id` (see [usage ingestion](/v2/guide/events/ingesting-usage)) and follow the running total with [current usage](/v2/guide/contracts/current-usage).
+
+## Add filters
+
+The running example has no filters. To price usage by region, declare a `region` dimension on the billable metric, create filters on the product, and give each filter its own rate card. Keep a filtered variation separate from the unfiltered 2,000-call baseline so the quantities do not mix. See [product filters](/v2/guide/product-catalog/product-filters).
+
+<CardGroup cols={2}>
+  <Card title="Product filters" icon="filter" href="/v2/guide/product-catalog/product-filters">
+    Price subsets of metered usage.
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Which rate models fit which metric.
+  </Card>
+  <Card title="Create a product" icon="code" href="/v2/api-reference/products/create">
+    `POST /products`
+  </Card>
+  <Card title="Create a rate card" icon="code" href="/v2/api-reference/rate-cards/create">
+    `POST /rate_cards`
+  </Card>
+</CardGroup>

@@ -1,0 +1,86 @@
+---
+title: "Percentage rate model"
+sidebarTitle: "Percentage"
+description: "The Lago percentage rate model bills a percentage of a measured monetary amount, with optional per-event fee and limits. Fields and a 2% of $1,000 example."
+keywords: ["Lago", "percentage pricing", "transaction fees", "rate model", "rate_properties"]
+---
+
+The percentage rate model calculates a fee as a percentage of a measured monetary amount, such as payment volume. Use it for transaction-based pricing, where the metric measures money moved rather than a count of requests.
+
+## How it works
+
+The product's billable metric measures a monetary base, typically a SUM of an `amount` event property. The rate applies `rate` to that base. Optional settings add a fixed fee per event, free allowances, and per-transaction minimums and maximums.
+
+Per-event settings can make the result differ from applying the percentage once to the period total. A per-transaction limit is not the same thing as a rate [spending minimum](/v2/guide/rate-cards/spending-minimums), which applies per billing interval.
+
+## Configure the rate
+
+Set `rate_model` to `percentage`. `rate_properties` takes:
+
+| Field | Description |
+| --- | --- |
+| `rate` | Percentage applied to the measured amount, as a decimal string. |
+| `fixed_amount` | Fixed fee per event, as a decimal string. |
+| `free_units_per_events` | Number of free transactions. |
+| `free_units_per_total_aggregation` | Free allowance on the aggregated amount. |
+| `per_transaction_min_amount` | Minimum charged per transaction. |
+| `per_transaction_max_amount` | Maximum charged per transaction. |
+
+<Note>
+The spec types `rate` as a decimal string without stating its unit. The example sends `"2"` for 2%. Check the resulting fee in a test environment before going live.
+</Note>
+
+<CodeGroup>
+```bash Create a percentage rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/payment_volume_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "payments_2_percent",
+      "effective_from": "2027-01-01T00:00:00Z",
+      "rate_model": "percentage",
+      "rate_properties": {
+        "rate": "2"
+      },
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
+
+## Example
+
+This example is separate from the API-call baseline. A metered product `payment_volume` uses a SUM metric on the transaction amount. In one month, the customer processes $1,000 of transactions, with no fixed fee, free allowance or limit:
+
+| Measured amount | Rate | Calculation | Amount before tax |
+| --- | --- | --- | --- |
+| $1,000.00 | 2% | $1,000.00 × 2% | $20.00 |
+
+The invoice shows one fee of $20.00. With a `fixed_amount` or per-transaction limits, validate the result against a full list of events: those settings apply per event.
+
+## Availability
+
+- Fixed products: not available.
+- Metered products: available with Count, Count unique, Max, Sum and Weighted sum, except with prorated recurring metrics. Not available with Latest. Advance billing is available only for Count, non-prorated Count unique and non-prorated Sum.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
+<CardGroup cols={2}>
+  <Card title="Graduated percentage" icon="percent" href="/v2/guide/rate-cards/pricing-models/graduated-percentage">
+    Percentage tiers.
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Compare every rate model.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="The rate object" icon="code" href="/v2/api-reference/rates/object">
+    `rate_properties` fields.
+  </Card>
+</CardGroup>

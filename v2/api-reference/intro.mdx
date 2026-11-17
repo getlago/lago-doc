@@ -1,0 +1,67 @@
+---
+title: "Introduction"
+description: "Base URLs, authentication and conventions for the Lago API, which powers contracts, the product catalog, rate cards and plans with phases."
+keywords: ["Lago API", "Lago contracts API", "rate cards API", "product catalog API", "billing API"]
+---
+
+import BetaNotice from "/snippets/v2/beta-notice.mdx";
+
+The Lago API is the REST API for the contracts billing engine. Use it to build a product catalog, price it with rate cards, package it in plans and bill customers through contracts.
+
+<BetaNotice />
+
+## Base URLs
+
+| Region | Base URL |
+| --- | --- |
+| US | `https://api.getlago.com/api/v2` |
+| EU | `https://api.eu.getlago.com/api/v2` |
+
+Self-hosted instances expose the same paths under `/api/v2` on your API host.
+
+## Authentication
+
+Every request uses a bearer API key. Create and rotate keys in the dashboard. See [API keys](/guide/security/api-keys).
+
+```bash
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v2/contracts?limit=20" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+Keep API keys server-side. Never ship them in client code or commit them to a repository.
+
+Most catalog and contract endpoints require the product catalog to be enabled on the organization. Each endpoint also checks the read or write permission of the API key on its resource. The requirement is stated on each endpoint page.
+
+## Conventions
+
+- **JSON bodies, wrapped by resource.** A create or update request wraps its fields in the resource key, for example `{"contract": {...}}`.
+- **Codes and external IDs as identifiers.** Catalog objects use your `code`. Customers and contracts use your `external_id`. Invoices, fees and payments use the `lago_id` that Lago returns.
+- **PUT and PATCH.** Both update a resource. Each endpoint page lists the accepted fields.
+- **Cursor pagination.** Lists use `limit`, `after` and `before`. See [Pagination](/v2/api-reference/pagination).
+- **Opt-in expansions.** Related objects are returned only when you ask with `expands[]`. See [Expansions](/v2/api-reference/expansions).
+- **Structured errors.** Failures return a `code` and a `details` array. See [Errors](/v2/api-reference/errors).
+- **Beta header.** Responses carry `X-Lago-Endpoint-Status: beta`.
+
+## API scope
+
+This reference documents the native v2 endpoints only: product catalog, rate cards, plans, contracts, billing, customers, organizations, billing entities, billable metrics, events, logs and webhook endpoints. Only the documented actions and expansions are supported. Some other `/api/v2` paths fall back to v1 controllers and are not described here. Use the [v1 API reference](/api-reference/intro) for subscriptions and the features v2 does not cover yet.
+
+The complete machine-readable contract is the [OpenAPI specification](https://swagger.getlago.com/openapi-v2.yaml). Generate clients from it and review diffs before upgrading.
+
+<CardGroup cols={2}>
+  <Card title="Your first invoice" icon="rocket" href="/v2/guide/introduction/your-first-invoice">
+    Go from product to contract to invoice with the API.
+  </Card>
+  <Card title="Contracts vs subscriptions" icon="code-compare" href="/v2/guide/introduction/contracts-vs-subscriptions">
+    What changed between v1 and v2, and which one to use.
+  </Card>
+  <Card title="Create a contract" icon="file-signature" href="/v2/api-reference/contracts/create">
+    `POST /contracts`
+  </Card>
+  <Card title="Ingest an event" icon="bolt" href="/v2/api-reference/events/create">
+    `POST /events` with `external_contract_id`
+  </Card>
+</CardGroup>

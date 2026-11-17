@@ -1,0 +1,94 @@
+---
+title: "Graduated rate model"
+sidebarTitle: "Graduated"
+description: "The Lago graduated rate model prices each slice of quantity at its own tier price, with optional flat fees. Configure graduated_ranges, with a 250-call example."
+keywords: ["Lago", "graduated pricing", "tiered pricing", "graduated_ranges", "rate model"]
+---
+
+The graduated rate model defines several price tiers and prices each slice of the quantity at its own tier's unit price. Use it to give a volume discount on the units above a threshold while the first units keep their original price.
+
+## How it works
+
+Tiers are ordered by their upper bound. The quantity fills tier 1 up to its `to_value`, then tier 2, and so on. Each slice is billed at its tier's `per_unit_amount`. A tier can also carry a `flat_amount`: a flat fee for the whole tier, on top of its unit prices. The last tier has `to_value: null` and is open-ended.
+
+## Configure the rate
+
+Set `rate_model` to `graduated` and describe the tiers in `rate_properties.graduated_ranges`. Each tier is a `RateTierInput`:
+
+| Field | Description |
+| --- | --- |
+| `to_value` | Upper bound of the tier, as a decimal string. `null` on the last tier. Bounds must increase. |
+| `per_unit_amount` | Price per unit in this tier. |
+| `flat_amount` | Flat fee for the tier. Use `"0"` for none. |
+
+Do not send `from_value`.
+
+<CodeGroup>
+```bash Create a graduated rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "calls_graduated",
+      "effective_from": "2027-07-01T00:00:00Z",
+      "rate_model": "graduated",
+      "rate_properties": {
+        "graduated_ranges": [
+          { "to_value": "100", "per_unit_amount": "1.00", "flat_amount": "0" },
+          { "to_value": "200", "per_unit_amount": "0.50", "flat_amount": "0" },
+          { "to_value": null, "per_unit_amount": "0.10", "flat_amount": "0" }
+        ]
+      },
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
+
+## Example
+
+Each unit is an API call:
+
+| Tier | Up to (`to_value`) | Unit price | Flat fee |
+| --- | --- | --- | --- |
+| Tier 1 | 100 | $1.00 | $0 |
+| Tier 2 | 200 | $0.50 | $0 |
+| Tier 3 | ∞ (`null`) | $0.10 | $0 |
+
+With 250 calls in the billing period:
+
+| Tier | Units | Calculation | Amount |
+| --- | --- | --- | --- |
+| Tier 1 | 100 | 100 × $1.00 | $100.00 |
+| Tier 2 | 100 | 100 × $0.50 | $50.00 |
+| Tier 3 | 50 | 50 × $0.10 | $5.00 |
+| **Fee** | **250** | | **$155.00** |
+
+The invoice shows one API calls fee of $155.00 before tax, with `units` 250.
+
+## Availability
+
+- Fixed products: available. Advance billing is unavailable when the rate card is prorated.
+- Metered products: available for every aggregation except prorated recurring Weighted sum. Advance billing is available only for Count, non-prorated Count unique and non-prorated Sum.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
+<CardGroup cols={2}>
+  <Card title="Volume" icon="layer-group" href="/v2/guide/rate-cards/pricing-models/volume">
+    One tier price for all units.
+  </Card>
+  <Card title="Graduated percentage" icon="percent" href="/v2/guide/rate-cards/pricing-models/graduated-percentage">
+    Percentage tiers on an amount.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Compare every rate model.
+  </Card>
+</CardGroup>

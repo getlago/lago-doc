@@ -1,0 +1,152 @@
+---
+title: "Building a plan"
+description: "Bundle reusable rate cards into a plan that many customers share, set fixed quantities, and verify the offer before a contract uses it."
+keywords: ["Lago", "plan", "applied rate card", "contracts"]
+---
+
+A [plan](/v2/api-reference/plans/object) is a reusable offer: a set of rate cards applied together, in one currency, that you attach to customers through contracts. Use a plan when several customers buy the same offer, and keep the prices themselves on [rate cards and rates](/v2/guide/rate-cards/overview).
+
+## How it fits together
+
+- A [product category](/v2/guide/product-catalog/product-categories) organizes products.
+- A [rate card](/v2/guide/rate-cards/overview) prices one product or product filter. Its [rates](/v2/guide/rate-cards/rates) hold the price timeline.
+- A plan applies rate cards. Each one becomes an [`applied_rate_card`](/v2/api-reference/plan-applied-rate-cards/object) on the plan.
+- A [contract](/v2/guide/contracts/overview) connects the plan to one customer and starts their billing timeline.
+
+## Plan rules
+
+| Rule | Detail |
+| --- | --- |
+| One currency | Every applied rate card must use the plan's `currency`. |
+| One card per target | Only one rate card may price each product or product filter combination on a plan. |
+| Fixed quantity | `units` sets the quantity for fixed pricing, as a decimal string. Null uses the default quantity. |
+| Phases | Each applied rate card holds a `rate_phases` sequence. Omitted or null creates one default indefinite phase. See [Plan phases and overrides](/v2/guide/plans/plan-phases). |
+| Locking | A plan attached to a contract is locked. See [Manage plan changes](/v2/guide/plans/manage-plan-changes). |
+| No deletion | The API has no plan DELETE operation. |
+
+## Example
+
+The running example builds `api_monthly` in USD from two rate cards:
+
+| Applied rate card | Product | Rate | Units |
+| --- | --- | --- | --- |
+| `monthly_service_usd` | `monthly_service` (fixed) | `monthly_standard`: $100 per month | `"1"` |
+| `api_calls_usd` | `api_calls_product` (metered on `api_calls`) | `calls_standard`: $0.01 per call | Measured from events |
+
+Both rate cards bill in arrears with `proration: false`. A customer on this plan who makes 2,000 API calls in a full month is billed:
+
+| Invoice line | Quantity | Unit price | Amount |
+| --- | --- | --- | --- |
+| Monthly service | 1 | $100.00 | $100.00 |
+| API calls | 2,000 | $0.01 | $20.00 |
+| **Subtotal before tax** | | | **$120.00** |
+
+## Create a plan
+
+Create the rate cards first. Then create the plan and apply each card.
+
+<Tabs>
+  <Tab title="Dashboard">
+    <Note>
+      Dashboard steps for plans are not documented yet. Use the API tab while the API is in beta.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash 1. Create the plan
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/plans" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "plan": {
+          "name": "API monthly",
+          "code": "api_monthly",
+          "currency": "USD"
+        }
+      }'
+    ```
+
+    ```bash 2. Apply the fixed rate card
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "applied_rate_card": {
+          "rate_card_code": "monthly_service_usd",
+          "units": "1"
+        }
+      }'
+    ```
+
+    ```bash 3. Apply the metered rate card
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "applied_rate_card": {
+          "rate_card_code": "api_calls_usd"
+        }
+      }'
+    ```
+    </CodeGroup>
+
+    The plan also accepts `description`, `invoice_display_name` (defaults to the name when blank) and `tax_codes`.
+  </Tab>
+</Tabs>
+
+## Verify the plan
+
+Retrieve the plan, then list its applied rate cards. Check the two targets, the currency and the fixed quantity before you create a contract.
+
+```bash List applied rate cards
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+An applied rate card can carry phases and pricing overrides. Read them with the source rate card. The source rate alone is not always the effective price.
+
+## Permissions
+
+Plan endpoints require the product catalog to be enabled. The API key needs `plan` read or write permission for the plan, and `plan_rate_card` read or write permission for applied rate cards and phases.
+
+<AccordionGroup>
+  <Accordion title="Can a plan mix currencies?">
+    No. Every applied rate card must use the plan's currency. Create one plan per currency.
+  </Accordion>
+  <Accordion title="Can two rate cards price the same product on one plan?">
+    No. Only one rate card may price each product or product filter combination. Use [product filters](/v2/guide/product-catalog/product-filters) to price slices of a metered product separately.
+  </Accordion>
+  <Accordion title="Can I edit a plan after customers use it?">
+    Only its tax codes. A plan attached to a contract is locked. Create a new plan for a different offer. See [Manage plan changes](/v2/guide/plans/manage-plan-changes).
+  </Accordion>
+  <Accordion title="Does a price change on a rate card reach customers on the plan?">
+    Yes, unless a phase overrides it. When a new rate becomes active, it applies to plans and contracts that do not override it. See [Plan phases and overrides](/v2/guide/plans/plan-phases).
+  </Accordion>
+</AccordionGroup>
+
+<CardGroup cols={2}>
+  <Card title="Plan phases and overrides" icon="timeline" href="/v2/guide/plans/plan-phases">
+    Add introductory pricing and ongoing terms.
+  </Card>
+  <Card title="Contracts" icon="file-signature" href="/v2/guide/contracts/overview">
+    Attach the plan to a customer.
+  </Card>
+  <Card title="Create a plan (API)" icon="code" href="/v2/api-reference/plans/create">
+    `POST /plans`
+  </Card>
+  <Card title="Create an applied rate card (API)" icon="code" href="/v2/api-reference/plan-applied-rate-cards/create">
+    `POST /plans/{plan_code}/applied_rate_cards`
+  </Card>
+</CardGroup>

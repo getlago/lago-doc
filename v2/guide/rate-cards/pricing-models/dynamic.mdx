@@ -1,0 +1,100 @@
+---
+title: "Dynamic rate model"
+sidebarTitle: "Dynamic"
+description: "The Lago dynamic rate model bills the amount sent on each event in precise_total_amount_cents. Requires a SUM metric. Event payload and a $1.25 worked example."
+keywords: ["Lago", "dynamic pricing", "precise_total_amount_cents", "SUM metric", "rate model"]
+---
+
+The dynamic rate model bills the amount that each event carries in `precise_total_amount_cents`, instead of applying a unit price. Use it when you calculate prices outside Lago, or when prices change during the period, such as SMS routes or AI model costs.
+
+## How it works
+
+- The product's billable metric must use SUM (`sum_agg`). It measures the quantity, for example the units in each event.
+- Each event sends its own total in `precise_total_amount_cents`: a finite amount in cents, as a number or decimal string.
+- The fee is the sum of those event amounts for the period.
+
+The quantity and the amount are separate. Do not send the same value as both a unit count and a total.
+
+## Configure the rate
+
+Set `rate_model` to `dynamic`. The model needs no `rate_properties`.
+
+<CodeGroup>
+```bash Create a dynamic rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/sms_messages_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "sms_dynamic",
+      "effective_from": "2027-01-01T00:00:00Z",
+      "rate_model": "dynamic",
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+
+```bash Send events with their amounts
+curl --location --request POST "$LAGO_URL/api/v2/events/batch" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "events": [
+      {
+        "transaction_id": "sms_0001",
+        "code": "sms_units",
+        "external_contract_id": "contract_example",
+        "precise_total_amount_cents": "70",
+        "properties": { "units": "7" }
+      },
+      {
+        "transaction_id": "sms_0002",
+        "code": "sms_units",
+        "external_contract_id": "contract_example",
+        "precise_total_amount_cents": "55",
+        "properties": { "units": "5" }
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+## Example
+
+This example is separate from the API-call baseline. A metered product `sms_messages` uses `sms_units`, a SUM metric on the `units` property. Two events arrive in the month:
+
+| Event | `units` | `precise_total_amount_cents` |
+| --- | --- | --- |
+| `sms_0001` | 7 | 70 |
+| `sms_0002` | 5 | 55 |
+| **Total** | **12** | **125** |
+
+The invoice shows one fee with 12 units and an amount of $1.25 before tax: 70 + 55 = 125 cents.
+
+Send `precise_total_amount_cents` on every event priced this way. The documentation does not define a fallback price for events without it.
+
+## Availability
+
+- Fixed products: not available.
+- Metered products: SUM metrics only, non-recurring or recurring without proration. Arrears and advance.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
+<CardGroup cols={2}>
+  <Card title="Usage ingestion" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
+    Send events to a contract.
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Compare every rate model.
+  </Card>
+  <Card title="Ingest a batch of events" icon="code" href="/v2/api-reference/events/batch">
+    `POST /events/batch`
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+</CardGroup>

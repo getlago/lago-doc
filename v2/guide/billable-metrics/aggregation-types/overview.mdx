@@ -1,0 +1,37 @@
+---
+title: "Choosing an aggregation type"
+description: "Compare the six aggregation types (count, count unique, latest, max, sum, weighted sum) and pick the one that turns your events into a billable quantity."
+keywords: ["Lago", "aggregation type", "billable metric", "aggregation_type"]
+---
+
+An aggregation type is the function a billable metric applies to its events to produce a billable quantity for each billing period. Pick it from what one event represents: one action (Count), a distinct entity (Count unique) or a numeric reading (Sum, Max, Latest, Weighted sum).
+
+| Aggregation | `aggregation_type` | What it does | Formula | Can be recurring |
+| --- | --- | --- | --- | --- |
+| [Count](/v2/guide/billable-metrics/aggregation-types/count) | `count_agg` | Counts the events received. | `COUNT(events.code)` | No |
+| [Count unique](/v2/guide/billable-metrics/aggregation-types/count-unique) | `unique_count_agg` | Counts the distinct values of a property. | `COUNT_DISTINCT(events.properties.property_name)` | Yes |
+| [Latest](/v2/guide/billable-metrics/aggregation-types/latest) | `latest_agg` | Keeps the most recent value of a property. | `LAST_VALUE(events.properties.property_name) OVER (ORDER BY events.timestamp)` | No |
+| [Max](/v2/guide/billable-metrics/aggregation-types/max) | `max_agg` | Keeps the highest value of a property. | `MAX(events.properties.property_name)` | No |
+| [Sum](/v2/guide/billable-metrics/aggregation-types/sum) | `sum_agg` | Adds up a property. | `SUM(events.properties.property_name)` | Yes |
+| [Weighted sum](/v2/guide/billable-metrics/aggregation-types/weighted-sum) | `weighted_sum_agg` | Adds up a property, prorated by the time each value was held. | `SUM(events.properties.property_name) / (DATEDIFF(SECOND, timestamp.event_1, timestamp.event_2) + 1) * (DATEDIFF(SECOND, 'period_start', 'period_end') + 1)` | Yes |
+
+<Note>
+  Count counts events. Every other type aggregates one event property, named in `field_name` or computed with an [`expression`](/v2/guide/billable-metrics/sql-expressions). The result is the quantity that the [rate](/v2/guide/rate-cards/rates) on the metered product's rate card prices.
+</Note>
+
+The [Dynamic](/v2/guide/rate-cards/pricing-models/dynamic) rate model requires a metric with `sum_agg`.
+
+<CardGroup cols={2}>
+  <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">
+    The same events under every type.
+  </Card>
+  <Card title="Recurring vs metered" icon="repeat" href="/v2/guide/billable-metrics/recurring-vs-metered">
+    Carry values across periods or reset them.
+  </Card>
+  <Card title="Create billable metrics" icon="ruler" href="/v2/guide/billable-metrics/create-billable-metrics">
+    Define a metric step by step.
+  </Card>
+  <Card title="Billable metric object (API)" icon="code" href="/v2/api-reference/billable-metrics/object">
+    Every metric field.
+  </Card>
+</CardGroup>

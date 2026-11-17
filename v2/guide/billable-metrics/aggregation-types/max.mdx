@@ -1,0 +1,97 @@
+---
+title: "Max"
+sidebarTitle: "Max"
+description: "Bill on the highest value of an event property reached in a billing period with the max_agg aggregation, with a worked event example and payload."
+keywords: ["Lago", "billable metric", "max_agg", "MAX"]
+---
+
+The Max aggregation (`max_agg`) keeps the highest value of one event property in the billing period. Use it for peak-based pricing, such as the maximum number of CPUs or the peak storage used.
+
+<Frame caption="Max calculation method">
+  <img src="/guide/images/max.png" alt="Diagram of the Max aggregation, keeping the highest value of a property" />
+</Frame>
+
+## Create a max billable metric
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Access the **Billable metrics** section in the side menu.
+    2. Create a new billable metric.
+    3. Define a name, a code and an optional description.
+    4. Select **Max** as the aggregation type.
+    5. Define the property to aggregate.
+    6. Apply filters if any.
+    7. Click **Add billable metric**.
+
+    <Info>
+      This metric is metered only. It cannot be recurring, and the aggregated value resets to 0 at the end of each billing period.
+    </Info>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+          "billable_metric": {
+            "name": "API requests",
+            "code": "api_requests",
+            "description": "Peak number of API requests.",
+            "aggregation_type": "max_agg",
+            "field_name": "total_requests",
+            "recurring": false
+          }
+        }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Calculation example
+
+Lago calculates `MAX(events.properties.total_requests)` for the two events below, sent to `contract_example` in January 2027.
+
+```json
+// Event received #1
+{
+  "transaction_id": "transaction_1",
+  "external_contract_id": "contract_example",
+  "code": "api_requests",
+  "timestamp": 1800057600,
+  "properties": {
+    "total_requests": 20
+  }
+}
+
+// Event received #2
+{
+  "transaction_id": "transaction_2",
+  "external_contract_id": "contract_example",
+  "code": "api_requests",
+  "timestamp": 1800144000,
+  "properties": {
+    "total_requests": 10
+  }
+}
+```
+
+Lago takes the highest value of the `total_requests` property, **resulting in a billable value of 20 units.**
+
+<CardGroup cols={2}>
+  <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">
+    The same events under every aggregation type.
+  </Card>
+  <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
+    Price the quantity this metric measures.
+  </Card>
+  <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
+    `POST /billable_metrics`
+  </Card>
+  <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
+    Send events with `external_contract_id`.
+  </Card>
+</CardGroup>

@@ -1,0 +1,119 @@
+---
+title: "Fixed products"
+description: "Bill recurring fees in Lago with a fixed product: the quantity comes from the applied rate card's units, not from events. Includes the $100 monthly example."
+keywords: ["Lago", "fixed product", "recurring fee", "units", "rate card"]
+---
+
+A fixed product bills a quantity agreed in advance, such as one platform license or ten licensed seats, rather than a quantity measured from events. Use it for recurring fees: it replaces the v1 plan subscription fee.
+
+## How it fits together
+
+- The **product** (`product_type: "fixed"`) names the service. It never references a billable metric.
+- The **applied rate card** holds the quantity in `units`, a decimal string.
+- The **rate** supplies the price, the rate model and the billing interval.
+
+No usage events are needed. Fixed products support three rate models: `standard`, `graduated` and `volume`. `volume` is billed in arrears only. See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#fixed-products).
+
+## Example
+
+`monthly_service` bills $100 per month for one unit.
+
+| Product | Rate | `units` | Period | Amount before tax |
+| --- | --- | --- | --- | --- |
+| Monthly service | `standard`, `amount: "100"`, 1 month | 1 | Full month, no proration | $100.00 |
+
+$100 × 1 = $100. When reconciling, compare the fee's `units` and period, not its amount alone.
+
+## Set up a fixed product
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Create a product with **Type** fixed, **Code** `monthly_service` and **Product category** `api_services`. Do not select a billable metric.
+    2. Create a rate card `monthly_service_usd` for this product: USD, arrears, proration off.
+    3. Add a standard rate `monthly_standard` with an amount of 100 and a billing interval of 1 month.
+    4. Apply the rate card to the plan `api_monthly` with a quantity of 1.
+
+    <Note>
+    The fields match the API. Screen-by-screen Dashboard steps are not documented yet.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash 1. Create the fixed product
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/products" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "product": {
+          "name": "Monthly service",
+          "code": "monthly_service",
+          "product_type": "fixed",
+          "product_category_code": "api_services"
+        }
+      }'
+    ```
+
+    ```bash 2. Create the rate card and rate
+    curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "rate_card": {
+          "name": "Monthly service USD",
+          "code": "monthly_service_usd",
+          "product_code": "monthly_service",
+          "currency": "USD",
+          "billing_timing": "arrears",
+          "proration": false,
+          "rates": [
+            {
+              "code": "monthly_standard",
+              "effective_from": "2027-01-01T00:00:00Z",
+              "rate_model": "standard",
+              "rate_properties": { "amount": "100" },
+              "billing_interval_count": 1,
+              "billing_interval_unit": "month"
+            }
+          ]
+        }
+      }'
+    ```
+
+    ```bash 3. Apply it to the plan with units
+    curl --location --request POST "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "applied_rate_card": {
+          "rate_card_code": "monthly_service_usd",
+          "units": "1"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+`units` set on the plan is the initial configuration. A plan attached to a contract is locked, so set the quantity before any contract uses the plan.
+
+<Note>
+Product filters are not available on fixed products. For several fixed tiers of the same service, such as Admin seat and Read-only seat, create one fixed product per tier.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
+    Usage measured by a billable metric.
+  </Card>
+  <Card title="Rate cards" icon="tags" href="/v2/guide/rate-cards/overview">
+    Currency, billing timing and proration.
+  </Card>
+  <Card title="Create a plan applied rate card" icon="code" href="/v2/api-reference/plan-applied-rate-cards/create">
+    `POST /plans/{plan_code}/applied_rate_cards`
+  </Card>
+  <Card title="Create a product" icon="code" href="/v2/api-reference/products/create">
+    `POST /products`
+  </Card>
+</CardGroup>

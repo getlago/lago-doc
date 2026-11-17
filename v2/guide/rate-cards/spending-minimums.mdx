@@ -1,0 +1,90 @@
+---
+title: "Spending minimums"
+sidebarTitle: "Spending minimums"
+description: "Set a spending minimum on a Lago rate with min_amount_cents: the minimum applies per rate billing interval, arrears only. Worked monthly and quarterly examples."
+keywords: ["Lago", "spending minimum", "min_amount_cents", "true-up", "rate"]
+---
+
+A spending minimum sets the minimum amount charged for one [rate](/v2/guide/rate-cards/rates) over each of its billing intervals. Use it when a product must bill at least a floor amount per period, whatever the usage.
+
+## How it fits together
+
+- The minimum lives on the rate, in `min_amount_cents`, next to `billing_interval_count` and `billing_interval_unit`.
+- It applies per billing interval of that rate. A monthly rate has a minimum per month. A rate billed every three months has one minimum per three-month period.
+- It is supported only when the rate card bills in `arrears`. It defaults to `0`.
+- It is a rate-level minimum. It is not a customer-wide commitment, and it is not the per-transaction limit of the [percentage](/v2/guide/rate-cards/pricing-models/percentage) model.
+
+## Example
+
+The API call rate of the running example, $0.01 per call, gets a $30 monthly minimum.
+
+| Scenario | Interval | Priced usage | Minimum | Shortfall | Total before tax |
+| --- | --- | --- | --- | --- | --- |
+| 2,000 calls in a full month | 1 month | $20.00 | $30.00 | $10.00 | $30.00 |
+| 4,000 calls in a full month | 1 month | $40.00 | $30.00 | $0.00 | $40.00 |
+| 2,000 calls in each month of a full quarter | 3 months | $60.00 | $30.00 | $0.00 | $60.00 |
+
+In the first row, the invoice shows the $20.00 usage fee and a $10.00 true-up, which bring the total to $30.00. The true-up fee references its parent fee through `lago_true_up_parent_fee_id`. Do not add the whole $30 minimum on top of usage.
+
+In the third row, the minimum applies once over the three-month period. It is not $30 per month.
+
+These examples use full periods. The baseline example has no minimum and stays at $120.
+
+## Configure the minimum
+
+<Tabs>
+  <Tab title="Dashboard">
+    On the rate card `api_calls_usd`, add or edit a pending rate with these values:
+    1. **Model**: standard, **Amount**: 0.01
+    2. **Billing interval**: 1 month
+    3. **Spending minimum**: 30
+
+    <Note>
+    The fields match the API. Screen-by-screen Dashboard steps are not documented yet.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Create a rate with a spending minimum
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "rate": {
+          "code": "calls_with_minimum",
+          "effective_from": "2027-07-01T00:00:00Z",
+          "rate_model": "standard",
+          "rate_properties": { "amount": "0.01" },
+          "min_amount_cents": 3000,
+          "billing_interval_count": 1,
+          "billing_interval_unit": "month"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+`min_amount_cents: 3000` is $30.00 in USD. An active rate rejects changes to `min_amount_cents`. To change the minimum, add a new rate with a later `effective_from`.
+
+## Partial periods
+
+These examples do not cover shortened periods, such as a first cycle that ends on the billing anchor date. Check how the minimum applies to a partial period in a test environment before relying on it.
+
+<CardGroup cols={2}>
+  <Card title="Rates" icon="clock-rotate-left" href="/v2/guide/rate-cards/rates">
+    Billing intervals and effective dates.
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Spending minimum availability.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="List fees" icon="code" href="/v2/api-reference/fees/list">
+    `GET /fees`
+  </Card>
+</CardGroup>

@@ -1,0 +1,298 @@
+---
+title: "Clone Segment pricing"
+sidebarTitle: "Clone Segment pricing"
+description: "Rebuild Segment's hybrid pricing in Lago: a fixed product billed in advance plus graduated usage on monthly tracked users, applied with a contract."
+keywords: ["Lago", "hybrid pricing", "Segment", "graduated", "fixed product", "contract"]
+---
+
+import SetupLago from "/snippets/v2/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/v2/templates/create-customer.mdx";
+import CreateContract from "/snippets/v2/templates/create-contract.mdx";
+import ContractUsage from "/snippets/v2/templates/contract-usage.mdx";
+
+This template builds hybrid pricing like Segment's with Lago: a fixed monthly platform fee plus a graduated usage component. Use it when a recurring fee covers base access and usage above an included volume grows revenue with your customers.
+
+Legacy (v1): [Clone Segment pricing with subscriptions](/templates/hybrid/segment).
+
+## Pricing structure
+
+Segment's Team plan combines a platform fee with usage on monthly tracked users (MTUs), the number of unique users whose data is stored each month.
+
+| Team plan | Price |
+|---|---|
+| Platform fee | $120/month |
+| Included consumption | 10,000 MTUs |
+| 10,001 to 25,000 MTUs | $0.012/MTU |
+| 25,001 to 100,000 MTUs | $0.011/MTU |
+| 100,001+ MTUs | $0.010/MTU |
+
+## How it maps to Lago
+
+| Pricing element | Lago object |
+|---|---|
+| Platform fee | Fixed product `team_platform_fee`, rate card `team_platform_fee_usd` (advance), `standard` rate at $120/month, applied with `units: "1"` |
+| MTU usage | Billable metric `mtu` (`unique_count_agg` on `user_id`), metered product `monthly_tracked_users` |
+| Tiered MTU price | Rate card `mtu_usd` (arrears) with a `graduated` rate |
+| The offer | Plan `segment_team` |
+
+## Get started
+
+<Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
+
+  <Step title="Create a billable metric">
+    Count unique users per billing period.
+
+    <CodeGroup>
+      ```bash cURL highlight={6,8-10}
+      curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "Monthly tracked users",
+            "code": "mtu",
+            "aggregation_type": "unique_count_agg",
+            "field_name": "user_id",
+            "recurring": false
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/billable-metrics/create).
+  </Step>
+
+  <Step title="Create the products">
+    Create a fixed product for the platform fee. Fixed products reject `billable_metric_code`.
+
+    <CodeGroup>
+      ```bash cURL highlight={7}
+      curl --location --request POST "$LAGO_URL/api/v2/products" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "product": {
+            "name": "Team platform fee",
+            "code": "team_platform_fee",
+            "product_type": "fixed"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Create a metered product for MTUs.
+
+    <CodeGroup>
+      ```bash cURL highlight={7-8}
+      curl --location --request POST "$LAGO_URL/api/v2/products" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "product": {
+            "name": "Monthly tracked users",
+            "code": "monthly_tracked_users",
+            "product_type": "metered",
+            "billable_metric_code": "mtu"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [fixed products](/v2/guide/product-catalog/fixed-products) and [metered products](/v2/guide/product-catalog/metered-products) guides.
+  </Step>
+
+  <Step title="Create the rate cards">
+    The platform fee is billed in advance with a `standard` rate of $120 per month. Fixed products support `standard`, `graduated` and `volume` only.
+
+    <CodeGroup>
+      ```bash cURL highlight={9,14-19}
+      curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "rate_card": {
+            "name": "Team platform fee USD",
+            "code": "team_platform_fee_usd",
+            "product_code": "team_platform_fee",
+            "currency": "USD",
+            "billing_timing": "advance",
+            "proration": false,
+            "rates": [
+              {
+                "code": "team_fee_standard",
+                "effective_from": "2027-01-01T00:00:00Z",
+                "rate_model": "standard",
+                "rate_properties": { "amount": "120" },
+                "billing_interval_count": 1,
+                "billing_interval_unit": "month"
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    MTUs are billed in arrears with a `graduated` rate. Each tier sets an upper bound with `to_value`. Do not send `from_value`. The last tier has `to_value: null`.
+
+    <CodeGroup>
+      ```bash cURL expandable highlight={9,14-25}
+      curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "rate_card": {
+            "name": "Monthly tracked users USD",
+            "code": "mtu_usd",
+            "product_code": "monthly_tracked_users",
+            "currency": "USD",
+            "billing_timing": "arrears",
+            "proration": false,
+            "rates": [
+              {
+                "code": "mtu_graduated",
+                "effective_from": "2027-01-01T00:00:00Z",
+                "rate_model": "graduated",
+                "rate_properties": {
+                  "graduated_ranges": [
+                    { "to_value": "10000", "per_unit_amount": "0", "flat_amount": "0" },
+                    { "to_value": "25000", "per_unit_amount": "0.012", "flat_amount": "0" },
+                    { "to_value": "100000", "per_unit_amount": "0.011", "flat_amount": "0" },
+                    { "to_value": null, "per_unit_amount": "0.010", "flat_amount": "0" }
+                  ]
+                },
+                "billing_interval_count": 1,
+                "billing_interval_unit": "month"
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/rate-cards/create) and the [graduated model](/v2/guide/rate-cards/pricing-models/graduated).
+  </Step>
+
+  <Step title="Create a plan and apply the rate cards">
+    <CodeGroup>
+      ```bash cURL highlight={6-7}
+      curl --location --request POST "$LAGO_URL/api/v2/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Segment Team",
+            "code": "segment_team",
+            "currency": "USD"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Apply the platform fee with one fixed unit:
+
+    <CodeGroup>
+      ```bash cURL highlight={6-7}
+      curl --location --request POST "$LAGO_URL/api/v2/plans/segment_team/applied_rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "applied_rate_card": {
+            "rate_card_code": "team_platform_fee_usd",
+            "units": "1"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Apply the MTU rate card:
+
+    <CodeGroup>
+      ```bash cURL highlight={6}
+      curl --location --request POST "$LAGO_URL/api/v2/plans/segment_team/applied_rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "applied_rate_card": {
+            "rate_card_code": "mtu_usd"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/plan-applied-rate-cards/create) and the [plans guide](/v2/guide/plans/overview).
+  </Step>
+
+  <Step title="Create a customer">
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a contract">
+    Replace `__PLAN_CODE__` with `segment_team`.
+
+    <CreateContract />
+  </Step>
+
+  <Step title="Ingest usage via events">
+    Send one event per tracked user. Repeated `user_id` values in the same period count once.
+
+    <CodeGroup>
+      ```bash cURL highlight={7-10}
+      curl --location --request POST "$LAGO_URL/api/v2/events" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "mtu",
+            "external_contract_id": "contract_example",
+            "properties": {
+              "user_id": "user_001"
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/events/create) and the [usage ingestion guide](/v2/guide/events/ingesting-usage).
+  </Step>
+
+  <Step title="Monitor current usage">
+    <ContractUsage />
+  </Step>
+</Steps>
+
+## Worked example
+
+Over one full monthly period, the customer tracks 30,000 unique users. The platform fee is billed in advance for the period. The MTU fee is billed in arrears at the end of the period.
+
+| Line | Quantity | Calculation | Amount |
+|---|---|---|---|
+| Team platform fee | 1 unit | 1 × $120 | $120.00 |
+| MTUs, tier 1 | 10,000 | 10,000 × $0 | $0.00 |
+| MTUs, tier 2 | 15,000 | 15,000 × $0.012 | $180.00 |
+| MTUs, tier 3 | 5,000 | 5,000 × $0.011 | $55.00 |
+| **Total for the period before tax** | | | **$355.00** |
+
+## What changed from v1
+
+- The plan's subscription fee becomes a fixed product, a rate card with `billing_timing: "advance"` and a `standard` rate, applied with `units`.
+- The v1 template used a 14-day trial. v2 has no trial setting, and rate phases count billing cycles, not days. To offer an introductory price, use [plan phases](/v2/guide/plans/plan-phases) with a `rate_override`.
+- Events target `external_contract_id` instead of `external_subscription_id`.
+
+<CardGroup cols={2}>
+  <Card title="Fixed products" icon="cube" href="/v2/guide/product-catalog/fixed-products">
+    Price configured quantities without usage events.
+  </Card>
+  <Card title="Graduated model" icon="stairs" href="/v2/guide/rate-cards/pricing-models/graduated">
+    Price quantity across tiers.
+  </Card>
+  <Card title="Plan phases" icon="timeline" href="/v2/guide/plans/plan-phases">
+    Introductory pricing measured in billing cycles.
+  </Card>
+  <Card title="Apply a rate card to a plan (API)" icon="code" href="/v2/api-reference/plan-applied-rate-cards/create">
+    `POST /api/v2/plans/{plan_code}/applied_rate_cards`
+  </Card>
+</CardGroup>

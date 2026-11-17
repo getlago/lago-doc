@@ -1,0 +1,147 @@
+---
+title: "Product categories"
+description: "Group related Lago products under a product category to organize usage and invoice output, assign or clear categories, and delete them safely."
+keywords: ["Lago", "product category", "product catalog", "invoice grouping"]
+---
+
+A [product category](/v2/api-reference/product-categories/object) groups related products in usage and billing output, so customers see which products contribute to a group of fees on their invoice. Use one when grouping makes the offer easier to read. A product can also stand alone.
+
+## How it fits together
+
+A category provides a grouping and a display name. Each product inside it is something you bill for, such as Compute, Bandwidth or a platform fee. A metered product can have filters, such as compute sizes.
+
+Pricing lives elsewhere. A [rate card](/v2/guide/rate-cards/overview) targets a product or a filter and contains rates. A [plan](/v2/guide/plans/overview) assembles rate cards into an offer. Assigning a product to a category does not price it, add it to a plan or bill anyone.
+
+## Example
+
+**Usage rates** groups the infrastructure services you sell:
+
+```txt
+Usage rates                     Product category
+├── Compute                     Product
+│   ├── Flex 512MiB             Filter
+│   └── Flex 1GiB               Filter
+└── Bandwidth                   Product
+
+Seat                            Standalone product
+├── Admin                       Filter
+└── Read-only                   Filter
+
+Platform fee                    Standalone product
+```
+
+Compute uses filters for machine sizes. Bandwidth joins the same category without filters. Seat uses filters without a category. Platform fee is a standalone fixed product. These structures coexist.
+
+## Category fields
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `name` | Yes | Name shown in the catalog, such as `Usage rates`. |
+| `code` | Yes | Unique code within your organization, such as `usage_rates`. |
+| `invoice_display_name` | No | Name used on invoices. When blank, Lago uses `name`. |
+| `description` | No | Internal description. |
+
+## Create a category
+
+<Tabs>
+  <Tab title="Dashboard">
+    Create a product category with these values:
+    1. **Name**: `Usage rates`
+    2. **Code**: `usage_rates`
+    3. **Invoice display name** (optional): `Infrastructure usage`
+    4. **Description** (optional): `Compute and bandwidth services.`
+
+    <Note>
+    The fields match the API. Screen-by-screen Dashboard steps are not documented yet.
+    </Note>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Create a product category
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/product_categories" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "product_category": {
+          "name": "Usage rates",
+          "code": "usage_rates",
+          "invoice_display_name": "Infrastructure usage",
+          "description": "Compute and bandwidth services."
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Assign products to a category
+
+A product has at most one category, set with `product_category_code`. Assign Compute and Bandwidth to `usage_rates`. Leave Seat and Platform fee uncategorized. Filters belong to their product: they appear inside the product's category and are never assigned separately.
+
+- On creation, omit `product_category_code` for a standalone product.
+- On update, `null` or an empty string removes the category.
+- On update, omitting the field leaves the assignment unchanged.
+
+<CodeGroup>
+```bash Assign an existing product
+curl --location --request PUT "$LAGO_URL/api/v2/products/compute" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "product": {
+      "product_category_code": "usage_rates"
+    }
+  }'
+```
+
+```bash Remove the assignment
+curl --location --request PUT "$LAGO_URL/api/v2/products/compute" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "product": {
+      "product_category_code": null
+    }
+  }'
+```
+</CodeGroup>
+
+Removing the assignment keeps the product. Only the grouping goes away.
+
+## List a category's products
+
+- Retrieve the category: `GET /api/v2/product_categories/usage_rates`.
+- List its products: `GET /api/v2/products?product_category_code=usage_rates`.
+- List uncategorized products: `GET /api/v2/products?without_product_category=true`.
+
+## Read grouped fees
+
+Read the hierarchy from category to product, then to the billed fees. Compute's filter fees sit under Compute. Bandwidth's fee sits directly under Usage rates. Standalone products appear outside any category.
+
+A grouping is not an extra fee. When a product has both a direct fee and filter fees, they are siblings under the product. Category totals summarize the underlying amounts. Do not add a group total to its detail lines again, and do not sum quantities with different units.
+
+## Update or delete a category
+
+`PUT` and `PATCH` on `/api/v2/product_categories/{code}` accept partial updates. Omitted fields stay unchanged.
+
+<Warning>
+`DELETE /api/v2/product_categories/{code}` deletes the category **and** its products, filters, rate cards and rates. A category attached to a plan cannot be deleted. Review the cascade before you delete. To keep a product and only drop its grouping, clear its `product_category_code` instead.
+</Warning>
+
+<CardGroup cols={2}>
+  <Card title="Products" icon="box" href="/v2/guide/product-catalog/products">
+    Fixed and metered products.
+  </Card>
+  <Card title="Product catalog" icon="boxes-stacked" href="/v2/guide/product-catalog/overview">
+    Choose a catalog structure.
+  </Card>
+  <Card title="Create a product category" icon="code" href="/v2/api-reference/product-categories/create">
+    `POST /product_categories`
+  </Card>
+  <Card title="Delete a product category" icon="code" href="/v2/api-reference/product-categories/delete">
+    `DELETE /product_categories/{code}`
+  </Card>
+</CardGroup>

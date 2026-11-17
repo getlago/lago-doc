@@ -1,0 +1,259 @@
+---
+title: "Clone Stripe pricing"
+sidebarTitle: "Clone Stripe pricing"
+description: "Rebuild Stripe's per-transaction pricing in Lago with product filters per payment type and percentage rates billed in advance on a contract."
+keywords: ["Lago", "per-transaction pricing", "Stripe", "percentage", "product filters", "contract"]
+---
+
+import SetupLago from "/snippets/v2/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/v2/templates/create-customer.mdx";
+import CreateContract from "/snippets/v2/templates/create-contract.mdx";
+import ContractUsage from "/snippets/v2/templates/contract-usage.mdx";
+
+This template builds per-transaction pricing like Stripe's with Lago: a percentage of each transaction amount plus a fixed fee per transaction. It suits fintechs and marketplaces that take a fee on the payment volume they process for customers.
+
+Legacy (v1): [Clone Stripe pricing with subscriptions](/templates/per-transaction/stripe).
+
+## Pricing structure
+
+Stripe charges per successful card payment. The rate and the fixed fee depend on the payment method. This template covers card payments.
+
+| Payment method | Percentage of transaction amount | Fixed fee per transaction |
+|---|---|---|
+| Card payments (online) | 2.9% | $0.30 |
+| Card payments (in-person) | 2.7% | $0.05 |
+
+## How it maps to Lago
+
+| Pricing element | Lago object |
+|---|---|
+| Transaction amount | Billable metric `card_transactions` (`sum_agg` on `amount`) with a `type` dimension |
+| What you sell | Metered product `card_processing` |
+| Online and in-person payments | Product filters `card_online` and `card_in_person` |
+| Fee per payment type | One rate card per filter, billed in advance, with a `percentage` rate |
+| The offer | Plan `card_processing_plan` |
+
+## Get started
+
+<Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
+
+  <Step title="Create a billable metric">
+    Sum transaction amounts, with a `type` dimension for the payment method.
+
+    <CodeGroup>
+      ```bash cURL highlight={6,8-15}
+      curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "Transaction amount",
+            "code": "card_transactions",
+            "aggregation_type": "sum_agg",
+            "field_name": "amount",
+            "recurring": false,
+            "filters": [
+              {
+                "key": "type",
+                "values": ["online", "in-person"]
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/billable-metrics/create) and the [billable metrics guide](/v2/guide/billable-metrics/create-billable-metrics).
+  </Step>
+
+  <Step title="Create a metered product and its filters">
+    <CodeGroup>
+      ```bash cURL highlight={7-8}
+      curl --location --request POST "$LAGO_URL/api/v2/products" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "product": {
+            "name": "Card processing",
+            "code": "card_processing",
+            "product_type": "metered",
+            "billable_metric_code": "card_transactions"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Create one filter per payment type:
+
+    <CodeGroup>
+      ```bash cURL highlight={6,8-10}
+      curl --location --request POST "$LAGO_URL/api/v2/products/card_processing/filters" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "filter": {
+            "name": "Online card payment",
+            "code": "card_online",
+            "values": [
+              { "key": "type", "value": "online" }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Create `card_in_person` the same way with `"value": "in-person"`. Refer to the [product filters guide](/v2/guide/product-catalog/product-filters).
+  </Step>
+
+  <Step title="Create a rate card per filter">
+    Set `billing_timing` to `advance` so fees are charged as transactions arrive. The `percentage` rate takes `rate` (the percentage) and `fixed_amount` (the per-transaction fee).
+
+    <CodeGroup>
+      ```bash cURL highlight={9-11,15-20}
+      curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "rate_card": {
+            "name": "Online card payment USD",
+            "code": "card_online_usd",
+            "product_code": "card_processing",
+            "product_filter_code": "card_online",
+            "currency": "USD",
+            "billing_timing": "advance",
+            "proration": false,
+            "rates": [
+              {
+                "code": "card_online_standard",
+                "effective_from": "2027-01-01T00:00:00Z",
+                "rate_model": "percentage",
+                "rate_properties": {
+                  "rate": "2.9",
+                  "fixed_amount": "0.30"
+                },
+                "billing_interval_count": 1,
+                "billing_interval_unit": "month"
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Repeat for in-person payments:
+
+    | Rate card `code` | `product_filter_code` | `rate` | `fixed_amount` |
+    |---|---|---|---|
+    | `card_online_usd` | `card_online` | `"2.9"` | `"0.30"` |
+    | `card_in_person_usd` | `card_in_person` | `"2.7"` | `"0.05"` |
+
+    Spending minimums (`min_amount_cents`) are not available with advance billing. Refer to the [API reference](/v2/api-reference/rate-cards/create) and the [percentage model](/v2/guide/rate-cards/pricing-models/percentage).
+  </Step>
+
+  <Step title="Create a plan and apply the rate cards">
+    <CodeGroup>
+      ```bash cURL highlight={6-7}
+      curl --location --request POST "$LAGO_URL/api/v2/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Card processing",
+            "code": "card_processing_plan",
+            "currency": "USD"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Apply `card_online_usd` and `card_in_person_usd`:
+
+    <CodeGroup>
+      ```bash cURL highlight={6}
+      curl --location --request POST "$LAGO_URL/api/v2/plans/card_processing_plan/applied_rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "applied_rate_card": {
+            "rate_card_code": "card_online_usd"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/plan-applied-rate-cards/create) and the [plans guide](/v2/guide/plans/overview).
+  </Step>
+
+  <Step title="Create a customer">
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a contract">
+    Replace `__PLAN_CODE__` with `card_processing_plan`.
+
+    <CreateContract />
+  </Step>
+
+  <Step title="Ingest transactions via events">
+    Send one event per transaction with its `amount` and `type`.
+
+    <CodeGroup>
+      ```bash cURL highlight={7-11}
+      curl --location --request POST "$LAGO_URL/api/v2/events" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "card_transactions",
+            "external_contract_id": "contract_example",
+            "properties": {
+              "amount": 200,
+              "type": "online"
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/events/create) and the [usage ingestion guide](/v2/guide/events/ingesting-usage).
+  </Step>
+
+  <Step title="Monitor current usage">
+    <ContractUsage />
+  </Step>
+</Steps>
+
+## Worked example
+
+One online card payment of $200:
+
+| Component | Calculation | Amount |
+|---|---|---|
+| Percentage | 2.9% × $200 | $5.80 |
+| Fixed fee | 1 transaction × $0.30 | $0.30 |
+| **Fee before tax** | | **$6.10** |
+
+## What changed from v1
+
+- The v1 template set `invoiceable: false` on the charge. v2 rate cards have `display_on_invoice` and `regroup_paid_fees`, which control how advance fees appear on invoices. They are not a one-to-one replacement, so this template keeps the defaults.
+- The v1 template estimated fees with `POST /events/estimate_fees`. The v2 API does not document an equivalent, so this template omits fee estimation.
+- Events target `external_contract_id` instead of `external_subscription_id`.
+
+<CardGroup cols={2}>
+  <Card title="Percentage model" icon="percent" href="/v2/guide/rate-cards/pricing-models/percentage">
+    Calculate a fee from a measured monetary base.
+  </Card>
+  <Card title="Rate cards" icon="layer-group" href="/v2/guide/rate-cards/overview">
+    Currency, billing timing and proration per product or filter.
+  </Card>
+  <Card title="Contracts" icon="file-contract" href="/v2/guide/contracts/overview">
+    Apply a plan to a customer.
+  </Card>
+  <Card title="Create a product filter (API)" icon="code" href="/v2/api-reference/product-filters/create">
+    `POST /api/v2/products/{product_code}/filters`
+  </Card>
+</CardGroup>
