@@ -414,6 +414,8 @@ For agent-initiated purchases, where an AI agent pays on the customer's behalf a
 </Info>
 When Lago automatically creates a customer in Stripe, Lago returns a checkout link that your customer uses to store their payment method information.
 
+Lago generates this link only when at least one payment method of the customer can be saved from a checkout page: `card`, `link`, `sepa_debit`, `us_bank_account`, `bacs_debit` or `boleto`. A customer set to `crypto` or `customer_balance` alone gets no checkout link, and the [regenerate endpoint](/api-reference/customers/psp-checkout-url) answers with a validation error.
+
 The payload sent by Lago will have the following structure, with the checkout link stored under `checkout_url`:
 
 ```json
