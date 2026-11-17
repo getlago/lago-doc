@@ -8,6 +8,32 @@ Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024
 
 <Update
   label="November 2026"
+  tags={["API", "Security & access"]}
+  rss={{
+    title: "November 2026 - Standard Webhooks signatures",
+    description: "Sign Lago webhooks with Standard Webhooks, the open specification shared by many API providers."
+  }}
+>
+  ## Standard Webhooks: verify Lago webhooks with an open standard
+
+  <Frame>
+    <img src="/changelog/images/20261112-standard-webhooks.webp" alt="A webhook request signed with Standard Webhooks: the webhook-id, webhook-timestamp and webhook-signature headers, and the add_on.created payload." loading="lazy" />
+  </Frame>
+
+  Webhook endpoints can now sign their messages with [Standard Webhooks](https://www.standardwebhooks.com), an open specification for signing webhooks. It is shared by many API providers, so you verify Lago messages the same way as the other webhooks you receive, with the same code or library.
+
+  - **Replay attacks refused:** the signature covers `webhook-timestamp`, so a captured message cannot be sent to you again later. Verification rejects a message older than 5 minutes.
+  - **An idempotency key on every message:** `webhook-id` stays the same when Lago sends a message again, so you can skip one you have already processed.
+  - **A key per endpoint:** each endpoint has its own `whsec_` signing key. Copy it from the app, or read `signing_keys` with an API key that can write webhook endpoints.
+  - **Signed over the raw body:** the signature is one short header computed over the body Lago sends, so you check it before you parse anything.
+
+  Verifying takes a few lines of HMAC-SHA256, or one call to a Standard Webhooks library, available in many languages.
+
+  [Learn more](/api-reference/webhooks/format---signature#standard-webhooks-signature)
+</Update>
+
+<Update
+  label="November 2026"
   tags={["Invoicing", "Subscriptions", "Wallets & credits"]}
   rss={{
     title: "November 2026 - Payment terms that follow the contract",
