@@ -53,7 +53,7 @@ You choose the signature algorithm when you create a webhook endpoint:
   with an off-the-shelf Standard Webhooks library. See [Standard Webhooks
   signature](#standard-webhooks-signature).
 
-Webhook endpoints of the native v2 API (`/api/v2/webhook_endpoints`) only offer `standard_webhooks`, which
+Webhook endpoints of the v2 API (`/api/v2/webhook_endpoints`) only offer `standard_webhooks`, which
 is their default. Existing `jwt` and `hmac` endpoints keep working as they do today.
 
 
@@ -238,7 +238,7 @@ key.
     [update](/api-reference/webhook-endpoints/update) and
     [retrieve](/api-reference/webhook-endpoints/get-specific) responses list the keys of a
     `standard_webhooks` endpoint in `signing_keys`, oldest first. Use the `secret_key` of the most recent
-    one. On the native v2 API, add `expands[]=signing_keys` to the same calls.
+    one. On the v2 API, add `expands[]=signing_keys` to the same calls.
 
     ```json
     "signing_keys": [
@@ -261,7 +261,12 @@ key.
 Use the Standard Webhooks library of your language
 ([Python](https://pypi.org/project/standardwebhooks/),
 [JavaScript](https://www.npmjs.com/package/standardwebhooks),
-[Ruby](https://rubygems.org/gems/standardwebhooks)). Pass it the raw request body, exactly as received:
+[Ruby](https://rubygems.org/gems/standardwebhooks),
+[Go](https://pkg.go.dev/github.com/standard-webhooks/standard-webhooks/libraries/go),
+[PHP](https://packagist.org/packages/standard-webhooks/standard-webhooks),
+[Java and Kotlin](https://central.sonatype.com/artifact/com.standardwebhooks/standardwebhooks),
+[C#](https://www.nuget.org/packages/StandardWebhooks.StandardWebhooks),
+[Rust](https://crates.io/crates/standardwebhooks)). Pass it the raw request body, exactly as received:
 a body parsed and serialized again does not match the signature. The libraries also refuse a message whose
 `webhook-timestamp` is more than 5 minutes away from the current time, which protects you from replayed
 messages.
@@ -304,6 +309,98 @@ rescue StandardWebhooks::WebhookVerificationError
   # reject the message
 end
 ```
+
+```go Go
+import standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
+
+webhook, _ := standardwebhooks.NewWebhook(os.Getenv("LAGO_WEBHOOK_SIGNING_KEY")) // "whsec_..."
+
+// rawBody: the request body as bytes, before any JSON parsing
+rawBody, _ := io.ReadAll(r.Body)
+if err := webhook.Verify(rawBody, r.Header); err != nil {
+	// reject the message
+}
+```
+
+```php PHP
+use StandardWebhooks\Webhook;
+use StandardWebhooks\Exception\WebhookVerificationException;
+
+$webhook = new Webhook(getenv('LAGO_WEBHOOK_SIGNING_KEY')); // "whsec_..."
+$headers = array_change_key_case(getallheaders(), CASE_LOWER);
+
+try {
+    $payload = $webhook->verify(file_get_contents('php://input'), $headers);
+} catch (WebhookVerificationException $e) {
+    // reject the message
+}
+```
+
+```java Java
+import com.standardwebhooks.Webhook;
+import com.standardwebhooks.exceptions.WebhookVerificationException;
+
+Webhook webhook = new Webhook(System.getenv("LAGO_WEBHOOK_SIGNING_KEY")); // "whsec_..."
+
+try {
+  // rawBody: the request body as a string, before any JSON parsing
+  // headers: the request headers as a Map<String, List<String>>
+  webhook.verify(rawBody, headers);
+} catch (WebhookVerificationException e) {
+  // reject the message
+}
+```
+
+```kotlin Kotlin
+import com.standardwebhooks.Webhook
+import com.standardwebhooks.exceptions.WebhookVerificationException
+
+val webhook = Webhook(System.getenv("LAGO_WEBHOOK_SIGNING_KEY")) // "whsec_..."
+
+try {
+    // rawBody: the request body as a string, before any JSON parsing
+    // headers: the request headers as a Map<String, List<String>>
+    webhook.verify(rawBody, headers)
+} catch (e: WebhookVerificationException) {
+    // reject the message
+}
+```
+
+```csharp C#
+using System.Net;
+using StandardWebhooks;
+using StandardWebhooks.Exceptions;
+
+var webhook = new Webhook(Environment.GetEnvironmentVariable("LAGO_WEBHOOK_SIGNING_KEY")); // "whsec_..."
+var headers = new WebHeaderCollection();
+foreach (var name in new[] { "webhook-id", "webhook-timestamp", "webhook-signature" })
+{
+    headers.Add(name, request.Headers[name]);
+}
+
+try
+{
+    // rawBody: the request body as a string, before any JSON parsing
+    webhook.Verify(rawBody, headers);
+}
+catch (WebhookVerificationException)
+{
+    // reject the message
+}
+```
+
+```rust Rust
+use standardwebhooks::Webhook;
+
+let webhook = Webhook::new(&std::env::var("LAGO_WEBHOOK_SIGNING_KEY")?)?; // "whsec_..."
+
+// raw_body: the request body as bytes, before any JSON parsing
+// headers: the request headers as an http::HeaderMap
+if webhook.verify(&raw_body, &headers).is_err() {
+    // reject the message
+}
+```
+
 
 </CodeGroup>
 
@@ -366,6 +463,70 @@ webhook = StandardWebhooks::Webhook.new('whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3Qtd
 
 signature = webhook.sign('1a901a90-1a90-1a90-1a90-1a901a901a90', 1794500000, body)
 signature == 'v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ=' # true
+```
+
+```go Go
+import standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
+
+body := []byte(`{"webhook_type":"customer.created","object_type":"customer","organization_id":"1a901a90-1a90-1a90-1a90-1a901a901a90","customer":{"lago_id":"1a901a90-1a90-1a90-1a90-1a901a901a91","external_id":"hooli_1234"}}`)
+webhook, _ := standardwebhooks.NewWebhook("whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=")
+
+signature, _ := webhook.Sign("1a901a90-1a90-1a90-1a90-1a901a901a90", time.Unix(1794500000, 0), body)
+signature == "v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ=" // true
+```
+
+```php PHP
+use StandardWebhooks\Webhook;
+
+$body = '{"webhook_type":"customer.created","object_type":"customer","organization_id":"1a901a90-1a90-1a90-1a90-1a901a901a90","customer":{"lago_id":"1a901a90-1a90-1a90-1a90-1a901a901a91","external_id":"hooli_1234"}}';
+$webhook = new Webhook('whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=');
+
+$signature = $webhook->sign('1a901a90-1a90-1a90-1a90-1a901a901a90', 1794500000, $body);
+$signature === 'v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ='; // true
+```
+
+```java Java
+import com.standardwebhooks.Webhook;
+
+String body = "{\"webhook_type\":\"customer.created\",\"object_type\":\"customer\",\"organization_id\":\"1a901a90-1a90-1a90-1a90-1a901a901a90\",\"customer\":{\"lago_id\":\"1a901a90-1a90-1a90-1a90-1a901a901a91\",\"external_id\":\"hooli_1234\"}}";
+Webhook webhook = new Webhook("whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=");
+
+String signature = webhook.sign("1a901a90-1a90-1a90-1a90-1a901a901a90", 1794500000L, body);
+signature.equals("v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ="); // true
+```
+
+```kotlin Kotlin
+import com.standardwebhooks.Webhook
+
+val body = """{"webhook_type":"customer.created","object_type":"customer","organization_id":"1a901a90-1a90-1a90-1a90-1a901a901a90","customer":{"lago_id":"1a901a90-1a90-1a90-1a90-1a901a901a91","external_id":"hooli_1234"}}"""
+val webhook = Webhook("whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=")
+
+val signature = webhook.sign("1a901a90-1a90-1a90-1a90-1a901a901a90", 1794500000, body)
+signature == "v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ=" // true
+```
+
+```csharp C#
+using StandardWebhooks;
+
+var body = "{\"webhook_type\":\"customer.created\",\"object_type\":\"customer\",\"organization_id\":\"1a901a90-1a90-1a90-1a90-1a901a901a90\",\"customer\":{\"lago_id\":\"1a901a90-1a90-1a90-1a90-1a901a901a91\",\"external_id\":\"hooli_1234\"}}";
+var webhook = new Webhook("whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=");
+
+var signature = webhook.Sign(
+    "1a901a90-1a90-1a90-1a90-1a901a901a90",
+    DateTimeOffset.FromUnixTimeSeconds(1794500000),
+    body
+);
+signature == "v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ="; // true
+```
+
+```rust Rust
+use standardwebhooks::Webhook;
+
+let body = r#"{"webhook_type":"customer.created","object_type":"customer","organization_id":"1a901a90-1a90-1a90-1a90-1a901a901a90","customer":{"lago_id":"1a901a90-1a90-1a90-1a90-1a901a901a91","external_id":"hooli_1234"}}"#;
+let webhook = Webhook::new("whsec_bGFnby10ZXN0LXNlY3JldC1kby1ub3QtdXNlLTAwMDA=")?;
+
+let signature = webhook.sign("1a901a90-1a90-1a90-1a90-1a901a901a90", 1794500000, body.as_bytes())?;
+signature == "v1,ZmpebVrI9OH3xCacxLy/fggnRFER+zUDBy3P3hKC7CQ="; // true
 ```
 
 </CodeGroup>
