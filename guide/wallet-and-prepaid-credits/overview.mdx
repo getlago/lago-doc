@@ -103,6 +103,24 @@ Keep track of the real-time balance of your customers' wallets. Lago provides tw
 1. **Balance:** the invoiced balance, which reflects the prepaid credits left in the wallet. It updates each time an invoice is finalized for the customer.
 2. **Ongoing balance:** the balance that accounts for current usage, including taxes and draft invoices. It estimates the consumption of the balance close to real time, and also updates each time an invoice is finalized for the customer.
 
+### How the ongoing balance updates
+
+Each usage event triggers a refresh of the customer's wallets. Lago groups these triggers, so a burst of events produces one refresh per customer.
+
+Before refreshing, Lago waits until the usage that caused the trigger is readable. It checks every 100 ms, for up to 5 seconds. It then computes current usage, allocates it across the customer's wallets in priority order, and writes the ongoing balance. [Credits consumption alerts](/guide/alerts/credits-consumption-alerts) and threshold top-ups are evaluated on the same refresh.
+
+In Lago's production tests, the ongoing balance reflected an event about 1.2 seconds after it was sent (p50). See [Production benchmarks](/guide/events/usage-performances#production-benchmarks) for the figures and how they were measured.
+
+This applies to usage from [charges served from pre-aggregated usage](/guide/events/retrieve-usage#charges-served-from-pre-aggregated-usage). Usage from other charges reaches the ongoing balance on the periodic wallet refresh.
+
+### If the refresh is delayed
+
+If the usage is not readable within 5 seconds, the customer stays flagged and the periodic wallet refresh updates the ongoing balance. No usage is lost. The balance is correct, later.
+
+### What the ongoing balance is not
+
+The ongoing balance is not a spending cap. Two concurrent requests can read the same balance and both proceed, and the ongoing balance can go below zero. To enforce a hard limit, authorize the work in your application before it starts.
+
 ## Application scope
 
 Prepaid credits settled in a wallet are applied to upcoming **subscription invoices**. They are deducted from the post-tax subtotal, after any credit notes have been applied.
