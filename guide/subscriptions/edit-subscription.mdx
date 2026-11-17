@@ -1,9 +1,11 @@
 ---
 title: "Edit a subscription"
-description: "You can edit a subscription at any time, whether it's active or pending."
+description: "Update negotiated prices, commitments, subscription dates, and payment terms for an individual customer through the dashboard or API."
 ---
 
-Once a plan is assigned to a customer, you can edit the subscription, whether it is pending or active:
+Once a plan is assigned to a customer, you can edit a pending or active subscription through the dashboard or API. On [Lago Cloud](/guide/lago-cloud) or Lago Self-Hosted Premium, use [plan overrides](/guide/subscriptions/assign-plan#overriding-a-plan) to update that customer's negotiated charges, tiers, spending minimums, and [minimum commitment](/guide/plans/commitment).
+
+An override customizes the subscription without changing the shared parent plan. To move the customer to a different plan, follow [upgrades and downgrades](/guide/subscriptions/upgrades-downgrades), which explains the timing and proration for that transition.
 
 <Info>
 A subscription held `incomplete` by an [activation rule](/guide/subscriptions/activation-rules) cannot be edited, upgraded or downgraded until it activates or is canceled.
@@ -65,6 +67,17 @@ A subscription held `incomplete` by an [activation rule](/guide/subscriptions/ac
 <Info>
   Fixed charges are updated under `plan_overrides`, using the `fixed_charges` array. Sending only `units` (and `apply_units_immediately` if needed) updates the quantity without creating a plan override. Passing a price or `properties` creates one. See [Update a fixed charge via the API](/guide/plans/charges/fixed-charges#update-a-fixed-charge-via-the-api).
 </Info>
+
+## Review and reconcile negotiated changes
+
+Before changing an active customer's prices or commitment:
+
+1. Identify the subscription and its current overridden plan with the [retrieve a subscription API](/api-reference/subscriptions/get-specific).
+2. Review the agreed prices, commitment interval, and dates. For annual minimum spend billed alongside monthly usage, see the [worked commitment example](/guide/plans/commitment#annual-commitment-with-monthly-usage-invoices).
+3. Reproduce the proposed update in a [separate test organization](/guide/integration-testing). Compare [dry-run invoices](/guide/invoicing/previews#dry-run-invoices-for-active-subscriptions) before and after the edit, including usage on either side of the agreed amendment date, before changing the production subscription.
+4. After applying the change, reconcile [current and past usage](/guide/events/retrieve-usage) with the resulting invoice lines. Use [invoice exports](/guide/invoicing/export) or the [NetSuite integration](/integrations/accounting/netsuite) for your accounting workflow.
+
+If sales manages negotiated offers in Salesforce, the [Salesforce CPQ integration](/integrations/crm/salesforce-cpq#iii-actions-from-salesforce-to-lago) provides configurable flows to assign a plan, set negotiated prices, and start a subscription when a quote is accepted.
 
 ## Change payment terms
 
