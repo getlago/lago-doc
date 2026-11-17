@@ -11,23 +11,21 @@ Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024
   tags={["API", "Security & access"]}
   rss={{
     title: "November 2026 - Standard Webhooks signatures",
-    description: "Sign Lago webhooks with the open Standard Webhooks specification: replay protection, an idempotency key and a signing key per endpoint."
+    description: "Sign Lago webhooks with Standard Webhooks, the open specification shared by many API providers."
   }}
 >
-  ## Standard Webhooks: replay-proof signatures on an open specification
+  ## Standard Webhooks: verify Lago webhooks with an open standard
 
   <Frame>
     <img src="/changelog/images/20261112-standard-webhooks.webp" alt="A webhook request signed with Standard Webhooks: the webhook-id, webhook-timestamp and webhook-signature headers, and the add_on.created payload." loading="lazy" />
   </Frame>
 
-  Lago signed webhooks with a JWT or an HMAC of the payload. A JWT carries the whole payload in a header that some servers reject, and neither signature tells you whether a message is old or one you already processed.
-
-  **Standard Webhooks** is now a third signature option for webhook endpoints. It follows the open specification of the same name, so the same verification works for Lago and for the other providers that use it.
+  Webhook endpoints can now sign their messages with [Standard Webhooks](https://www.standardwebhooks.com), an open specification for signing webhooks. It is shared by many API providers, so you verify Lago messages the same way as the other webhooks you receive, with the same code or library.
 
   - **Replay attacks refused:** the signature covers `webhook-timestamp`, so a captured message cannot be sent to you again later. Verification rejects a message older than 5 minutes.
   - **An idempotency key on every message:** `webhook-id` stays the same when Lago sends a message again, so you can skip one you have already processed.
-  - **A key per endpoint:** each endpoint has its own `whsec_` signing key, instead of one HMAC key for the whole organization. Copy it from the app, or read `signing_keys` with an API key that can write webhook endpoints.
-  - **A short header, an untouched body:** the signature is one short header computed over the raw body, so no payload travels in a header.
+  - **A key per endpoint:** each endpoint has its own `whsec_` signing key. Copy it from the app, or read `signing_keys` with an API key that can write webhook endpoints.
+  - **Signed over the raw body:** the signature is one short header computed over the body Lago sends, so you check it before you parse anything.
 
   Verifying takes a few lines of HMAC-SHA256, or one call to a Standard Webhooks library, available in many languages. Webhook endpoints of the native v2 API only offer Standard Webhooks, and use it by default.
 
