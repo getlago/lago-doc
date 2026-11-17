@@ -31,7 +31,7 @@ A `page` or `per_page` that is not a positive number (`0`, a negative value, tex
 }
 ```
 
-The limit is **200 by default**. Requests that send no `page` or `per_page`, or send them empty, behave as before: the default page size stays 100.
+The limit is **200 by default**. Requests that send no `page` or `per_page`, or send them empty, behave as before: the default page size stays 100. A limit below 100 also lowers that default, so a request without `per_page` then returns at most the limit.
 
 The limit can be changed in two ways:
 
@@ -50,7 +50,8 @@ Creating or updating a customer now checks the length of its text fields, on the
 | Field | Maximum length |
 |---|---|
 | `address_line1`, `address_line2` (billing and shipping) | 500 characters |
-| `firstname`, `lastname`, `legal_name`, `tax_identification_number`, `zipcode`, `city`, `state` (billing and shipping) | 255 characters |
+| `zipcode`, `city`, `state` (billing and shipping) | 255 characters |
+| `firstname`, `lastname`, `legal_name`, `tax_identification_number` | 255 characters |
 
 `name` already had a 255 character limit. A longer value returns a `422` with the `value_is_too_long` code on the field (the shipping fields are reported as `shipping_city`, `shipping_address_line1` and so on):
 
@@ -246,7 +247,7 @@ The Docker Compose files of the [Lago repository](https://github.com/getlago/lag
 | `LAGO_EVENTS_MAX_PAST_DAYS` | not set | Rejects events with a timestamp more than this number of days in the past. |
 | `LAGO_EVENTS_MAX_FUTURE_HOURS` | not set | Rejects events with a timestamp more than this number of hours in the future. |
 
-# Get Involved
+# Get involved
 
 If you have any questions or encounter issues during the migration, please reach out to us via the Slack community. Our team is here to help you through this transition.
 
