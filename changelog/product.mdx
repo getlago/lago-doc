@@ -8,6 +8,38 @@ Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024
 
 <Update
   label="November 2026"
+  tags={["Usage & metering", "Wallets & credits"]}
+  rss={{
+    title: "November 2026 - Real-time usage",
+    description: "A premium add-on that refreshes wallet balances and current usage within seconds of each event, and evaluates credits consumption alerts on the same refresh."
+  }}
+>
+  ## Real-time usage: act on a balance seconds old, not minutes old
+
+  <Frame>
+    <img src="/changelog/images/20261119-real-time-usage.webp" alt="A wallet's ongoing balance refreshed seconds after a usage event, with a credits consumption alert triggered on the same refresh." loading="lazy" />
+  </Frame>
+
+  A wallet's ongoing balance used to refresh on a periodic cycle. Between two refreshes, your customers kept consuming against a number that was already out of date, and alerts fired after the budget was gone.
+
+  The **Real-time usage** add-on refreshes the ongoing balance as events arrive, typically in under 2 seconds.
+
+  - **Balances that follow usage:** in production tests, an event reached the ongoing balance in about 1.2 seconds, compared to about 26 seconds on the periodic path.
+  - **Alerts in time to act:** credits consumption alerts and threshold top-ups are evaluated on the same refresh. A burst of events triggers one alert, not one per event.
+  - **Current usage that matches:** current usage reads continuously aggregated data, so the amounts on your customer's usage page match the events they just sent.
+  - **Nothing to change:** events, endpoints, webhooks and payloads stay the same. Invoices are still computed from the full event store.
+
+  Lago supplies the state. Your app or gateway decides whether to top up, throttle or block.
+
+  [Learn more](/guide/events/real-time-usage)
+
+  <Info>
+  **Premium add-on, on request.** It covers in-arrears charges on count, sum, max and latest metrics. Other charges keep the periodic refresh. We recommend enabling it on a sandbox organization first.
+  </Info>
+</Update>
+
+<Update
+  label="November 2026"
   tags={["API", "Security & access"]}
   rss={{
     title: "November 2026 - Standard Webhooks signatures",
