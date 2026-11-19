@@ -99,6 +99,10 @@ The guiding question: **what do you charge your customers for?** That's your eve
     - `add`: Adds the unique value. **Optional**: Lago adds by default if `operation_type` is omitted.
     - `remove`: Removes the unique value from the count. **Required** whenever you want to explicitly remove a unit.
 
+    <Warning>
+      If your Lago organization uses the ClickHouse-based event pipeline (designed for high-volume processing), numeric values are stored with 26 decimal places, which caps them at approximately 1.70 × 10¹² (1,701,411,834,604). Currently, both the numeric value of an event property and the aggregated value of a billable metric over a billing period (for example, a Sum) must stay below this limit. Values above it overflow and may be reported as 0 or as an incorrect value in current usage and on invoices. The Postgres event store is not affected.
+    </Warning>
+
   </Accordion>
 
   <Accordion title="precise_total_amount_cents (optional)">
