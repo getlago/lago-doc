@@ -1,28 +1,28 @@
 ---
-title: "Real-time alerts: act while it still matters"
-sidebarTitle: "Real-time alerts"
-description: "With the real-time usage add-on, usage alerts and credits consumption alerts fire from under a second to a few seconds after the event that crossed the threshold."
+title: "Real-time wallet alerts: act while it still matters"
+sidebarTitle: "Real-time wallet alerts"
+description: "With the real-time usage add-on, wallet alerts fire from under a second to a few seconds after the event that crossed the threshold."
 ---
 
 <Info>
   **PREMIUM ADD-ON** ✨
 
-  Real-time alerts are part of the [real-time usage](/guide/events/real-time-usage) add-on, available on Lago Cloud upon request only. Please [**contact us**](mailto:hello@getlago.com) to enable it for your organization.
+  Real-time wallet alerts are part of the [real-time usage](/guide/events/real-time-usage) add-on, available on Lago Cloud upon request only. Please [**contact us**](mailto:hello@getlago.com) to enable it for your organization.
 </Info>
 
-An alert is only useful if it arrives while you can still act on it. When usage and balances refresh on a periodic cycle, a fast workload can blow through a budget or drain a wallet before the alert fires.
+An alert is only useful if it arrives while you can still act on it. When balances refresh on a periodic cycle, a fast workload can drain a wallet before the alert fires.
 
-With real-time alerts, Lago evaluates your alerts as usage streams in. The `alert.triggered` webhook reaches you from under a second to a few seconds after the event that crossed the threshold.
+With real-time wallet alerts, Lago evaluates your wallet alerts as soon as the ongoing balance moves. The `alert.triggered` webhook reaches you from under a second to a few seconds after the event that crossed the threshold.
 
 ## What changes
 
-| | Without the add-on | With real-time alerts |
+| | Without the add-on | With real-time wallet alerts |
 | --- | --- | --- |
-| Alert evaluation | Periodic | As usage streams in |
+| Wallet alert evaluation | Periodic | As the balance moves |
 | Time to `alert.triggered` | Up to minutes | Under a second to a few seconds |
 | Alerts, thresholds, webhooks | Unchanged | Unchanged |
 
-It applies to all your alerts, [usage alerts](/guide/alerts/usage-alerts) and [wallet alerts](/guide/alerts/credits-consumption-alerts) alike. Nothing changes in how you create alerts or consume webhooks. The add-on changes when alerts fire, not what they are.
+It applies to [wallet alerts](/guide/alerts/credits-consumption-alerts). [Usage alerts](/guide/alerts/usage-alerts) keep their periodic check. Nothing changes in how you create alerts or consume webhooks. The add-on changes when alerts fire, not what they are.
 
 ## Use cases
 
@@ -34,7 +34,7 @@ It applies to all your alerts, [usage alerts](/guide/alerts/usage-alerts) and [w
     Trigger a top-up or a payment request on a low-balance threshold while the customer is still running.
   </Card>
   <Card title="Catch spikes early" icon="chart-line">
-    Detect a token or compute surge while it is still small, and throttle or notify before it becomes a surprise invoice.
+    A token or compute surge drains a wallet fast. A low-balance alert catches it while it is still small, so you can throttle or notify.
   </Card>
 </CardGroup>
 
@@ -44,18 +44,18 @@ It applies to all your alerts, [usage alerts](/guide/alerts/usage-alerts) and [w
   <Step title="An event arrives">
     You send usage events as usual. Lago aggregates them as they stream in.
   </Step>
-  <Step title="Usage and balances refresh">
-    Current usage and wallet ongoing balances reflect the event within seconds.
+  <Step title="The balance refreshes">
+    The wallet's ongoing balance reflects the event within seconds.
   </Step>
   <Step title="Alerts are evaluated">
-    Lago checks your alerts against the new values. A burst of events triggers one alert, not one per event.
+    Lago checks your wallet alerts against the new balance. A burst of events triggers one alert, not one per event.
   </Step>
   <Step title="Your product acts">
     You receive `alert.triggered` and decide what happens: warn, throttle, block or top up.
   </Step>
 </Steps>
 
-## Set up a real-time alert
+## Set up a real-time wallet alert
 
 Once the add-on is enabled, create alerts exactly as you would without it. Give each threshold a `code` that maps to the action your product takes.
 
@@ -80,11 +80,11 @@ curl --location --request POST "$LAGO_URL/api/v1/customers/:customer_external_id
   }'
 ```
 
-Then listen for `alert.triggered`, with the same payload as any other alert: warn on `warning`, restrict on `critical`, block or top up on `empty`. Usage alerts work the same way, on increasing thresholds. To also know when a value is back on the safe side, use [alert resolution](/guide/alerts/alert-resolution).
+Then listen for `alert.triggered`, with the same payload as any other alert: warn on `warning`, restrict on `critical`, block or top up on `empty`. To also know when a value is back on the safe side, use [alert resolution](/guide/alerts/alert-resolution).
 
 ## Good to know
 
 - **Lago notifies, your product enforces.** Blocking, throttling or topping up happens in your application or gateway.
 - **Not a spending cap.** Usage served before your product reacts is still consumed, and a balance can go below zero. To enforce a hard limit, authorize the work in your application before it starts.
 - **Automatic fallback.** If the real-time path is delayed, alerts are evaluated on the periodic cycle. No threshold crossing is lost.
-- **Coverage follows real-time usage.** Alerts on charges that are not [covered](/guide/events/real-time-usage#coverage) by the add-on fire on the periodic cycle.
+- **Coverage follows real-time usage.** A wallet's balance refreshes in real time only for charges [covered](/guide/events/real-time-usage#coverage) by the add-on. Usage from other charges reaches the balance, and its alerts, on the periodic cycle.

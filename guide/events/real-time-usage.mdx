@@ -1,7 +1,7 @@
 ---
 title: "Real-time usage: act on balances in seconds"
 sidebarTitle: "Real-time usage"
-description: "The real-time add-on refreshes wallet balances, current usage, the usage graph and the usage report from under a second to a few seconds after an event, and fires usage and wallet alerts as soon as a threshold is crossed."
+description: "The real-time add-on refreshes wallet balances, current usage and the usage page from under a second to a few seconds after an event, and fires wallet alerts as soon as a balance crosses a threshold."
 ---
 
 <Info>
@@ -15,7 +15,7 @@ Without the add-on, Lago refreshes a wallet's ongoing balance on a periodic cycl
 With real-time usage, every event you send updates the balance your product reads. Your app, gateway or agent can top up, throttle or block based on a number that is seconds old, not minutes.
 
 <Frame>
-  <img src="/changelog/images/20261119-real-time-usage.webp" alt="A wallet with its real-time ongoing balance, a token usage chart and a usage alert triggered on a budget limit." />
+  <img src="/changelog/images/20261119-real-time-usage.webp" alt="A wallet with its real-time ongoing balance, a token usage chart and a budget alert." />
 </Frame>
 
 ## What changes for you
@@ -28,7 +28,7 @@ With real-time usage, every event you send updates the balance your product read
     The balance in your customer-facing UI matches what they just consumed. Fewer billing tickets, fewer surprises on the invoice.
   </Card>
   <Card title="Warn before budgets break" icon="bell">
-    Usage and wallet alerts fire seconds after a threshold is crossed, while there is still time to top up or slow down.
+    Wallet alerts fire seconds after a balance crosses a threshold, while there is still time to top up or slow down.
   </Card>
 </CardGroup>
 
@@ -45,7 +45,7 @@ With real-time usage, every event you send updates the balance your product read
     The wallet's [ongoing balance](/guide/wallet-and-prepaid-credits/overview) reflects the event from under a second to a few seconds later. A burst of events collapses into a single refresh, so the balance stays current under load.
   </Step>
   <Step title="Alerts are evaluated right away">
-    As soon as usage or a balance moves, Lago evaluates your [usage alerts](/guide/alerts/usage-alerts) and [credits consumption alerts](/guide/alerts/credits-consumption-alerts), and sends `alert.triggered` when a threshold is crossed.
+    As soon as a balance moves, Lago evaluates your [wallet alerts](/guide/alerts/credits-consumption-alerts) and sends `alert.triggered` when a threshold is crossed.
   </Step>
   <Step title="Your product acts">
     Your app reads the balance or reacts to the webhook, then tops up, throttles or blocks. Lago supplies the state. Enforcement stays in your request path.
@@ -72,14 +72,14 @@ curl --location --request GET "$LAGO_URL/api/v1/wallets/__WALLET_ID__" \
 
 `ongoing_balance_cents` and `credits_ongoing_balance` carry the refreshed values. Automatic [top-ups triggered by a threshold](/guide/wallet-and-prepaid-credits/wallet-top-up-and-void) monitor the same ongoing balance, so they also react within seconds.
 
-### Real-time alerts
+### Real-time wallet alerts
 
-Usage alerts and wallet alerts are evaluated as usage streams in, instead of waiting for the next periodic check.
+Wallet alerts are evaluated as soon as the ongoing balance moves, instead of waiting for the next periodic check. [Usage alerts](/guide/alerts/usage-alerts) keep their periodic check.
 
 - A burst of events triggers a single alert, not one per event.
 - Alerts and webhooks keep the same payloads, thresholds and [resolution rules](/guide/alerts/alert-resolution). Your webhook handlers need no change.
 
-See [real-time alerts](/guide/alerts/real-time-alerts) for use cases and a setup example.
+See [real-time wallet alerts](/guide/alerts/real-time-alerts) for use cases and a setup example.
 
 ### Real-time current usage
 
@@ -87,10 +87,9 @@ See [real-time alerts](/guide/alerts/real-time-alerts) for use cases and a setup
 
 ### Real-time usage graph and report
 
-The usage graph in the Lago app and the [usage report](/guide/analytics/usage) follow the same data. Consumption appears as events arrive, not after the next refresh, so your teams read the same numbers your product acts on.
+The usage page in the Lago app reads the same continuously aggregated data. Its graph and report per billable metric update as events arrive, so your teams see the numbers your product acts on, for example tokens per model during a traffic spike.
 
-- **Usage graph.** Follow a customer's consumption per billable metric while it happens, for example tokens per model during a traffic spike.
-- **Usage report.** Break consumption and its value down by billable metric, customer or plan, including usage from the current billing period that is not invoiced yet.
+Metrics outside the [coverage](#coverage), recurring metrics included, do not appear on this page.
 
 ## Coverage
 
@@ -112,7 +111,7 @@ A charge is refreshed in real time when it also meets these conditions:
 | --- | --- |
 | Charge timing | In arrears |
 | Charge models | Standard, graduated, package, volume, graduated percentage, dynamic |
-| Not yet covered | Pay-in-advance and prorated charges, the percentage charge model, plans from the product catalog |
+| Not yet covered | Recurring metrics (for example seats or stored GB), pay-in-advance and prorated charges, the percentage charge model, plans from the product catalog |
 
 Other charges keep the periodic refresh. Their events are billed exactly as before. Only the refresh delay differs.
 
