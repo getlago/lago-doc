@@ -39,7 +39,9 @@ Lago releases the held funds immediately after a successful verification.
 
 ### Supported payment methods
 
-Pre-authorization relies on Stripe's manual capture, so it only works with payment methods that support it. Cards and Link do; methods such as SEPA Direct Debit or Boleto do not, and using one returns a `provider_error` without creating the subscription.
+Pre-authorization relies on Stripe's manual capture, so it only works with payment methods that support it. Cards and Link do; bank debits and transfers do not.
+
+When the payment method to pre-authorize is a SEPA Direct Debit, ACH Direct Debit, Bacs Direct Debit, Boleto or bank transfer, Lago rejects the request before calling Stripe. It returns a `payment_method_not_supported_for_authorization` validation error on `payment_method_id`, and no subscription is created. If Lago doesn't know the payment method's type, Stripe refuses the hold instead, and the request returns a `provider_error`.
 
 The exact list depends on the payment methods enabled on your Stripe account. Refer to the **Manual capture** column of [Stripe's payment method support matrix](https://docs.stripe.com/payments/payment-methods/payment-method-support).
 
@@ -164,6 +166,19 @@ A `requires_capture` status means the amount is held and about to be released. W
     "http_body": {
       // Complete Stripe error response
     }
+  }
+}
+```
+
+When the payment method can't be pre-authorized, or the customer has none, the request fails with a validation error instead:
+
+```json
+{
+  "status": 422,
+  "error": "Unprocessable Entity",
+  "code": "validation_errors",
+  "error_details": {
+    "payment_method_id": ["payment_method_not_supported_for_authorization"]
   }
 }
 ```
