@@ -1,5 +1,6 @@
 ---
 title: "Commitments"
+description: "Bill negotiated minimum spend with Lago Cloud or self-hosted Lago, including annual commitments, monthly usage invoices, and an end-of-period true-up."
 ---
 
 <Info>
@@ -8,9 +9,9 @@ title: "Commitments"
 This feature is only available to users with a premium license. Please **[contact us](mailto:hello@getlago.com)** to get access to Lago Cloud and Lago Self-Hosted Premium.
 </Info>
 
-A plan can define a spending commitment, which sets a financial baseline for
-the services you offer. You can also override that commitment per customer when
-you create a subscription.
+A plan can define a minimum spending commitment for an enterprise contract. Combine it with negotiated usage rates, and [override the plan for each customer](/guide/subscriptions/assign-plan#overriding-a-plan). These workflows are available with managed [Lago Cloud](/guide/lago-cloud) and Lago Self-Hosted Premium.
+
+Use a minimum commitment when the customer agrees to spend at least an amount over a billing period. Use [prepaid credits](/guide/wallet-and-prepaid-credits/overview) when the customer buys a balance up front to pay future invoices. Both can be part of a negotiated offer; they represent different billing rules.
 
 ## Minimum commitment
 
@@ -32,6 +33,25 @@ Conversely, if spending exceeds the minimum commitment, Lago will generate an in
 <Info>
   The minimum commitment is calculated based on the pre-tax amount and before any discounts (such as coupons or credits) are applied.
 </Info>
+
+### Annual commitment with monthly usage invoices
+
+Set the [plan interval](/guide/plans/plan-model#plan-interval) to `yearly` and enable monthly billing for usage-based charges (`bill_charges_monthly: true`). The minimum commitment follows the yearly plan interval. Lago invoices usage each month and assesses the annual shortfall at the end of the commitment period.
+
+For example, a customer starts on January 1 with a **\$120,000 annual minimum commitment**, no subscription fee, and usage billed monthly in arrears. Assume a full calendar year with no plan changes, taxes, discounts, or credits, and \$8,000 of billable usage each month:
+
+| Billing step | Amount |
+| --- | ---: |
+| January through November usage invoices | 11 × \$8,000 = \$88,000 |
+| December usage | \$8,000 |
+| Annual usage total | \$96,000 |
+| Year-end true-up | \$120,000 − \$96,000 = \$24,000 |
+| Invoice closing the year | \$8,000 usage + \$24,000 true-up = \$32,000 |
+| Total billed for the year | \$120,000 |
+
+If annual spending reaches or exceeds the commitment, Lago bills the actual spending without adding a true-up. A \$120,000 annual minimum allows usage to vary across the year; twelve \$10,000 monthly minimums assess a separate shortfall each month.
+
+For customer-specific changes, see [edit a subscription](/guide/subscriptions/edit-subscription). Finance can reconcile [past usage](/guide/events/retrieve-usage), the invoice's usage lines, and its true-up fee, then [export invoices](/guide/invoicing/export) or sync them to [NetSuite](/integrations/accounting/netsuite).
 
 ### Defining a minimum commitment
 <Tabs>

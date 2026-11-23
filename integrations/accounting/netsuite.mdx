@@ -191,8 +191,8 @@ Customer creation from Lago to NetSuite happens in real time with only a few sec
 When Lago finalizes an invoice for a linked customer, it syncs to a NetSuite Invoice in real time. The NetSuite invoice gets:
 
 - **One line per Lago fee**, on the mapped item, with the Lago fee `units` as `quantity` and `precise_unit_amount` as `rate`;
-- **Coupons, credit notes, and prepaid (wallet) credits** as negative lines, so the NetSuite total matches what the customer owes;
-- **Taxes** from your Tax Mapping, reconciled against Lago's totals to the cent (NetSuite does not support tax details at the line item level, so the integration adjusts rounding so the totals never drift); and
+- **Coupons, credit notes, prepaid (wallet) credits, and usage already billed** as negative lines, so the NetSuite total matches what the customer owes;
+- **Taxes** from your Tax Mapping, as one tax detail line per fee, reconciled against Lago's totals to the cent so the totals never drift; and
 - **Links back to Lago**: the Lago invoice view shows a direct link to the NetSuite invoice, and the NetSuite invoice stores its Lago ID and a URL back to Lago.
 
 <Info>
@@ -207,7 +207,7 @@ Invoice creation from Lago to NetSuite happens in real time with only a few seco
 
 If your invoices carry many small usage lines (for example, one per metric or model), you can enable **charge grouping** to combine all usage-charge lines into a single invoice line on an item you choose, with a description listing what was included. Grouping rules let you restrict when this happens, for example only for certain customers or invoice types.
 
-### Credit Notes synchronization
+### Credit notes synchronization
 
 When a credit note is issued in Lago for a linked customer, it syncs to a NetSuite Credit Memo in real time, following the same line and tax logic as invoices. When the credit note offsets an existing invoice, the credit memo is **automatically applied to the original invoice**.
 

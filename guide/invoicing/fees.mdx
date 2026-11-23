@@ -88,6 +88,25 @@ This is illustrated below:
 
 This option allows you to define the payment status of a fee yourself. The available options are: `pending`, `succeeded`, `failed`, and `refunded`.
 
+<CodeGroup>
+```bash Update the payment status of a fee
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+FEE_ID="__YOUR_FEE_ID__"
+
+curl --location --request PUT "$LAGO_URL/api/v1/fees/$FEE_ID" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "fee": {
+      "payment_status": "succeeded"
+    }
+  }'
+```
+</CodeGroup>
+
+Lago stamps the matching timestamp on the fee: `succeeded_at`, `failed_at` or `refunded_at`. Only the timestamp of the current status is set. A fee that already belongs to an invoice returns the error code `invoiced_fee`.
+
 Note that `payment_status` is used to group fees with a `succeeded` status into a specific invoice if `regroup_paid_fees` is set to `invoice`. Outside of this process, the `payment_status` is for your internal use.
 
 ## Delete a fee
@@ -97,3 +116,16 @@ Note that `payment_status` is used to group fees with a `succeeded` status into 
 </Info>
 
 This option allows you to delete a fee that is not linked to any invoice. Please refer to charge [invoiceable or not](/guide/plans/charges/invoiceable-vs-noninvoiceable) for more details.
+
+<CodeGroup>
+```bash Delete a fee
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+FEE_ID="__YOUR_FEE_ID__"
+
+curl --location --request DELETE "$LAGO_URL/api/v1/fees/$FEE_ID" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+Lago returns the deleted fee. A fee that already belongs to an invoice returns the error code `invoiced_fee`.

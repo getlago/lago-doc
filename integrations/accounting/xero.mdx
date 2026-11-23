@@ -135,8 +135,9 @@ Note the following:
 - Each fee issued by Lago is synced as a line item on a Xero invoice;
 - The Lago fee `units` are synced to Xero as `Quantity`;
 - The Lago fee `precise_unit_amount` is synced to Xero as `UnitAmount`;
-- Lago can send the total tax amount for a specific line item; and
-- Lago can apply discount to a specific line item.
+- Lago can send the total tax amount for a specific line item;
+- Coupons, prepaid credits, usage already billed and credit notes are each synced as a separate negative line item, not as a discount on an existing line; and
+- Lago creates every Xero invoice with the status `AUTHORISED`.
 
 Once the invoice is created in Xero, the Lago invoice view shows a direct link to the corresponding Xero invoice.
 
@@ -153,21 +154,20 @@ Invoice creation from Lago to Xero happens in real time with only a few seconds 
 | --- | --- |
 | invoice | type |
 | invoice.number | InvoiceNumber |
-| invoice.status | Status |
 | invoice.currency | CurrencyCode |
 | invoice.issuing_date | Date |
 | invoice.payment_due_date | DueDate |
+| invoice.purchase_order_number | Reference |
 | invoice.fee.units | Quantity |
 | invoice.fee.precise_unit_amount | UnitAmount |
-| invoice.fee.amount_cents | LineAmount |
 | invoice.fee.taxes_amount_cents | TaxAmount |
-| invoice.fee.precise_coupons_amount_cents | DiscountAmount |
 
-## Credit Notes synchronization
+## Credit notes synchronization
 If a Lago customer is linked to a Xero customer, Lago syncs credit notes to Xero Credit Notes in real time.
 
 Note the following:
-- Each fee refunded by Lago is synced as a line item on a Xero Credit Note; and
+- Each fee refunded by Lago is synced as a line item on a Xero Credit Note;
+- Each line is sent with a quantity of 1 and the full refunded amount as the unit amount; and
 - Any discounts on a credit note (like a coupon, for instance) are synced as line items on the Xero Credit Note.
 
 Once the credit note is created in Xero, the Lago credit note view shows a direct link to the corresponding Xero Credit Note.
@@ -180,13 +180,9 @@ Credit note creation from Lago to Xero happens in real time with only a few seco
 | Lago | Xero |
 | --- | --- |
 | credit_note.number | CreditNoteNumber |
-| credit_note.reference | Reference |
-| credit_note.status | Status |
 | credit_note.currency | CurrencyCode |
 | credit_note.issuing_date | Date |
-| credit_note.line_item.units | Quantity |
-| credit_note.line_item.precise_unit_amount | UnitAmount |
-| credit_note.line_item.amount_cents | LineAmount |
+| credit_note.line_item.amount_cents | UnitAmount |
 | credit_note.line_item.taxes_amount_cents | TaxAmount |
 
 ## Payments synchronization
@@ -195,7 +191,7 @@ If a Lago invoice is tied to a Xero invoice, Lago automatically syncs payments o
 | Lago | Xero |
 | --- | --- |
 | invoice.id | Invoice |
-| invoice.amount_cents | Amount |
+| payment.amount_cents | Amount |
 
 ## Integration logs
 Whenever an issue occurs in Xero, Lago will notify you through a [webhook message](/api-reference/webhooks/messages#param-customer-accounting-provider-error) called `customer.accounting_provider_error`.

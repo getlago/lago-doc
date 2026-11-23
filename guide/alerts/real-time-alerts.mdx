@@ -1,0 +1,90 @@
+---
+title: "Real-time wallet alerts: act while it still matters"
+sidebarTitle: "Real-time wallet alerts"
+description: "With the real-time usage add-on, wallet alerts fire from under a second to a few seconds after the event that crossed the threshold."
+---
+
+<Info>
+  **PREMIUM ADD-ON** ✨
+
+  Real-time wallet alerts are part of the [real-time usage](/guide/events/real-time-usage) add-on, available on Lago Cloud upon request only. Please [**contact us**](mailto:hello@getlago.com) to enable it for your organization.
+</Info>
+
+An alert is only useful if it arrives while you can still act on it. When balances refresh on a periodic cycle, a fast workload can drain a wallet before the alert fires.
+
+With real-time wallet alerts, Lago evaluates your wallet alerts as soon as the ongoing balance moves. The `alert.triggered` webhook reaches you from under a second to a few seconds after the event that crossed the threshold.
+
+## What changes
+
+| | Without the add-on | With real-time wallet alerts |
+| --- | --- | --- |
+| Wallet alert evaluation | Periodic | As the balance moves |
+| Time to `alert.triggered` | Up to minutes | Under a second to a few seconds |
+| Alerts, thresholds, webhooks | Unchanged | Unchanged |
+
+It applies to [wallet alerts](/guide/alerts/credits-consumption-alerts). [Usage alerts](/guide/alerts/usage-alerts) keep their periodic check. Nothing changes in how you create alerts or consume webhooks. The add-on changes when alerts fire, not what they are.
+
+## Use cases
+
+<CardGroup cols={3}>
+  <Card title="Cut access on time" icon="lock">
+    Block or downgrade a customer when credits run out, not a minute after they went into debt.
+  </Card>
+  <Card title="Top up before the stop" icon="arrow-up">
+    Trigger a top-up or a payment request on a low-balance threshold while the customer is still running.
+  </Card>
+  <Card title="Catch spikes early" icon="chart-line">
+    A token or compute surge drains a wallet fast. A low-balance alert catches it while it is still small, so you can throttle or notify.
+  </Card>
+</CardGroup>
+
+## How it works
+
+<Steps>
+  <Step title="An event arrives">
+    You send usage events as usual. Lago aggregates them as they stream in.
+  </Step>
+  <Step title="The balance refreshes">
+    The wallet's ongoing balance reflects the event within seconds.
+  </Step>
+  <Step title="Alerts are evaluated">
+    Lago checks your wallet alerts against the new balance. A burst of events triggers one alert, not one per event.
+  </Step>
+  <Step title="Your product acts">
+    You receive `alert.triggered` and decide what happens: warn, throttle, block or top up.
+  </Step>
+</Steps>
+
+## Set up a real-time wallet alert
+
+Once the add-on is enabled, create alerts exactly as you would without it. Give each threshold a `code` that maps to the action your product takes.
+
+```bash Create a low-credits alert
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v1/customers/:customer_external_id/wallets/:wallet_code/alerts" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "alert": {
+      "alert_type": "wallet_credits_ongoing_balance",
+      "code": "low_credits",
+      "name": "Low credits",
+      "thresholds": [
+        { "code": "warning", "value": "500", "recurring": false },
+        { "code": "critical", "value": "50", "recurring": false },
+        { "code": "empty", "value": "0", "recurring": false }
+      ]
+    }
+  }'
+```
+
+Then listen for `alert.triggered`, with the same payload as any other alert: warn on `warning`, restrict on `critical`, block or top up on `empty`. To also know when a value is back on the safe side, use [alert resolution](/guide/alerts/alert-resolution).
+
+## Good to know
+
+- **Lago notifies, your product enforces.** Blocking, throttling or topping up happens in your application or gateway.
+- **Not a spending cap.** Usage served before your product reacts is still consumed, and a balance can go below zero. To enforce a hard limit, authorize the work in your application before it starts.
+- **Automatic fallback.** If the real-time path is delayed, alerts are evaluated on the periodic cycle. No threshold crossing is lost.
+- **Coverage follows real-time usage.** A wallet's balance refreshes in real time only for charges [covered](/guide/events/real-time-usage#coverage) by the add-on. Usage from other charges reaches the balance, and its alerts, on the periodic cycle.
