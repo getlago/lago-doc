@@ -1,23 +1,24 @@
 ---
 title: "Create billable metrics"
 sidebarTitle: "Create billable metrics"
-description: "Define a billable metric that turns usage events into a quantity, pick its aggregation, and connect it to a metered product for pricing."
-keywords: ["Lago", "billable metric", "aggregation", "metered product"]
+description: "Define what you want to measure from usage events and how Lago calculates the quantity."
+keywords: ["Lago", "billable metric", "aggregation", "usage measurement"]
 ---
 
-A [billable metric](/v2/api-reference/billable-metrics/object) defines how Lago turns usage events into a quantity, such as a count of API calls or a sum of gigabytes. It measures usage but sets no price: a [metered product](/v2/guide/product-catalog/metered-products) uses the metric, and its [rate card](/v2/guide/rate-cards/overview) prices the quantity.
+A [billable metric](/v2/api-reference/billable-metrics/object) defines what you want to measure from your customers’ usage and how Lago calculates the quantity. For example, you can count API calls, sum tokens consumed, or track the highest number of CPUs used.
 
-## How it fits together
+Your application sends usage events to Lago. The metric identifies the matching events and applies an aggregation rule, such as counting events or adding the values of an event property.
 
-| Object | Answers |
+Start with the quantity you need to track. Pricing is configured separately through Products and Rate Cards.
+
+## Choose what to measure
+
+| What you want to measure | How to calculate it |
 | --- | --- |
-| Billable metric | How much was used? |
-| Metered product | What do you sell? Set `billable_metric_code` on the product. |
-| Product filter | Which slice of that usage? Built on the metric's `filters`. |
-| Rate card and rate | What does it cost? |
-| Contract | Who pays? Events carry `external_contract_id`. |
-
-In the running example, the `api_calls` metric counts API calls. The metered product `api_calls_product` uses it, and the `api_calls_usd` rate card prices it at $0.01 per call. 2,000 calls give $20.00. The fixed $100 `monthly_service` product needs no metric.
+| Number of API calls | Count matching events. |
+| Total tokens consumed | Sum the token count sent with each event. |
+| Highest number of CPUs used | Take the maximum CPU count reported. |
+| Number of distinct users | Count unique user identifiers. |
 
 ## Metric fields
 
@@ -30,9 +31,9 @@ In the running example, the `api_calls` metric counts API calls. The metered pro
 | `field_name` | `gb` | The event property to aggregate. Required for every type except `count_agg`. |
 | `expression` | `event.properties.gb * event.properties.replicas` | Optional computed value per event. See [SQL expressions](/v2/guide/billable-metrics/sql-expressions). |
 | `weighted_interval` | `seconds` | Required for `weighted_sum_agg`. |
-| `recurring` | `false` | Whether values carry over between billing periods. See [Recurring vs metered](/v2/guide/billable-metrics/recurring-vs-metered). |
+| `recurring` | `false` | `true` carries the aggregated value between billing cycles; `false` resets it at the end of each cycle. See [Metric recurrence](/v2/guide/billable-metrics/recurring-vs-metered). |
 | `rounding_function`, `rounding_precision` | `round`, `2` | Optional rounding of the aggregated value. See [Rounding](/v2/guide/billable-metrics/rounding). |
-| `filters` | `[{ "key": "region", "values": ["us", "eu"] }]` | Dimensions you can slice and price separately. See [Filters and dimensions](/v2/guide/billable-metrics/filters). |
+| `filters` | `[{ "key": "region", "values": ["us", "eu"] }]` | Dimensions you can use to group usage, such as region or provider. See [Filters and dimensions](/v2/guide/billable-metrics/filters). |
 
 ## Create the API calls metric
 
@@ -45,8 +46,8 @@ Use COUNT (`count_agg`) when each event is one API call. `field_name` is not nee
     3. Enter its `name`, a `code` your events will send, and an optional `description`.
     4. Select the aggregation type that defines how consumption is measured.
     5. Define the property to aggregate, except for Count.
-    6. Define `filters` if you price several dimensions of the same usage.
-    7. Choose whether the metric is recurring (kept period over period) or metered (reset to 0 each period).
+    6. Define `filters` if you want to group usage by dimensions such as region or provider.
+    7. Set `recurring: true` to carry the aggregated value between billing cycles, or `recurring: false` to reset it at the end of each cycle.
     8. Save the billable metric.
   </Tab>
   <Tab title="API">
@@ -173,20 +174,20 @@ curl --location --request POST "$LAGO_URL/api/v2/events" \
 
 Send a second event with `transaction_id` set to `api-call-test-002`. The omitted `timestamp` defaults to the request time. Then read [contract current usage](/v2/guide/contracts/current-usage): the `api_calls_usd` entry should show `units` of `"2"`. Newly accepted events may take time to appear.
 
-## Connect the metric to a metered product
-
-When you create the API calls product, set `product_type` to `metered` and `billable_metric_code` to `api_calls`. Neither can change after the product is created. Keep the fixed `monthly_service` product separate: fixed products must not reference a metric.
-
 ## Update a metric
 
 `PUT` and `PATCH /billable_metrics/{code}` accept partial updates. Once the metric is attached to a plan, only `name`, `description` and permitted filter changes are allowed. Changes to locked fields return `422`. Filter values referenced by product filters cannot be removed.
+
+## Next step: connect the metric to a Product
+
+To use the metric for billing, connect it to a [metered Product](/v2/guide/product-catalog/metered-products). Set `product_type` to `metered` and `billable_metric_code` to `api_calls`. Configure pricing separately through a [Rate Card](/v2/guide/rate-cards/overview).
 
 <CardGroup cols={2}>
   <Card title="Aggregation types" icon="calculator" href="/v2/guide/billable-metrics/aggregation-types/overview">
     Choose how usage is measured.
   </Card>
   <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
-    Sell what the metric measures.
+    Connect your metric to a Product.
   </Card>
   <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
     `POST /billable_metrics`
