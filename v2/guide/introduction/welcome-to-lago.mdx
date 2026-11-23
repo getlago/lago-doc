@@ -1,49 +1,53 @@
 ---
 title: "Welcome to Lago"
 sidebarTitle: "Welcome to Lago"
-description: "How Lago turns usage and pricing into invoices: events, billable metrics, products, rate cards, rates, plans and contracts, with one worked example."
+description: "Understand how Lago turns your pricing and customer usage into invoices."
 keywords: ["Lago", "billing engine", "contracts", "product catalog", "rate cards", "usage-based billing"]
 ---
 
-Lago is the contract-based billing engine: it turns your pricing and your customers' usage into invoices. You define what you sell in a product catalog, price it with rate cards and rates, bundle the pricing into a plan, and apply it to a customer with a contract.
+Lago turns your pricing and your customers' usage into invoices.
+
+Define what you sell as Products and configure their pricing with Rate Cards and Rates. Combine that pricing into a Plan, then use a Contract to apply the billing terms to a customer.
 
 <Info>
 API v2 is in beta (`2.0.0-beta`). The subscription-based engine stays supported as [Legacy (v1): Welcome to Lago](/guide/introduction/welcome-to-lago). To compare the two models, read [Contracts vs subscriptions](/v2/guide/introduction/contracts-vs-subscriptions).
 </Info>
 
-This documentation follows one example: a monthly fee of $100, plus $0.01 for each API call. With 2,000 calls in a month, the invoice is $120 before tax. [Your first invoice](/v2/guide/introduction/your-first-invoice) builds it end to end.
+This guide uses an example with a $100 monthly fee and $0.01 per API call. For a full month with one fixed unit and 2,000 calls, the total is $120 before tax, with no discounts, credits or adjustments for a partial billing period.
 
-## Five-step billing workflow
+Follow [Your first invoice](/v2/guide/introduction/your-first-invoice) to build this example.
 
-The workflow below explains how usage becomes a billed amount. Fixed products do not need usage events.
+## How billing works
 
-### 1. Usage ingestion
+The sections below explain how usage, pricing, invoices and payments fit together. Fixed Products do not need usage events.
 
-An [event](/v2/api-reference/events/create) records something your customer consumed. In the example, your application sends one event per API call, addressed to the customer's contract with `external_contract_id`.
+### 1. Record usage
 
-Events can carry properties that describe the usage, such as a region. Properties let you price subsets of usage differently when your pricing needs that detail.
+An [event](/v2/api-reference/events/create) records your customer's usage. In this example, your application sends one event for each API call. The `external_contract_id` field identifies the customer's Contract.
 
-### 2. Metrics aggregation
+Events can include properties such as region. You can use these properties to price groups of usage differently.
 
-A [billable metric](/v2/guide/billable-metrics/create-billable-metrics) defines how Lago measures usage from events. For API calls, a `COUNT` metric (`count_agg`) counts the matching events.
+### 2. Measure usage
 
-2,000 matching events give a billable quantity of 2,000 calls. The metric measures the quantity. Pricing decides what that quantity costs.
+A [billable metric](/v2/guide/billable-metrics/create-billable-metrics) defines how Lago measures usage from events. In this example, the Count aggregation (`count_agg`) counts API call events.
 
-### 3. Pricing and packaging
+With 2,000 matching events, the billable quantity is 2,000 calls. The metric determines the quantity; the Rate determines the price.
+
+### 3. Define pricing
 
 Pricing connects what you sell to the terms each customer receives. Each object has one role.
 
 | Object | Purpose | In the example |
 | --- | --- | --- |
-| [Product category](/v2/guide/product-catalog/product-categories) | Groups products. Optional. | `api_services` groups the monthly service and API calls. |
-| [Product](/v2/guide/product-catalog/products) | What you charge for. A fixed product has no billable metric. A metered product uses one to measure consumption. | Fixed `monthly_service` and metered `api_calls_product`. |
-| [Product filter](/v2/guide/product-catalog/product-filters) | A subset of a metered product's usage, priced separately. | None in the baseline. A variation could split calls by region. |
-| [Rate card](/v2/guide/rate-cards/overview) | Billing settings and rates for one product or product filter: currency, billing timing, proration. | `monthly_service_usd` and `api_calls_usd`. |
-| [Rate](/v2/guide/rate-cards/rates) | How much to charge, with which rate model, from which date, on which billing interval. | `monthly_standard` at $100 per month, `calls_standard` at $0.01 per call. |
-| [Plan](/v2/guide/plans/overview) | Combines rate cards into a reusable offer. | `api_monthly`. |
-| [Contract](/v2/guide/contracts/overview) | Applies billing terms to one customer. | `contract_example` for `customer_example`. |
+| [Product category](/v2/guide/product-catalog/product-categories) | An optional way to group Products. | `api_services` groups the monthly service and API calls. |
+| [Product](/v2/guide/product-catalog/products) | What you bill your customer for. A fixed Product has no billable metric. A metered Product uses a billable metric to measure usage. | Fixed `monthly_service` and metered `api_calls_product`. |
+| [Product filter](/v2/guide/product-catalog/product-filters) | A group of a metered Product's usage that you price separately. | Not used in this example. You could use a filter to price calls by region. |
+| [Rate Card](/v2/guide/rate-cards/overview) | Holds Rates and shared billing settings for a Product or Product filter, including currency, billing timing and proration—adjustments for part of a billing period. | `monthly_service_usd` and `api_calls_usd`. |
+| [Rate](/v2/guide/rate-cards/rates) | Defines the price, pricing model, effective date and billing interval. | `monthly_standard` at $100 per month, `calls_standard` at $0.01 per call. |
+| [Plan](/v2/guide/plans/overview) | Combines applied Rate Cards into a reusable offer. | `api_monthly`. |
+| [Contract](/v2/guide/contracts/overview) | Applies billing terms to a customer. | `contract_example` for `customer_example`. |
 
-A product can belong to a product category or stand alone. A category organizes products. It never sets a price.
+A Product can belong to a Product category or stand alone. A category organizes Products. It never sets a price.
 
 The diagram shows how the objects relate. Arrows describe relationships, not setup order.
 
@@ -51,8 +55,8 @@ The diagram shows how the objects relate. Arrows describe relationships, not set
 flowchart TD
   Category["Product category"] -. "optionally groups" .-> Product["Product"]
   Product -->|"usage measured by (metered)"| Metric["Billable metric"]
-  Product -->|"metered products can define"| Filter["Product filter"]
-  Card["Rate card"] -->|"targets"| Product
+  Product -->|"metered Products can define"| Filter["Product filter"]
+  Card["Rate Card"] -->|"targets"| Product
   Card -->|"or targets"| Filter
   Card -->|"contains"| Rate["Rates: prices and effective dates"]
   Plan["Plan"] -->|"applies"| Card
@@ -60,13 +64,13 @@ flowchart TD
   Contract -->|"applies terms to"| Customer["Customer"]
 ```
 
-Each rate card targets either a product or one of its filters. It holds the shared billing settings and the rates that define pricing over time. The `api_calls_usd` rate card targets `api_calls_product`. Its rate sets the price at $0.01 per call. A later rate can introduce a new price from a specified date.
+Each Rate Card targets either a Product or one of its filters. It holds the shared billing settings and the Rates that define pricing over time. The `api_calls_usd` Rate Card targets `api_calls_product`. Its Rate sets the price at $0.01 per call. A later Rate can introduce a new price from a specified date.
 
-The plan brings the offer together. The contract connects those terms to the customer. Every invoice line traces back to a product, a rate card, a rate and a quantity.
+The Plan brings the offer together. The Contract connects those terms to the customer. In this example, each invoice line relates to a Product, a Rate Card, a Rate and a quantity.
 
-### 4. Invoicing
+### 4. Calculate invoice amounts
 
-Lago calculates fees from the customer's contract and the billed quantities. The rate's billing interval and the rate card's billing timing decide when fees are invoiced.
+Lago calculates fees from the customer's Contract and the billed quantities. The Rate's billing interval and the Rate Card's billing timing decide when fees are invoiced.
 
 For one full monthly period, with one fixed unit, 2,000 API calls, and no proration, discounts, credits or taxes:
 
@@ -76,34 +80,32 @@ For one full monthly period, with one fixed unit, 2,000 API calls, and no prorat
 | API calls | $0.01 per call | 2,000 calls | Same full monthly period | $20.00 |
 | **Total** | | | | **$120.00** |
 
-The fixed line is $100 × 1. The usage line is $0.01 × 2,000 = $20. Together, $120 before tax. To reconcile a line, check its product, rate, quantity and billing period.
+To check an invoice line, compare its Product, Rate, quantity and billing period with the Contract's billing terms.
 
-### 5. Payments
+### 5. Collect and record payments
 
-An invoice records what your customer owes. A payment records money received toward that balance.
+An invoice records what your customer owes. You can collect payments through a [payment provider](/v2/guide/payments/payment-providers) or [record payments received outside Lago](/v2/guide/payments/record-manual-payments).
 
-Lago connects billing to payment collection through [payment providers](/v2/guide/payments/payment-providers). You can also [record payments received outside Lago](/v2/guide/payments/record-manual-payments).
-
-Invoice status and payment status are separate. A finalized invoice does not mean the customer has paid.
+A finalized invoice does not mean the customer has paid.
 
 ## Where to go next
 
 | Your goal | Start here |
 | --- | --- |
 | Measure customer consumption | [Billable metrics](/v2/guide/billable-metrics/create-billable-metrics) and [usage ingestion](/v2/guide/events/ingesting-usage) |
-| Define products, filters and reusable pricing | [Product catalog](/v2/guide/product-catalog/overview) and [rate cards](/v2/guide/rate-cards/overview) |
-| Build an offer and apply it to a customer | [Plans](/v2/guide/plans/overview) and [contracts](/v2/guide/contracts/overview) |
+| Define Products, filters and reusable pricing | [Product Catalog](/v2/guide/product-catalog/overview) and [Rate Cards](/v2/guide/rate-cards/overview) |
+| Build an offer and apply it to a customer | [Plans](/v2/guide/plans/overview) and [Contracts](/v2/guide/contracts/overview) |
 | Understand and verify invoice lines | [Invoicing](/v2/guide/invoicing/overview) |
 | Collect and reconcile payments | [Payments](/v2/guide/payments/payment-providers) |
 
-Task guides use **Dashboard** and **API** tabs where both paths exist. They share the same concepts and the same example.
+Where both options are available, task guides include **Dashboard** and **API** instructions.
 
 <CardGroup cols={2}>
   <Card title="Your first invoice" icon="rocket" href="/v2/guide/introduction/your-first-invoice">
-    Build the $100 + $0.01 per call example end to end, from billable metric to invoice.
+    Create a Contract and invoice a $100 monthly fee plus $0.01 per API call.
   </Card>
   <Card title="Contracts vs subscriptions" icon="code-compare" href="/v2/guide/introduction/contracts-vs-subscriptions">
-    What changed from v1 and which version to use.
+    Compare the contract-based and subscription-based billing models.
   </Card>
   <Card title="Lago Cloud" icon="cloud" href="/guide/lago-cloud">
     Use the hosted Lago service.
