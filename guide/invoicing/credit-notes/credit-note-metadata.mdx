@@ -22,7 +22,6 @@ To add metadata:
       <CodeGroup>
       ```bash Add metadata when creating a credit note
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
 
       curl --location --request POST "$LAGO_URL/api/v1/credit_notes" \
@@ -30,7 +29,15 @@ To add metadata:
       --header 'Content-Type: application/json' \
       --data-raw '{
         "credit_note": {
-          …
+          "invoice_id": "__LAGO_INVOICE_ID__",
+          "reason": "duplicated_charge",
+          "credit_amount_cents": 10,
+          "items": [
+            {
+              "fee_id": "__LAGO_FEE_ID__",
+              "amount_cents": 10
+            }
+          ],
           "metadata": {
             "sync_to_netsuite": "false",
             "sync_to_salesforce": "false"
@@ -44,10 +51,10 @@ To add metadata:
       <CodeGroup>
       ```bash Add metadata to an existing credit note
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
+      CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
 
-      curl --location --request POST "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      curl --location --request POST "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/metadata" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -76,10 +83,10 @@ To edit metadata on a credit note:
       <CodeGroup>
       ```bash Edit or add metadata on a credit note
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
+      CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
 
-      curl --location --request PATCH "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      curl --location --request PATCH "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/metadata" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -95,10 +102,10 @@ To edit metadata on a credit note:
       <CodeGroup>
       ```bash Replace all metadata on a credit note
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
+      CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
 
-      curl --location --request POST "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      curl --location --request POST "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/metadata" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -127,10 +134,11 @@ To delete metadata on a credit note:
       <CodeGroup>
       ```bash Delete a specific metadata key
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
+      CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+      METADATA_KEY="sync_to_salesforce"
 
-      curl --location --request DELETE "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata/:key" \
+      curl --location --request DELETE "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/metadata/$METADATA_KEY" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json'
       ```
@@ -140,10 +148,10 @@ To delete metadata on a credit note:
       <CodeGroup>
       ```bash Delete all metadata on a credit note
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
+      CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
 
-      curl --location --request DELETE "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      curl --location --request DELETE "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/metadata" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json'
       ```
