@@ -1,57 +1,52 @@
 ---
 title: "Retrieve usage"
 sidebarTitle: "Retrieve usage"
-description: "List ingested events by contract, code, transaction or time window with cursor pagination, and read a contract's current usage to reconcile."
+description: "Find received events and check the quantities and amounts calculated for a Contract."
 keywords: ["Lago", "events", "current usage", "external_contract_id"]
 ---
 
-Retrieving usage means checking two things: the raw events Lago accepted, and the quantities and amounts it computed from them for each contract. Use the events list to debug an integration, and [contract current usage](/v2/guide/contracts/current-usage) to see what the open billing windows will bill.
+Use the events list to check which usage events Lago received. Use [Contract current usage](/v2/guide/contracts/current-usage) to check the quantities and amounts calculated for the current billing periods.
+
+These checks help you investigate missing events and compare Lago's results with your own records.
 
 ## List events
 
-`GET /events` lists events with event-time filters. It is cursor-paginated and supports no expansions. The API key needs `event` read permission.
+Use `GET /events` to find events by Contract, billable metric, transaction ID or the time the usage happened. Your API key needs `event` read permission.
+
+The response is split into pages. Use the returned cursors to retrieve additional pages.
 
 | Query parameter | Effect |
 | --- | --- |
-| `external_contract_id` | Events for one contract. |
+| `external_contract_id` | Events for one Contract. |
 | `code` | Events for one billable metric code. |
 | `transaction_id` | Events with this transaction identifier. |
-| `timestamp_from` | Inclusive lower bound on the event time, as an ISO 8601 date or timestamp. A date means midnight UTC. |
-| `timestamp_to` | Inclusive upper bound on the event time, as an ISO 8601 date or timestamp. A date means midnight UTC. |
+| `timestamp_from` | Include events at or after this time. Use an ISO 8601 date or timestamp. A date without a time means midnight UTC. |
+| `timestamp_to` | Include events at or before this time. Use an ISO 8601 date or timestamp. A date without a time means midnight UTC. |
 | `limit` | Records per page. Values outside the supported range return `400`. |
-| `after`, `before` | Opaque cursors from `next_cursor` and `prev_cursor`. |
-| `include_total_count` | Adds `total_count` on the first page. The count can be an estimate, flagged by `total_count_estimated: true`. |
+| `after`, `before` | Use the values returned in `next_cursor` or `prev_cursor` to navigate the results. |
+| `include_total_count` | Request `total_count` on the first page. If `total_count_estimated` is `true`, the count is an estimate. |
 
-`external_subscription_id`, `created_at_from` and `created_at_to` are rejected on this endpoint.
+<CodeGroup>
+```bash Events for contract_example in January 2027
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
 
-<Tabs>
-  <Tab title="Dashboard">
-    <Note>
-      Dashboard steps for the events list are not documented yet. Use the API tab while the API is in beta.
-    </Note>
-  </Tab>
-  <Tab title="API">
-    <CodeGroup>
-    ```bash Events for contract_example in January 2027
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
+curl --location --request GET "$LAGO_URL/api/v2/events?external_contract_id=contract_example&code=api_calls&timestamp_from=2027-01-01T00:00:00Z&timestamp_to=2027-01-31T23:59:59Z&limit=100" \
+  --header "Authorization: Bearer $API_KEY"
+```
 
-    curl --location --request GET "$LAGO_URL/api/v2/events?external_contract_id=contract_example&code=api_calls&timestamp_from=2027-01-01T00:00:00Z&timestamp_to=2027-01-31T23:59:59Z&limit=100" \
-      --header "Authorization: Bearer $API_KEY"
-    ```
+```bash Find events by transaction ID
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
 
-    ```bash Find one event
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
+curl --location --request GET "$LAGO_URL/api/v2/events?transaction_id=api_20270114_customer_example_00001" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
 
-    curl --location --request GET "$LAGO_URL/api/v2/events?transaction_id=api_20270114_customer_example_00001" \
-      --header "Authorization: Bearer $API_KEY"
-    ```
-    </CodeGroup>
-  </Tab>
-</Tabs>
+### Read the response
 
-Each event returns `transaction_id`, `external_contract_id`, `code`, `properties`, `precise_total_amount_cents` and `timestamp` (UTC, microsecond precision).
+Each event returns `transaction_id`, `external_contract_id`, `code`, `properties`, `precise_total_amount_cents` and `timestamp` (UTC, microsecond precision). The response also includes cursors for navigating the results.
 
 ```json Response (trimmed)
 {
@@ -72,24 +67,34 @@ Each event returns `transaction_id`, `external_contract_id`, `code`, `properties
 }
 ```
 
-### Order and pagination
+<a id="order-and-pagination"></a>
+
+### Read additional pages
+
+1. Copy `meta.next_cursor` from the response.
+2. Send it as `after` in your next request, keeping the same filters.
+3. Continue until there is no next cursor.
+
+Use the cursor exactly as returned. Do not build it from event fields.
+
+The order of results depends on the event store:
 
 - ClickHouse-based organizations return enriched events ordered by `timestamp`, `external_contract_id`, `code` and `transaction_id`, all descending.
 - PostgreSQL-based organizations order by creation time and identifier, both descending.
-- Cursors are opaque. Pass `meta.next_cursor` as `after` for the next page. Never build a cursor from response fields. Keep the same filters while paging.
 
 See [Pagination](/v2/api-reference/pagination).
 
 ### If an event is missing
 
-1. Newly accepted events may not appear immediately. Wait and retry.
-2. Check the request returned `200`. A `422` means the event was rejected.
-3. Check `external_contract_id` and `code` in your payload.
-4. Check the `timestamp` falls inside your `timestamp_from` and `timestamp_to` window.
+1. Check the response to your ingestion request. A `422` means the event was rejected.
+2. Check that your retrieval filters match the event's `external_contract_id`, `code` and `transaction_id`.
+3. Check that its `timestamp` falls within your `timestamp_from` and `timestamp_to` range.
+4. Check the remaining result pages.
+5. If the event was just accepted, wait and repeat the retrieval request. Newly accepted events may not appear immediately.
 
 ## Retrieve current usage
 
-`GET /contracts/{external_id}/current_usage` returns the running quantities and amounts of a contract's open billing windows, per applied rate card. The API key needs `customer_usage` read permission.
+Use `GET /contracts/{external_id}/current_usage` to check the quantities and amounts calculated for a Contract's open billing periods, grouped by applied Rate Card. Your API key needs `customer_usage` read permission.
 
 ```bash Current usage of contract_example
 LAGO_URL="https://api.getlago.com"
@@ -99,27 +104,30 @@ curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example/curre
   --header "Authorization: Bearer $API_KEY"
 ```
 
-The data is provisional while the windows are open. See [Contract current usage](/v2/guide/contracts/current-usage) for the response fields, filters and a worked example.
+These values can change while the billing periods are open. See [Contract current usage](/v2/guide/contracts/current-usage) for the response fields, filters and a worked example.
 
-## Reconcile events and usage
+<a id="reconcile-events-and-usage"></a>
 
-For `contract_example` in January 2027:
+## Compare events with calculated usage
 
-| Check | Source | Expected |
-| --- | --- | --- |
-| Events received | `GET /events?external_contract_id=contract_example&code=api_calls` with January bounds | 2,000 events |
-| Quantity computed | Current usage, `api_calls_usd` entry, `units` and `events_count` | `"2000"` and `2000` |
-| Amount | Current usage, `api_calls_usd` entry, `amount_cents` | `2000` ($20.00) |
-| Fixed fee | Current usage, `monthly_service_usd` entry, `amount_cents` | `10000` ($100.00) |
+Compare the same Contract, metric and time range in your source records and Lago. Retrieve all result pages before comparing event counts.
 
-If the counts differ, look for events with the wrong `external_contract_id` or `code`, or timestamps outside the window. After the window closes, reconcile against the invoice [fees](/v2/guide/invoicing/fees).
+For a `Count` metric, 2,000 matching events represent a measured quantity of 2,000. Other aggregation types calculate quantities from event data, so the quantity may differ from the number of events.
+
+| Check | What to compare |
+| --- | --- |
+| Events received | Your source records and the matching events returned by Lago. |
+| Quantity calculated | The metric's aggregation result and the quantity in Contract current usage. |
+| Final invoice | The relevant invoice [fees](/v2/guide/invoicing/fees) after the invoice is finalized. |
+
+If results differ, check the Contract, metric, time range and filters. Allow recently accepted events time to appear before comparing again. See [Contract current usage](/v2/guide/contracts/current-usage) for pricing details.
 
 <CardGroup cols={2}>
   <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
-    Send events with `external_contract_id`.
+    Send usage events for a Contract.
   </Card>
   <Card title="Contract current usage" icon="gauge" href="/v2/guide/contracts/current-usage">
-    Fields, filters and a worked example.
+    Check calculated quantities and amounts.
   </Card>
   <Card title="List events (API)" icon="code" href="/v2/api-reference/events/list">
     `GET /events`
