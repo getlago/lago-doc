@@ -63,26 +63,6 @@ flowchart LR
 | Plan subscription fee | Fixed Product + Rate Card + `standard` Rate, applied with `units` | The recurring fee is a Product like any other. |
 | Plan interval | Billing interval on each Rate | Each Rate has its own billing interval. |
 
-## FAQ
-
-<AccordionGroup>
-  <Accordion title="Is a Contract the same thing as a subscription?">
-    It plays the same role: it applies billing terms to one customer and drives invoicing. A Contract differs in where pricing lives. Its terms come from applied Rate Cards, each with its own Rates, billing interval and phase sequence, instead of from charges on a Plan.
-  </Accordion>
-  <Accordion title="Can I send v1 events to a v2 Contract?">
-    Events use the same ingestion mechanism, but a v2 event targets a Contract with `external_contract_id` on `POST /api/v2/events` or `POST /api/v2/events/batch`. The v2 events list rejects `external_subscription_id`. See [usage ingestion](/v2/guide/events/ingesting-usage).
-  </Accordion>
-  <Accordion title="Where did the Plan interval go?">
-    Each Rate carries `billing_interval_count` and `billing_interval_unit`. Two Rate Cards in the same Plan can bill on different intervals, for example a yearly platform fee and monthly usage.
-  </Accordion>
-  <Accordion title="Does a price change affect existing customers?">
-    When a new Rate becomes active, every Plan and Contract using that Rate Card picks up its price, unless the Plan or Contract overrides the price for the current phase. See [Rates](/v2/guide/rate-cards/rates).
-  </Accordion>
-  <Accordion title="Is there an automated migration from v1 to v2?">
-    No migration tool is documented. v1 subscriptions and v2 Contracts are separate objects. To move an offer, recreate its pricing in the Product Catalog and create Contracts for the customers.
-  </Accordion>
-</AccordionGroup>
-
 <CardGroup cols={2}>
   <Card title="Your first invoice" icon="rocket" href="/v2/guide/introduction/your-first-invoice">
     Build the $100 monthly fee plus $0.01 per API call example.
