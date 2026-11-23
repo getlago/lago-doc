@@ -1,90 +1,82 @@
 ---
 title: "Manage plan changes"
-description: "Know what you can still edit on a plan, why a plan locks once a contract uses it, and how to roll out a different offer to new contracts."
+description: "Update an unused Plan or create a new Plan for a different offer."
 keywords: ["Lago", "plan", "plan locking", "contracts"]
 ---
 
-A plan locks as soon as a contract uses it: its applied rate cards, quantities and phases can no longer change. Finish configuring a plan before you attach the first customer, and create a new plan when you need a different offer.
+Before a Contract uses a Plan, you can update its applied Rate Cards, quantities and phases. Once the Plan is in use, these settings are locked. Create a new Plan when you need to offer different terms to new customers.
 
-## Before a contract uses the plan
+## Before a Contract uses the Plan
 
-While no contract uses it, the plan is editable. You can:
+While no Contract uses the Plan, you can:
 
-- Update plan fields such as `name`, `description`, `invoice_display_name` and `tax_codes`.
-- Add, update or remove applied rate cards.
-- Change `units` on an applied rate card.
-- Add, update, reorder or remove [rate phases and overrides](/v2/guide/plans/plan-phases).
+- Update Plan fields such as `name`, `description`, `invoice_display_name` and `tax_codes`.
+- Add, update or remove applied Rate Cards.
+- Change `units` on an applied Rate Card.
+- Add, update, reorder or remove [phases and overrides](/v2/guide/plans/plan-phases).
 
-Review the offer and its pricing before you create the first [contract](/v2/guide/contracts/overview).
+Review the offer and its pricing before you create the first [Contract](/v2/guide/contracts/overview).
 
-## Once the plan is locked
+## After a Contract uses the Plan
 
-Plans attached to contracts are locked. You cannot change the plan's configuration or add rate cards to it.
+The Plan's applied Rate Cards, quantities and phases are locked. Tax codes (`tax_codes`) can still be updated.
 
-| Change | Locked plan |
-| --- | --- |
-| Tax codes (`tax_codes`) | Allowed. Tax codes can change after a plan is in use. |
-| Other plan fields | Subject to plan locking rules. |
-| Add, update or remove applied rate cards | Not allowed. |
-| Add, update or remove rate phases | Not allowed. |
+Plan locking applies to the Plan's configuration. To review a customer's price, check the relevant Rate and any Plan or Contract overrides.
 
-To offer different terms to new customers, create a separate plan.
+## Update an unused Plan
 
-The lock applies to the plan, not to rate cards. Rate cards keep their own price timeline. When a new [rate](/v2/guide/rate-cards/rates) becomes active, its price applies to every plan and contract that does not override it.
+`PUT` and `PATCH` both accept partial updates. Omitted fields are unchanged.
 
-## Deletion
+Update the Plan's invoice display name:
 
-The API has no plan DELETE operation.
+```bash Update the plan's invoice display name
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
 
-## Update an editable plan
+curl --location --request PATCH "$LAGO_URL/api/v2/plans/api_monthly" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "plan": {
+      "invoice_display_name": "API monthly plan"
+    }
+  }'
+```
 
-<Tabs>
-  <Tab title="Dashboard">
-    <Note>
-      Dashboard steps for plans are not documented yet. Use the API tab while the API is in beta.
-    </Note>
-  </Tab>
-  <Tab title="API">
-    `PUT` and `PATCH` both accept partial updates. Omitted fields are unchanged.
+To change a fixed quantity, update the applied Rate Card:
 
-    <CodeGroup>
-    ```bash Update the plan's invoice display name
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
+```bash Change the fixed quantity on an applied rate card
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
 
-    curl --location --request PATCH "$LAGO_URL/api/v2/plans/api_monthly" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "plan": {
-          "invoice_display_name": "API monthly plan"
-        }
-      }'
-    ```
+curl --location --request PATCH "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards/monthly_service_usd" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "applied_rate_card": {
+      "units": "2"
+    }
+  }'
+```
 
-    ```bash Change the fixed quantity on an applied rate card
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
+## Offer different terms
 
-    curl --location --request PATCH "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards/monthly_service_usd" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "applied_rate_card": {
-          "units": "2"
-        }
-      }'
-    ```
-    </CodeGroup>
-  </Tab>
-</Tabs>
+Create a new Plan and configure its applied Rate Cards, quantities and phases before using it for new Contracts. For customer-specific terms, see [Contract overrides](/v2/guide/contracts/overrides).
+
+## Deleting a Plan
+
+The API does not provide an operation to delete a Plan.
+
+## Check the changes
+
+Retrieve the Plan after updating it. If you changed an applied Rate Card, retrieve it and check its quantity and phases. Confirm that the saved configuration matches the offer you intend to use.
 
 <CardGroup cols={2}>
   <Card title="Plans" icon="layer-group" href="/v2/guide/plans/overview">
-    Assemble an offer from rate cards.
+    Build an offer from Rate Cards.
   </Card>
   <Card title="Contract overrides" icon="sliders" href="/v2/guide/contracts/overrides">
-    Adjust one customer's terms instead of the plan.
+    Adjust one customer's terms.
   </Card>
   <Card title="Update a plan (API)" icon="code" href="/v2/api-reference/plans/update">
     `PUT /plans/{code}`
