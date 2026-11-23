@@ -39,6 +39,8 @@ If the customer already exists in the PSP with a payment method on file, you can
 When you set `sync_with_provider` to `false` and provide the existing `provider_customer_id`, Lago retrieves the default payment method stored in the PSP and attaches it to the customer. No checkout URL is generated.
 This is useful when migrating customers from another billing system, or when the customer and their mandate/card already exist in Adyen or GoCardless.
 
+With Stripe, when the customer has no default payment method there, Lago takes their most recent card. If they have no card, it takes their most recent stored method of a type you allow on that customer: Link, SEPA Direct Debit, ACH Direct Debit, Bacs Direct Debit or Boleto. Lago only picks up a method added outside Lago after it becomes the Stripe default.
+
 ### 3. Generate a new checkout URL
 
 Once the customer is connected to a PSP, you can generate a new checkout URL at any time to capture a new payment method:
