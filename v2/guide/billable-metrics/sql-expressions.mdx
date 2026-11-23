@@ -1,15 +1,19 @@
 ---
 title: "SQL expressions"
 sidebarTitle: "SQL expressions"
-description: "Compute a per-event value with a SQL custom expression on a billable metric, using event attributes, operators and functions like ROUND or CONCAT."
+description: "Calculate a value from event properties before Lago applies the billable metric's aggregation."
 keywords: ["Lago", "billable metric", "expression", "SQL expressions"]
 ---
 
-A SQL custom expression computes a value from each event before the billable metric aggregates it, such as `gb × replicas × hours`. Use it when the quantity you bill is not a single event property but a calculation over several.
+A SQL expression calculates a value from the data in each usage event. Use one when the measurement you need combines several properties or transforms a reported value.
+
+For example, an event might report storage size, the number of replicas and a start and end time. An expression can combine these properties to calculate GB-hours.
+
+Lago evaluates the expression for each event, then applies the metric's aggregation. With `Sum`, Lago adds the calculated values together.
 
 ## Create a custom expression
 
-Set `expression` on the metric. Lago evaluates it on each event, then applies the aggregation type to the results. Custom expressions work with every aggregation type except Count.
+Set `expression` to the calculation you want Lago to run for each event. Choose an aggregation type based on how you want to combine or select the results. Custom expressions work with every aggregation type except `Count`.
 
 <Tabs>
   <Tab title="Dashboard">
@@ -25,6 +29,9 @@ Set `expression` on the metric. Lago evaluates it on each event, then applies th
     </Frame>
   </Tab>
   <Tab title="API">
+    - **Storage:** Calculate GB-hours from storage size, replicas and duration.
+    - **Seats:** Combine `user_id` and `app_id` into an identifier for `Count unique`.
+
     <CodeGroup>
     ```bash Storage {13,14}
     LAGO_URL="https://api.getlago.com"
@@ -88,20 +95,43 @@ The `storage` metric above receives one event for `contract_example`:
 }
 ```
 
-The expression gives 10 × 3 × (1800064800 − 1800057600) / 3600 = 10 × 3 × 2 = **60 GB hours**. Sum adds this to the other events of the period. At $0.05 per GB hour, this event contributes $3.00.
+This event reports 10 GB of storage across three replicas for two hours.
+
+The expression calculates:
+
+**10 GB × 3 replicas × 2 hours = 60 GB-hours**
+
+The `Sum` aggregation adds these 60 GB-hours to the values calculated from other matching events in the billing cycle.
+
+## Test a custom expression
+
+Test your expression with a sample event before saving the metric. Use values you can calculate manually, then compare your expected result with Lago's result.
+
+For the storage example above, the expected result is 60.
+
+The Dashboard testing tool runs the expression against a sample event whose fields you can edit. If the expression is invalid, Lago returns an error. Fix the expression before saving the metric.
+
+- Use the supported attributes: `event.code`, `event.timestamp` and properties under `event.properties`.
+- Use precise paths: `event.timestamp` for the event timestamp, `event.properties.your_field` for a property.
+
+<Frame caption="Test your custom expression">
+  <img src="/guide/billable-metrics/images/test-custom-expression.png" alt="Lago dashboard testing a custom expression against a sample event and showing the result" />
+</Frame>
 
 ## Supported expressions
-Lago supports a range of SQL custom expressions. Here are a few examples:
+Use an expression that matches the value you want to calculate:
 
-- **Concatenation:** `CONCAT(event.properties.user_id, '-', event.properties.app_id)`
-- **Math operations:** `(event.properties.cpu_number * 25 * event.properties.duration_msec) + (event.properties.memory_mb * 0.000001 * event.properties.duration_msec)`
-- **Rounding:** `ROUND(event.properties.duration_msec * 1000)`
-- **Least/Greatest:** `LEAST(event.properties.memory_mb, 10.0)`
+| Purpose | Example |
+| --- | --- |
+| Combine two identifiers | `CONCAT(event.properties.user_id, '-', event.properties.app_id)` |
+| Calculate storage across replicas | `event.properties.gb * event.properties.replicas` |
+| Round a reported duration | `ROUND(event.properties.duration_msec)` |
+| Select the smaller reported value | `LEAST(event.properties.disk1_usage_mb, event.properties.disk2_usage_mb)` |
 
-You can find the full list of supported expressions below:
+The following sections describe the supported attributes, literal values, operators and functions:
 
 - [Event attributes](#event-attributes)
-- [Atoms](#atoms)
+- [Literal values](#literal-values)
 - [Operators](#operators)
 - [Functions](#functions)
   - [`CONCAT`](#concat)
@@ -123,9 +153,11 @@ Lago expressions may include the following event attributes:
 
 For example, `event.properties.my_property` is a valid event attribute.
 
-### Atoms
+<a id="atoms"></a>
 
-Lago expressions may include atoms:
+### Literal values
+
+You can include values directly in an expression:
 
 - `123` (integer)
 - `123.45` (decimal)
@@ -145,37 +177,41 @@ Lago expressions may include basic operators:
 
 #### `CONCAT`
 
-The `CONCAT` function is used to concatenate two or more strings.
+`CONCAT` joins two or more strings.
 
 ```SQL
 CONCAT(str1, str2[,strs,...])
 ```
 
 **Parameters:**
+
 - `str1`: The first string to concatenate
 - `str2`: The second string to concatenate
 - `strs`: (Optional) Additional strings to concatenate.
 
-**Returns:** A string with the concatenated strings.
+**Returns:** A string containing the joined values.
 
 **Examples:**
+
 - `CONCAT(event.properties.user_id, '-', event.properties.app_id)`
 
 #### `ROUND`
 
-The `ROUND` function is used to round a number to a specified number of decimal places.
+`ROUND` rounds a number to the specified precision.
 
 ```SQL
 ROUND(value, precision)
 ```
 
 **Parameters:**
+
 - `value`: The number to round
 - `precision`: (Optional) Number of decimal places. Defaults to `0`.
 
 **Returns:** A number rounded to the specified precision.
 
 **Examples:**
+
 - `ROUND(14.2355)` returns `14`
 - `ROUND(14.2355, 0)` returns `14`
 - `ROUND(14.2355, 2)` returns `14.24`
@@ -183,19 +219,21 @@ ROUND(value, precision)
 
 #### `FLOOR`
 
-The `FLOOR` function is used to round a number down to the nearest integer.
+`FLOOR` rounds a number down to the specified precision. With the default precision of `0`, it rounds down to an integer.
 
 ```SQL
 FLOOR(value, precision)
 ```
 
 **Parameters:**
+
 - `value`: The number to round
 - `precision`: (Optional) Number of decimal places. Defaults to `0`.
 
 **Returns:** A number rounded down to the specified precision.
 
 **Examples:**
+
 - `FLOOR(16.2365)` returns `16`
 - `FLOOR(16.2365, 0)` returns `16`
 - `FLOOR(16.2365, 2)` returns `16.23`
@@ -203,19 +241,21 @@ FLOOR(value, precision)
 
 #### `CEIL`
 
-The `CEIL` function is used to round a number up to the nearest integer.
+`CEIL` rounds a number up to the specified precision. With the default precision of `0`, it rounds up to an integer.
 
 ```SQL
 CEIL(value, precision)
 ```
 
 **Parameters:**
+
 - `value`: The number to round
 - `precision`: (Optional) Number of decimal places. Defaults to `0`.
 
 **Returns:** A number rounded up to the specified precision.
 
 **Examples:**
+
 - `CEIL(14.2345)` returns `15`
 - `CEIL(14.2345, 0)` returns `15`
 - `CEIL(14.2345, 2)` returns `14.24`
@@ -223,50 +263,43 @@ CEIL(value, precision)
 
 #### `LEAST`
 
-The `LEAST` function is used to find the minimum of two or more numbers.
+`LEAST` returns the smallest of two or more numbers.
 
 ```SQL
 LEAST(num1, num2[,nums,...])
 ```
 
 **Parameters:**
-- `num1`: The first number to check minimum value
-- `num2`: The second number to check minimum value
-- `nums`: (Optional) Additional numbers to check minimum value.
+
+- `num1`: The first number to compare
+- `num2`: The second number to compare
+- `nums`: (Optional) Additional numbers to compare.
 
 **Returns:** The minimum of the given numbers.
 
 **Examples:**
+
 - `LEAST(event.properties.disk1_usage_mb, event.properties.disk2_usage_mb, 10.0)`
 
 #### `GREATEST`
 
-The `GREATEST` function is used to find the maximum of two or more numbers.
+`GREATEST` returns the largest of two or more numbers.
 
 ```SQL
 GREATEST(num1, num2[,nums,...])
 ```
 
 **Parameters:**
-- `num1`: The first number to check maximum value
-- `num2`: The second number to check maximum value
-- `nums`: (Optional) Additional numbers to check maximum value.
+
+- `num1`: The first number to compare
+- `num2`: The second number to compare
+- `nums`: (Optional) Additional numbers to compare.
 
 **Returns:** The maximum of the given numbers.
 
 **Examples:**
+
 - `GREATEST(event.properties.memory_mb, 10.0)`
-
-## Test a custom expression
-
-The Dashboard provides a testing tool for custom expressions. It runs your expression against a sample event, and you can override any field of that event. If the expression is invalid, Lago returns an error and you cannot save the metric until it is fixed.
-
-- Reference any event field in your expression.
-- Use precise paths: `event.timestamp` for the event timestamp, `event.properties.your_field` for a property.
-
-<Frame caption="Test your custom expression">
-  <img src="/guide/billable-metrics/images/test-custom-expression.png" alt="Lago dashboard testing a custom expression against a sample event and showing the result" />
-</Frame>
 
 <CardGroup cols={2}>
   <Card title="Aggregation types" icon="calculator" href="/v2/guide/billable-metrics/aggregation-types/overview">
