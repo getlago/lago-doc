@@ -21,13 +21,15 @@ Contract status describes the agreement, not money. Check [invoices](/v2/guide/i
 
 ```mermaid
 stateDiagram-v2
-    [*] --> pending: create with a future started_at
-    [*] --> active: create with started_at omitted
+    state "Create a Contract" as creation
+    state "Lifecycle ended" as ended
+    creation --> pending: create with a future started_at
+    creation --> active: create with started_at omitted
     pending --> active: start reached
     pending --> canceled: DELETE (cancel)
     active --> terminated: DELETE (terminate)
-    canceled --> [*]
-    terminated --> [*]
+    canceled --> ended
+    terminated --> ended
 ```
 
 - **Create.** Omitting `started_at` starts the Contract now. A future timestamp creates a `pending` Contract.
