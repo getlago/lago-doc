@@ -1,42 +1,48 @@
 ---
 title: "Rounding"
 sidebarTitle: "Rounding"
-description: "Round a billable metric's aggregated value up, down or to the nearest unit, at a chosen precision, before its rate card prices the quantity."
+description: "Round a billable metric's measured quantity to a whole number or a chosen number of decimal places."
 keywords: ["Lago", "billable metric", "rounding_function", "rounding_precision"]
 ---
 
-Rounding applies a function to a billable metric's aggregated value before it is priced, so you bill whole units or a fixed number of decimals. Use it when the raw aggregate is fractional, such as compute hours or GB-seconds, and your price is per whole unit.
+Rounding adjusts the result after Lago aggregates your events. For example, a metric that measures compute hours can return a whole number of hours or a value with two decimal places.
+
+By default, Lago leaves the aggregated value unchanged.
 
 ## Rounding options
 
-No rounding applies by default. Set `rounding_function` to one of:
+Set `rounding_function` to choose how Lago rounds the quantity:
 
 - `ceil`: rounds up.
 - `floor`: rounds down.
-- `round`: rounds to the nearest value with standard rounding rules.
+- `round`: rounds to the nearest value.
 
-Set the precision with `rounding_precision`.
+Use `rounding_precision` to set the number of decimal places.
 
 ## Precision
 
-| Precision | Effect | 123.4567 becomes |
-| --- | --- | --- |
-| None | Rounds to a whole number. | `123` |
-| Positive, `2` | Keeps that many decimal places. | `123.46` |
-| Negative, `-1` | Rounds to the left of the decimal point (here, the nearest ten). | `120` |
+These examples use `rounding_function: round`.
 
-## Worked example
+| `rounding_precision` | Result for `123.4567` |
+| --- | --- |
+| Not set: round to a whole number | `123` |
+| `2`: round to two decimal places | `123.46` |
+| `-1`: round to the nearest ten | `120` |
 
-A `compute_hours` metric sums 10.2 hours in a billing period. The rate is $2.00 per hour.
+## Example: compute hours
 
-| `rounding_function` | Billed quantity | Amount |
-| --- | --- | --- |
-| None | 10.2 | $20.40 |
-| `ceil` | 11 | $22.00 |
-| `floor` | 10 | $20.00 |
-| `round` | 10 | $20.00 |
+A billable metric measures 10.2 hours of compute usage during a billing cycle. With no precision set, each rounding option gives the following result:
+
+| Rounding option | Result |
+| --- | --- |
+| No rounding | 10.2 hours |
+| `ceil` | 11 hours |
+| `floor` | 10 hours |
+| `round` | 10 hours |
 
 ## Apply rounding
+
+Once the metric is attached to a Plan, only its name, description and permitted filter changes can be updated. Set rounding before you attach the metric.
 
 <Tabs>
   <Tab title="Dashboard">
@@ -67,8 +73,6 @@ A `compute_hours` metric sums 10.2 hours in a billing period. The rate is $2.00 
     </CodeGroup>
   </Tab>
 </Tabs>
-
-Once the metric is attached to a plan, only its name, description and permitted filter changes can be updated. Set rounding before you attach the metric.
 
 <CardGroup cols={2}>
   <Card title="Aggregation types" icon="calculator" href="/v2/guide/billable-metrics/aggregation-types/overview">
