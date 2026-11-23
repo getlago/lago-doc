@@ -59,22 +59,24 @@ Here is the list of tables synced from Lago to your data destination:
 | `applied_coupons`                   | Table |
 | `billable_metrics`                  | Table |
 | `billing_entities`                  | Table |
+| `billing_entities_taxes`            | Table |
 | `charges`                           | Table |
 | `coupons`                           | Table |
-| `credit_notes_taxes`                | Table |
 | `credit_notes`                      | Table |
+| `credit_notes_taxes`                | Table |
 | `customers`                         | Table |
+| `customers_taxes`                   | Table |
 | `daily_usages`                      | Table |
 | `entitlement_entitlement_values`    | Table |
 | `entitlement_entitlements`          | Table |
 | `entitlement_features`              | Table |
-| `fees_taxes`                        | Table |
 | `fees`                              | Table |
+| `fees_taxes`                        | Table |
 | `integration_customers`             | Table |
 | `invoice_settlements`               | Table |
 | `invoice_subscriptions`             | Table |
-| `invoices_taxes`                    | Table |
 | `invoices`                          | Table |
+| `invoices_taxes`                    | Table |
 | `item_metadata`                     | Table |
 | `payment_requests`                  | Table |
 | `payments`                          | Table |
@@ -95,24 +97,35 @@ These tables hold the product catalog and are empty for an organization that doe
 
 | Name                        | Type  |
 |-----------------------------|-------|
-| `billing_entities_taxes`    | Table |
 | `catalog_plans`             | Table |
-| `contract_rate_cards_terms` | Table |
 | `contract_rate_cards`       | Table |
+| `contract_rate_cards_terms` | Table |
 | `contracts`                 | Table |
-| `customers_taxes`           | Table |
 | `plan_rate_cards`           | Table |
 | `pricing_units`             | Table |
 | `product_categories`        | Table |
 | `product_filters`           | Table |
 | `products`                  | Table |
 | `rate_card_rates`           | Table |
-| `rate_cards_taxes`          | Table |
 | `rate_cards`                | Table |
+| `rate_cards_taxes`          | Table |
 | `rate_overrides`            | Table |
 | `rate_phases`               | Table |
 
 Product catalog plans are in `catalog_plans`, separate from the `plans` table used by plans and subscriptions.
+
+## Tax tables
+
+One row per tax applied to a billing entity, a customer or a rate card. `billing_entities_taxes` and `customers_taxes` are filled for every organization, whatever its billing engine. `rate_cards_taxes` is a product catalog table and is empty for an organization that does not use it.
+
+| Column                                                              | Type      | Description                                         |
+|---------------------------------------------------------------------|-----------|-----------------------------------------------------|
+| `organization_id`                                                   | string    | Lago organization id.                               |
+| `lago_id`                                                           | string    | Primary key.                                        |
+| `lago_billing_entity_id`, `lago_customer_id` or `lago_rate_card_id` | string    | Billing entity, customer or rate card of the tax.   |
+| `lago_tax_id`                                                       | string    | Tax applied.                                        |
+| `created_at`                                                        | timestamp | Creation date.                                      |
+| `updated_at`                                                        | timestamp | Last update date.                                   |
 
 ## Product catalog columns
 
@@ -279,19 +292,6 @@ For contract rows, the entries of `daily_usage` reference a contract rate card i
 | `updated_at`                   | timestamp | Last update date.                                                                                    |
 | `deleted_at`                   | timestamp | Deletion date, empty if the override is not deleted.                                                 |
 
-### `billing_entities_taxes`, `customers_taxes` and `rate_cards_taxes`
-
-One row per tax applied to a billing entity, a customer or a rate card.
-
-| Column                                                              | Type      | Description                                         |
-|---------------------------------------------------------------------|-----------|-----------------------------------------------------|
-| `organization_id`                                                   | string    | Lago organization id.                               |
-| `lago_id`                                                           | string    | Primary key.                                        |
-| `lago_billing_entity_id`, `lago_customer_id` or `lago_rate_card_id` | string    | Billing entity, customer or rate card of the tax.   |
-| `lago_tax_id`                                                       | string    | Tax applied.                                        |
-| `created_at`                                                        | timestamp | Creation date.                                      |
-| `updated_at`                                                        | timestamp | Last update date.                                   |
-
 ### `catalog_plans`
 
 | Column                 | Type      | Description                                      |
@@ -390,3 +390,7 @@ The sync only adds and updates rows in your destination, so deletions in Lago ar
 - When a record is removed from Lago, a row is added to the `record_deletions` table with the name of its table in `table_name` and its id in `lago_record_id`. Delete or ignore the matching rows in your destination.
 
 `record_deletions` covers the following tables: `fees`, `fees_taxes`, `invoice_subscriptions`, `invoices_taxes`, `credit_notes_taxes`, `billing_entities_taxes`, `customers_taxes`, `rate_cards_taxes` and `contract_rate_cards_terms`.
+
+<Warning>
+Rows in `record_deletions` are kept for one month. If the sync to your destination is paused for longer than that, deletions from that period are not exported, and a full resync of the affected tables is needed to remove the deleted records from your destination.
+</Warning>
