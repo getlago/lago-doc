@@ -93,21 +93,26 @@ Here is the list of tables synced from Lago to your data destination:
 
 These tables hold the product catalog and are empty for an organization that does not use it:
 
-| Name                     | Type  |
-|--------------------------|-------|
-| `billing_entities_taxes` | Table |
-| `customers_taxes`        | Table |
-| `pricing_units`          | Table |
-| `product_categories`     | Table |
-| `product_filters`        | Table |
-| `products`               | Table |
-| `rate_card_rates`        | Table |
-| `rate_cards_taxes`       | Table |
-| `rate_cards`             | Table |
-| `rate_overrides`         | Table |
-| `rate_phases`            | Table |
+| Name                        | Type  |
+|-----------------------------|-------|
+| `billing_entities_taxes`    | Table |
+| `catalog_plans`             | Table |
+| `contract_rate_cards_terms` | Table |
+| `contract_rate_cards`       | Table |
+| `contracts`                 | Table |
+| `customers_taxes`           | Table |
+| `plan_rate_cards`           | Table |
+| `pricing_units`             | Table |
+| `product_categories`        | Table |
+| `product_filters`           | Table |
+| `products`                  | Table |
+| `rate_card_rates`           | Table |
+| `rate_cards_taxes`          | Table |
+| `rate_cards`                | Table |
+| `rate_overrides`            | Table |
+| `rate_phases`               | Table |
 
-{/* TODO before release: add the catalog plan and contract tables (plans, contracts and their rate cards) once their export models exist. `rate_phases`, `fees` and `daily_usages` already reference plan rate cards, contracts and contract rate cards. */}
+Product catalog plans are in `catalog_plans`, separate from the `plans` table used by plans and subscriptions.
 
 ## Product catalog columns
 
@@ -287,7 +292,95 @@ One row per tax applied to a billing entity, a customer or a rate card.
 | `created_at`                                                        | timestamp | Creation date.                                      |
 | `updated_at`                                                        | timestamp | Last update date.                                   |
 
-{/* TODO before release: add the column tables for the catalog plan and contract tables. */}
+### `catalog_plans`
+
+| Column                 | Type      | Description                                      |
+|------------------------|-----------|--------------------------------------------------|
+| `organization_id`      | string    | Lago organization id.                            |
+| `lago_id`              | string    | Primary key.                                     |
+| `code`                 | string    | Unique code of the plan.                         |
+| `name`                 | string    | Name of the plan.                                |
+| `invoice_display_name` | string    | Name displayed on invoices.                      |
+| `description`          | string    | Description of the plan.                         |
+| `currency`             | string    | Currency of the plan.                            |
+| `created_at`           | timestamp | Creation date.                                   |
+| `updated_at`           | timestamp | Last update date.                                |
+| `deleted_at`           | timestamp | Deletion date, empty if the plan is not deleted. |
+
+### `plan_rate_cards`
+
+One row per rate card attached to a catalog plan.
+
+| Column                 | Type      | Description                                           |
+|------------------------|-----------|-------------------------------------------------------|
+| `organization_id`      | string    | Lago organization id.                                 |
+| `lago_id`              | string    | Primary key.                                          |
+| `lago_catalog_plan_id` | string    | Catalog plan the rate card is attached to.            |
+| `lago_rate_card_id`    | string    | Rate card attached to the plan.                       |
+| `units`                | decimal   | Units of the rate card in the plan.                   |
+| `created_at`           | timestamp | Creation date.                                        |
+| `updated_at`           | timestamp | Last update date.                                     |
+| `deleted_at`           | timestamp | Deletion date, empty if the rate card is not removed. |
+
+### `contracts`
+
+A contract is priced through a catalog plan, rate cards attached directly to it, or both. Contracts are never deleted: they are terminated or canceled, so this table has no `deleted_at` column.
+
+| Column                         | Type      | Description                                                         |
+|--------------------------------|-----------|---------------------------------------------------------------------|
+| `organization_id`              | string    | Lago organization id.                                               |
+| `lago_id`                      | string    | Primary key.                                                        |
+| `lago_customer_id`             | string    | Customer of the contract.                                           |
+| `external_id`                  | string    | External id of the contract.                                        |
+| `code`                         | string    | Code of the contract.                                               |
+| `name`                         | string    | Name of the contract.                                               |
+| `status`                       | string    | `draft`, `pending`, `active`, `terminated` or `canceled`.           |
+| `billing_anchor_date`          | date      | Date the contract's billing periods are anchored to.                |
+| `started_at`                   | timestamp | Start date of the contract.                                         |
+| `ended_at`                     | timestamp | End date of the contract, if any.                                   |
+| `terminated_at`                | timestamp | Termination date, if the contract was terminated.                   |
+| `canceled_at`                  | timestamp | Cancellation date, if the contract was canceled.                    |
+| `lago_catalog_plan_id`         | string    | Catalog plan of the contract, if any.                               |
+| `lago_billing_entity_id`       | string    | Billing entity of the contract.                                     |
+| `lago_payment_method_id`       | string    | Payment method of the contract, if any.                             |
+| `payment_method_type`          | string    | `provider` or `manual`.                                             |
+| `purchase_order_number`        | string    | Purchase order number, if any.                                      |
+| `consolidate_invoice`          | boolean   | Whether the contract's fees are consolidated on one invoice.        |
+| `skip_invoice_custom_sections` | boolean   | Whether invoice custom sections are skipped for the contract.       |
+| `created_at`                   | timestamp | Creation date.                                                      |
+| `updated_at`                   | timestamp | Last update date.                                                   |
+
+### `contract_rate_cards`
+
+One row per rate card attached to a contract. A contract rate card has no units column: its units over time are in `contract_rate_cards_terms`.
+
+| Column                | Type      | Description                                           |
+|-----------------------|-----------|-------------------------------------------------------|
+| `organization_id`     | string    | Lago organization id.                                 |
+| `lago_id`             | string    | Primary key.                                          |
+| `lago_contract_id`    | string    | Contract the rate card is attached to.                |
+| `lago_rate_card_id`   | string    | Rate card attached to the contract.                   |
+| `billing_anchor_date` | date      | Date the rate card's billing periods are anchored to. |
+| `next_billing_at`     | timestamp | Next billing date of the rate card.                   |
+| `effective_date`      | date      | Date the rate card takes effect on the contract.      |
+| `created_at`          | timestamp | Creation date.                                        |
+| `updated_at`          | timestamp | Last update date.                                     |
+| `deleted_at`          | timestamp | Deletion date, empty if the rate card is not removed. |
+
+### `contract_rate_cards_terms`
+
+The units of a contract rate card over time: one row per change, with the date it takes effect. Rows removed from Lago are listed in `record_deletions`.
+
+| Column                       | Type      | Description                                                 |
+|------------------------------|-----------|-------------------------------------------------------------|
+| `organization_id`            | string    | Lago organization id.                                       |
+| `lago_id`                    | string    | Primary key.                                                |
+| `lago_contract_rate_card_id` | string    | Contract rate card the units apply to.                      |
+| `units`                      | decimal   | Units of the contract rate card from `effective_date`.      |
+| `effective_date`             | date      | Date the units take effect.                                 |
+| `application_timing`         | string    | `current_billing_cycle` or `next_billing_cycle`.            |
+| `created_at`                 | timestamp | Creation date.                                              |
+| `updated_at`                 | timestamp | Last update date.                                           |
 
 ## Deleted records
 
@@ -296,4 +389,4 @@ The sync only adds and updates rows in your destination, so deletions in Lago ar
 - When a table keeps deleted records, the row is still synced and its `deleted_at` column holds the deletion date. Filter on `deleted_at IS NULL` to keep active records only.
 - When a record is removed from Lago, a row is added to the `record_deletions` table with the name of its table in `table_name` and its id in `lago_record_id`. Delete or ignore the matching rows in your destination.
 
-`record_deletions` covers the following tables: `fees`, `fees_taxes`, `invoice_subscriptions`, `invoices_taxes`, `credit_notes_taxes`, `billing_entities_taxes`, `customers_taxes` and `rate_cards_taxes`.
+`record_deletions` covers the following tables: `fees`, `fees_taxes`, `invoice_subscriptions`, `invoices_taxes`, `credit_notes_taxes`, `billing_entities_taxes`, `customers_taxes`, `rate_cards_taxes` and `contract_rate_cards_terms`.
