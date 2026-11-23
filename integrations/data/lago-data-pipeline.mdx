@@ -107,7 +107,7 @@ These tables hold the product catalog and are empty for an organization that doe
 | `rate_overrides`         | Table |
 | `rate_phases`            | Table |
 
-{/* TODO before release: add the catalog plan and contract tables (plans, contracts and their rate cards) and the billing segments table once their export models exist. `rate_phases`, `fees` and `daily_usages` already reference plan rate cards, contracts and contract rate cards. */}
+{/* TODO before release: add the catalog plan and contract tables (plans, contracts and their rate cards) once their export models exist. `rate_phases`, `fees` and `daily_usages` already reference plan rate cards, contracts and contract rate cards. */}
 
 ## Product catalog columns
 
@@ -124,6 +124,8 @@ These columns come after the existing `fees` columns. They are empty for fees bi
 | `lago_product_id`            | string | Product the fee was billed for.                   |
 
 For product catalog fees, the existing `item` column has the type `product` with the product's code and name, and `lago_customer_id` is the customer of the contract.
+
+To link invoices to contracts, use `fees`: each fee carries `lago_invoice_id` along with `lago_contract_id` and `lago_contract_rate_card_id`.
 
 ### Columns added to `daily_usages`
 
@@ -285,7 +287,7 @@ One row per tax applied to a billing entity, a customer or a rate card.
 | `created_at`                                                        | timestamp | Creation date.                                      |
 | `updated_at`                                                        | timestamp | Last update date.                                   |
 
-{/* TODO before release: add the column tables for the catalog plan, contract and billing segment tables. */}
+{/* TODO before release: add the column tables for the catalog plan and contract tables. */}
 
 ## Deleted records
 
