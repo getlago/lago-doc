@@ -1,18 +1,20 @@
 ---
 title: "Product filters"
-description: "Price subsets of a metered product's usage in Lago with product filters, built on billable metric dimensions and targeted by their own rate cards."
+description: "Select groups of a metered Product's usage so each group can have its own pricing."
 keywords: ["Lago", "product filter", "metered product", "billable metric filters", "rate card"]
 ---
 
-A [product filter](/v2/api-reference/product-filters/object) identifies a subset of a metered product's usage, such as calls from the EU region, so that subset can have its own price. Use filters when one product needs different prices by dimension: region, instance type, role.
+A Product filter selects usage within a metered Product, such as API calls from the EU region. Use it when groups of usage need different prices based on region, instance type or another event property.
+
+A Product filter defines which usage to select. Its Rate Card defines the pricing.
 
 ## How it fits together
 
-- The **billable metric** declares the allowed event keys and values in its `filters`.
-- A **product filter** belongs to one metered product and selects usage by those keys and values.
-- A **rate card** targets the filter with `product_filter_code` and carries its own rates.
+1. Define filter keys and allowed values on the billable metric.
+2. Create a Product filter using those keys and values.
+3. Create a Rate Card for the Product filter.
 
-Only metered products can have filters. Filter values must refer to keys and configured values of the product's billable metric.
+Only metered Products can have filters. Filter values must refer to keys and configured values of the Product's billable metric. A Rate Card targets the filter with `product_filter_code`.
 
 ## Filter fields
 
@@ -24,11 +26,11 @@ Only metered products can have filters. Filter values must refer to keys and con
 | `invoice_display_name` | No | Name used on invoices. Defaults to `name` when blank. |
 | `description` | No | Internal description. |
 
-In `values`, a `null` or omitted `value` selects all configured values for that key. A key-only entry cannot be combined with specific values for the same key.
+In `values`, omit `value` or set it to `null` to select all configured values for that key. For the same key, choose either all configured values or specific values; you cannot combine both.
 
 ## Example
 
-A regional variation of the running example prices EU calls separately. It is kept apart from the unfiltered 2,000-call baseline so the quantities do not mix.
+To price EU API calls separately, select events whose `region` property is `eu`.
 
 1. The `api_calls` billable metric declares a `region` filter with values `eu` and `us`.
 2. `api_calls_product` gets a filter `api_calls_eu` with `values: [{ "key": "region", "value": "eu" }]`.
@@ -47,98 +49,95 @@ Events carry the dimension in `properties`:
 }
 ```
 
-With 500 EU calls in a full month, the EU fee is 500 × $0.015 = $7.50 before tax, on the `api_calls_eu_usd` line.
+With a `Count` metric, 500 matching EU API call events give a measured quantity of 500.
 
 ## Set up filtered pricing
 
-<Tabs>
-  <Tab title="Dashboard">
-    1. On the `api_calls` billable metric, add a filter with key `region` and values `eu` and `us`.
-    2. On `api_calls_product`, create a filter named `EU`, code `api_calls_eu`, matching `region` = `eu`.
-    3. Create a rate card `api_calls_eu_usd` for `api_calls_product`, scoped to the `api_calls_eu` filter, and add its rate.
+The following requests define the metric dimension, create the Product filter and create its Rate Card.
 
-    <Note>
-    The fields match the API. Screen-by-screen Dashboard steps are not documented yet.
-    </Note>
-  </Tab>
-  <Tab title="API">
-    <CodeGroup>
-    ```bash 1. Declare the metric dimension
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
+<Warning>
+The billable metric's `filters` array replaces all existing filter definitions. Include every definition you want to keep when updating the metric.
+</Warning>
 
-    curl --location --request PUT "$LAGO_URL/api/v2/billable_metrics/api_calls" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "billable_metric": {
-          "filters": [
-            { "key": "region", "values": ["eu", "us"] }
-          ]
+<CodeGroup>
+```bash 1. Declare the metric dimension
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PUT "$LAGO_URL/api/v2/billable_metrics/api_calls" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "billable_metric": {
+      "filters": [
+        { "key": "region", "values": ["eu", "us"] }
+      ]
+    }
+  }'
+```
+
+```bash 2. Create the product filter
+curl --location --request POST "$LAGO_URL/api/v2/products/api_calls_product/filters" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "filter": {
+      "name": "EU",
+      "code": "api_calls_eu",
+      "values": [
+        { "key": "region", "value": "eu" }
+      ]
+    }
+  }'
+```
+
+```bash 3. Create a rate card for the filter
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate_card": {
+      "name": "API calls EU USD",
+      "code": "api_calls_eu_usd",
+      "product_code": "api_calls_product",
+      "product_filter_code": "api_calls_eu",
+      "currency": "USD",
+      "billing_timing": "arrears",
+      "proration": false,
+      "rates": [
+        {
+          "code": "calls_eu_standard",
+          "effective_from": "2027-01-01T00:00:00Z",
+          "rate_model": "standard",
+          "rate_properties": { "amount": "0.015" },
+          "billing_interval_count": 1,
+          "billing_interval_unit": "month"
         }
-      }'
-    ```
-
-    ```bash 2. Create the product filter
-    curl --location --request POST "$LAGO_URL/api/v2/products/api_calls_product/filters" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "filter": {
-          "name": "EU",
-          "code": "api_calls_eu",
-          "values": [
-            { "key": "region", "value": "eu" }
-          ]
-        }
-      }'
-    ```
-
-    ```bash 3. Create a rate card for the filter
-    curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "rate_card": {
-          "name": "API calls EU USD",
-          "code": "api_calls_eu_usd",
-          "product_code": "api_calls_product",
-          "product_filter_code": "api_calls_eu",
-          "currency": "USD",
-          "billing_timing": "arrears",
-          "proration": false,
-          "rates": [
-            {
-              "code": "calls_eu_standard",
-              "effective_from": "2027-01-01T00:00:00Z",
-              "rate_model": "standard",
-              "rate_properties": { "amount": "0.015" },
-              "billing_interval_count": 1,
-              "billing_interval_unit": "month"
-            }
-          ]
-        }
-      }'
-    ```
-    </CodeGroup>
-
-    The billable metric's `filters` array is the complete set: it replaces the existing definitions.
-  </Tab>
-</Tabs>
+      ]
+    }
+  }'
+```
+</CodeGroup>
 
 ## Verify matching
 
-Compare the events that carry the filter's values with the filtered fee's `units` and its `product_filter_code`. Test overlapping filters and events with missing values against your own fixtures before relying on them: the documentation does not yet define first-match, most-specific or fallback behavior.
+Send test events with the configured property values. Check the matching Product filter and calculated quantity in [Contract current usage](/v2/guide/contracts/current-usage).
 
-## Change or delete a filter
+<a id="change-or-delete-a-filter"></a>
+
+## Update a filter
 
 - `PUT` and `PATCH` accept partial updates. Supplying `values` replaces the whole set. Omitting it keeps the set.
-- The `code` cannot change while the product is used by a plan or contract.
-- `values` cannot change while a contract has a rate card scoped to this filter.
+- The `code` cannot change while the Product is used by a Plan or Contract.
+- `values` cannot change while a Contract has a Rate Card scoped to this filter.
+
+## Delete a filter
 
 <Warning>
-`DELETE /api/v2/products/{product_code}/filters/{code}` soft-deletes the filter, its values, its scoped rate cards and their rates. Deletion is rejected while the product is used by a plan or contract.
+Deleting a Product filter soft-deletes the filter, its values, its scoped Rate Cards and their Rates. Deletion is rejected while the Product is used by a Plan or Contract.
 </Warning>
+
+Use `DELETE /api/v2/products/{product_code}/filters/{code}` to delete the filter.
 
 <CardGroup cols={2}>
   <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
