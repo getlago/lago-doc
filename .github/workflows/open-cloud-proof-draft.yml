@@ -1,0 +1,29 @@
+name: Open Cloud wallet proof draft
+on:
+  push:
+    branches: [codex/open-wallet-cloud-proof-pr-20261123]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  open:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Open focused content draft with bot identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: getlago/lago-doc
+          HEAD_BRANCH: codex/wallet-cloud-proof-link-20261123
+          EXPECTED_SHA: 33fe452f40fcfcfb8be180d44e40ef53b9135f7a
+          BODY: "Developers reading about ongoing and invoiced wallet balances can now follow the live Lago Cloud usage-to-invoice worked example.\n\nChanged page: `guide/wallet-and-prepaid-credits/overview.mdx`, one paragraph after the existing numerical balance example. Navigation, API examples and product claims are unchanged.\n\nValidation: `pnpm exec mint validate` exited 0. It also reported an existing parsing error in unchanged `faq/pricing.mdx:7:36` and the resulting missing-navigation-page warning; these are not fixed by this link insertion. `npm run validate:agent-assets` passed. Deployed Mintlify route and Markdown fallback checks are pending, so this PR stays draft.\n\nSource check, 23 November 2026: The linked walkthrough responds 200 in HTML and Markdown, with the correct canonical URL. It is explicitly an illustrative worked example, not a recording of a customer execution. The linked page explains ongoing versus invoiced balances and subscription-invoice credit settlement.\n\nAEO and privacy: Adds one descriptive crawlable link using the existing Markdown renderer. No agent contract, tracking, embed, cookie, storage or consent behavior changed. No search or conversion improvement is claimed.\n\nRequest: Raffi's review. No merge authorization is included.\n"
+        run: |
+          set -euo pipefail
+          actual="$(gh api "repos/$GH_REPO/branches/$HEAD_BRANCH" --jq .commit.sha)"
+          test "$actual" = "$EXPECTED_SHA"
+          existing="$(gh pr list --head "$HEAD_BRANCH" --base main --state open --json url --jq '.[0].url // empty')"
+          if [ -n "$existing" ]; then
+            echo "$existing"
+            exit 0
+          fi
+          gh pr create --base main --head "$HEAD_BRANCH" --draft --title "Link wallet balances to the Cloud worked example" --body "$BODY" --reviewer sarkissianraffi
