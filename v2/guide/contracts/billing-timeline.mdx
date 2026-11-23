@@ -1,0 +1,100 @@
+---
+title: "Billing timeline"
+description: "Understand billing cycles, phase sequences and Rate changes for a Contract."
+keywords: ["Lago", "Contract", "billing timeline", "billing_anchor_date", "rate phases"]
+---
+
+Each applied Rate Card on a Contract follows a billing timeline. Its billing interval determines the length of each cycle, and its phases define which pricing applies along the way.
+
+## Start and first billing cycle
+
+The Contract's `started_at` sets when its billing timeline begins. Each inherited phase sequence starts at position `1`.
+
+`billing_anchor_date` defines when the first billing cycle ends and renews. The first cycle runs from `started_at` to that anchor. An applied Rate Card can carry its own `billing_anchor_date`, which defaults to the Contract anchor.
+
+From that first renewal, each applied Rate Card follows its own timeline. Its effective Rate or phase override defines the interval. Its phase cycle count decides when the next phase starts.
+
+Phases chain: the next phase starts where the previous one ends. Later phases are not realigned to the original anchor date.
+
+The Rate Card's `billing_timing` still decides advance or arrears billing. The anchor is a cycle boundary, not a payment date. When the first cycle is shorter than the configured interval, its amount depends on the applicable proration rules.
+
+## Independent Rate Card timelines
+
+The Contract below starts on January 10, 2027, with `billing_anchor_date` set to February 1. Both cards complete their first cycle on February 1.
+
+- **Platform fee**: one ongoing phase with a monthly interval.
+- **Compute**: one anchored cycle at position `1`, then one two-week cycle at position `2`, then an ongoing monthly phase.
+
+```mermaid
+gantt
+    title One initial anchor, then independent rate card timelines
+    dateFormat YYYY-MM-DD
+    axisFormat %d %b
+    section Contract boundaries
+    Contract starts :milestone, start, 2027-01-10, 0d
+    First cycle ends and renews :milestone, anchor, 2027-02-01, 0d
+    section Platform fee - monthly ongoing phase
+    First anchored cycle :a1, 2027-01-10, 2027-02-01
+    Monthly cycle :a2, 2027-02-01, 2027-03-01
+    Monthly cycle :a3, 2027-03-01, 2027-04-01
+    Monthly cycle :a4, 2027-04-01, 2027-05-01
+    section Compute - chained phases
+    Position 1 - first anchored cycle :b1, 2027-01-10, 2027-02-01
+    Position 2 - one two-week cycle :b2, 2027-02-01, 2027-02-15
+    Position 3 - monthly cycle :b3, 2027-02-15, 2027-03-15
+    Position 3 - monthly cycle :b4, 2027-03-15, 2027-04-15
+    Position 3 - monthly cycle :b5, 2027-04-15, 2027-05-15
+```
+
+Compute's monthly phase starts on February 15, right after its two-week phase. Its next renewal is March 15. It does not shorten that month to renew on March 1. Platform fee keeps renewing on the first of each month.
+
+The final phase of each card has `billing_interval_cycle_count: null`. The chart stops in May. Both timelines continue while the Contract remains in effect. Dates are UTC boundaries and show scheduling only, not invoice amounts.
+
+## How phases interact with Rate changes
+
+Each Contract follows its own phase sequence. A phase with a pricing override keeps that price when the Rate Card's active Rate changes. A phase without an override follows newly effective Rates, including changes that occur after the phase has started.
+
+Customer A starts on January 1, 2027, and Customer B starts on March 1, 2027. Both receive two monthly cycles at 50 USD, followed by three at 80 USD, then pricing from the Rate Card. The Rate Card's price changes from 100 USD to 120 USD per month on July 1, 2027.
+
+This example uses one fixed unit and full calendar-month periods in UTC, with no proration, taxes or other adjustments.
+
+```mermaid
+gantt
+    title Customer phases and the Rate Card price timeline
+    dateFormat YYYY-MM-DD
+    axisFormat %b %Y
+    section Rate Card
+    100 USD per month :r1, 2027-01-01, 2027-07-01
+    120 USD per month :r2, 2027-07-01, 2027-11-01
+    section Customer A - starts January 1
+    Phase 1 - 50 USD override :a1, 2027-01-01, 2027-03-01
+    Phase 2 - 80 USD override :a2, 2027-03-01, 2027-06-01
+    Phase 3 - inherits 100 USD :a3, 2027-06-01, 2027-07-01
+    Phase 3 - inherits 120 USD :a4, 2027-07-01, 2027-11-01
+    section Customer B - starts March 1
+    Phase 1 - 50 USD override :b1, 2027-03-01, 2027-05-01
+    Phase 2 - 80 USD override :b2, 2027-05-01, 2027-08-01
+    Phase 3 - inherits 120 USD :b3, 2027-08-01, 2027-11-01
+```
+
+| Customer | June | July | August |
+| --- | --- | --- | --- |
+| A | 100 USD, inherited Rate | 120 USD, new Rate applies within phase 3 | 120 USD, inherited Rate |
+| B | 80 USD, phase override | 80 USD, phase override | 120 USD, active Rate on entering phase 3 |
+
+Customer A enters phase 3 on June 1 and follows the new Rate from July 1. Customer B keeps the 80 USD override through July, then inherits the active 120 USD Rate on August 1.
+
+The price change does not restart either customer's phase sequence. Customer A's two phase 3 bars represent the same ongoing phase. The chart ends in October; phase 3 continues while the Contract remains in effect.
+
+## Check the timeline
+
+For each applied Rate Card, check the start, billing anchor, interval and phase cycle counts. Identify the phase and Rate used for the period you are reviewing. Check payment status separately from billing dates.
+
+<CardGroup cols={2}>
+  <Card title="Plan phase & overrides" icon="timeline" href="/v2/guide/plans/plan-phases">
+    Configure a reusable phase sequence.
+  </Card>
+  <Card title="Contract overrides" icon="sliders" href="/v2/guide/contracts/overrides">
+    Adjust one customer's pricing.
+  </Card>
+</CardGroup>
