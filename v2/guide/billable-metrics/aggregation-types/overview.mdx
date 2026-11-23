@@ -17,9 +17,12 @@ For example, use Count to count API calls, Sum to total tokens consumed, or Max 
 | [Sum](/v2/guide/billable-metrics/aggregation-types/sum) | `sum_agg` | Adds the values of an event property. | True |
 | [Weighted sum](/v2/guide/billable-metrics/aggregation-types/weighted-sum) | `weighted_sum_agg` | Weights each value by how long it applies during the billing period. | True |
 
-Count counts events without reading a numeric property. For other aggregation types, `field_name` identifies the event property to aggregate. See [SQL expressions](/v2/guide/billable-metrics/sql-expressions) for calculating a value from event properties.
+`Count` measures how many matching events Lago receives. Other aggregation types use a value within each event. Set `field_name` to the property you want to measure—for example, `tokens` to add up token usage. You can also use [SQL expressions](/v2/guide/billable-metrics/sql-expressions) to calculate a value from event properties.
 
-With `recurring: true`, the aggregated value carries over between billing cycles. With `recurring: false`, it resets at the end of each cycle.
+The `recurring` setting controls what happens to the measured quantity when a billing cycle ends:
+
+- `true`: Lago keeps the quantity and carries it into the next billing cycle.
+- `false`: Lago resets the quantity, so each billing cycle starts fresh.
 
 <CardGroup cols={2}>
   <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">
