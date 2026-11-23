@@ -1,31 +1,28 @@
 ---
 title: "Filters and dimensions"
 sidebarTitle: "Filters and dimensions"
-description: "Slice one billable metric by region, model or tier with filters, then price each slice separately through product filters and their rate cards."
+description: "Define dimensions such as region, model or provider to distinguish groups of usage within a billable metric."
 keywords: ["Lago", "billable metric filters", "product filter", "dimensions"]
 ---
 
-A filter is a dimension of a billable metric: a `key` and a list of allowed `values`, matched against each event's `properties`. Use filters when one metric needs several prices, such as per region or per model, without creating a metric per slice.
+Filters define the event properties and values you can use to select groups of usage within a billable metric.
 
-## How filters feed pricing
+For example, a compute metric measures hours of usage. A `region` filter lets you distinguish where that usage occurred, while a `provider` filter identifies the cloud provider. You can use the same metric across these dimensions.
 
-Metering and rating stay separate:
+## How filters work
 
-| Layer | Object | What you define |
-| --- | --- | --- |
-| Metering | Billable metric `filters` | The dimensions and allowed values, such as `region: [us-east-1, eu-west-1]`. |
-| Product slice | [Product filter](/v2/guide/product-catalog/product-filters) | A slice of a metered product, built from the metric's keys and values, such as `region = eu-west-1`. |
-| Rating | [Rate card](/v2/guide/rate-cards/overview) | The price of a product or of one product filter. |
+A dimension is an attribute of usage, such as its region or model. Define each filter with a `key` and a list of `values`:
 
-A product filter's `values` must refer to keys and configured values on its product's billable metric. Define the dimension on the metric first, then create the product filter, then price it with a rate card targeting its `product_filter_code`.
+- `key`: the event property to match, such as `region`.
+- `values`: the configured values for that property, such as `us-east-1` and `eu-west-1`.
 
-Your product team can add a dimension without waiting on pricing. Your finance team can add a price without changing what you measure.
+Your application sends these properties with each event. The metric's aggregation determines how the quantity is calculated; the filter identifies which group the event matches.
 
 ## Use cases
 
 <AccordionGroup>
-  <Accordion title="Regional pricing">
-    You meter compute hours and launch in Europe. EU infrastructure costs more, so EU usage needs its own price.
+  <Accordion title="Usage by region">
+    Measure compute hours across regions. Include `region` in each event to identify where the usage occurred.
 
     ```json
     "filters": [
@@ -36,11 +33,10 @@ Your product team can add a dimension without waiting on pricing. Your finance t
     ]
     ```
 
-    Create product filters on the `compute` metered product, one for the US regions and one for the EU regions, and price each with its own rate card.
   </Accordion>
 
-  <Accordion title="Per-model pricing (AI and LLM platforms)">
-    You meter tokens. Each model has a different cost.
+  <Accordion title="Usage by model">
+    Measure token usage across models. Include `model` in each event to identify which model processed the tokens.
 
     ```json
     "filters": [
@@ -51,11 +47,10 @@ Your product team can add a dimension without waiting on pricing. Your finance t
     ]
     ```
 
-    Each model becomes a product filter with its own per-token rate card.
   </Accordion>
 
-  <Accordion title="Tier of service">
-    You meter API calls. Real-time requests cost more to serve than batched ones.
+  <Accordion title="Usage by service tier">
+    Measure API calls by service tier. Use `tier` to distinguish real-time requests from batch requests.
 
     ```json
     "filters": [
@@ -67,8 +62,8 @@ Your product team can add a dimension without waiting on pricing. Your finance t
     ```
   </Accordion>
 
-  <Accordion title="Combined dimensions (matrix pricing)">
-    Filters combine. A `gpt-4` call in Europe is not priced like a `llama` call in the US.
+  <Accordion title="Combined dimensions">
+    Include both `region` and `model` when you want to distinguish usage by where it occurred and which model was used.
 
     ```json
     "filters": [
@@ -83,13 +78,12 @@ Your product team can add a dimension without waiting on pricing. Your finance t
     ]
     ```
 
-    Each event carries both `region` and `model`. A product filter can match several keys, so one metric can carry four prices.
   </Accordion>
 </AccordionGroup>
 
 ## Create filters
 
-A DevOps company bills compute capacity by the hour. The `compute` metric sums `properties.hours`. Customers pick a cloud provider and a region, so the metric defines two filters: `provider` and `region`.
+The `compute` metric adds the `hours` reported in usage events. Define `provider` and `region` filters to distinguish the cloud provider and location associated with that usage.
 
 <Tabs>
   <Tab title="Dashboard">
@@ -160,15 +154,17 @@ curl --location --request POST "$LAGO_URL/api/v2/events" \
   }'
 ```
 
+This event reports 0.07 hours of compute usage on `aws` in `us-east-1`. The `hours` property supplies the quantity; `provider` and `region` supply the dimensions.
+
 <Warning>
   Values are case-sensitive. An event must send the exact value to match. With the filters above, `"aws"` matches and `"AWS"` does not.
 </Warning>
 
 ## Edit filters
 
-On update, `filters` is the complete definition. It replaces the existing filters. An empty array removes them all.
+When you update `filters`, send the complete set you want to keep. The supplied array replaces the existing filters. An empty array removes all filters, subject to restrictions on values already referenced by Product filters.
 
-Filter values referenced by product filters cannot be removed. Remove or change the product filter first.
+Filter values referenced by Product filters cannot be removed. Remove or change the Product filter first.
 
 ```json Payload A
 {
@@ -197,23 +193,19 @@ Sending Payload B after Payload A:
 3. `USA` is added. Keys and values are case-sensitive, so it is a new value.
 4. `africa` is added.
 
-New values are not priced automatically. Create a product filter and a rate card for each new slice you want to bill.
-
-Once the metric is attached to a plan, only its name, description and permitted filter changes can be updated.
+Once the metric is attached to a Plan, only its `name`, `description` and permitted filter changes can be updated.
 
 ## Design guidance
 
-- **Use a broad metric code** that can absorb future dimensions: `compute_events` rather than `compute_us_events`.
-- **Send dimensions you might price on** as event properties, even before you filter on them. A filter can only match values that events carry.
-- **Get the metric code right on day one.** You can add filter keys and values later, but events are matched to metrics by `code`.
+- Choose a metric code that describes the measurement, such as `compute_hours`.
+- Send the dimensions you need to distinguish as event properties.
+- Use consistent spelling and capitalization for filter values.
+
+## Next step
+
+See [Product filters](/v2/guide/product-catalog/product-filters) to learn how to select combinations of these dimensions for a Product.
 
 <CardGroup cols={2}>
-  <Card title="Product filters" icon="filter" href="/v2/guide/product-catalog/product-filters">
-    Turn metric dimensions into priceable slices.
-  </Card>
-  <Card title="Rate cards" icon="tags" href="/v2/guide/rate-cards/overview">
-    Price a product filter.
-  </Card>
   <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
     `POST /billable_metrics`
   </Card>
