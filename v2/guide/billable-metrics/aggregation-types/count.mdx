@@ -1,30 +1,33 @@
 ---
 title: "Count"
 sidebarTitle: "Count"
-description: "Count the number of usage events a contract sends in a billing period with the count_agg aggregation, with a worked example and API payload."
+description: "Count matching usage events during a billing cycle."
 keywords: ["Lago", "billable metric", "count_agg", "COUNT"]
 ---
 
-The Count aggregation (`count_agg`) tallies the number of events received during a billing period. Use it when each event is one billable action, such as one API call.
+`Count` measures how many matching events Lago receives during a billing cycle. Use it when each event represents one action you want to measure, such as an API call.
 
 <Frame caption="Count calculation method">
   <img src="/guide/images/count.png" alt="Diagram of the Count aggregation, counting the number of events received in a period" />
 </Frame>
 
-## Create a count billable metric
+## Configure the metric
+
+Each matching event adds one to the count. You do not need to select an event property.
+
+Set `recurring` to `false`. This aggregation does not support carrying the quantity into the next billing cycle. Lago resets the measured quantity at the end of each cycle.
+
+## Create the metric
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Access the **Billable metrics** section in the side menu.
+    1. Go to **Billable metrics** in the side menu.
     2. Create a new billable metric.
-    3. Define a name, a code and an optional description.
+    3. Enter a name, a code and an optional description.
     4. Select **Count** as the aggregation type.
-    5. Apply filters if any.
+    5. Add filters if you want to group usage by dimensions such as region or provider.
     6. Click **Add billable metric**.
 
-    <Info>
-      This metric is metered only. It cannot be recurring, and the aggregated value resets to 0 at the end of each billing period.
-    </Info>
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -51,10 +54,9 @@ The Count aggregation (`count_agg`) tallies the number of events received during
 
 ## Calculation example
 
-Lago calculates `COUNT(events.code)` for the two events below, sent to `contract_example` in January 2027.
+The two example events below belong to `contract_example` and the same billing cycle. Their timestamps are January 16 and 17, 2027 at 00:00 UTC.
 
-```json
-// Event received #1
+```json Event 1
 {
   "transaction_id": "transaction_1",
   "external_contract_id": "contract_example",
@@ -62,8 +64,9 @@ Lago calculates `COUNT(events.code)` for the two events below, sent to `contract
   "timestamp": 1800057600,
   "properties": {}
 }
+```
 
-// Event received #2
+```json Event 2
 {
   "transaction_id": "transaction_2",
   "external_contract_id": "contract_example",
@@ -73,19 +76,19 @@ Lago calculates `COUNT(events.code)` for the two events below, sent to `contract
 }
 ```
 
-Lago counts the events received, **resulting in a billable value of 2 units.** At the `calls_standard` rate of $0.01 per call, this is $0.02.
+Both events match the `api_calls` metric. Each adds one, so the measured quantity is 2.
 
 <CardGroup cols={2}>
   <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">
-    The same events under every aggregation type.
+    Compare how aggregation types calculate usage.
   </Card>
   <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
-    Price the quantity this metric measures.
+    Connect your metric to a Product.
   </Card>
   <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
     `POST /billable_metrics`
   </Card>
   <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
-    Send events with `external_contract_id`.
+    Send usage events to Lago.
   </Card>
 </CardGroup>

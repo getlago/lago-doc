@@ -1,32 +1,40 @@
 ---
 title: "Sum"
 sidebarTitle: "Sum"
-description: "Add up a numeric event property over a billing period with the sum_agg aggregation, for tokens, gigabytes or hours, with a worked example."
+description: "Add the values of an event property during a billing cycle."
 keywords: ["Lago", "billable metric", "sum_agg", "SUM"]
 ---
 
-The Sum aggregation (`sum_agg`) adds up the values of one numeric event property over the billing period. Use it when each event carries a quantity, such as tokens, gigabytes or compute hours.
+`Sum` adds the values of an event property during a billing cycle. Use it when each event reports an additional quantity, such as tokens consumed or data transferred.
 
 <Frame caption="Sum calculation method">
   <img src="/guide/images/sum.png" alt="Diagram of the Sum aggregation, adding up the values of a property" />
 </Frame>
 
-## Create a sum billable metric
+## Configure the metric
+
+Set `field_name` to the event property you want to measure.
+
+Choose what happens when a billing cycle ends:
+
+- `recurring: true`: Lago keeps the quantity and carries it into the next cycle.
+- `recurring: false`: Lago resets the quantity, so each cycle starts fresh.
+
+See [Metric recurrence](/v2/guide/billable-metrics/recurring-vs-metered).
+
+## Create the metric
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Access the **Billable metrics** section in the side menu.
+    1. Go to **Billable metrics** in the side menu.
     2. Create a new billable metric.
-    3. Define a name, a code and an optional description.
+    3. Enter a name, a code and an optional description.
     4. Select **Sum** as the aggregation type.
-    5. Define whether this metric is metered or recurring.
-    6. Define the property to aggregate.
-    7. Apply filters if any.
+    5. Choose whether the measured quantity carries over or resets at the end of each billing cycle.
+    6. Select the event property you want to measure.
+    7. Add filters if you want to group usage by dimensions such as region or provider.
     8. Click **Add billable metric**.
 
-    <Info>
-      This metric can be metered or recurring. See [Recurring vs metered](/v2/guide/billable-metrics/recurring-vs-metered).
-    </Info>
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -54,10 +62,9 @@ The Sum aggregation (`sum_agg`) adds up the values of one numeric event property
 
 ## Calculation example
 
-Lago calculates `SUM(events.properties.total_requests)` for the two events below, sent to `contract_example` in January 2027.
+The two example events below belong to `contract_example` and the same billing cycle. Their timestamps are January 16 and 17, 2027 at 00:00 UTC.
 
-```json
-// Event received #1
+```json Event 1
 {
   "transaction_id": "transaction_1",
   "external_contract_id": "contract_example",
@@ -67,8 +74,9 @@ Lago calculates `SUM(events.properties.total_requests)` for the two events below
     "total_requests": 20
   }
 }
+```
 
-// Event received #2
+```json Event 2
 {
   "transaction_id": "transaction_2",
   "external_contract_id": "contract_example",
@@ -80,19 +88,19 @@ Lago calculates `SUM(events.properties.total_requests)` for the two events below
 }
 ```
 
-Lago adds up the values of the `total_requests` property, **resulting in a billable value of 30 units.**
+The events report 20 and 10. Lago adds them: 20 + 10 = 30.
 
 <CardGroup cols={2}>
   <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">
-    The same events under every aggregation type.
+    Compare how aggregation types calculate usage.
   </Card>
   <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
-    Price the quantity this metric measures.
+    Connect your metric to a Product.
   </Card>
   <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
     `POST /billable_metrics`
   </Card>
   <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
-    Send events with `external_contract_id`.
+    Send usage events to Lago.
   </Card>
 </CardGroup>

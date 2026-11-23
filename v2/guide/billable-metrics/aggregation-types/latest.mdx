@@ -1,31 +1,34 @@
 ---
 title: "Latest"
 sidebarTitle: "Latest"
-description: "Bill on the most recent value of an event property in a billing period with the latest_agg aggregation, with a worked event example and payload."
+description: "Use the most recent value reported for an event property during a billing cycle."
 keywords: ["Lago", "billable metric", "latest_agg", "LATEST"]
 ---
 
-The Latest aggregation (`latest_agg`) keeps the most recent value of one event property in the billing period. Use it when your system reports a running total and only the last reading matters.
+`Latest` uses the most recent value reported for an event property during a billing cycle. Use it when your application reports a current value and you want the last reading, rather than a total of all readings.
 
 <Frame caption="Latest calculation method">
   <img src="/guide/images/latest.png" alt="Diagram of the Latest aggregation, keeping the value of the most recent event" />
 </Frame>
 
-## Create a latest billable metric
+## Configure the metric
+
+Set `field_name` to the event property you want to measure.
+
+Set `recurring` to `false`. This aggregation does not support carrying the quantity into the next billing cycle. Lago resets the measured quantity at the end of each cycle.
+
+## Create the metric
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Access the **Billable metrics** section in the side menu.
+    1. Go to **Billable metrics** in the side menu.
     2. Create a new billable metric.
-    3. Define a name, a code and an optional description.
+    3. Enter a name, a code and an optional description.
     4. Select **Latest** as the aggregation type.
-    5. Define the property to aggregate.
-    6. Apply filters if any.
+    5. Select the event property you want to measure.
+    6. Add filters if you want to group usage by dimensions such as region or provider.
     7. Click **Add billable metric**.
 
-    <Info>
-      This metric is metered only. It cannot be recurring, and the aggregated value resets to 0 at the end of each billing period.
-    </Info>
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -53,10 +56,9 @@ The Latest aggregation (`latest_agg`) keeps the most recent value of one event p
 
 ## Calculation example
 
-Lago calculates `LAST_VALUE(events.properties.total_requests) OVER (ORDER BY events.timestamp)` for the two events below, sent to `contract_example` in January 2027.
+The two example events below belong to `contract_example` and the same billing cycle. Their timestamps are January 16 and 17, 2027 at 00:00 UTC.
 
-```json
-// Event received #1
+```json Event 1
 {
   "transaction_id": "transaction_1",
   "external_contract_id": "contract_example",
@@ -66,8 +68,9 @@ Lago calculates `LAST_VALUE(events.properties.total_requests) OVER (ORDER BY eve
     "total_requests": 20
   }
 }
+```
 
-// Event received #2
+```json Event 2
 {
   "transaction_id": "transaction_2",
   "external_contract_id": "contract_example",
@@ -79,19 +82,19 @@ Lago calculates `LAST_VALUE(events.properties.total_requests) OVER (ORDER BY eve
 }
 ```
 
-Lago takes the latest value of the `total_requests` property, **resulting in a billable value of 10 units.**
+The first event reports 20 and the later event reports 10. Lago uses the later reading, so the measured quantity is 10.
 
 <CardGroup cols={2}>
   <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">
-    The same events under every aggregation type.
+    Compare how aggregation types calculate usage.
   </Card>
   <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
-    Price the quantity this metric measures.
+    Connect your metric to a Product.
   </Card>
   <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
     `POST /billable_metrics`
   </Card>
   <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
-    Send events with `external_contract_id`.
+    Send usage events to Lago.
   </Card>
 </CardGroup>
