@@ -69,7 +69,7 @@ Under the hood, Lago's high-volume pipeline is built on **Kafka/Redpanda** for s
 
 <Tabs>
   <Tab title="Lago Cloud">
-    ClickHouse and Kafka managed for you. You just send events.
+    Lago manages ClickHouse and Kafka. You send events.
   </Tab>
   <Tab title="Self-hosted">
     Full control over scaling, retention, and tuning. Requires manual administration of ClickHouse and Redpanda in your infrastructure.
@@ -126,7 +126,7 @@ Before moving to Kafka, maximize REST performance:
 - **Always use the batch endpoint.** `/api/v1/events/batch` accepts up to 100 events per request.
 - **Parallelize.** Send batch requests concurrently from multiple threads/workers.
 - **Reuse connections.** HTTP keep-alive eliminates TLS handshake overhead.
-- **Retry safely.** Events are idempotent by `transaction_id`, so retries on 429 or 5xx are always safe.
+- **Retry safely.** Resend the identical payload, `timestamp` included, and the retry is deduplicated instead of billed twice. See [Idempotency and deduplication](/guide/events/ingesting-usage#idempotency-and-deduplication).
 
 ---
 
