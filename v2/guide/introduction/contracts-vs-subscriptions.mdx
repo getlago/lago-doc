@@ -14,6 +14,12 @@ Use this page to compare the models and understand how their objects relate.
 API v2 is in beta (`2.0.0-beta`), served under `/api/v2`. API v1 (`/api/v1`) stays supported. The two versions document separate objects: v2 invoice and fee endpoints return Contract invoices and Product fees, not v1 subscription fees.
 </Info>
 
+## Why a new model?
+
+The contract-based model gives you more flexibility to manage pricing as your business evolves. Prices are defined in Rates and organized into Rate Cards, separately from Plans. This makes it easier to introduce new prices, define pricing phases and override pricing for individual items.
+
+Explore the documentation to understand how Products, Rate Cards, Plans and Contracts work together, or start with [Your first invoice](/v2/guide/introduction/your-first-invoice) to build a complete example.
+
 ## What changed
 
 In v1, a Plan holds charges, and a charge prices one billable metric with a charge model. The Plan also carries the subscription fee and a single billing interval.
@@ -56,32 +62,6 @@ flowchart LR
 | Charge filters | [Product filters](/v2/guide/product-catalog/product-filters) | Filters are catalog objects on a metered Product. A Rate Card can target one. |
 | Plan subscription fee | Fixed Product + Rate Card + `standard` Rate, applied with `units` | The recurring fee is a Product like any other. |
 | Plan interval | Billing interval on each Rate | Each Rate has its own billing interval. |
-
-## Same example, both versions
-
-Consider an offer with a $100 monthly fee and $0.01 per API call.
-
-With subscriptions, the Plan contains the subscription fee and a standard charge for API calls. With Contracts, the same offer uses the following Products, Rate Cards and Plan:
-
-| v2 object | Code | Setting |
-| --- | --- | --- |
-| Product category | `api_services` | Groups both Products |
-| Fixed Product | `monthly_service` | No billable metric |
-| Metered Product | `api_calls_product` | `billable_metric_code: "api_calls"` |
-| Rate Card + Rate | `monthly_service_usd` / `monthly_standard` | `standard`, `amount: "100"`, 1 month |
-| Rate Card + Rate | `api_calls_usd` / `calls_standard` | `standard`, `amount: "0.01"`, 1 month |
-| Plan | `api_monthly` | Both Rate Cards, `units: "1"` on the fixed one |
-| Contract | `contract_example` | `customer_example` on `api_monthly` |
-
-For a full month with one fixed unit and 2,000 API calls, both examples total $120 before tax, with no discounts, credits or adjustments for a partial billing period. [Your first invoice](/v2/guide/introduction/your-first-invoice) builds the v2 side step by step.
-
-## Which version should I use?
-
-- **Use v2 (Contracts)** for a new integration that needs a shared Product Catalog, effective-dated price changes, different billing intervals in one offer, or phased introductory pricing. The v2 endpoints require the Product Catalog to be enabled for your organization.
-- **Use v1 (Subscriptions)** for an existing integration built on subscriptions, or when you depend on a feature that the v2 documentation does not cover yet.
-- v1 is not deprecated. API v2 is in beta.
-
-Legacy (v1): [Assign a Plan to a customer](/guide/subscriptions/assign-plan) · [Plans](/guide/plans/overview) · [Charge models](/guide/plans/charges/charge-models/standard)
 
 ## FAQ
 
