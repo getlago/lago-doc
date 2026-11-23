@@ -39,6 +39,8 @@ If the customer already exists in the PSP with a payment method on file, you can
 When you set `sync_with_provider` to `false` and provide the existing `provider_customer_id`, Lago retrieves the default payment method stored in the PSP and attaches it to the customer. No checkout URL is generated.
 This is useful when migrating customers from another billing system, or when the customer and their mandate/card already exist in Adyen or GoCardless.
 
+With Stripe, when the customer has no default payment method there, Lago takes their most recent card. If they have no card, it takes their most recent stored method of a type you allow on that customer: Link, SEPA Direct Debit, ACH Direct Debit, Bacs Direct Debit or Boleto. Lago only picks up a method added outside Lago after it becomes the Stripe default.
+
 ### 3. Generate a new checkout URL
 
 Once the customer is connected to a PSP, you can generate a new checkout URL at any time to capture a new payment method:
@@ -55,11 +57,12 @@ Once the customer is connected to a PSP, you can generate a new checkout URL at 
   </Tab>
   <Tab title="API">
     <CodeGroup>
-    ```bash cURL
+    ```bash Generate a checkout URL
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
+    EXTERNAL_CUSTOMER_ID="hooli_1234"
 
-    curl --location --request POST "$LAGO_URL/api/v1/customers/:external_customer_id/checkout_url" \
+    curl --location --request POST "$LAGO_URL/api/v1/customers/$EXTERNAL_CUSTOMER_ID/checkout_url" \
       --header "Authorization: Bearer $API_KEY"
     ```
     </CodeGroup>
@@ -71,9 +74,17 @@ Once the customer is connected to a PSP, you can generate a new checkout URL at 
 
 When an invoice has a `pending` or `failed` payment status, you can generate a one-off payment checkout link:
 
+<CodeGroup>
+```bash Generate a payment URL for an invoice
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+INVOICE_ID="__YOUR_INVOICE_ID__"
+
+curl --location --request POST "$LAGO_URL/api/v1/invoices/$INVOICE_ID/payment_url" \
+  --header "Authorization: Bearer $API_KEY"
 ```
-POST /api/v1/invoices/{lago_id}/payment_url
-```
+</CodeGroup>
+
 When the customer pays through this link, Lago **automatically captures and stores** the payment method used in the transaction. This means future invoices can be charged automatically without requiring a separate checkout step.
 This path is natively supported for **Stripe** and **Adyen** integrations.
 

@@ -38,7 +38,27 @@ You can therefore track every payment made towards an invoice and keep a clear a
 
 ## Downloading receipts
 
-You can download payment receipts directly from the payment details page in the Lago dashboard.
+<Tabs>
+  <Tab title="Dashboard">
+    You can download payment receipts directly from the payment details page in the Lago dashboard.
+  </Tab>
+  <Tab title="API">
+    List the receipts of an invoice, then download each one from the `file_url` of the receipt object. The receipt also carries `xml_url` for its e-invoicing file.
+
+    <CodeGroup>
+    ```bash List the payment receipts of an invoice
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    INVOICE_ID="__YOUR_INVOICE_ID__"
+
+    curl --location --request GET "$LAGO_URL/api/v1/payment_receipts?invoice_id=$INVOICE_ID" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+
+    Both links expire. `file_url_expires_at` and `xml_url_expires_at` give the moment they stop working, so read the receipt again to get fresh links.
+  </Tab>
+</Tabs>
 
 ## Receipt email notifications
 
