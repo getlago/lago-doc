@@ -1,15 +1,22 @@
 ---
 title: "Package rate model"
 sidebarTitle: "Package"
-description: "The Lago package rate model charges a fixed amount per bundle of units. Configure amount and package_size, with a 2,000-call example at $1 per 100 calls."
+description: "Apply a fixed price to each package of units."
 keywords: ["Lago", "package pricing", "bundles", "package_size", "rate model"]
 ---
 
-The package rate model charges a fixed amount for each bundle of units, such as $1 per 100 API calls. Use it when you sell usage in blocks rather than per unit.
+Package pricing applies a fixed price to a group of units, such as 100 API calls. Use it when you sell usage in packages.
 
 ## How it works
 
 A package has a size (`package_size`) and a price (`amount`). The fee is the number of packages consumed × `amount`.
+
+## Availability
+
+- Fixed Products: not available.
+- Metered Products: available for Count, Count unique, Latest, Max, Sum and Weighted sum, except when metrics use `recurring: true` with proration. Advance billing is available only for Count, non-prorated Count unique and non-prorated Sum.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
 
 ## Configure the rate
 
@@ -48,20 +55,17 @@ curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates"
 
 ## Example
 
-At $1 per package of 100 calls, with no free units:
+This example prices 2,000 calls over one full monthly billing period in USD. Each package contains 100 calls and costs 1 USD. It uses no free units, proration or spending minimum:
 
 | Quantity | Packages | Calculation | Amount before tax |
 | --- | --- | --- | --- |
-| 2,000 calls | 20 | 20 × $1.00 | $20.00 |
+| 2,000 calls | 20 | 20 × 1.00 USD | 20.00 USD |
 
-2,000 calls fill exactly 20 packages, so the fee matches the standard $0.01 per call. Quantities that leave a partial package, and non-zero `free_units`, can change the result compared with unit pricing. Test those boundaries in a test environment before you rely on them.
+The 2,000 calls fill exactly 20 packages, giving a calculated fee of 20 USD before tax. This example uses complete packages and no free units.
 
-## Availability
+## Check the result
 
-- Fixed products: not available.
-- Metered products: available for Count, Count unique, Latest, Max, Sum and Weighted sum, except with prorated recurring metrics. Advance billing is available only for Count, non-prorated Count unique and non-prorated Sum.
-
-See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+For the complete-package example above, divide the quantity by the package size and multiply the package count by its price. Use [Contract current usage](/v2/guide/contracts/current-usage) to inspect provisional values. See [Rates](/v2/guide/rate-cards/rates#check-which-rate-was-used) to check which Rate applies.
 
 <CardGroup cols={2}>
   <Card title="Standard" icon="equals" href="/v2/guide/rate-cards/pricing-models/standard">

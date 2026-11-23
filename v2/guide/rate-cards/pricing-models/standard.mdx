@@ -1,19 +1,26 @@
 ---
 title: "Standard rate model"
 sidebarTitle: "Standard"
-description: "The Lago standard rate model bills the same price for every unit. Configure rate_properties.amount and see the $100 + 2,000 × $0.01 = $120 worked example."
+description: "Apply the same price to every unit."
 keywords: ["Lago", "standard pricing", "rate model", "unit price", "rate_properties"]
 ---
 
-The standard rate model charges the same price for every unit: billable quantity × `amount`. Use it for flat recurring fees on fixed products and for simple per-unit usage pricing on metered products.
+Standard pricing applies the same price to every unit. Use it for a fixed Product with a configured quantity or a metered Product with a quantity measured from events.
 
 ## How it works
 
 Amount = quantity × unit price. `amount` accepts decimal unit prices, such as `"0.0004"`.
 
+## Availability
+
+- Fixed Products: available, arrears and advance, with or without proration.
+- Metered Products: available for every aggregation except Weighted sum with `recurring: true` and proration. Advance billing is unavailable with Latest, Max and Weighted sum.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
 ## Configure the rate
 
-Set `rate_model` to `standard` and `rate_properties.amount` to the unit price, as a decimal string in the rate card's currency. `amount` is required.
+Set `rate_model` to `standard` and `rate_properties.amount` to the unit price, as a decimal string in the Rate Card's currency. `amount` is required.
 
 <CodeGroup>
 ```bash Create a standard rate
@@ -38,22 +45,19 @@ curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates"
 
 ## Example
 
-The running example uses two standard rates, one per product, over one full month:
+This illustration uses two separate Standard Rates in USD over one full month, with no proration or spending minimum:
 
 | Fee | Rate | Quantity | Calculation | Amount before tax |
 | --- | --- | --- | --- | --- |
-| Monthly service | `amount: "100"` | 1 unit | 1 × $100.00 | $100.00 |
-| API calls | `amount: "0.01"` | 2,000 calls | 2,000 × $0.01 | $20.00 |
-| **Total** | | | | **$120.00** |
+| Monthly service | `amount: "100"` | 1 unit | 1 × 100.00 USD | 100.00 USD |
+| API calls | `amount: "0.01"` | 2,000 calls | 2,000 × 0.01 USD | 20.00 USD |
+| **Total** | | | | **120.00 USD** |
 
-A zero quantity gives a zero amount, unless the rate has a [spending minimum](/v2/guide/rate-cards/spending-minimums). The baseline has none.
+A zero quantity gives a zero amount, unless the Rate has a [spending minimum](/v2/guide/rate-cards/spending-minimums). The example above has no spending minimum.
 
-## Availability
+## Check the result
 
-- Fixed products: available, arrears and advance, with or without proration.
-- Metered products: available for every aggregation except prorated recurring Weighted sum. Advance billing is unavailable with Latest, Max and Weighted sum.
-
-See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+Compare the quantity and unit price with the calculated fee. Account for any configured spending minimum separately. Use [Contract current usage](/v2/guide/contracts/current-usage) to inspect provisional values. See [Rates](/v2/guide/rate-cards/rates#check-which-rate-was-used) to check which Rate applies.
 
 <CardGroup cols={2}>
   <Card title="Graduated" icon="stairs" href="/v2/guide/rate-cards/pricing-models/graduated">

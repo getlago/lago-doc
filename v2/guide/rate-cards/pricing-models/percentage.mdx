@@ -1,17 +1,24 @@
 ---
 title: "Percentage rate model"
 sidebarTitle: "Percentage"
-description: "The Lago percentage rate model bills a percentage of a measured monetary amount, with optional per-event fee and limits. Fields and a 2% of $1,000 example."
+description: "Calculate a fee as a percentage of a measured monetary amount."
 keywords: ["Lago", "percentage pricing", "transaction fees", "rate model", "rate_properties"]
 ---
 
-The percentage rate model calculates a fee as a percentage of a measured monetary amount, such as payment volume. Use it for transaction-based pricing, where the metric measures money moved rather than a count of requests.
+Percentage pricing applies a percentage to a measured monetary amount, such as payment volume. You can also configure a fixed fee per event, free allowances and per-transaction limits.
 
 ## How it works
 
-The product's billable metric measures a monetary base, typically a SUM of an `amount` event property. The rate applies `rate` to that base. Optional settings add a fixed fee per event, free allowances, and per-transaction minimums and maximums.
+The Product's billable metric measures a monetary base, typically a Sum of an `amount` event property. The Rate applies the percentage in `rate_properties.rate` to that amount. Optional settings add a fixed fee per event, free allowances, and per-transaction minimums and maximums.
 
 Per-event settings can make the result differ from applying the percentage once to the period total. A per-transaction limit is not the same thing as a rate [spending minimum](/v2/guide/rate-cards/spending-minimums), which applies per billing interval.
+
+## Availability
+
+- Fixed Products: not available.
+- Metered Products: available with Count, Count unique, Max, Sum and Weighted sum, except when metrics use `recurring: true` with proration. Not available with Latest. Advance billing is available only for Count, non-prorated Count unique and non-prorated Sum.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
 
 ## Configure the rate
 
@@ -23,12 +30,8 @@ Set `rate_model` to `percentage`. `rate_properties` takes:
 | `fixed_amount` | Fixed fee per event, as a decimal string. |
 | `free_units_per_events` | Number of free transactions. |
 | `free_units_per_total_aggregation` | Free allowance on the aggregated amount. |
-| `per_transaction_min_amount` | Minimum charged per transaction. |
-| `per_transaction_max_amount` | Maximum charged per transaction. |
-
-<Note>
-The spec types `rate` as a decimal string without stating its unit. The example sends `"2"` for 2%. Check the resulting fee in a test environment before going live.
-</Note>
+| `per_transaction_min_amount` | Minimum fee per transaction. |
+| `per_transaction_max_amount` | Maximum fee per transaction. |
 
 <CodeGroup>
 ```bash Create a percentage rate
@@ -55,20 +58,17 @@ curl --location --request POST "$LAGO_URL/api/v2/rate_cards/payment_volume_usd/r
 
 ## Example
 
-This example is separate from the API-call baseline. A metered product `payment_volume` uses a SUM metric on the transaction amount. In one month, the customer processes $1,000 of transactions, with no fixed fee, free allowance or limit:
+This example uses a metered Product, `payment_volume`, with a Sum metric measuring transaction amounts in USD. Over one full monthly billing period, the customer processes 1,000 USD of transactions. The calculation uses 2%, with no fixed fee, free allowance, transaction limits, proration or spending minimum:
 
 | Measured amount | Rate | Calculation | Amount before tax |
 | --- | --- | --- | --- |
-| $1,000.00 | 2% | $1,000.00 × 2% | $20.00 |
+| 1,000.00 USD | 2% | 1,000.00 USD × 2% | 20.00 USD |
 
-The invoice shows one fee of $20.00. With a `fixed_amount` or per-transaction limits, validate the result against a full list of events: those settings apply per event.
+The calculated fee is 20 USD before tax. A `fixed_amount` or per-transaction limits can change the result because those settings apply per event.
 
-## Availability
+## Check the result
 
-- Fixed products: not available.
-- Metered products: available with Count, Count unique, Max, Sum and Weighted sum, except with prorated recurring metrics. Not available with Latest. Advance billing is available only for Count, non-prorated Count unique and non-prorated Sum.
-
-See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+Compare the measured monetary amount and percentage with the calculated fee. If you configure per-event options, include those settings and the individual events in your calculation. Use [Contract current usage](/v2/guide/contracts/current-usage) to inspect provisional values. See [Rates](/v2/guide/rate-cards/rates#check-which-rate-was-used) to check which Rate applies.
 
 <CardGroup cols={2}>
   <Card title="Graduated percentage" icon="percent" href="/v2/guide/rate-cards/pricing-models/graduated-percentage">
