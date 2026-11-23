@@ -152,6 +152,42 @@ This illustration assumes full monthly periods in UTC, one fixed unit and no pro
 
 The first two phases cover five monthly cycles. Their calculated total is 2 × 50 USD + 3 × 80 USD = **340 USD before tax**.
 
+## How phases interact with Rate changes
+
+Each Contract follows its own phase sequence. A phase with a pricing override keeps that price when the Rate Card's active Rate changes. A phase without an override follows newly effective Rates, including changes that occur after the phase has started.
+
+Using the three phases above, Customer A starts on January 1, 2027, and Customer B starts on March 1, 2027. Both receive two monthly cycles at 50 USD, followed by three at 80 USD, then pricing from the Rate Card. The Rate Card's price changes from 100 USD to 120 USD per month on July 1, 2027.
+
+This example uses one fixed unit and full calendar-month periods in UTC, with no proration, taxes or other adjustments.
+
+```mermaid
+gantt
+    title Customer phases and the Rate Card price timeline
+    dateFormat YYYY-MM-DD
+    axisFormat %b %Y
+    section Rate Card
+    100 USD per month :r1, 2027-01-01, 2027-07-01
+    120 USD per month :r2, 2027-07-01, 2027-11-01
+    section Customer A - starts January 1
+    Phase 1 - 50 USD override :a1, 2027-01-01, 2027-03-01
+    Phase 2 - 80 USD override :a2, 2027-03-01, 2027-06-01
+    Phase 3 - inherits 100 USD :a3, 2027-06-01, 2027-07-01
+    Phase 3 - inherits 120 USD :a4, 2027-07-01, 2027-11-01
+    section Customer B - starts March 1
+    Phase 1 - 50 USD override :b1, 2027-03-01, 2027-05-01
+    Phase 2 - 80 USD override :b2, 2027-05-01, 2027-08-01
+    Phase 3 - inherits 120 USD :b3, 2027-08-01, 2027-11-01
+```
+
+| Customer | June | July | August |
+| --- | --- | --- | --- |
+| A | 100 USD, inherited Rate | 120 USD, new Rate applies within phase 3 | 120 USD, inherited Rate |
+| B | 80 USD, phase override | 80 USD, phase override | 120 USD, active Rate on entering phase 3 |
+
+Customer A enters phase 3 on June 1 and follows the new Rate from July 1. Customer B keeps the 80 USD override through July, then inherits the active 120 USD Rate on August 1.
+
+The price change does not restart either customer's phase sequence. Customer A's two phase 3 bars represent the same ongoing phase. The chart ends in October; phase 3 continues while the Contract remains in effect.
+
 ## Edit a phase sequence
 
 You can edit phases while the Plan is unused.
