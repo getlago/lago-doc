@@ -1,94 +1,89 @@
 ---
-title: "Recurring vs metered metrics"
-sidebarTitle: "Recurring vs metered"
-description: "Choose whether a billable metric resets to zero each billing period (metered) or carries its value into the next period (recurring), with examples."
-keywords: ["Lago", "billable metric", "recurring", "metered"]
+title: "Metric recurrence"
+sidebarTitle: "Metric recurrence"
+description: "Choose whether a billable metric keeps its measured quantity or resets it at the end of each billing cycle."
+keywords: ["Lago", "billable metric", "recurring", "metric recurrence"]
 ---
 
-The `recurring` flag on a billable metric decides whether its aggregated value resets each billing period or carries over. Set `recurring: false` for consumption you bill per period, such as API calls, and `recurring: true` for state that persists, such as seats.
+The `recurring` setting controls what happens to a billable metric's measured quantity when a billing cycle ends.
 
-Metric recurrence and product type answer different questions. `recurring` controls carry-over of the measured value. A [metered product](/v2/guide/product-catalog/metered-products) is a product priced from measured usage, recurring or not.
+Use `recurring: true` when the quantity should continue into the next cycle, such as the number of active seats. Use `recurring: false` when you want to measure each cycle separately, such as the number of API calls.
 
-<Info>
-  Only `sum_agg`, `unique_count_agg` and `weighted_sum_agg` metrics can be recurring. A `count_agg`, `max_agg` or `latest_agg` metric is always metered.
-</Info>
+| Setting | What happens at the end of the billing cycle |
+| --- | --- |
+| `recurring: true` | Lago keeps the quantity and carries it into the next cycle. |
+| `recurring: false` | Lago resets the quantity, so the next cycle starts fresh. |
 
-## Recurring billable metrics
+## Keep the quantity with `recurring: true`
 
-With `recurring: true`, the aggregation persists across billing periods. The accumulated result carries over and is billed in the following periods.
+Use this setting for quantities that remain relevant across billing cycles.
 
-Example: a customer adds 5 seats in January and 2 more in February. With a recurring Count unique metric on `seat_id`, January bills 5 seats and February bills 7.
+For example, you track seats with a `Count unique` metric using `seat_id`. Your customer adds five distinct seats in January. Those five seats carry into February. If the customer adds two more distinct seats and removes none, the measured quantity becomes seven.
 
-<Tabs>
-  <Tab title="Dashboard">
-    Choose the **recurring** option when you create the billable metric.
-  </Tab>
-  <Tab title="API">
-    <CodeGroup>
-    ```bash Seats {13}
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
+Set `recurring` to `true` when creating the metric.
 
-    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "billable_metric": {
-          "name": "Seats",
-          "code": "seats",
-          "aggregation_type": "unique_count_agg",
-          "field_name": "seat_id",
-          "recurring": true
-        }
-      }'
-    ```
-    </CodeGroup>
-  </Tab>
-</Tabs>
+```bash Seats {13}
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
 
-## Metered billable metrics
+curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "billable_metric": {
+      "name": "Seats",
+      "code": "seats",
+      "aggregation_type": "unique_count_agg",
+      "field_name": "seat_id",
+      "recurring": true
+    }
+  }'
+```
 
-With `recurring: false`, the aggregation resets to zero at the end of each billing period. The customer is billed only for that period's usage.
+## Reset the quantity with `recurring: false`
 
-Example: the `api_calls` metric counts 2,000 calls in January and 1,500 in February. January bills 2,000 calls ($20.00 at $0.01) and February bills 1,500 ($15.00).
+Use this setting to measure usage separately for each billing cycle.
 
-<Tabs>
-  <Tab title="Dashboard">
-    Choose the **metered** option when you create the billable metric.
-  </Tab>
-  <Tab title="API">
-    <CodeGroup>
-    ```bash API calls {12}
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
+For example, your `api_calls` metric counts 2,000 calls in January. At the end of January's billing cycle, the count resets. If your customer makes 1,500 calls in February, February's measured quantity is 1,500.
 
-    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "billable_metric": {
-          "name": "API calls",
-          "code": "api_calls",
-          "aggregation_type": "count_agg",
-          "recurring": false
-        }
-      }'
-    ```
-    </CodeGroup>
-  </Tab>
-</Tabs>
+Set `recurring` to `false` when creating the metric.
+
+```bash API calls {12}
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "billable_metric": {
+      "name": "API calls",
+      "code": "api_calls",
+      "aggregation_type": "count_agg",
+      "recurring": false
+    }
+  }'
+```
+
+## Supported aggregation types
+
+`Count unique`, `Sum` and `Weighted sum` support both settings.
+
+`Count`, `Max` and `Latest` require `recurring: false`.
+
+See [Aggregation types](/v2/guide/billable-metrics/aggregation-types/overview) to choose how Lago calculates the quantity.
 
 <CardGroup cols={2}>
   <Card title="Aggregation types" icon="calculator" href="/v2/guide/billable-metrics/aggregation-types/overview">
-    Which types can be recurring.
+    Compare how aggregation types measure usage.
   </Card>
-  <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
-    Sell what the metric measures.
+  <Card title="Create billable metrics" icon="ruler" href="/v2/guide/billable-metrics/create-billable-metrics">
+    Define what to measure and how to calculate it.
   </Card>
   <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
     `POST /billable_metrics`
   </Card>
   <Card title="Billable metric object (API)" icon="code" href="/v2/api-reference/billable-metrics/object">
-    Every metric field.
+    Explore the metric's fields.
   </Card>
 </CardGroup>
