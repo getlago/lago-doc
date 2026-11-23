@@ -1,19 +1,23 @@
 ---
 title: "Your first invoice"
-description: "Quickstart for Lago: create a billable metric, products, rate cards, a plan, a customer and a contract, send events, check usage and read the $120 invoice."
+description: "Configure monthly and usage-based pricing, send usage events, and check the resulting invoice."
 keywords: ["Lago", "quickstart", "contract", "first invoice", "API"]
 ---
 
-This quickstart builds a complete billing flow through the API, from a billable metric to an invoice. Follow it once to see how a product, a rate card, a plan and a contract combine into invoice lines.
+Follow this API walkthrough to configure a $100 monthly fee plus $0.01 per API call. You'll create the pricing, apply a Plan to a customer through a Contract, and send usage events.
 
-The example charges $100 per month plus $0.01 per API call. With 2,000 calls in January 2027, the invoice is $120 before tax.
+For one full billing month with 2,000 calls, the expected fees total $120 USD before tax, with no discounts or credits.
+
+## Before you start
 
 <Info>
-You need an API key with write access to the objects below and the product catalog enabled on your organization. All requests use `https://api.getlago.com/api/v2` (US). For the EU cluster, use `https://api.eu.getlago.com/api/v2`.
+You need an API key with write access to the objects below and the Product catalog enabled on your organization. All requests use `https://api.getlago.com/api/v2` (US). For the EU cluster, use `https://api.eu.getlago.com/api/v2`.
 </Info>
 
 <Note>
-The example uses fixed dates so the numbers are reproducible: the contract starts on `2027-01-01T00:00:00Z` and its first billing cycle ends on `2027-02-01`. A rate's `effective_from` cannot be before today in your organization timezone. If you run this later, move all dates forward together. A different start can make the first cycle shorter than a month, and the first invoice can then differ from $120.
+This example covers January 1–February 1, 2027, with usage dated January 15. Both Rate Cards bill after the billing period ends. Creating the Contract does not immediately generate the invoice shown at the end of this guide.
+
+The Contract starts on `2027-01-01T00:00:00Z` and its first billing cycle ends on `2027-02-01`. A Rate's `effective_from` cannot be before today in your organization timezone. If you run this later, move the Rate and Contract dates forward together and update the Unix timestamp in both event examples. A different start can make the first cycle shorter than a month, and the first invoice can then differ from $120.
 </Note>
 
 ## What you will build
@@ -21,10 +25,10 @@ The example uses fixed dates so the numbers are reproducible: the contract start
 | Object | Code | Purpose |
 | --- | --- | --- |
 | Billable metric | `api_calls` | Counts API call events (`count_agg`) |
-| Product category | `api_services` | Groups the two products |
-| Fixed product | `monthly_service` | The $100 monthly service |
-| Metered product | `api_calls_product` | API calls, measured by `api_calls` |
-| Rate cards | `monthly_service_usd`, `api_calls_usd` | USD, `arrears`, `proration: false` |
+| Product category | `api_services` | Groups the two Products |
+| Fixed Product | `monthly_service` | The $100 monthly service |
+| Metered Product | `api_calls_product` | API calls, measured by `api_calls` |
+| Rate Cards | `monthly_service_usd`, `api_calls_usd` | USD, `arrears`, `proration: false` |
 | Rates | `monthly_standard`, `calls_standard` | $100 per month, $0.01 per call |
 | Plan | `api_monthly` | The offer |
 | Customer | `customer_example` | Who you bill |
@@ -32,7 +36,7 @@ The example uses fixed dates so the numbers are reproducible: the contract start
 
 <Steps>
   <Step title="Create the billable metric">
-    The metric counts one event per API call. COUNT does not need `field_name`.
+    Create a billable metric that counts API call events. Count (`count_agg`) does not need a `field_name`. With `recurring: false`, the aggregation resets at the end of each billing cycle.
 
     <CodeGroup>
     ```bash Create billable metric
@@ -57,8 +61,10 @@ The example uses fixed dates so the numbers are reproducible: the contract start
     Reference: [Create a billable metric](/v2/api-reference/billable-metrics/create).
   </Step>
 
-  <Step title="Create the product category and products">
-    The category is optional. It groups both products on usage and invoices. The fixed product has no metric. The metered product must reference one.
+  <Step title="Create the Product category and Products">
+    The category is optional. It groups both Products on usage and invoices. The fixed Product has no metric. The metered Product must reference one.
+
+    Run all three requests below: create the Product category, then the monthly service Product and API calls Product.
 
     <CodeGroup>
     ```bash Product category
@@ -103,11 +109,13 @@ The example uses fixed dates so the numbers are reproducible: the contract start
     ```
     </CodeGroup>
 
-    References: [Create a product category](/v2/api-reference/product-categories/create), [Create a product](/v2/api-reference/products/create).
+    References: [Create a Product category](/v2/api-reference/product-categories/create), [Create a Product](/v2/api-reference/products/create).
   </Step>
 
-  <Step title="Create the rate cards with their rates">
-    A rate card targets one product and holds currency, billing timing and proration. Pass the first rate in `rates` to create both in one call. If the rate is invalid, the whole request rolls back.
+  <Step title="Create the Rate Cards and Rates">
+    Create a Rate Card for each Product. Both use USD and bill in arrears, meaning after the billing period ends. Proration is disabled, so fees are not adjusted for part of a billing period.
+
+    Run both requests to create a Rate Card and its first Rate for each Product. Include the first Rate in `rates` to define its price and monthly billing interval. If the Rate is invalid, the whole request rolls back.
 
     <CodeGroup>
     ```bash Monthly service rate card
@@ -163,11 +171,11 @@ The example uses fixed dates so the numbers are reproducible: the contract start
     ```
     </CodeGroup>
 
-    Check the result with `GET /api/v2/rate_cards/api_calls_usd?expands[]=rates`. References: [Create a rate card](/v2/api-reference/rate-cards/create), [Rates](/v2/guide/rate-cards/rates).
+    Check the result with `GET /api/v2/rate_cards/api_calls_usd?expands[]=rates`. References: [Create a Rate Card](/v2/api-reference/rate-cards/create), [Rates](/v2/guide/rate-cards/rates).
   </Step>
 
-  <Step title="Create the plan and apply the rate cards">
-    A plan is a set of applied rate cards in one currency. The fixed card needs `units`, the configured quantity. Apply the cards before any contract uses the plan: a plan attached to a contract is locked.
+  <Step title="Create the Plan">
+    Create a USD Plan to combine the monthly service and API usage pricing.
 
     <CodeGroup>
     ```bash Create plan
@@ -183,6 +191,21 @@ The example uses fixed dates so the numbers are reproducible: the contract start
       }'
     ```
 
+    </CodeGroup>
+
+    Reference: [Create a Plan](/v2/api-reference/plans/create).
+  </Step>
+
+  <Step title="Apply Rate Cards to the Plan">
+    Apply both Rate Cards to the Plan. Set `units` to `1` for the monthly service. The API calls Product uses the quantity measured by the billable metric.
+
+    <Note>
+    Apply the Rate Cards before any Contract uses the Plan: a Plan attached to a Contract is locked.
+    </Note>
+
+    Run both requests below.
+
+    <CodeGroup>
     ```bash Apply fixed rate card
     curl --location --request POST "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards" \
       --header "Authorization: Bearer $API_KEY" \
@@ -207,10 +230,16 @@ The example uses fixed dates so the numbers are reproducible: the contract start
     ```
     </CodeGroup>
 
-    Without `rate_phases`, each applied rate card gets one indefinite phase that follows the active rate. References: [Create a plan](/v2/api-reference/plans/create), [Create a plan applied rate card](/v2/api-reference/plan-applied-rate-cards/create).
+    <Note>
+    Without `rate_phases`, each applied Rate Card gets one indefinite phase that follows the active Rate.
+    </Note>
+
+    Reference: [Create a Plan applied Rate Card](/v2/api-reference/plan-applied-rate-cards/create).
   </Step>
 
   <Step title="Create the customer">
+    Create the customer who will receive the invoices. Use `customer_example` to identify this customer when creating the Contract.
+
     <CodeGroup>
     ```bash Create customer
     curl --location --request POST "$LAGO_URL/api/v2/customers" \
@@ -230,8 +259,8 @@ The example uses fixed dates so the numbers are reproducible: the contract start
     Reference: [Create a customer](/v2/api-reference/customers/create).
   </Step>
 
-  <Step title="Create the contract">
-    The contract applies `api_monthly` to `customer_example`. A future `started_at` creates a `pending` contract. It becomes `active` at the start. `billing_anchor_date` sets when the first billing cycle ends.
+  <Step title="Create the Contract">
+    The Contract applies `api_monthly` to `customer_example`. A future `started_at` creates a `pending` Contract. It becomes `active` at the start. `billing_anchor_date` sets when the first billing cycle ends.
 
     <CodeGroup>
     ```bash Create contract
@@ -250,14 +279,16 @@ The example uses fixed dates so the numbers are reproducible: the contract start
     ```
     </CodeGroup>
 
-    Retrieve it with `GET /api/v2/contracts/contract_example?expands[]=applied_rate_cards` to confirm the plan, status, start and anchor. Reference: [Create a contract](/v2/api-reference/contracts/create).
+    Retrieve it with `GET /api/v2/contracts/contract_example?expands[]=applied_rate_cards` to confirm the Plan, status, start and anchor. Reference: [Create a Contract](/v2/api-reference/contracts/create).
   </Step>
 
-  <Step title="Ingest usage events">
-    Send one event per API call, addressed to the contract with `external_contract_id`. Each event needs a unique `transaction_id`. `timestamp` is in Unix seconds. `1800007200` is `2027-01-15T10:00:00Z`.
+  <Step title="Send usage events">
+    Send one event per API call, addressed to the Contract with `external_contract_id`. Each event needs a unique `transaction_id`. `timestamp` is in Unix seconds. `1800007200` is `2027-01-15T10:00:00Z`.
+
+    For this walkthrough, run the batch example to send all 2,000 events. The single-event request shows the payload format; you do not need to run it separately.
 
     <CodeGroup>
-    ```bash One event
+    ```bash Single-event request (reference only)
     curl --location --request POST "$LAGO_URL/api/v2/events" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
@@ -291,7 +322,7 @@ The example uses fixed dates so the numbers are reproducible: the contract start
   </Step>
 
   <Step title="Check current usage">
-    Current usage covers the contract's open billing windows. It is not a preview of one invoice.
+    Current usage covers the Contract's open billing windows. It is not a preview of one invoice.
 
     <CodeGroup>
     ```bash Retrieve current usage
@@ -334,11 +365,13 @@ The example uses fixed dates so the numbers are reproducible: the contract start
     }
     ```
 
-    Amounts ending in `_cents` are minor units: `12000` is $120.00. Newly accepted events can take a moment to appear. Reference: [Retrieve contract current usage](/v2/api-reference/contracts/retrieve-current-usage).
+    Amounts ending in `_cents` are minor units: `12000` is $120.00. Newly accepted events can take a moment to appear. Reference: [Retrieve Contract current usage](/v2/api-reference/contracts/retrieve-current-usage).
   </Step>
 
-  <Step title="Read the invoice">
-    Both rate cards bill in arrears. When the first cycle ends on February 1, 2027, Lago bills the January period. List the customer's invoices, then retrieve one with its fees.
+  <Step title="Check the invoice">
+    Both Rate Cards bill in arrears. When the first cycle ends on February 1, 2027, Lago bills the January period. List the customer's invoices, then retrieve one with its fees.
+
+    From the invoice list, select the invoice for this Contract and billing period. Replace `__LAGO_INVOICE_ID__` with its Lago invoice ID.
 
     <CodeGroup>
     ```bash List invoices
@@ -372,7 +405,7 @@ An invoice records what the customer owes. It does not mean the customer has pai
 
 <CardGroup cols={2}>
   <Card title="Product catalog" icon="boxes-stacked" href="/v2/guide/product-catalog/overview">
-    Structure products with categories and filters.
+    Structure Products with categories and filters.
   </Card>
   <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
     Graduated, volume, package, percentage and more.
