@@ -18,6 +18,8 @@ Phases chain: the next phase starts where the previous one ends. Later phases ar
 
 The Rate Card's `billing_timing` still decides advance or arrears billing. The anchor is a cycle boundary, not a payment date. When the first cycle is shorter than the configured interval, its amount depends on the applicable proration rules.
 
+Timeline colors: purple for phase 1, amber for phase 2, blue for ongoing or inherited pricing, and gray for Contract boundaries.
+
 ## Independent Rate Card timelines
 
 The Contract below starts on January 10, 2027, with `billing_anchor_date` set to February 1. Both cards complete their first cycle on February 1.
@@ -25,26 +27,30 @@ The Contract below starts on January 10, 2027, with `billing_anchor_date` set to
 - **Platform fee**: one ongoing phase with a monthly interval.
 - **Compute**: one anchored cycle at position `1`, then one two-week cycle at position `2`, then an ongoing monthly phase.
 
+<div className="billing-timeline-diagram">
+
 ```mermaid
 gantt
     title One initial anchor, then independent rate card timelines
     dateFormat YYYY-MM-DD
     axisFormat %d %b
     section Contract boundaries
-    Contract starts :milestone, start, 2027-01-10, 0d
-    First cycle ends and renews :milestone, anchor, 2027-02-01, 0d
+    Contract starts :milestone, boundary_start, 2027-01-10, 0d
+    First cycle ends and renews :milestone, boundary_anchor, 2027-02-01, 0d
     section Platform fee - monthly ongoing phase
-    First anchored cycle :a1, 2027-01-10, 2027-02-01
-    Monthly cycle :a2, 2027-02-01, 2027-03-01
-    Monthly cycle :a3, 2027-03-01, 2027-04-01
-    Monthly cycle :a4, 2027-04-01, 2027-05-01
+    First anchored cycle :inherited_platform_1, 2027-01-10, 2027-02-01
+    Monthly cycle :inherited_platform_2, 2027-02-01, 2027-03-01
+    Monthly cycle :inherited_platform_3, 2027-03-01, 2027-04-01
+    Monthly cycle :inherited_platform_4, 2027-04-01, 2027-05-01
     section Compute - chained phases
-    Position 1 - first anchored cycle :b1, 2027-01-10, 2027-02-01
-    Position 2 - one two-week cycle :b2, 2027-02-01, 2027-02-15
-    Position 3 - monthly cycle :b3, 2027-02-15, 2027-03-15
-    Position 3 - monthly cycle :b4, 2027-03-15, 2027-04-15
-    Position 3 - monthly cycle :b5, 2027-04-15, 2027-05-15
+    Position 1 - first anchored cycle :phase1_compute, 2027-01-10, 2027-02-01
+    Position 2 - one two-week cycle :phase2_compute, 2027-02-01, 2027-02-15
+    Position 3 - monthly cycle :inherited_compute_3, 2027-02-15, 2027-03-15
+    Position 3 - monthly cycle :inherited_compute_4, 2027-03-15, 2027-04-15
+    Position 3 - monthly cycle :inherited_compute_5, 2027-04-15, 2027-05-15
 ```
+
+</div>
 
 Compute's monthly phase starts on February 15, right after its two-week phase. Its next renewal is March 15. It does not shorten that month to renew on March 1. Platform fee keeps renewing on the first of each month.
 
@@ -58,24 +64,28 @@ Customer A starts on January 1, 2027, and Customer B starts on March 1, 2027. Bo
 
 This example uses one fixed unit and full calendar-month periods in UTC, with no proration, taxes or other adjustments.
 
+<div className="billing-timeline-diagram">
+
 ```mermaid
 gantt
     title Customer phases and the Rate Card price timeline
     dateFormat YYYY-MM-DD
     axisFormat %b %Y
     section Rate Card
-    100 USD per month :r1, 2027-01-01, 2027-07-01
-    120 USD per month :r2, 2027-07-01, 2027-11-01
+    100 USD per month :inherited_rate_100, 2027-01-01, 2027-07-01
+    120 USD per month :inherited_rate_120, 2027-07-01, 2027-11-01
     section Customer A - starts January 1
-    Phase 1 - 50 USD override :a1, 2027-01-01, 2027-03-01
-    Phase 2 - 80 USD override :a2, 2027-03-01, 2027-06-01
-    Phase 3 - inherits 100 USD :a3, 2027-06-01, 2027-07-01
-    Phase 3 - inherits 120 USD :a4, 2027-07-01, 2027-11-01
+    Phase 1 - 50 USD override :phase1_customer_a, 2027-01-01, 2027-03-01
+    Phase 2 - 80 USD override :phase2_customer_a, 2027-03-01, 2027-06-01
+    Phase 3 - inherits 100 USD :inherited_customer_a_100, 2027-06-01, 2027-07-01
+    Phase 3 - inherits 120 USD :inherited_customer_a_120, 2027-07-01, 2027-11-01
     section Customer B - starts March 1
-    Phase 1 - 50 USD override :b1, 2027-03-01, 2027-05-01
-    Phase 2 - 80 USD override :b2, 2027-05-01, 2027-08-01
-    Phase 3 - inherits 120 USD :b3, 2027-08-01, 2027-11-01
+    Phase 1 - 50 USD override :phase1_customer_b, 2027-03-01, 2027-05-01
+    Phase 2 - 80 USD override :phase2_customer_b, 2027-05-01, 2027-08-01
+    Phase 3 - inherits 120 USD :inherited_customer_b_120, 2027-08-01, 2027-11-01
 ```
+
+</div>
 
 | Customer | June | July | August |
 | --- | --- | --- | --- |
