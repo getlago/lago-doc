@@ -1,0 +1,66 @@
+---
+title: "Useful commands"
+description:
+  "Useful commands for self-hosted users."
+---
+
+Below is a set of commands for self-hosted users, mostly for managing invoicing tasks, whether for immediate processing or scheduling.
+
+These commands run in a Rails console (`rails c`) inside a Docker container named `api`, managed by Docker Compose.
+
+```shell
+docker compose exec api rails c
+```
+
+## Bill a subscription for a future date
+
+Use this to queue the billing of a subscription for a later issuance date. The job
+generates a real invoice, it is not a preview. Specify the correct subscription
+`external_id`, the targeted invoice issuance date, and an `invoicing_reason`.
+
+```ruby
+# In the Rails console
+subscription = Subscription.find_by(external_id: 'YOUR_SUB_EXTERNAL_ID')
+timestamp = DateTime.parse('2024-10-01').to_i
+
+BillSubscriptionJob.perform_later([subscription], timestamp, invoicing_reason: :subscription_periodic)
+```
+
+<Info>
+  `invoicing_reason` is required. It accepts `subscription_starting`,
+  `subscription_periodic`, `subscription_terminating`, `in_advance_charge`,
+  `in_advance_charge_periodic` and `progressive_billing`.
+</Info>
+
+## Issue an invoice immediately
+
+Use this to issue an invoice right away. Specify the correct subscription `external_id`.
+
+```ruby
+# In the Rails console
+subscription = Subscription.find_by(external_id: 'YOUR_SUB_EXTERNAL_ID')
+timestamp = Time.current.to_i
+BillSubscriptionJob.perform_now([subscription], timestamp, invoicing_reason: :subscription_periodic)
+```
+
+## Remove cache for a subscription
+Use this to remove the cache on a specific subscription.
+
+```ruby
+# In the Rails console
+Subscriptions::ChargeCacheService.expire_for_subscription(Subscription.find_by(external_id: 'YOUR_SUB_EXTERNAL_ID'))
+```
+To remove the cache for all subscriptions, you can alternatively use this command:
+```ruby
+# In the Rails console
+Subscription.find_each {|s| Subscriptions::ChargeCacheService.expire_for_subscription(s) }
+```
+
+## Audit logs of a subscription
+Use this to view all changes applied to a subscription and identify which membership made those changes.
+
+```ruby
+# In the Rails console
+subscription = Subscription.find_by(external_id: 'YOUR_SUB_EXTERNAL_ID')
+subscription.versions
+```
