@@ -13,16 +13,15 @@ Metadata is stored in the `credit_note` object but is **not** displayed on the P
 To add metadata:
 <Tabs>
   <Tab title="Dashboard">
-    1. Go to the credit note detail page for the credit note you want to update.  
-    2. Click **“Add metadata.”**  
-    3. Enter your key–value pairs.  
-    4. Click **Save** to confirm.  
+    1. Go to the credit note detail page for the credit note you want to update.
+    2. Click **Add metadata**.
+    3. Enter your key-value pairs.
+    4. Click **Save** to confirm.
   </Tab>
-  <Tab title="API — At credit note creation">
+  <Tab title="API: at credit note creation">
       <CodeGroup>
       ```bash Add metadata when creating a credit note
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
 
       curl --location --request POST "$LAGO_URL/api/v1/credit_notes" \
@@ -30,7 +29,15 @@ To add metadata:
       --header 'Content-Type: application/json' \
       --data-raw '{
         "credit_note": {
-          …
+          "invoice_id": "__LAGO_INVOICE_ID__",
+          "reason": "duplicated_charge",
+          "credit_amount_cents": 10,
+          "items": [
+            {
+              "fee_id": "__LAGO_FEE_ID__",
+              "amount_cents": 10
+            }
+          ],
           "metadata": {
             "sync_to_netsuite": "false",
             "sync_to_salesforce": "false"
@@ -40,14 +47,14 @@ To add metadata:
       ```
       </CodeGroup>
   </Tab>
-  <Tab title="API — After credit note creation">
+  <Tab title="API: after credit note creation">
       <CodeGroup>
       ```bash Add metadata to an existing credit note
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
+      CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
 
-      curl --location --request POST "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      curl --location --request POST "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/metadata" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -67,19 +74,19 @@ To add metadata:
 To edit metadata on a credit note:
 <Tabs>
   <Tab title="Dashboard">
-    1. Navigate to the credit note detail page.  
-    2. Click **“Edit metadata.”**  
-    3. Add, update key–value pairs.  
-    4. Save your changes.  
+    1. Navigate to the credit note detail page.
+    2. Click **Edit metadata**.
+    3. Add or update key-value pairs.
+    4. Save your changes.
   </Tab>
-  <Tab title="API — Add or edit specific keys">
+  <Tab title="API: add or edit specific keys">
       <CodeGroup>
       ```bash Edit or add metadata on a credit note
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
+      CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
 
-      curl --location --request PATCH "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      curl --location --request PATCH "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/metadata" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -91,14 +98,14 @@ To edit metadata on a credit note:
       ```
       </CodeGroup>
   </Tab>
-  <Tab title="API — Replace all metadata">
+  <Tab title="API: replace all metadata">
       <CodeGroup>
       ```bash Replace all metadata on a credit note
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
+      CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
 
-      curl --location --request POST "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      curl --location --request POST "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/metadata" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -118,32 +125,33 @@ To edit metadata on a credit note:
 To delete metadata on a credit note:
 <Tabs>
   <Tab title="Dashboard">
-    1. Open the credit note detail page.  
-    2. Click **“Edit metadata.”**  
-    3. Click the trash icon next to the key–value pair you want to remove.  
-    4. Save your changes.  
+    1. Open the credit note detail page.
+    2. Click **Edit metadata**.
+    3. Click the trash icon next to the key-value pair you want to remove.
+    4. Save your changes.
   </Tab>
-  <Tab title="API — Delete a specific key">
+  <Tab title="API: delete a specific key">
       <CodeGroup>
       ```bash Delete a specific metadata key
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
+      CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+      METADATA_KEY="sync_to_salesforce"
 
-      curl --location --request DELETE "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata/:key" \
+      curl --location --request DELETE "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/metadata/$METADATA_KEY" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json'
       ```
       </CodeGroup>
   </Tab>
-  <Tab title="API — Delete all metadata">
+  <Tab title="API: delete all metadata">
       <CodeGroup>
       ```bash Delete all metadata on a credit note
       LAGO_URL="https://api.getlago.com"
-      INVOICE_ID="__YOUR_INVOICE_ID__"
       API_KEY="__YOUR_API_KEY__"
+      CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
 
-      curl --location --request DELETE "$LAGO_URL/api/v1/credit_notes/:lago_id/metadata" \
+      curl --location --request DELETE "$LAGO_URL/api/v1/credit_notes/$CREDIT_NOTE_ID/metadata" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json'
       ```
@@ -153,6 +161,6 @@ To delete metadata on a credit note:
 
 ## Credit note metadata limitations
 
-1. A maximum of 50 metadata key–value pairs is allowed per credit note.
+1. A maximum of 50 metadata key-value pairs is allowed per credit note.
 2. Keys must be strings of up to 100 characters.
 3. Values must be strings of up to 255 characters.
