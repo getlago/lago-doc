@@ -1,10 +1,11 @@
 ---
-title: "Choosing a pricing model"
-description: "Compare Lago rate models (standard, graduated, volume, package, percentage, graduated percentage, dynamic) and check availability by product, metric and timing."
+title: "Overview"
+sidebarTitle: "Overview"
+description: "Compare pricing models and check which ones support your billing configuration."
 keywords: ["Lago", "rate model", "pricing models", "availability matrix", "rate_properties"]
 ---
 
-A rate model defines how a rate turns a measured or configured quantity into an amount. Set it on each [rate](/v2/guide/rate-cards/rates) with `rate_model` and configure it with `rate_properties`, after checking below that the model fits your product type, billable metric and billing timing.
+A pricing model defines how a Rate calculates an amount. Choose the model that matches your pricing, then configure it with `rate_model` and `rate_properties`.
 
 ## Model comparison
 
@@ -18,30 +19,52 @@ A rate model defines how a rate turns a measured or configured quantity into an 
 | [Graduated percentage](/v2/guide/rate-cards/pricing-models/graduated-percentage) | `graduated_percentage` | Percentage tiers on a measured monetary amount | `graduated_percentage_ranges` |
 | [Dynamic](/v2/guide/rate-cards/pricing-models/dynamic) | `dynamic` | The amount comes from each event's `precise_total_amount_cents` | None |
 
-The API enum also lists `custom`. It is not covered by this documentation.
-
 Tiered models share one tier shape, `RateTierInput`: `to_value` (upper bound, decimal string, `null` on the last open-ended tier), `per_unit_amount`, `flat_amount` and `rate`. Upper bounds must increase. Do not send `from_value`.
 
 ## Model availability
 
-A model can be available for one combination of product type, aggregation, `recurring`, proration and billing timing, and unavailable for another. Each cell reads **arrears / advance**. ✅ means available, ❌ means unavailable. "n/a" means the row has no separate proration setting.
+Availability depends on the Product type, metric aggregation, `recurring` setting, proration and billing timing. Select the billing timing below. ✅ means available and ❌ means unavailable. "n/a" means the row has no separate proration setting.
 
 ### Metered products
 
+<Tabs>
+  <Tab title="Arrears">
+
 | Aggregation | `recurring` | Proration | Standard | Graduated | Volume | Package | Percentage | Graduated percentage | Dynamic |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Count | `false` | n/a | ✅ / ✅ | ✅ / ✅ | ✅ / ❌ | ✅ / ✅ | ✅ / ✅ | ✅ / ✅ | ❌ / ❌ |
-| Count unique | `false` | n/a | ✅ / ✅ | ✅ / ✅ | ✅ / ❌ | ✅ / ✅ | ✅ / ✅ | ✅ / ✅ | ❌ / ❌ |
-| Count unique | `true` | Full (`false`) | ✅ / ✅ | ✅ / ✅ | ✅ / ❌ | ✅ / ✅ | ✅ / ✅ | ✅ / ✅ | ❌ / ❌ |
-| Count unique | `true` | Prorated (`true`) | ✅ / ✅ | ✅ / ❌ | ✅ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ |
-| Latest | `false` | n/a | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ |
-| Max | `false` | n/a | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ❌ / ❌ |
-| Sum | `false` | n/a | ✅ / ✅ | ✅ / ✅ | ✅ / ❌ | ✅ / ✅ | ✅ / ✅ | ✅ / ✅ | ✅ / ✅ |
-| Sum | `true` | Full (`false`) | ✅ / ✅ | ✅ / ✅ | ✅ / ❌ | ✅ / ✅ | ✅ / ✅ | ✅ / ✅ | ✅ / ✅ |
-| Sum | `true` | Prorated (`true`) | ✅ / ✅ | ✅ / ❌ | ✅ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ |
-| Weighted sum | `false` | n/a | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ❌ / ❌ |
-| Weighted sum | `true` | Full (`false`) | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ✅ / ❌ | ❌ / ❌ |
-| Weighted sum | `true` | Prorated (`true`) | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ |
+| Count | `false` | n/a | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Count unique | `false` | n/a | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Count unique | `true` | Full (`false`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Count unique | `true` | Prorated (`true`) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Latest | `false` | n/a | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Max | `false` | n/a | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Sum | `false` | n/a | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Sum | `true` | Full (`false`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Sum | `true` | Prorated (`true`) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Weighted sum | `false` | n/a | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Weighted sum | `true` | Full (`false`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Weighted sum | `true` | Prorated (`true`) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+  </Tab>
+  <Tab title="Advance">
+
+| Aggregation | `recurring` | Proration | Standard | Graduated | Volume | Package | Percentage | Graduated percentage | Dynamic |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Count | `false` | n/a | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| Count unique | `false` | n/a | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| Count unique | `true` | Full (`false`) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| Count unique | `true` | Prorated (`true`) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Latest | `false` | n/a | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Max | `false` | n/a | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Sum | `false` | n/a | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Sum | `true` | Full (`false`) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Sum | `true` | Prorated (`true`) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Weighted sum | `false` | n/a | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Weighted sum | `true` | Full (`false`) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Weighted sum | `true` | Prorated (`true`) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+  </Tab>
+</Tabs>
 
 Aggregation is the billable metric's `aggregation_type`: `count_agg`, `unique_count_agg`, `latest_agg`, `max_agg`, `sum_agg`, `weighted_sum_agg`. Proration is the rate card's `proration`.
 
@@ -49,12 +72,26 @@ Aggregation is the billable metric's `aggregation_type`: `count_agg`, `unique_co
 
 Fixed products use configured quantities. They have no billable metric and no `recurring` setting.
 
+<Tabs>
+  <Tab title="Arrears">
+
 | Proration | Standard | Graduated | Volume | Package | Percentage | Graduated percentage | Dynamic |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Full (`false`) | ✅ / ✅ | ✅ / ✅ | ✅ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ |
-| Prorated (`true`) | ✅ / ✅ | ✅ / ❌ | ✅ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ | ❌ / ❌ |
+| Full (`false`) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Prorated (`true`) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 
-In short: fixed products support `standard`, `graduated` and `volume`. `volume` is never billed in advance. `dynamic` requires a SUM metric.
+  </Tab>
+  <Tab title="Advance">
+
+| Proration | Standard | Graduated | Volume | Package | Percentage | Graduated percentage | Dynamic |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Full (`false`) | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Prorated (`true`) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+  </Tab>
+</Tabs>
+
+Fixed Products support `standard`, `graduated` and `volume`. `volume` is never billed in advance. `dynamic` requires a Sum metric.
 
 ### Related options
 
@@ -64,26 +101,18 @@ In short: fixed products support `standard`, `graduated` and `volume`. `volume` 
 | Display on invoice | Rate card `display_on_invoice` | Listed for advance billing. |
 | Regroup paid fees | Rate card `regroup_paid_fees` | Only for hidden advance fees (`display_on_invoice: false`). |
 
-## Example
+<a id="example"></a>
 
-The running example uses `standard` twice: $100 per month for one fixed unit and $0.01 per API call. A full month with 2,000 calls bills $100.00 + $20.00 = $120.00 before tax. The `api_calls` metric is a non-recurring COUNT on an arrears rate card, so every model except `dynamic` would be available for it.
+## Compare graduated and volume pricing
 
-## FAQ
+Consider 250 units with these prices: 1 USD per unit up to 100 units, 0.50 USD per unit up to 200, and 0.10 USD per unit above 200. This example has no flat fees.
 
-<AccordionGroup>
-  <Accordion title="Which rate model should I start with?">
-    `standard`, unless the price per unit changes with quantity. Use `graduated` when each tier prices its own slice, `volume` when the total quantity picks one price for all units, and `package` when you sell bundles.
-  </Accordion>
-  <Accordion title="What is the difference between graduated and volume?">
-    With 250 units and tiers at $1.00 up to 100, $0.50 up to 200, $0.10 above: graduated bills 100 × $1.00 + 100 × $0.50 + 50 × $0.10 = $155. Volume picks the tier that contains 250 and bills all 250 units at $0.10 = $25, plus that tier's flat fee if it has one.
-  </Accordion>
-  <Accordion title="Why is a model rejected for my rate card?">
-    Availability depends on the product type, the metric aggregation and `recurring` setting, the rate card's `proration` and its `billing_timing`. For example, `volume` is arrears only and fixed products accept only `standard`, `graduated` and `volume`. Check the matrix above.
-  </Accordion>
-  <Accordion title="Can I change the rate model later?">
-    Not on an active rate. Add a new rate with a later `effective_from` and the new model. Pending rates stay fully editable.
-  </Accordion>
-</AccordionGroup>
+- Graduated pricing applies each tier's price to the units in that tier: 100 × 1 + 100 × 0.50 + 50 × 0.10 = 155 USD.
+- Volume pricing uses the tier reached by the total quantity: all 250 units cost 0.10 USD each, for a total of 25 USD.
+
+Choose Standard for one unit price, Graduated for a separate price per tier, Volume for one price based on total quantity, or Package for bundles. Check the availability tables before configuring the Rate.
+
+To change the pricing model on an active Rate, create a new Rate with a later `effective_from`. Pending Rates remain editable. See [Rates](/v2/guide/rate-cards/rates).
 
 <CardGroup cols={2}>
   <Card title="Standard" icon="equals" href="/v2/guide/rate-cards/pricing-models/standard">

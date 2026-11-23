@@ -1,28 +1,47 @@
 ---
-title: "How rate cards work"
-description: "A Lago rate card holds the currency, billing timing and proration for one product or filter, plus its effective-dated rates. Create, apply and lock rules."
+title: "Overview"
+sidebarTitle: "Overview"
+description: "Define billing settings for a Product or Product filter and add Rates to set its prices."
 keywords: ["Lago", "rate card", "billing timing", "proration", "pricing"]
 ---
 
-A [rate card](/v2/api-reference/rate-cards/object) defines reusable billing settings for one product or one product filter: currency, billing timing and proration, plus the [rates](/v2/guide/rate-cards/rates) that set its price over time. Create one rate card per pricing target and currency, then apply it to [plans](/v2/guide/plans/overview) and [contracts](/v2/guide/contracts/overview).
+A Rate Card defines billing settings for one Product or Product filter, including currency, billing timing and proration. Its [Rates](/v2/guide/rate-cards/rates) define the prices, billing intervals and dates when those prices take effect.
 
-## How it fits together
+Apply Rate Cards to a Plan, then use that Plan in a customer Contract.
 
-- A rate card targets exactly one `product_code`, or one `product_filter_code` on that product. The target is fixed at creation.
-- It owns `currency`, `billing_timing` and `proration`.
-- It contains rates. Each rate owns the rate model, the price, the billing interval and the effective date.
-- An **applied rate card** attaches the reusable card to a plan or a contract. It can carry a fixed quantity (`units`) and a sequence of rate phases.
+<a id="how-it-fits-together"></a>
 
-A product category is never a pricing target. It only groups the resulting fees.
+## How catalog and pricing fit together
+
+Your [Product catalog](/v2/guide/product-catalog/overview) defines what you sell. Rate Cards and Rates define how you bill for it. A Product category groups Products; it is not a pricing target.
+
+| Object | Defines |
+| --- | --- |
+| Product or Product filter | What you price. |
+| Rate Card | Currency, billing timing and proration. |
+| Rate | Price, pricing model, billing interval and effective date. |
+| Plan | The applied Rate Cards included in an offer. |
+| Contract | The Plan used for a customer. |
 
 ```mermaid
-flowchart LR
-  Product["Product or product filter"] --> Card["Rate card: currency, billing_timing, proration"]
-  Card --> R1["Rate (terminated)"]
-  Card --> R2["Rate (active)"]
-  Card --> R3["Rate (pending)"]
-  Card --> Applied["Applied rate card on a plan or contract: units, rate_phases"]
+flowchart TD
+  Product["Product or Product filter"] --> Card["Rate Card"]
+  Card --> Rate["Rates"]
+  Card --> Plan["Applied Rate Card on a Plan"]
+  Plan --> Contract["Customer Contract uses the Plan"]
 ```
+
+Applied Rate Cards can carry a fixed quantity (`units`) and a sequence of `rate_phases` on Plans and Contracts. See [Plan phases](/v2/guide/plans/plan-phases) and [Contract overrides](/v2/guide/contracts/overrides) for configuration details.
+
+## Billing settings
+
+Set the currency, billing timing and proration on the Rate Card:
+
+- `currency` identifies the currency used for pricing, such as `USD`.
+- `billing_timing` selects billing in advance (`advance`) or in arrears (`arrears`, the default).
+- `proration` controls whether fees are adjusted for part of a billing period. It defaults to `false`.
+
+These settings affect which pricing models and options are available. For example, Volume pricing and spending minimums require arrears billing. Check [model availability](/v2/guide/rate-cards/pricing-models/overview#model-availability) before creating a Rate.
 
 ## Rate card fields
 
@@ -41,111 +60,86 @@ flowchart LR
 | `rates` | No | Initial rates. If one fails validation, the card and its rates roll back. |
 | `description` | No | Internal description. |
 
-`billing_timing` and `proration` limit which rate models and options are available. See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview).
-
 ## Example
 
-The running example uses two rate cards, both USD, `arrears` and `proration: false`:
+These two Rate Cards use USD, `billing_timing: "arrears"` and `proration: false`:
 
-| Rate card | Targets | Rate | Full-month amount |
-| --- | --- | --- | --- |
-| `monthly_service_usd` | `monthly_service` (fixed) | `monthly_standard`: $100 per month | $100 × 1 unit = $100.00 |
-| `api_calls_usd` | `api_calls_product` (metered) | `calls_standard`: $0.01 per call | $0.01 × 2,000 = $20.00 |
+| Rate Card | Product | Rate |
+| --- | --- | --- |
+| `monthly_service_usd` | `monthly_service` (fixed) | `monthly_standard`: 100 USD per month for one unit. |
+| `api_calls_usd` | `api_calls_product` (metered) | `calls_standard`: 0.01 USD per API call, billed monthly. |
 
-The invoice for a full month shows two fees totaling $120.00 before tax. For a cloud catalog, a card can target a filter instead, such as Compute → Flex 512MiB.
+A Rate Card can also target a Product filter, such as Compute → Flex 512MiB. See [Your first invoice](/v2/guide/introduction/your-first-invoice) for the complete billing example.
 
 ## Create a rate card
 
-<Tabs>
-  <Tab title="Dashboard">
-    Create a rate card with these values:
-    1. **Name**: `API calls USD`, **Code**: `api_calls_usd`
-    2. **Product**: `api_calls_product` (no filter)
-    3. **Currency**: USD
-    4. **Billing timing**: arrears
-    5. **Proration**: off
-    6. Add the rate `calls_standard`: standard model, amount 0.01, billing interval 1 month, effective from January 1, 2027.
+Choose the Product or Product filter before creation; the target cannot change later. Set the currency and billing settings before creating the first Rate. See [update restrictions](#update-a-rate-card) for the fields that become locked.
 
-    <Note>
-    The fields match the API. Screen-by-screen Dashboard steps are not documented yet.
-    </Note>
-  </Tab>
-  <Tab title="API">
-    <CodeGroup>
-    ```bash Create a rate card with its first rate
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
+The following request creates `api_calls_usd` with its first Rate.
 
-    curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "rate_card": {
-          "name": "API calls USD",
-          "code": "api_calls_usd",
-          "product_code": "api_calls_product",
-          "currency": "USD",
-          "billing_timing": "arrears",
-          "proration": false,
-          "rates": [
-            {
-              "code": "calls_standard",
-              "effective_from": "2027-01-01T00:00:00Z",
-              "rate_model": "standard",
-              "rate_properties": { "amount": "0.01" },
-              "billing_interval_count": 1,
-              "billing_interval_unit": "month"
-            }
-          ]
+<CodeGroup>
+```bash Create a rate card with its first rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate_card": {
+      "name": "API calls USD",
+      "code": "api_calls_usd",
+      "product_code": "api_calls_product",
+      "currency": "USD",
+      "billing_timing": "arrears",
+      "proration": false,
+      "rates": [
+        {
+          "code": "calls_standard",
+          "effective_from": "2027-01-01T00:00:00Z",
+          "rate_model": "standard",
+          "rate_properties": { "amount": "0.01" },
+          "billing_interval_count": 1,
+          "billing_interval_unit": "month"
         }
-      }'
-    ```
-    </CodeGroup>
-  </Tab>
-</Tabs>
+      ]
+    }
+  }'
+```
+</CodeGroup>
 
-## Verify pricing
+<a id="verify-pricing"></a>
 
-Retrieve the card with `GET /api/v2/rate_cards/api_calls_usd`. Supported expansions are `active_rate`, `rates`, `taxes`, `product` and `product_filter`. `active_rate` is null until a rate becomes effective. `rates` are sorted by `effective_from`, newest first.
+## Check the Rate Card
 
-## Apply a rate card
+Retrieve the Rate Card and check its Product, currency, billing settings and Rates. Use `GET /api/v2/rate_cards/api_calls_usd`. Supported expansions are `active_rate`, `rates`, `taxes`, `product` and `product_filter`. `active_rate` is null until a rate becomes effective. `rates` are sorted by `effective_from`, newest first.
 
-Apply the card to an editable plan with `POST /api/v2/plans/{plan_code}/applied_rate_cards`. All cards on a plan share its currency, and only one card may price each product and filter combination. See [plans](/v2/guide/plans/overview). A contract can also receive cards directly while it is `pending`. See [contract overrides](/v2/guide/contracts/overrides).
+<a id="apply-a-rate-card"></a>
 
-## Change and lock rules
+## Apply to a Plan
+
+Apply the Rate Card to an editable Plan with `POST /api/v2/plans/{plan_code}/applied_rate_cards`. All Rate Cards on a Plan share its currency, and only one Rate Card may price each Product and filter combination. See [Plans](/v2/guide/plans/overview).
+
+Use the Plan in a customer Contract. See [Contract overrides](/v2/guide/contracts/overrides) for Contract-specific configuration.
+
+<a id="change-and-lock-rules"></a>
+
+## Update a Rate Card
 
 `PUT` and `PATCH` accept partial updates.
 
-- The product and product filter are fixed at creation.
+- The Product and Product filter are fixed at creation.
 - Once any rate exists, `currency`, `applied_pricing_unit_code`, `billing_timing`, `proration`, `regroup_paid_fees` and `display_on_invoice` cannot change.
-- `code` and `currency` cannot change while the card is attached to a plan or contract.
+- `code` and `currency` cannot change while the Rate Card is attached to a Plan or Contract.
 - `tax_codes` stay editable.
 
-Set the structural fields before you create the first rate.
+To use different billing timing or proration after a Rate exists, create a new Rate Card.
+
+## Delete a Rate Card
 
 <Warning>
 `DELETE /api/v2/rate_cards/{code}` deletes an unused rate card and its rates. A card attached to a plan cannot be deleted.
 </Warning>
-
-## FAQ
-
-<AccordionGroup>
-  <Accordion title="What is the difference between a rate card and a rate?">
-    The rate card holds settings that stay stable: the target product or filter, currency, billing timing and proration. The rate holds the price: rate model, `rate_properties`, billing interval, spending minimum and effective date. One card keeps a timeline of rates.
-  </Accordion>
-  <Accordion title="Can one rate card price several products?">
-    No. A rate card targets exactly one product, or one filter on that product. Create one card per pricing target.
-  </Accordion>
-  <Accordion title="How do I bill in advance?">
-    Set `billing_timing: "advance"` on the rate card before creating its first rate. Some models are arrears only, such as `volume`, and spending minimums require arrears. Check the [availability matrix](/v2/guide/rate-cards/pricing-models/overview).
-  </Accordion>
-  <Accordion title="How do I change a price for existing customers?">
-    Add a new rate with a later `effective_from`. When it becomes active, plans and contracts using the card inherit it, unless they override the price in their current phase. See [rates](/v2/guide/rate-cards/rates).
-  </Accordion>
-  <Accordion title="Can I change billing timing after launch?">
-    No. Once a rate exists, `billing_timing` and `proration` are locked. Create a new rate card with the new settings.
-  </Accordion>
-</AccordionGroup>
 
 <CardGroup cols={2}>
   <Card title="Rates" icon="clock-rotate-left" href="/v2/guide/rate-cards/rates">

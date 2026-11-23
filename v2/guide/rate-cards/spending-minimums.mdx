@@ -1,11 +1,11 @@
 ---
 title: "Spending minimums"
 sidebarTitle: "Spending minimums"
-description: "Set a spending minimum on a Lago rate with min_amount_cents: the minimum applies per rate billing interval, arrears only. Worked monthly and quarterly examples."
+description: "Set the minimum amount billed for a Rate's billing period."
 keywords: ["Lago", "spending minimum", "min_amount_cents", "true-up", "rate"]
 ---
 
-A spending minimum sets the minimum amount charged for one [rate](/v2/guide/rate-cards/rates) over each of its billing intervals. Use it when a product must bill at least a floor amount per period, whatever the usage.
+A spending minimum sets the lowest amount billed for a Rate during one billing period. If the calculated amount is below the minimum, Lago adds a fee for the difference. This additional fee is called a true-up.
 
 ## How it fits together
 
@@ -16,63 +16,47 @@ A spending minimum sets the minimum amount charged for one [rate](/v2/guide/rate
 
 ## Example
 
-The API call rate of the running example, $0.01 per call, gets a $30 monthly minimum.
+The API call Rate is 0.01 USD per call, with a 30 USD minimum per billing interval. The examples below cover complete billing periods and show totals for this Rate, not the entire Contract invoice.
 
 | Scenario | Interval | Priced usage | Minimum | Shortfall | Total before tax |
 | --- | --- | --- | --- | --- | --- |
-| 2,000 calls in a full month | 1 month | $20.00 | $30.00 | $10.00 | $30.00 |
-| 4,000 calls in a full month | 1 month | $40.00 | $30.00 | $0.00 | $40.00 |
-| 2,000 calls in each month of a full quarter | 3 months | $60.00 | $30.00 | $0.00 | $60.00 |
+| 2,000 calls in a full month | 1 month | 20 USD | 30 USD | 10 USD | 30 USD |
+| 4,000 calls in a full month | 1 month | 40 USD | 30 USD | 0 USD | 40 USD |
+| 2,000 calls in each month of a full quarter | 3 months | 60 USD | 30 USD | 0 USD | 60 USD |
 
-In the first row, the invoice shows the $20.00 usage fee and a $10.00 true-up, which bring the total to $30.00. The true-up fee references its parent fee through `lago_true_up_parent_fee_id`. Do not add the whole $30 minimum on top of usage.
+In the first row, the invoice shows the 20 USD usage fee and a 10 USD true-up, which bring the total to 30 USD. The true-up fee references its parent fee through `lago_true_up_parent_fee_id`. Do not add the whole 30 USD minimum on top of usage.
 
-In the third row, the minimum applies once over the three-month period. It is not $30 per month.
+In the third row, the minimum applies once over the three-month period. It is not 30 USD per month.
 
-These examples use full periods. The baseline example has no minimum and stays at $120.
+
 
 ## Configure the minimum
 
-<Tabs>
-  <Tab title="Dashboard">
-    On the rate card `api_calls_usd`, add or edit a pending rate with these values:
-    1. **Model**: standard, **Amount**: 0.01
-    2. **Billing interval**: 1 month
-    3. **Spending minimum**: 30
+Spending minimums require a Rate Card with `billing_timing: "arrears"`. Set the minimum when creating a Rate or editing a pending Rate. An active Rate rejects changes to `min_amount_cents`; create a new Rate with a later `effective_from` to change it.
 
-    <Note>
-    The fields match the API. Screen-by-screen Dashboard steps are not documented yet.
-    </Note>
-  </Tab>
-  <Tab title="API">
-    <CodeGroup>
-    ```bash Create a rate with a spending minimum
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
+<CodeGroup>
+```bash Create a rate with a spending minimum
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
 
-    curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "rate": {
-          "code": "calls_with_minimum",
-          "effective_from": "2027-07-01T00:00:00Z",
-          "rate_model": "standard",
-          "rate_properties": { "amount": "0.01" },
-          "min_amount_cents": 3000,
-          "billing_interval_count": 1,
-          "billing_interval_unit": "month"
-        }
-      }'
-    ```
-    </CodeGroup>
-  </Tab>
-</Tabs>
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "calls_with_minimum",
+      "effective_from": "2027-07-01T00:00:00Z",
+      "rate_model": "standard",
+      "rate_properties": { "amount": "0.01" },
+      "min_amount_cents": 3000,
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
 
-`min_amount_cents: 3000` is $30.00 in USD. An active rate rejects changes to `min_amount_cents`. To change the minimum, add a new rate with a later `effective_from`.
-
-## Partial periods
-
-These examples do not cover shortened periods, such as a first cycle that ends on the billing anchor date. Check how the minimum applies to a partial period in a test environment before relying on it.
+`min_amount_cents: 3000` represents 30 USD.
 
 <CardGroup cols={2}>
   <Card title="Rates" icon="clock-rotate-left" href="/v2/guide/rate-cards/rates">

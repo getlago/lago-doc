@@ -1,14 +1,16 @@
 ---
 title: "Rates"
-description: "A Lago rate sets the price, rate model, billing interval and effective date inside a rate card. Schedule price changes and understand pending, active, terminated."
+description: "Set a price, choose a billing interval and schedule when the price takes effect."
 keywords: ["Lago", "rate", "effective date", "billing interval", "price change"]
 ---
 
-A [rate](/v2/api-reference/rates/object) defines the pricing that takes effect on a given date inside a [rate card](/v2/guide/rate-cards/overview): the rate model, its properties, the billing interval and an optional spending minimum. Add a new rate whenever the price changes. Older rates stay for history.
+A Rate defines a price within a [Rate Card](/v2/guide/rate-cards/overview). It specifies the pricing model, the values used to calculate the amount, the billing interval and when the price takes effect.
+
+Create a new Rate to schedule a price change. Earlier Rates remain available to explain past billing.
 
 ## How it fits together
 
-When a rate becomes active, its price applies to every plan and contract using that rate card, unless the plan or contract overrides the price in its current [phase](/v2/guide/plans/plan-phases). Overridden prices stay as they are. The rate card supplies the currency and billing timing.
+The Rate Card supplies the currency and billing timing. The Rate defines the price and billing interval. Plans and Contracts can also have pricing overrides in their [phases](/v2/guide/plans/plan-phases); check the applicable phase when reviewing a customer's price.
 
 ## Rate fields
 
@@ -23,7 +25,7 @@ When a rate becomes active, its price applies to every plan and contract using t
 | `min_amount_cents` | No | [Spending minimum](/v2/guide/rate-cards/spending-minimums) per billing interval, in cents. Arrears only. Defaults to `0`. |
 | `applied_pricing_unit_conversion_rate` | When the card uses a pricing unit | Conversion rate, as a decimal string. |
 
-Amounts in `rate_properties` are decimal values in the currency's major unit: `"100"` is $100. Fields ending in `_cents` are minor units: `3000` is $30.
+For a Rate Card priced in USD, `rate_properties.amount: "100"` represents 100 USD. The spending minimum uses cents: `min_amount_cents: 3000` represents 30 USD.
 
 ## Billing interval
 
@@ -40,7 +42,7 @@ Each rate has its own interval, so one plan can mix a yearly fee and monthly usa
 
 ## Example
 
-The running example has two rates, both monthly:
+These examples define monthly Rates for two USD Rate Cards: `monthly_service_usd` and `api_calls_usd`.
 
 <CodeGroup>
 ```json monthly_standard (on monthly_service_usd)
@@ -70,63 +72,54 @@ The running example has two rates, both monthly:
 ```
 </CodeGroup>
 
-One unit at $100 plus 2,000 calls at $0.01 bill $120.00 for a full month, before tax.
+The first Rate sets a price of 100 USD per unit per month. The second sets a price of 0.01 USD per API call, billed monthly. See [Your first invoice](/v2/guide/introduction/your-first-invoice) for the complete calculation.
+
+## Before you schedule a price change
+
+Check the scheduling rules for `effective_from`:
+
+- It cannot be before today in your organization timezone.
+- It must be unique on the Rate Card and later than the active Rate.
+- Rates billed in arrears start at the beginning of the day.
 
 ## Schedule a price change
 
-To lower the API call price to $0.008 from July 1, 2027, add a new rate to `api_calls_usd`:
+This request adds a Rate to `api_calls_usd` with an amount of 0.008 USD per API call and `effective_from: "2027-07-01T00:00:00Z"`.
 
-<Tabs>
-  <Tab title="Dashboard">
-    On the rate card `api_calls_usd`, add a rate with these values:
-    1. **Code**: `calls_standard_2027_07`
-    2. **Effective from**: July 1, 2027
-    3. **Model**: standard, **Amount**: 0.008
-    4. **Billing interval**: 1 month
+<CodeGroup>
+```bash Create a rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
 
-    <Note>
-    The fields match the API. Screen-by-screen Dashboard steps are not documented yet.
-    </Note>
-  </Tab>
-  <Tab title="API">
-    <CodeGroup>
-    ```bash Create a rate
-    LAGO_URL="https://api.getlago.com"
-    API_KEY="__YOUR_API_KEY__"
-
-    curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
-      --header "Authorization: Bearer $API_KEY" \
-      --header 'Content-Type: application/json' \
-      --data-raw '{
-        "rate": {
-          "code": "calls_standard_2027_07",
-          "effective_from": "2027-07-01T00:00:00Z",
-          "rate_model": "standard",
-          "rate_properties": { "amount": "0.008" },
-          "billing_interval_count": 1,
-          "billing_interval_unit": "month"
-        }
-      }'
-    ```
-    </CodeGroup>
-  </Tab>
-</Tabs>
-
-The new rate is `pending` until July 1, 2027. From then, a contract on `api_monthly` with no price override bills 2,000 July calls at 2,000 × $0.008 = $16.00 instead of $20.00.
-
-Scheduling rules for `effective_from`:
-
-- It cannot be before today in your organization timezone.
-- It must be unique on the rate card and later than the active rate.
-- Rates billed in arrears start at the beginning of the day.
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "calls_standard_2027_07",
+      "effective_from": "2027-07-01T00:00:00Z",
+      "rate_model": "standard",
+      "rate_properties": { "amount": "0.008" },
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
 
 ## Rate statuses
 
-| Status | Meaning | What you can change |
-| --- | --- | --- |
-| `pending` | `effective_from` is in the future. | Fully editable. Can be deleted. |
-| `active` | The current price on the card. | `effective_from`, `rate_model`, `min_amount_cents` and the billing interval fields are rejected, even with unchanged values. |
-| `terminated` | Replaced by a later rate. | Frozen. Kept for history. |
+| Status | Meaning |
+| --- | --- |
+| `pending` | Scheduled for a future date. |
+| `active` | The current Rate on the Rate Card. |
+| `terminated` | Replaced by a later Rate and kept for history. |
+
+## Update or delete a Rate
+
+- Pending Rates are fully editable and can be deleted.
+- Active Rates reject `effective_from`, `rate_model`, `min_amount_cents` and billing interval fields, even when the supplied values are unchanged.
+- Terminated Rates cannot be edited.
 
 <Warning>
 `DELETE /api/v2/rate_cards/{rate_card_code}/rates/{code}` works only on `pending` rates. Active and terminated rates cannot be deleted: they explain past invoices.
@@ -136,9 +129,11 @@ Scheduling rules for `effective_from`:
 
 `GET /api/v2/rate_cards/{rate_card_code}/rates` returns the complete list, ordered by `effective_from`, newest first. It has no cursor pagination.
 
-## Verify the applied price
+<a id="verify-the-applied-price"></a>
 
-To explain a fee, check whether the plan or contract overrides the price in the phase that covered the fee's period. Without an override, the active rate applies. Each fee carries `rate_code`, `from_datetime` and `to_datetime`. Use them, not the current catalog price, to explain a past invoice.
+## Check which Rate was used
+
+To explain an invoice fee, start with its `rate_code` and billing period: `from_datetime` and `to_datetime`. Check the applicable Plan or Contract phase for overrides. Use the Rate and settings that applied to that period rather than today's catalog price.
 
 <CardGroup cols={2}>
   <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
