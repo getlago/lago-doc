@@ -15,7 +15,7 @@ Applying a Rate Card adds it to the Plan as an [applied Rate Card](/v2/api-refer
 
 For a fixed Product, `units` sets the quantity as a decimal string. A null value uses the default quantity. For a metered Product, the billable metric measures the quantity from events.
 
-Use [Plan phase & overrides](/v2/guide/plans/plan-phases) to define a pricing sequence. Finish configuring the Plan before a Contract uses it. See [Manage plan changes](/v2/guide/plans/manage-plan-changes) for editing restrictions.
+Use [Plan phase & overrides](/v2/guide/plans/plan-phases) to define a pricing sequence.
 
 ## Before you start
 
@@ -42,6 +42,19 @@ This illustration covers one full monthly billing period. Both Rate Cards bill i
 
 ## Create the Plan
 
+<Tabs>
+  <Tab title="Dashboard">
+1. Open **Plans** and click **Create plan**.
+2. Enter the Plan's `Name` and `Code`.
+3. Select its `Plan currency`. For the example above, select USD.
+4. Optionally, click **Add a description** and enter an `Invoice display name (optional)`.
+5. Click **Create plan**.
+
+<Frame caption="Create a Plan in the Dashboard">
+  <img src="/v2/guide/plans/images/create-plan.png" alt="Create plan form showing name, code, currency and optional invoice display name" />
+</Frame>
+  </Tab>
+  <Tab title="API">
 Create the Plan with a name, code and currency.
 
 ```bash 1. Create the plan
@@ -61,9 +74,24 @@ curl --location --request POST "$LAGO_URL/api/v2/plans" \
 ```
 
 The Plan also accepts `description`, `invoice_display_name` (defaults to the name when blank) and `tax_codes`.
+  </Tab>
+</Tabs>
 
 ## Apply Rate Cards
 
+<Tabs>
+  <Tab title="Dashboard">
+1. Open the Plan and select **Rate cards** under **Overview**. Open the **Apply a rate card** form.
+2. Select the `Product`. To apply pricing to a Product filter, click **Product filters** and choose the filter.
+3. Select the Rate Card for that Product or filter. For a USD Plan, the field is labeled `Rate card in USD`.
+4. Review **Rate phases**. To configure a pricing sequence, click **Add a phase**. See [Plan phase & overrides](/v2/guide/plans/plan-phases) for phase settings.
+5. Click **Add rate card**. Repeat for each Rate Card you want to apply.
+
+<Frame caption="Apply a Rate Card to a Plan in the Dashboard">
+  <img src="/v2/guide/plans/images/apply-rate-card.png" alt="Apply a rate card form showing Product selection, Product filters, a USD Rate Card and Rate phases" />
+</Frame>
+  </Tab>
+  <Tab title="API">
 Apply the fixed Product's Rate Card with a quantity of one.
 
 ```bash 2. Apply the fixed rate card
@@ -96,6 +124,8 @@ curl --location --request POST "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_
     }
   }'
 ```
+  </Tab>
+</Tabs>
 
 ## Check the Plan
 
