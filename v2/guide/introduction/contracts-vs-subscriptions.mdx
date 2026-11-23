@@ -1,6 +1,6 @@
 ---
 title: "Contracts vs subscriptions"
-description: "Compare subscription-based and contract-based billing, understand the main objects, and find the corresponding API fields."
+description: "Compare subscription-based and contract-based billing and understand how their main objects relate."
 keywords: ["Lago", "contracts vs subscriptions", "migration", "rate cards", "glossary"]
 ---
 
@@ -8,7 +8,7 @@ Subscriptions and Contracts both apply billing terms to a customer. They organiz
 
 With subscriptions, pricing is configured on a Plan through fees and charges. With Contracts, Products, Rate Cards and Rates define pricing that you can reuse across Plans.
 
-Use this page to compare the models and understand how their objects and API fields relate.
+Use this page to compare the models and understand how their objects relate.
 
 <Info>
 API v2 is in beta (`2.0.0-beta`), served under `/api/v2`. API v1 (`/api/v1`) stays supported. The two versions document separate objects: v2 invoice and fee endpoints return Contract invoices and Product fees, not v1 subscription fees.
@@ -56,34 +56,6 @@ flowchart LR
 | Charge filters | [Product filters](/v2/guide/product-catalog/product-filters) | Filters are catalog objects on a metered Product. A Rate Card can target one. |
 | Plan subscription fee | Fixed Product + Rate Card + `standard` Rate, applied with `units` | The recurring fee is a Product like any other. |
 | Plan interval | Billing interval on each Rate | Each Rate has its own billing interval. |
-
-## API field mappings
-
-The table below maps fields and statuses between the two APIs.
-
-| Subscriptions (v1) | Contracts (v2) | What changed | API details |
-| --- | --- | --- | --- |
-| `external_subscription_id` | `external_contract_id` | Events target a Contract. | The v2 events list rejects `external_subscription_id`. |
-| Subscription statuses | Contract statuses | Same four values: `pending`, `active`, `terminated`, `canceled`. | A Contract ended while pending is `canceled`. Ended while active, `terminated`. |
-| Charge model and `properties` | `rate_model` and `rate_properties` | Set on the Rate. Tiers use `to_value` only. | See [pricing models](/v2/guide/rate-cards/pricing-models/overview). |
-| Plan interval | `billing_interval_count` and `billing_interval_unit` on each Rate | Each Rate has its own interval: `day`, `week`, `month` or `year`. | A monthly fee and a yearly fee can live in one Plan. |
-| Charge `pay_in_advance` | Rate Card `billing_timing` | Enum `arrears` or `advance`, set per Rate Card. | Volume pricing is arrears only. |
-| Charge `prorated` | Rate Card `proration` | Boolean on the Rate Card. | Locked once a Rate exists. |
-| Charge `min_amount_cents` | Rate `min_amount_cents` | Applies per Rate billing interval. Arrears only. | See [spending minimums](/v2/guide/rate-cards/spending-minimums). |
-| Plan overrides at subscription creation | Contract overrides through `rate_override` on rate phases | Allowed only while the Contract is `pending`. | See [Contract overrides](/v2/guide/contracts/overrides). |
-| Subscription `billing_time` | Contract `billing_time` | Same values: `calendar` or `anniversary`. Contracts add `billing_anchor_date`, which sets when the first billing cycle ends. | See [Contract lifecycle](/v2/guide/contracts/lifecycle). |
-
-### Related API details
-
-- Create Contracts with `POST /api/v2/contracts`.
-- All applied Rate Cards share the Plan currency. At most one per Product or filter.
-- One v1 charge usually becomes one Product, one Rate Card and one Rate.
-- Before creating Product filters, declare their keys and values on the billable metric.
-- For the subscription fee mapping, see [fixed Products](/v2/guide/product-catalog/fixed-products).
-
-Rate Cards use `currency`, `billing_timing` and `proration` for shared billing settings. Rates use `rate_model`, `rate_properties` and `effective_from` for pricing and effective dates. A Rate Card keeps a timeline of Rates.
-
-Not mapped: trial periods, Plan upgrades and downgrades, and Plan-level minimum commitments have no documented v2 equivalent yet. Do not assume v1 behavior carries over.
 
 ## Same example, both versions
 
