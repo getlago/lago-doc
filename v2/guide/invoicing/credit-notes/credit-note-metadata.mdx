@@ -1,11 +1,11 @@
 ---
 title: "Credit note metadata"
 sidebarTitle: "Credit note metadata"
-description: "Add, merge, replace and delete key-value metadata on finalized credit notes with /api/v2, for example ERP or government document references."
+description: "Store external references on a credit note."
 keywords: ["Lago", "credit note metadata", "metadata", "ERP"]
 ---
 
-Credit note metadata is a set of key-value pairs stored on a [credit note](/v2/guide/invoicing/credit-notes/overview). Use it to keep references from external systems, such as an ERP document ID or a sync flag, next to the credit note.
+Add metadata to link a credit note to records in your other systems, such as an ERP document ID. Each entry has a key and a value.
 
 ## Limits
 
@@ -14,26 +14,17 @@ Credit note metadata is a set of key-value pairs stored on a [credit note](/v2/g
 - Values up to 255 characters. Values must be strings or `null`.
 - The credit note must be finalized.
 
-## Endpoints
+<span id="add-or-merge-metadata" />
 
-| Method and path | Effect |
-| --- | --- |
-| `POST /credit_notes` with `metadata` | Sets metadata at creation. |
-| `POST /credit_notes/{credit_note_id}/metadata` | Replaces all metadata. |
-| `PUT` or `PATCH /credit_notes/{credit_note_id}/metadata` | Merges keys into existing metadata. |
-| `PUT` or `PATCH /credit_notes/{lago_id}` with `metadata` | Merges keys. |
-| `DELETE /credit_notes/{credit_note_id}/metadata` | Clears all metadata. |
-| `DELETE /credit_notes/{credit_note_id}/metadata/{key}` | Deletes one key and returns the remaining metadata. |
+## Add or update metadata
 
-The metadata endpoints return only the metadata object, or `null`. To read metadata with the credit note, retrieve it with `expands[]=metadata`.
-
-## Add or merge metadata
+Add new keys or update existing values. Keys you do not include stay unchanged. In the example below, `synced_to_erp` stores the string `"true"`, not a boolean.
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Open the credit note detail page;
-    2. Click **Add metadata** or **Edit metadata**;
-    3. Enter your key-value pairs; and
+    1. Open the credit note detail page.
+    2. Click **Add metadata** or **Edit metadata**.
+    3. Enter your key-value pairs.
     4. Click **Save**.
   </Tab>
   <Tab title="API">
@@ -59,7 +50,7 @@ The metadata endpoints return only the metadata object, or `null`. To read metad
 
 ## Replace all metadata
 
-`POST` overwrites the whole set. Keys you omit are removed. Omitted `metadata` defaults to an empty object.
+Replacing metadata removes keys you do not include. `POST` replaces the whole set. Omitted `metadata` defaults to an empty object.
 
 <CodeGroup>
 ```bash Replace all metadata
@@ -80,11 +71,13 @@ curl --location --request POST "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID/me
 
 ## Delete metadata
 
+Delete one key to remove a single reference, or delete all metadata to clear the credit note’s metadata.
+
 <Tabs>
   <Tab title="Dashboard">
-    1. Open the credit note detail page;
-    2. Click **Edit metadata**;
-    3. Click the trash icon next to the key; and
+    1. Open the credit note detail page.
+    2. Click **Edit metadata**.
+    3. Click the trash icon next to the key.
     4. Click **Save**.
   </Tab>
   <Tab title="API">
@@ -109,6 +102,26 @@ curl --location --request POST "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID/me
     </CodeGroup>
   </Tab>
 </Tabs>
+
+## Retrieve metadata
+
+[Retrieve the credit note](/v2/api-reference/credit-notes/retrieve) with `expands[]=metadata` to include its metadata.
+
+<span id="endpoints" />
+
+<Accordion title="Metadata API operations">
+| Method and path | Effect |
+| --- | --- |
+| `POST /credit_notes` with `metadata` | Sets metadata at creation. |
+| `POST /credit_notes/{credit_note_id}/metadata` | Replaces all metadata. |
+| `PUT` or `PATCH /credit_notes/{credit_note_id}/metadata` | Merges keys into existing metadata. |
+| `PUT` or `PATCH /credit_notes/{lago_id}` with `metadata` | Merges keys. |
+| `DELETE /credit_notes/{credit_note_id}/metadata` | Clears all metadata. |
+| `DELETE /credit_notes/{credit_note_id}/metadata/{key}` | Deletes one key and returns the remaining metadata. |
+
+The metadata endpoints return only the metadata object, or `null`. To read metadata with the credit note, retrieve it with `expands[]=metadata`.
+
+</Accordion>
 
 ## Next steps
 

@@ -1,13 +1,13 @@
 ---
 title: "Zero-amount invoices"
-sidebarTitle: "Empty invoices"
-description: "Decide whether Lago finalizes zero-amount invoices with finalize_zero_amount_invoice on the billing entity, and override it per customer."
+sidebarTitle: "Zero-amount invoices"
+description: "Choose whether Lago finalizes invoices with a zero amount."
 keywords: ["Lago", "zero amount invoice", "empty invoice", "billing entity"]
 ---
 
-The zero-amount invoice setting decides whether Lago finalizes invoices whose amount is zero. Skip them when they would only add accounting documents with nothing to collect.
+Choose whether Lago finalizes invoices with a zero amount. Set the default on the [billing entity](/v2/guide/billing-entities), then override it for individual customers when needed.
 
-Set the default on the [billing entity](/v2/guide/billing-entities), then override it per customer.
+You can finalize these invoices or skip finalization. A customer can also inherit the billing entity’s setting.
 
 ## Settings
 
@@ -20,9 +20,10 @@ Set the default on the [billing entity](/v2/guide/billing-entities), then overri
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Click **Settings** in the side menu;
-    2. Open **Billing entity** > **Invoicing settings**; and
-    3. Update the **Finalize zero amount invoice** block.
+    1. Click **Settings** in the side menu.
+    2. Open **Billing entity**.
+    3. Open **Invoicing settings**.
+    4. Update the **Finalize zero amount invoice** block.
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -48,9 +49,10 @@ Set the default on the [billing entity](/v2/guide/billing-entities), then overri
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Open **Customers** and select a customer;
-    2. Open the **Settings** tab; and
-    3. Update the **Finalize zero amount invoice** block.
+    1. Open **Customers**.
+    2. Select a customer.
+    3. Open the **Settings** tab.
+    4. Update the **Finalize zero amount invoice** block.
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -58,7 +60,7 @@ Set the default on the [billing entity](/v2/guide/billing-entities), then overri
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
-    curl --location --request PATCH "$LAGO_URL/api/v2/customers/customer_example" \
+    curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -83,7 +85,7 @@ Set the default on the [billing entity](/v2/guide/billing-entities), then overri
   <Card title="Update a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/partially-update">
     Request and response schema.
   </Card>
-  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/partially-update">
+  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/update">
     Request and response schema.
   </Card>
 </CardGroup>

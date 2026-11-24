@@ -1,34 +1,38 @@
 ---
-title: "Taxes: tax rates for contracts and rate cards"
-sidebarTitle: "Taxes"
-description: "Create tax rates with /api/v2/taxes and assign them by code to rate cards, plans, customers and billing entities, with a worked contract invoice example."
+title: "Taxes"
+sidebarTitle: "Overview"
+description: "Create tax rates and assign them to your billing configuration."
 keywords: ["Lago", "taxes", "tax rate", "rate card", "VAT"]
 ---
 
-A [tax](/v2/api-reference/taxes/retrieve) is a named percentage rate, such as 20% VAT, defined once for your organization. Create it first, then assign it by `code` to the objects that should carry it: rate cards, plans, customers or billing entities.
+A [tax](/v2/api-reference/taxes/retrieve) defines a percentage rate, such as 20% VAT. Create the tax, then assign it to a Rate Card, Plan, customer or billing entity. Creating a tax does not apply it to invoices automatically.
 
-Creating a tax does not assign it to anything.
-
-## The tax object
-
-| Field | Meaning |
-| --- | --- |
-| `code` | Unique within the organization, including deleted taxes. Used in every `tax_codes` array. |
-| `name` | Display name, such as `VAT`. |
-| `rate` | Percentage. `20` means 20%. Accepts a number or a decimal string, returned as a number. |
-| `description` | Internal description. `null` clears it. |
-| `deleted_at` | `null` until the tax is deleted. |
+<span id="the-tax-object" />
 
 ## Create a tax
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Go to **Settings** > **Taxes**;
-    2. Click **Add**;
-    3. Enter a name, a unique code, an optional description and the rate; and
-    4. Save.
+    1. Open **Settings**.
+    2. Open **Taxes**.
+    3. Click **Add**.
+    4. Enter a name.
+    5. Enter a unique code.
+    6. Optionally, add a description.
+    7. Enter the tax rate.
+    8. Save.
   </Tab>
   <Tab title="API">
+    <Accordion title="Tax fields">
+      | Field | Meaning |
+      | --- | --- |
+      | `code` | Unique within the organization, including deleted taxes. Used in every `tax_codes` array. |
+      | `name` | Display name, such as `VAT`. |
+      | `rate` | Percentage. `20` means 20%. Accepts a number or a decimal string, returned as a number. |
+      | `description` | Internal description. `null` clears it. |
+      | `deleted_at` | `null` until the tax is deleted. |
+    </Accordion>
+
     `name`, `code` and `rate` are required. A code already used by another tax, including a deleted one, returns `422`.
 
     <CodeGroup>
@@ -50,7 +54,9 @@ Creating a tax does not assign it to anything.
     ```
     </CodeGroup>
 
-    The `applied_to_organization` parameter from v1 is ignored and not returned.
+    <Accordion title="API compatibility">
+      The `applied_to_organization` parameter from v1 is ignored and not returned.
+    </Accordion>
   </Tab>
 </Tabs>
 
@@ -58,25 +64,24 @@ Creating a tax does not assign it to anything.
 
 Every object below takes a `tax_codes` array. An empty array clears the assignments.
 
-| Object | Field | Editable after use |
-| --- | --- | --- |
-| [Rate card](/v2/guide/rate-cards/overview) | `tax_codes` | Yes. Tax assignments stay editable after rates exist, even though currency, timing and proration lock. |
-| [Plan](/v2/guide/plans/overview) | `tax_codes` | Yes. Tax codes can change after the plan is used by a contract. |
-| [Customer](/v2/guide/customers/customer-management) | `tax_codes` | Yes. |
-| [Billing entity](/v2/guide/billing-entities) | `tax_codes` | Yes. |
+| Assign to | Field |
+| --- | --- |
+| [Rate Card](/v2/guide/rate-cards/overview) | `tax_codes` |
+| [Plan](/v2/guide/plans/overview) | `tax_codes` |
+| [Customer](/v2/guide/customers/customer-management) | `tax_codes` |
+| [Billing entity](/v2/guide/billing-entities) | `tax_codes` |
 
-<Note>
-The spec documents where taxes can be assigned. It does not document the precedence between rate card, plan, customer and billing entity assignments. Check the applied taxes on a draft invoice before relying on a combination.
-</Note>
+### Assign a tax to a Rate Card
 
-### Assign a tax to a rate card
+Tax assignments remain editable after the Rate Card has Rates.
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Open **Rate cards** and select the rate card;
-    2. Click **Edit**;
-    3. In the tax section, add the tax; and
-    4. Save.
+    1. Open **Rate cards**.
+    2. Select a Rate Card.
+    3. Click **Edit**.
+    4. In the tax section, add the tax.
+    5. Save.
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -98,21 +103,23 @@ The spec documents where taxes can be assigned. It does not document the precede
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
-    curl --location --request GET "$LAGO_URL/api/v2/rate_cards/api_calls_usd?expands[]=taxes" \
+    curl --globoff --location --request GET "$LAGO_URL/api/v2/rate_cards/api_calls_usd?expands[]=taxes" \
       --header "Authorization: Bearer $API_KEY"
     ```
     </CodeGroup>
   </Tab>
 </Tabs>
 
-### Assign a tax to a plan, customer or billing entity
+### Assign a tax to a Plan, customer or billing entity
+
+You can update a Plan’s tax codes after a Contract uses it.
 
 <CodeGroup>
 ```bash Plan
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request PATCH "$LAGO_URL/api/v2/plans/api_monthly" \
+curl --location --request PUT "$LAGO_URL/api/v2/plans/api_monthly" \
   --header "Authorization: Bearer $API_KEY" \
   --header 'Content-Type: application/json' \
   --data-raw '{
@@ -126,7 +133,7 @@ curl --location --request PATCH "$LAGO_URL/api/v2/plans/api_monthly" \
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request PATCH "$LAGO_URL/api/v2/customers/customer_example" \
+curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
   --header "Authorization: Bearer $API_KEY" \
   --header 'Content-Type: application/json' \
   --data-raw '{
@@ -153,9 +160,11 @@ curl --location --request PATCH "$LAGO_URL/api/v2/billing_entities/acme_corp" \
 
 Plans expose `taxes` with `expands[]=taxes` on retrieval. Billing entities expose assigned taxes the same way.
 
-## Worked example
+<span id="worked-example" />
 
-`standard_vat` (20%) is assigned to both rate cards of the running example. `contract_example` records 2,000 API calls in the period.
+## Read taxes on an invoice
+
+This illustrative example covers one full monthly billing period in USD, with no proration, discounts or credits. A monthly service costs USD 100, and 2,000 API calls at USD 0.01 cost USD 20. Both fees have `standard_vat` (20%) assigned through their Rate Cards.
 
 ```
 monthly_service      1 x $100.00          $100.00   VAT 20%   $20.00
@@ -169,14 +178,16 @@ Total                                     $144.00
 
 Each fee returns its own `taxes_amount_cents`, and `expands[]=applied_taxes` lists the `tax_code`, `tax_rate` and `amount_cents` applied. On the invoice, `taxes_amount_cents` is `2400` and `total_amount_cents` is `14400`.
 
-## Edit or delete a tax
+<span id="edit-or-delete-a-tax" />
+
+## Update or delete a tax
 
 `PUT` and `PATCH` both accept partial updates. `code` can be renamed if no other tax, including a deleted one, uses the new code.
 
 `DELETE /taxes/{code}` returns the tax with a non-null `deleted_at`. Deleted taxes are no longer listed or retrievable.
 
 <Warning>
-Changing a rate or deleting a tax can affect how future fees are taxed for every object that carries it. Review the change before you run it in production.
+Changing a rate or deleting a tax can affect how future fees are taxed for every object that carries it. Review the tax assignments before changing the rate or deleting the tax.
 </Warning>
 
 <CodeGroup>
@@ -203,29 +214,17 @@ curl --location --request DELETE "$LAGO_URL/api/v2/taxes/standard_vat" \
 ```
 </CodeGroup>
 
-## Tax providers
+<span id="tax-providers" />
 
-To let a tax provider compute taxes, use a tax integration: [Anrok](/v2/integrations/taxes/anrok), [Avalara](/v2/integrations/taxes/avalara) or [Lago EU taxes](/v2/integrations/taxes/lago-eu-taxes). When provider tax processing fails, [retry taxes](/v2/guide/invoicing/overview#retry-taxes) on the invoice.
+## Use a tax provider
 
-## FAQ
-
-<AccordionGroup>
-  <Accordion title="Can I change the taxes of a rate card that already has rates?">
-    Yes. Once a rate exists, structural settings such as currency, billing timing and proration lock. Tax assignments remain editable.
-  </Accordion>
-  <Accordion title="Does creating a tax apply it to my invoices?">
-    No. A new tax is not assigned to anything. Add its code to a rate card, plan, customer or billing entity.
-  </Accordion>
-  <Accordion title="Can I reuse the code of a deleted tax?">
-    No. Codes must be unique across all taxes of the organization, including deleted ones.
-  </Accordion>
-</AccordionGroup>
+To let a tax provider compute taxes, use a tax integration: [Anrok](/v2/integrations/taxes/anrok), [Avalara](/v2/integrations/taxes/avalara) or [Lago EU taxes](/v2/integrations/taxes/lago-eu-taxes). When provider tax processing fails, [retry taxes](/v2/api-reference/invoices/retry-taxes) on the invoice.
 
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Rate cards" icon="layer-group" href="/v2/guide/rate-cards/overview">
-    Where most tax assignments live.
+    Assign taxes to Rate Cards.
   </Card>
   <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
     How taxes appear on invoice totals.

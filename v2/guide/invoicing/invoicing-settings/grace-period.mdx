@@ -1,21 +1,21 @@
 ---
-title: "Grace period: review invoices before finalization"
+title: "Grace period"
 sidebarTitle: "Grace period"
-description: "Set invoice_grace_period on a billing entity or a customer to keep invoices in draft for a number of days so you can review them before they finalize."
+description: "Give your team time to review invoices before Lago finalizes them."
 keywords: ["Lago", "grace period", "draft invoice", "billing entity"]
 ---
 
-The grace period is the number of days invoices stay in `draft` before Lago finalizes them. Use it when your team reviews invoices, or when late usage events can still arrive after the billing period ends.
+A grace period keeps an invoice in draft for a set number of days before Lago finalizes it. Use this time to review fees or add usage received after the billing period ends.
 
 <Info>
-The grace period is a premium feature. On the customer, `invoice_grace_period` is ignored without a premium license.
+The grace period requires a premium license.
 </Info>
 
 While an invoice is in draft, you can [refresh, finalize or delete it](/v2/guide/invoicing/draft-invoices).
 
 ## Example
 
-With a 3-day grace period on `customer_example`, the invoice generated when a billing period of `contract_example` ends stays in draft for 3 days. Events for that period that arrive during those days can be added by [refreshing the draft](/v2/guide/invoicing/draft-invoices#refresh-a-draft-invoice).
+With a three-day grace period, you have three days to review the draft invoice. If usage for the billed period arrives during that time, send the events and [refresh the draft](/v2/guide/invoicing/draft-invoices#refresh-a-draft-invoice).
 
 ## Set the grace period on the billing entity
 
@@ -23,11 +23,12 @@ The billing entity value applies to every customer of the entity that has no val
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Click **Settings** in the side menu;
-    2. Open **Billing entity** > **Invoicing settings**;
-    3. Click **Edit** in the **Grace period** block;
-    4. Enter the number of days; and
-    5. Click **Edit grace period**.
+    1. Click **Settings** in the side menu.
+    2. Open **Billing entity**.
+    3. Open **Invoicing settings**.
+    4. Click **Edit** in the **Grace period** block.
+    5. Enter the number of days.
+    6. Click **Edit grace period**.
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -55,10 +56,12 @@ A customer value overrides the billing entity value for that customer only.
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Open **Customers** and select a customer;
-    2. Open the **Settings** tab;
-    3. Click **Add grace period** in the **Grace period** block; and
-    4. Enter the number of days and confirm.
+    1. Open **Customers**.
+    2. Select a customer.
+    3. Open the **Settings** tab.
+    4. Click **Add grace period** in the **Grace period** block.
+    5. Enter the number of days.
+    6. Confirm the grace period.
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -66,7 +69,7 @@ A customer value overrides the billing entity value for that customer only.
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
-    curl --location --request PATCH "$LAGO_URL/api/v2/customers/customer_example" \
+    curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -82,7 +85,7 @@ A customer value overrides the billing entity value for that customer only.
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Draft invoices" icon="pen-to-square" href="/v2/guide/invoicing/draft-invoices">
+  <Card title="Draft invoice" icon="pen-to-square" href="/v2/guide/invoicing/draft-invoices">
     Refresh, finalize or delete a draft.
   </Card>
   <Card title="Issuing date" icon="calendar" href="/v2/guide/invoicing/invoicing-settings/issuing-date">
@@ -91,7 +94,7 @@ A customer value overrides the billing entity value for that customer only.
   <Card title="Update a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/partially-update">
     Request and response schema.
   </Card>
-  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/partially-update">
+  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/update">
     Request and response schema.
   </Card>
 </CardGroup>
