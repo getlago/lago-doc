@@ -1,0 +1,91 @@
+---
+title: "Manage plan changes"
+description: "Update an unused Plan or create a new Plan for a different offer."
+keywords: ["Lago", "plan", "plan locking", "contracts"]
+---
+
+Before a Contract uses a Plan, you can update its applied Rate Cards, quantities and phases. Once the Plan is in use, these settings are locked. Create a new Plan when you need to offer different terms to new customers.
+
+## Before a Contract uses the Plan
+
+While no Contract uses the Plan, you can:
+
+- Update Plan fields such as `name`, `description`, `invoice_display_name` and `tax_codes`.
+- Add, update or remove applied Rate Cards.
+- Change `units` on an applied Rate Card.
+- Add, update, reorder or remove [phases and overrides](/v2/guide/plans/plan-phases).
+
+The currency is also locked once the Plan has applied Rate Cards or wallets, even before a Contract uses it.
+
+Review the offer and its pricing before you create the first [Contract](/v2/guide/contracts/overview).
+
+## After a Contract uses the Plan
+
+The Plan's `code`, `currency`, applied Rate Cards, quantities and phases are locked. You can still update `name`, `description`, `invoice_display_name` and `tax_codes`.
+
+Plan locking applies to the Plan's configuration. To review a customer's price, check the relevant Rate and any Plan or Contract overrides.
+
+<span id="update-an-unused-plan" />
+
+## Update a Plan
+
+Use `PUT` to update the Plan. Omitted fields are unchanged.
+
+Update the Plan's invoice display name:
+
+```bash Update the plan's invoice display name
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PUT "$LAGO_URL/api/v2/plans/api_monthly" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "plan": {
+      "invoice_display_name": "API monthly plan"
+    }
+  }'
+```
+
+Before a Contract uses the Plan, change a fixed quantity by updating the applied Rate Card:
+
+```bash Change the fixed quantity on an applied rate card
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request PUT "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards/monthly_service_usd" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "applied_rate_card": {
+      "units": "2"
+    }
+  }'
+```
+
+## Offer different terms
+
+Create a new Plan and configure its applied Rate Cards, quantities and phases before using it for new Contracts. For customer-specific terms, see [Contract overrides](/v2/guide/contracts/overrides).
+
+## Deleting a Plan
+
+The API does not provide an operation to delete a Plan.
+
+## Check the changes
+
+Retrieve the Plan after updating it. If you changed an applied Rate Card, retrieve it and check its quantity and phases. Confirm that the saved configuration matches the offer you intend to use.
+
+<CardGroup cols={2}>
+  <Card title="Plans" icon="layer-group" href="/v2/guide/plans/overview">
+    Build an offer from Rate Cards.
+  </Card>
+  <Card title="Contract overrides" icon="sliders" href="/v2/guide/contracts/overrides">
+    Adjust one customer's terms.
+  </Card>
+  <Card title="Update a plan (API)" icon="code" href="/v2/api-reference/plans/update">
+    `PUT /plans/{code}`
+  </Card>
+  <Card title="Update an applied rate card (API)" icon="code" href="/v2/api-reference/plan-applied-rate-cards/update">
+    `PUT /plans/{plan_code}/applied_rate_cards/{code}`
+  </Card>
+</CardGroup>

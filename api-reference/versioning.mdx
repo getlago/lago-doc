@@ -6,6 +6,17 @@ keywords: ["Lago API versioning", "Lago API deprecation", "Lago API migration", 
 
 The Lago REST API uses URL-path versioning. Lago Cloud's stable base URL is `https://api.getlago.com/api/v1`, and endpoint paths in the complete OpenAPI contract are resolved below that versioned base.
 
+## API v1 and API v2
+
+Lago runs two API versions side by side.
+
+| Version | Base URL | Billing model | Status |
+| --- | --- | --- | --- |
+| v1 | `https://api.getlago.com/api/v1` | Subscriptions to plans with charges | Stable |
+| v2 | `https://api.getlago.com/api/v2` | Contracts built from a product catalog, rate cards and plans with phases | Beta |
+
+API v2 is additive. It does not deprecate v1. The [v2 reference](/v2/api-reference/intro) documents native v2 endpoints only, and its contract is the [OpenAPI v2 specification](https://swagger.getlago.com/openapi-v2.yaml). See [Contracts vs subscriptions](/v2/guide/introduction/contracts-vs-subscriptions) to choose a version. The rules below describe `v1`. Beta endpoints in v2 return the `X-Lago-Endpoint-Status: beta` header.
+
 ## Compatible changes
 
 Clients should tolerate additive changes within `v1`, including new response fields, enum values, endpoints, optional request fields, and webhook event types. Avoid rejecting a response solely because it contains an unknown field, and handle unknown enum or webhook values safely.

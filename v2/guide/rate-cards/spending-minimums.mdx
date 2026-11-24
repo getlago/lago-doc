@@ -1,0 +1,85 @@
+---
+title: "Spending minimums"
+sidebarTitle: "Spending minimums"
+description: "Set the minimum amount billed for a Rate's billing period."
+keywords: ["Lago", "spending minimum", "min_amount_cents", "true-up", "rate"]
+---
+
+A spending minimum sets the lowest amount billed for a Rate during one billing period. If the calculated amount is below the minimum, Lago adds a fee for the difference. This additional fee is called a true-up.
+
+## How it works
+
+A spending minimum applies to one Rate for each of its billing periods. A monthly Rate has a minimum per month. A Rate billed every three months has one minimum for the full three-month period.
+
+For a partial billing segment, Lago prorates the minimum for that segment and adds a separate true-up fee linked to the usage fee when needed.
+
+The minimum applies to that Rate, rather than the customer's total spending. [Percentage pricing](/v2/guide/rate-cards/pricing-models/percentage) also supports per-transaction limits, which apply to individual transactions.
+
+## Before you start
+
+Spending minimums are available only for Rate Cards billed in arrears, with `billing_timing: "arrears"`. In arrears means billing at the end of the billing period.
+
+You can set the minimum when creating a Rate or updating a pending Rate. To change the minimum after the Rate becomes active, create a new Rate with a later `effective_from`.
+
+## Set the minimum
+
+Set `min_amount_cents` to the minimum amount in cents. It defaults to `0`. For a Rate Card priced in USD, `min_amount_cents: 3000` sets a minimum of 30 USD.
+
+The example below creates a monthly Rate at 0.01 USD per API call with a 30 USD minimum.
+
+<CodeGroup>
+```bash Create a rate with a spending minimum
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "calls_with_minimum",
+      "effective_from": "2027-07-01T00:00:00Z",
+      "rate_model": "standard",
+      "rate_properties": { "amount": "0.01" },
+      "min_amount_cents": 3000,
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
+
+## Example
+
+At 0.01 USD per API call, a Rate with a 30 USD minimum produces the following totals for complete billing periods. These totals cover this Rate only, before tax.
+
+| Usage | Billing period | Usage fee | Minimum | True-up fee | Total before tax |
+| --- | --- | --- | --- | --- | --- |
+| 2,000 calls | 1 month | 20 USD | 30 USD | 10 USD | 30 USD |
+| 4,000 calls | 1 month | 40 USD | 30 USD | 0 USD | 40 USD |
+| 2,000 calls each month | 3 months | 60 USD | 30 USD | 0 USD | 60 USD |
+
+For 2,000 calls in one month, the usage fee is 20 USD. Lago adds a 10 USD true-up fee to reach the 30 USD minimum.
+
+For a three-month billing period, the 30 USD minimum applies once to the full period. The 60 USD usage fee already exceeds it, so there is no true-up fee.
+
+## Check the result
+
+Compare the usage fee with the minimum for the same Rate and billing period. When the usage fee is below the minimum, check that the true-up fee covers the difference.
+
+In the [fee response](/v2/api-reference/fees/list), `lago_true_up_parent_fee_id` links the true-up fee to its parent fee.
+
+<CardGroup cols={2}>
+  <Card title="Rates" icon="clock-rotate-left" href="/v2/guide/rate-cards/rates">
+    Manage billing intervals and effective dates.
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Choose how a Rate calculates fees.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="List fees" icon="code" href="/v2/api-reference/fees/list">
+    `GET /fees`
+  </Card>
+</CardGroup>

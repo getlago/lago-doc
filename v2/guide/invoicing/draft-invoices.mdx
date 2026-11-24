@@ -1,0 +1,125 @@
+---
+title: "Draft invoice"
+sidebarTitle: "Draft invoice"
+description: "Review, refresh, finalize or delete an invoice before the grace period ends."
+keywords: ["Lago", "draft invoice", "finalize invoice", "contract", "grace period"]
+---
+
+A draft invoice lets you review fees before the invoice is finalized. The [grace period](/v2/guide/invoicing/invoicing-settings/grace-period) sets how long it stays in draft. During this time, you can refresh its amounts, finalize it early or delete it if it was created by mistake.
+
+## Refresh a draft invoice
+
+Refresh a draft to recalculate its fees, taxes and total.
+
+### Add late usage to a draft
+
+If usage is missing, send [events](/v2/guide/events/ingesting-usage) with `external_contract_id` and a `timestamp` within the invoice’s billing period before refreshing it.
+
+For example, an invoice covers January 1 to January 31, 2027, with a three-day grace period. On February 2, you send an event for `contract_example` dated January 11. Refresh the draft to include that usage.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the draft invoice.
+    2. Click **Refresh**.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Refresh a draft invoice
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    INVOICE_ID="__YOUR_INVOICE_ID__"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/invoices/$INVOICE_ID/refresh" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+
+    <Accordion title="Response details">
+      Eligible non-draft invoices return `200` unchanged. See the [Refresh API reference](/v2/api-reference/invoices/refresh) for response details.
+    </Accordion>
+  </Tab>
+</Tabs>
+
+## Finalize a draft invoice
+
+Finalize a draft when you have finished reviewing it and want to bill before the grace period ends. Lago refreshes the invoice before finalizing it.
+
+<Warning>
+Finalization cannot be undone. To cancel a finalized invoice, see [Void invoice](/v2/guide/invoicing/void).
+</Warning>
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the draft invoice.
+    2. Click **Finalize**.
+    3. Confirm finalization.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Finalize a draft invoice
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    INVOICE_ID="__YOUR_INVOICE_ID__"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/invoices/$INVOICE_ID/finalize" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+
+    A successful request returns `200` with the invoice. If Lago needs to fetch taxes from a tax provider, the invoice can remain in `pending` status until those taxes are applied. Check the returned status before treating the invoice as finalized.
+
+    See the [Finalize API reference](/v2/api-reference/invoices/finalize) for error responses.
+  </Tab>
+</Tabs>
+
+## Delete a draft invoice
+
+Delete a draft invoice if it was created by mistake. Only drafts that have not been synchronized to an external integration can be deleted.
+
+<Warning>
+Deletion cannot be undone. If only the amounts are incorrect, correct the underlying data and refresh the draft instead.
+</Warning>
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the draft invoice.
+    2. Click the **ellipsis icon**.
+    3. Select **Delete invoice**.
+    4. Confirm deletion.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Delete a draft invoice
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    INVOICE_ID="__YOUR_INVOICE_ID__"
+
+    curl --location --request DELETE "$LAGO_URL/api/v2/invoices/$INVOICE_ID" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+
+    The response returns the invoice with `status: "deleted"`.
+  </Tab>
+</Tabs>
+
+<span id="delete-or-void" />
+
+To cancel a finalized invoice while keeping it on record, see [Void invoice](/v2/guide/invoicing/void).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Grace period" icon="hourglass" href="/v2/guide/invoicing/invoicing-settings/grace-period">
+    Set how long invoices stay in draft.
+  </Card>
+  <Card title="Void invoice" icon="ban" href="/v2/guide/invoicing/void">
+    Cancel a finalized invoice.
+  </Card>
+  <Card title="Finalize an invoice (API)" icon="code" href="/v2/api-reference/invoices/finalize">
+    Request and response schema.
+  </Card>
+  <Card title="Refresh an invoice (API)" icon="code" href="/v2/api-reference/invoices/refresh">
+    Request and response schema.
+  </Card>
+</CardGroup>

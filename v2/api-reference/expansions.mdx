@@ -1,0 +1,32 @@
+---
+title: "Expansions"
+description: "Use the expands[] query parameter in the Lago API to include related objects, such as rates on a rate card or applied rate cards on a contract."
+keywords: ["Lago API expansions", "expands", "related objects", "Lago API"]
+---
+
+The API returns related objects only when you ask for them. Pass one or more `expands[]` query parameters on a retrieve endpoint to include them in the response.
+
+```bash
+curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example?expands[]=applied_rate_cards&expands[]=plan" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+Only the documented values are supported. A value that an endpoint does not support returns `400`. Endpoints without expansions, such as taxes, also return `400` for any non-empty `expands[]`.
+
+## Supported expansions
+
+| Endpoint | `expands[]` values |
+| --- | --- |
+| [Retrieve product](/v2/api-reference/products/retrieve) | `product_category`, `billable_metric` |
+| [Retrieve rate card](/v2/api-reference/rate-cards/retrieve) | `active_rate`, `taxes`, `rates`, `product`, `product_filter` |
+| [Retrieve plan](/v2/api-reference/plans/retrieve) | `taxes` |
+| [Retrieve contract](/v2/api-reference/contracts/retrieve) | `applied_rate_cards`, `plan`, `customer`, `invoice_custom_sections` |
+| [Retrieve customer](/v2/api-reference/customers/retrieve) | `metadata`, `taxes`, `integration_customers` |
+| [Retrieve billable metric](/v2/api-reference/billable-metrics/retrieve) | `filters` |
+| [Retrieve billing entity](/v2/api-reference/billing-entities/retrieve) | `taxes`, `selected_invoice_custom_sections` |
+| [Retrieve invoice](/v2/api-reference/invoices/retrieve) | `fees`, `applied_taxes`, `customer`, `contracts`, `applied_invoice_custom_sections`, `error_details` |
+| [Retrieve fee](/v2/api-reference/fees/retrieve) | `applied_taxes`, `invoice`, `product`, `product_filter`, `rate_card`, `rate`, `contract`, `customer` |
+| [Retrieve credit note](/v2/api-reference/credit-notes/retrieve) | `items`, `applied_taxes`, `customer`, `error_details`, `metadata` |
+| [Retrieve payment receipt](/v2/api-reference/payment-receipts/retrieve) | `payment` |
+
+Each endpoint page is the source of truth for its accepted values. `active_rate` can be `null` when no rate is effective yet.

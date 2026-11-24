@@ -1,0 +1,107 @@
+---
+title: "Payment requests"
+sidebarTitle: "Payment requests"
+description: "Collect a customer’s overdue invoices in one payment request."
+keywords: ["Lago", "payment request", "overdue invoices", "dunning"]
+---
+
+A payment request groups a customer’s overdue invoices into one collection request. Use it to follow up on an outstanding balance.
+
+<Info>
+Payment requests require a premium license.
+</Info>
+
+## Before you start
+
+- The selected invoices must belong to the customer, be overdue and be ready for payment processing.
+- All selected invoices must share the same currency and billing entity.
+- Payment collection and email delivery are asynchronous.
+
+## Example
+
+`customer_example` has two overdue USD invoices from `contract_example`: $144.00 and $132.00. One payment request asks for USD 276 in total:
+
+| Field | Value |
+| --- | --- |
+| `lago_invoice_ids` | both invoice IDs |
+| `amount_cents` | `27600` |
+| `currency` | `USD` |
+| `payment_status` | `pending` while the request is being processed |
+
+## Create a payment request
+
+<Warning>
+A payment request can start collection and email delivery. Check the invoices, recipient and payment method before confirming.
+</Warning>
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the customer.
+    2. Click **Request payment** on the overdue balance.
+    3. Review the invoices.
+    4. Review the email preview.
+    5. Confirm.
+  </Tab>
+  <Tab title="API">
+    | Field | Meaning |
+    | --- | --- |
+    | `external_customer_id` | The customer to collect from. |
+    | `lago_invoice_ids` | The invoices to include. |
+    | `email` | Recipient email. Defaults to the customer email. |
+    | `payment_method` | Optional. `payment_method_type` (`provider` or `manual`) and `payment_method_id`. Omit to use the default. See [Payment methods](/v2/guide/payments/payment-methods). |
+
+    The response returns `amount_cents`, `currency`, `payment_status` (`pending`, `succeeded`, `failed`) and `lago_invoice_ids`.
+
+
+    <CodeGroup>
+    ```bash Create a payment request
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/payment_requests" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "payment_request": {
+          "external_customer_id": "customer_example",
+          "lago_invoice_ids": ["__LAGO_INVOICE_ID_1__", "__LAGO_INVOICE_ID_2__"],
+          "email": "billing@example.com"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## List and retrieve payment requests
+
+Find requests by customer, payment status or date. See the [List API reference](/v2/api-reference/payment-requests/list) for all filters.
+
+<CodeGroup>
+```bash List pending payment requests of a customer
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v2/payment_requests?external_customer_id=customer_example&payment_status=pending" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+To list one customer's payment requests, you can also call [`GET /customers/{customer_external_id}/payment_requests`](/v2/api-reference/customers/list-payment-requests). Payments made through a request appear in `GET /payments` with `payable_type: "PaymentRequest"`.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Payment retries" icon="rotate" href="/v2/guide/payments/payment-retries">
+    Retry a single invoice instead.
+  </Card>
+  <Card title="Payment methods" icon="credit-card" href="/v2/guide/payments/payment-methods">
+    Choose which method to charge.
+  </Card>
+  <Card title="Create a payment request (API)" icon="code" href="/v2/api-reference/payment-requests/create">
+    Request and response schema.
+  </Card>
+  <Card title="List payment requests (API)" icon="code" href="/v2/api-reference/payment-requests/list">
+    Filters and response schema.
+  </Card>
+</CardGroup>

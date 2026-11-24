@@ -1,0 +1,87 @@
+---
+title: "Download invoice"
+sidebarTitle: "Download invoice"
+description: "Download an invoice PDF or resend the invoice email to your customer."
+keywords: ["Lago", "invoice PDF", "download invoice", "resend invoice email"]
+---
+
+Download a finalized invoice as a PDF to share with your customer or keep for your records. You can also resend the invoice email through the API.
+
+## Download an invoice PDF
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Customers**.
+    2. Select a customer.
+    3. Open the **Invoices** tab.
+    4. Click the invoice’s **ellipsis icon**.
+    5. Click **Download invoice**.
+  </Tab>
+  <Tab title="API">
+    Request the PDF with `POST /invoices/{lago_id}/download_pdf`. The invoice must be finalized.
+
+    <CodeGroup>
+    ```bash Download an invoice PDF
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    INVOICE_ID="__YOUR_INVOICE_ID__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/download_pdf" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+
+    If the PDF is ready, the request returns `200` with the invoice and its `pdf_url`. Use this URL to download the file.
+
+    If Lago needs to generate the PDF, the request returns `202` with an empty body. [Retrieve the invoice](/v2/api-reference/invoices/retrieve) later and use `pdf_url` when it becomes available.
+  </Tab>
+</Tabs>
+
+## Resend an invoice email
+
+Resend a finalized invoice when your customer needs another copy. Email delivery must be configured on the [billing entity](/v2/guide/billing-entities), and this action requires a premium license.
+
+Check the recipients before sending. If `to` is omitted or empty, Lago uses the customer’s email address.
+
+Send `POST /invoices/{lago_id}/resend_email` with any of these optional fields:
+
+| Field | Meaning |
+| --- | --- |
+| `to` | Recipients. When omitted or empty, Lago uses the customer email. |
+| `cc` | Additional recipients. |
+| `bcc` | Additional recipients. |
+
+<CodeGroup>
+```bash Resend an invoice email
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+INVOICE_ID="__YOUR_INVOICE_ID__"
+
+curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/resend_email" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "to": ["billing@example.com"],
+    "cc": ["finance@example.com"]
+  }'
+```
+</CodeGroup>
+
+A successful request queues the email. It does not confirm delivery.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Invoicing settings" icon="gear" href="/v2/guide/invoicing/invoicing-settings/overview">
+    Logo, footer, language and custom sections on the PDF.
+  </Card>
+  <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
+    Statuses and available actions.
+  </Card>
+  <Card title="Download an invoice PDF (API)" icon="code" href="/v2/api-reference/invoices/download-pdf">
+    Request and response schema.
+  </Card>
+  <Card title="Resend an invoice email (API)" icon="code" href="/v2/api-reference/invoices/resend-email">
+    Request and response schema.
+  </Card>
+</CardGroup>

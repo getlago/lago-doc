@@ -1,0 +1,218 @@
+---
+title: "Clone Google BigQuery pricing"
+sidebarTitle: "Clone Google BigQuery pricing"
+description: "Rebuild BigQuery's pay-as-you-go pricing in Lago with a metered product, a graduated rate with a free first tier and a contract."
+keywords: ["Lago", "pay-as-you-go", "BigQuery", "graduated pricing", "contract"]
+---
+
+import SetupLago from "/snippets/v2/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/v2/templates/create-customer.mdx";
+import CreateContract from "/snippets/v2/templates/create-contract.mdx";
+import ContractUsage from "/snippets/v2/templates/contract-usage.mdx";
+
+This template builds pay-as-you-go billing like Google BigQuery with Lago: no platform fee, a free first tier, then a price per unit of data processed. It suits data and infrastructure companies that charge on volume processed.
+
+Legacy (v1): [Clone Google BigQuery pricing with subscriptions](/templates/payg/bigquery).
+
+## Pricing structure
+
+| Plan | Cost per volume of data scanned |
+|---|---|
+| On-demand pricing | $6.25 per TiB scanned |
+
+This template makes the first 10 TiB of each month free.
+
+## How it maps to Lago
+
+| Pricing element | Lago object |
+|---|---|
+| Data processed, in TiB | Billable metric `data_processed` (`sum_agg` on `data_processed_volume`) |
+| What you sell | Metered product `bigquery_on_demand` |
+| Free tier, then $6.25 per TiB | Rate card `bigquery_on_demand_usd` with a `graduated` rate |
+| The offer | Plan `bigquery_payg` |
+
+## Get started
+
+<Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
+
+  <Step title="Create a billable metric">
+    <CodeGroup>
+      ```bash cURL highlight={6,8-10}
+      curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "Data processed",
+            "code": "data_processed",
+            "description": "Data processed in TiB",
+            "aggregation_type": "sum_agg",
+            "field_name": "data_processed_volume",
+            "recurring": false
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/billable-metrics/create).
+  </Step>
+
+  <Step title="Create a metered product">
+    <CodeGroup>
+      ```bash cURL highlight={7-8}
+      curl --location --request POST "$LAGO_URL/api/v2/products" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "product": {
+            "name": "BigQuery on-demand",
+            "code": "bigquery_on_demand",
+            "product_type": "metered",
+            "billable_metric_code": "data_processed"
+          }
+        }'
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Create a rate card">
+    The `graduated` rate prices the first 10 TiB at $0 and every TiB above at $6.25. Do not send `from_value`. The last tier has `to_value: null`.
+
+    <CodeGroup>
+      ```bash cURL highlight={14-23}
+      curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "rate_card": {
+            "name": "BigQuery on-demand USD",
+            "code": "bigquery_on_demand_usd",
+            "product_code": "bigquery_on_demand",
+            "currency": "USD",
+            "billing_timing": "arrears",
+            "proration": false,
+            "rates": [
+              {
+                "code": "bigquery_on_demand_standard",
+                "effective_from": "2027-01-01T00:00:00Z",
+                "rate_model": "graduated",
+                "rate_properties": {
+                  "graduated_ranges": [
+                    { "to_value": "10", "per_unit_amount": "0", "flat_amount": "0" },
+                    { "to_value": null, "per_unit_amount": "6.25", "flat_amount": "0" }
+                  ]
+                },
+                "billing_interval_count": 1,
+                "billing_interval_unit": "month"
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/rate-cards/create) and the [graduated model](/v2/guide/rate-cards/pricing-models/graduated).
+  </Step>
+
+  <Step title="Create a plan and apply the rate card">
+    <CodeGroup>
+      ```bash cURL highlight={6-7}
+      curl --location --request POST "$LAGO_URL/api/v2/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "BigQuery on-demand",
+            "code": "bigquery_payg",
+            "currency": "USD"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    <CodeGroup>
+      ```bash cURL highlight={6}
+      curl --location --request POST "$LAGO_URL/api/v2/plans/bigquery_payg/applied_rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "applied_rate_card": {
+            "rate_card_code": "bigquery_on_demand_usd"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/plan-applied-rate-cards/create) and the [plans guide](/v2/guide/plans/overview).
+  </Step>
+
+  <Step title="Create a customer">
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a contract">
+    Replace `__PLAN_CODE__` with `bigquery_payg`.
+
+    <CreateContract />
+  </Step>
+
+  <Step title="Ingest usage via events">
+    <CodeGroup>
+      ```bash cURL highlight={7-10}
+      curl --location --request POST "$LAGO_URL/api/v2/events" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "data_processed",
+            "external_contract_id": "contract_example",
+            "properties": {
+              "data_processed_volume": 10
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/events/create) and the [usage ingestion guide](/v2/guide/events/ingesting-usage).
+  </Step>
+
+  <Step title="Monitor current usage">
+    <ContractUsage />
+  </Step>
+</Steps>
+
+## Worked example
+
+Over one full monthly period, the customer processes 25 TiB.
+
+| Line | Quantity | Calculation | Amount |
+|---|---|---|---|
+| Tier 1 | 10 TiB | 10 × $0 | $0.00 |
+| Tier 2 | 15 TiB | 15 × $6.25 | $93.75 |
+| **Total before tax** | | | **$93.75** |
+
+## What changed from v1
+
+- The v1 template granted $300 of free credits through a wallet that expired after 90 days. The v2 API does not document wallets, so this template omits the credit grant.
+- The charge becomes a rate card and a `graduated` rate. Tiers set `to_value` only.
+- Events target `external_contract_id` instead of `external_subscription_id`.
+
+<CardGroup cols={2}>
+  <Card title="Graduated model" icon="stairs" href="/v2/guide/rate-cards/pricing-models/graduated">
+    Price quantity across tiers.
+  </Card>
+  <Card title="Rate cards" icon="layer-group" href="/v2/guide/rate-cards/overview">
+    Currency, billing timing and proration per product or filter.
+  </Card>
+  <Card title="Contracts" icon="file-contract" href="/v2/guide/contracts/overview">
+    Apply a plan to a customer.
+  </Card>
+  <Card title="Retrieve current usage (API)" icon="code" href="/v2/api-reference/contracts/retrieve-current-usage">
+    `GET /api/v2/contracts/{external_id}/current_usage`
+  </Card>
+</CardGroup>

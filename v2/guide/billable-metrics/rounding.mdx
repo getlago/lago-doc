@@ -1,0 +1,90 @@
+---
+title: "Rounding"
+sidebarTitle: "Rounding"
+description: "Round a billable metric's measured quantity to a whole number or a chosen number of decimal places."
+keywords: ["Lago", "billable metric", "rounding_function", "rounding_precision"]
+---
+
+Rounding adjusts the result after Lago aggregates your events. For example, a metric that measures compute hours can return a whole number of hours or a value with two decimal places.
+
+By default, Lago leaves the aggregated value unchanged.
+
+## Rounding options
+
+Set `rounding_function` to choose how Lago rounds the quantity:
+
+- `ceil`: rounds up.
+- `floor`: rounds down.
+- `round`: rounds to the nearest value.
+
+Use `rounding_precision` to set the number of decimal places.
+
+## Precision
+
+These examples use `rounding_function: round`.
+
+| `rounding_precision` | Result for `123.4567` |
+| --- | --- |
+| Not set: round to a whole number | `123` |
+| `2`: round to two decimal places | `123.46` |
+| `-1`: round to the nearest ten | `120` |
+
+## Example: compute hours
+
+A billable metric measures 10.2 hours of compute usage during a billing cycle. With no precision set, each rounding option gives the following result:
+
+| Rounding option | Result |
+| --- | --- |
+| No rounding | 10.2 hours |
+| `ceil` | 11 hours |
+| `floor` | 10 hours |
+| `round` | 10 hours |
+
+## Apply rounding
+
+Once the metric is attached to a Plan, only its name, description and permitted filter changes can be updated. Set rounding before you attach the metric.
+
+<Tabs>
+  <Tab title="Dashboard">
+    On the configuration page of your billable metric, enable rounding, select `ceil`, `floor` or `round`, and set an optional precision.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Round the aggregated value to 2 decimal places {14,15}
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billable_metric": {
+          "name": "Storage",
+          "code": "storage",
+          "description": "Number of GB used",
+          "aggregation_type": "sum_agg",
+          "field_name": "gb",
+          "rounding_function": "round",
+          "rounding_precision": 2,
+          "recurring": false
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+<CardGroup cols={2}>
+  <Card title="Aggregation types" icon="calculator" href="/v2/guide/billable-metrics/aggregation-types/overview">
+    How the value is aggregated before rounding.
+  </Card>
+  <Card title="Rates" icon="tag" href="/v2/guide/rate-cards/rates">
+    Price the rounded quantity.
+  </Card>
+  <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
+    `POST /billable_metrics`
+  </Card>
+  <Card title="Update a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/update">
+    `PUT /billable_metrics/{code}`
+  </Card>
+</CardGroup>

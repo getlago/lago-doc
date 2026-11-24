@@ -1,0 +1,103 @@
+---
+title: "Security logs"
+sidebarTitle: "Security logs"
+description: "Review changes to authentication, team access and API keys."
+---
+
+Security logs record access-related actions, such as user invitations, API key rotations and changes to login methods.
+
+## Who can access security logs
+
+Admins and custom roles with the security logs permission can view these logs. API access requires `security_log` read permission, a premium license and enabled log storage.
+
+## Inspect security logs
+
+1. Open **Team & Security**.
+2. Open **Security Logs**.
+3. Filter the list.
+4. Open an entry to inspect the event and related resources.
+
+See [Logs](/v2/guide/logs#security-logs) for API examples. Security log queries require `to_date` and return records within the 90-day retention period.
+
+## Event categories
+
+Security logs cover team access, roles, API keys, webhook endpoints, exports, integrations, billing entities and login-method changes.
+
+<Accordion title="Event identifiers and messages">
+
+### Users
+
+| Event key | Message |
+| --- | --- |
+| `user.signed_up` | \{\{email\}\} joined |
+| `user.new_device_logged_in` | \{\{email\}\} successfully logged in using a new device |
+| `user.deleted` | \{\{email\}\} deleted |
+| `user.invited` | \{\{emailInvitee\}\} was invited by \{\{emailInvitor\}\} |
+| `user.role_edited` | \{\{email\}\}'s role was edited to \{\{role.name\}\} by \{\{email\}\} |
+| `user.password_reset_requested` | \{\{email\}\} requested to change password |
+| `user.password_edited` | \{\{email\}\} password edited |
+
+<Info>New device logins capture additional context such as device ID, IP address, browser, and operating system.</Info>
+
+### Roles & permissions
+
+| Event key | Message |
+| --- | --- |
+| `role.created` | \{\{email\}\} added a new role \{\{role_code\}\} |
+| `role.updated` | \{\{email\}\} updated the role \{\{role_code\}\} |
+| `role.deleted` | \{\{email\}\} deleted the role \{\{role_code\}\} |
+
+### API keys
+
+| Event key | Message |
+| --- | --- |
+| `api_key.created` | An API key \{\{apiKeyName\}\} ending with \{\{***1337\}\} was created |
+| `api_key.updated` | The API key \{\{apiKeyName\}\} ending with \{\{***1337\}\} was updated |
+| `api_key.deleted` | The API key \{\{apiKeyName\}\} ending with \{\{***1337\}\} was deleted |
+| `api_key.rotated` | The API key \{\{apiKeyName\}\} ending with \{\{***1337\}\} was rotated |
+
+### Webhook endpoints
+
+| Event key | Message |
+| --- | --- |
+| `webhook_endpoint.created` | A new webhook endpoint \{\{url\}\} was created |
+| `webhook_endpoint.updated` | A webhook endpoint \{\{url\}\} was updated |
+| `webhook_endpoint.deleted` | A webhook endpoint \{\{url\}\} was deleted |
+
+### Data exports
+
+| Event key | Message |
+| --- | --- |
+| `export.created` | \{\{email\}\} exported data |
+
+### Integrations
+
+| Event key | Message |
+| --- | --- |
+| `integration.created` | \{\{email\}\} created a new \{\{integration.name\}\} integration |
+| `integration.updated` | \{\{email\}\} updated the \{\{integration.name\}\} integration |
+| `integration.deleted` | \{\{email\}\} deleted the \{\{integration.name\}\} integration |
+
+### Billing entities
+
+| Event key | Message |
+| --- | --- |
+| `billing_entity.created` | \{\{email\}\} created a new billing entity \{\{billingEntity.name\}\} |
+| `billing_entity.updated` | \{\{email\}\} updated the billing entity \{\{billingEntity.name\}\} |
+
+### Organization
+
+| Event key | Message |
+| --- | --- |
+| `organization.authentication_methods_updated` | The allowed login methods of the organization were updated |
+
+<Info>The resources of `organization.authentication_methods_updated` list the login methods that were added and the ones that were deleted.</Info>
+
+
+</Accordion>
+
+## Retrieve security logs
+
+Use the [Security logs API](/v2/api-reference/security-logs/list) to retrieve records by date, user, API key, category or event. Follow cursor pagination to retrieve additional records.
+
+This retrieves records through the API; it does not create a CSV export or configure log streaming.

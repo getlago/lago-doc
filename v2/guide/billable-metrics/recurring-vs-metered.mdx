@@ -1,0 +1,89 @@
+---
+title: "Metric recurrence"
+sidebarTitle: "Metric recurrence"
+description: "Choose whether a billable metric keeps its measured quantity or resets it at the end of each billing cycle."
+keywords: ["Lago", "billable metric", "recurring", "metric recurrence"]
+---
+
+The `recurring` setting controls what happens to a billable metric's measured quantity when a billing cycle ends.
+
+Use `recurring: true` when the quantity should continue into the next cycle, such as the number of active seats. Use `recurring: false` when you want to measure each cycle separately, such as the number of API calls.
+
+| Setting | What happens at the end of the billing cycle |
+| --- | --- |
+| `recurring: true` | Lago keeps the quantity and carries it into the next cycle. |
+| `recurring: false` | Lago resets the quantity, so the next cycle starts fresh. |
+
+## Keep the quantity with `recurring: true`
+
+Use this setting for quantities that remain relevant across billing cycles.
+
+For example, you track seats with a `Count unique` metric using `seat_id`. Your customer adds five distinct seats in January. Those five seats carry into February. If the customer adds two more distinct seats and removes none, the measured quantity becomes seven.
+
+Set `recurring` to `true` when creating the metric.
+
+```bash Seats {13}
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "billable_metric": {
+      "name": "Seats",
+      "code": "seats",
+      "aggregation_type": "unique_count_agg",
+      "field_name": "seat_id",
+      "recurring": true
+    }
+  }'
+```
+
+## Reset the quantity with `recurring: false`
+
+Use this setting to measure usage separately for each billing cycle.
+
+For example, your `api_calls` metric counts 2,000 calls in January. At the end of January's billing cycle, the count resets. If your customer makes 1,500 calls in February, February's measured quantity is 1,500.
+
+Set `recurring` to `false` when creating the metric.
+
+```bash API calls {12}
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "billable_metric": {
+      "name": "API calls",
+      "code": "api_calls",
+      "aggregation_type": "count_agg",
+      "recurring": false
+    }
+  }'
+```
+
+## Supported aggregation types
+
+`Count unique`, `Sum` and `Weighted sum` support both settings.
+
+`Count`, `Max` and `Latest` require `recurring: false`.
+
+See [Aggregation types](/v2/guide/billable-metrics/aggregation-types/overview) to choose how Lago calculates the quantity.
+
+<CardGroup cols={2}>
+  <Card title="Aggregation types" icon="calculator" href="/v2/guide/billable-metrics/aggregation-types/overview">
+    Compare how aggregation types measure usage.
+  </Card>
+  <Card title="Create billable metrics" icon="ruler" href="/v2/guide/billable-metrics/create-billable-metrics">
+    Define what to measure and how to calculate it.
+  </Card>
+  <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
+    `POST /billable_metrics`
+  </Card>
+  <Card title="Billable metric object (API)" icon="code" href="/v2/api-reference/billable-metrics/object">
+    Explore the metric's fields.
+  </Card>
+</CardGroup>

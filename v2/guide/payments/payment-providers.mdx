@@ -1,0 +1,103 @@
+---
+title: "Payment providers"
+sidebarTitle: "Payment providers"
+description: "Connect a payment provider to collect payments from your customers."
+keywords: ["Lago", "payment provider", "Stripe", "contract", "payments"]
+---
+
+Connect a payment provider so Lago can request payment for your customers’ invoices. Link each customer to the provider connection you want to use.
+
+## Native integrations
+
+<CardGroup cols={2}>
+  <Card title="Stripe" icon="stripe" href="/v2/integrations/payments/stripe/payments">
+    Collect payments through Stripe.
+  </Card>
+  <Card title="Adyen" icon="credit-card" href="/v2/integrations/payments/adyen-integration">
+    Collect payments through Adyen.
+  </Card>
+  <Card title="GoCardless" icon="building-columns" href="/v2/integrations/payments/gocardless-integration">
+    Direct debit bank payments.
+  </Card>
+  <Card title="Cashfree" icon="indian-rupee-sign" href="/v2/integrations/payments/cashfree-integration">
+    Cashfree integration. Community-maintained.
+  </Card>
+  <Card title="Moneyhash" icon="money-bill" href="/v2/integrations/payments/moneyhash-integration">
+    MoneyHash integration. Community-maintained.
+  </Card>
+</CardGroup>
+
+If you collect payments outside Lago, [record manual payments](/v2/guide/payments/record-manual-payments) against the invoices.
+
+## Connect a customer to a provider
+
+Choose the provider connection configured in your organization, then link the customer to their account with that provider.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open **Customers**.
+    2. Select the customer.
+    3. Click **Edit**.
+    4. In **Payment provider**, select the provider connection.
+    5. Enter the provider customer ID, or let Lago create the customer in the provider.
+    6. Save.
+  </Tab>
+  <Tab title="API">
+    | Field | Meaning |
+    | --- | --- |
+    | `payment_provider` | Provider type, for example `stripe`. |
+    | `payment_provider_code` | Code of the provider connection in your organization. |
+    | `provider_customer_id` | Customer identifier in the provider, for example `cus_example`. |
+    | `provider_payment_methods` | Payment methods allowed by the provider. |
+    | `sync_with_provider` | Whether to create or synchronize the customer with the provider. |
+    | `sync` | Whether to run provider synchronization before returning the response instead of in a background job. |
+
+
+    <CodeGroup>
+    ```bash Connect a customer to Stripe
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "payment_provider": "stripe",
+          "payment_provider_code": "stripe_main",
+          "sync_with_provider": true
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Collect a payment
+
+Choose the action you need:
+
+- [Add a payment method](/v2/guide/payments/payment-methods).
+- [Retry an invoice payment](/v2/guide/payments/payment-retries).
+- [Share a payment link](/v2/guide/payments/payment-retries#create-a-payment-url).
+- [Create a payment request](/v2/guide/payments/payment-requests) for overdue invoices.
+- [Issue a credit note](/v2/guide/invoicing/credit-notes/overview) to request a refund.
+
+Provider payments appear in [`GET /payments`](/v2/api-reference/payments/list) with `payment_type: "provider"`, `payment_provider_code` and `provider_payment_id`. When the provider needs the customer to act, for example to authenticate, `next_action` holds the provider instructions.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Payment methods" icon="credit-card" href="/v2/guide/payments/payment-methods">
+    Store, list and choose the default method.
+  </Card>
+  <Card title="Payment retries" icon="rotate" href="/v2/guide/payments/payment-retries">
+    Retry collection or share a payment URL.
+  </Card>
+  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/update">
+    Provider fields on the customer.
+  </Card>
+  <Card title="List payments (API)" icon="code" href="/v2/api-reference/payments/list">
+    Payment fields and filters.
+  </Card>
+</CardGroup>

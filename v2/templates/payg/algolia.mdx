@@ -1,0 +1,217 @@
+---
+title: "Clone Algolia pricing"
+sidebarTitle: "Clone Algolia pricing"
+description: "Rebuild Algolia's pay-as-you-go search pricing in Lago with a metered product, a package rate with free monthly requests and a contract."
+keywords: ["Lago", "pay-as-you-go", "Algolia", "package pricing", "contract"]
+---
+
+import SetupLago from "/snippets/v2/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/v2/templates/create-customer.mdx";
+import CreateContract from "/snippets/v2/templates/create-contract.mdx";
+import ContractUsage from "/snippets/v2/templates/contract-usage.mdx";
+
+This template builds pay-as-you-go billing like Algolia Search with Lago: no platform fee, a free monthly allowance, then a price per bundle of requests. It suits API and infrastructure companies that charge only for what customers consume.
+
+Legacy (v1): [Clone Algolia pricing with subscriptions](/templates/payg/algolia).
+
+## Pricing structure
+
+| Search API | Price |
+|---|---|
+| Monthly price | $1.50 / 1,000 requests |
+| Free usage each month | 10,000 requests |
+
+## How it maps to Lago
+
+| Pricing element | Lago object |
+|---|---|
+| Request volume | Billable metric `search_requests` (`sum_agg` on `search_requests_volume`) |
+| What you sell | Metered product `search_api` |
+| $1.50 per 1,000 requests, 10,000 free | Rate card `search_api_usd` with a `package` rate |
+| The offer | Plan `algolia_payg` with no fixed product |
+
+## Get started
+
+<Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
+
+  <Step title="Create a billable metric">
+    <CodeGroup>
+      ```bash cURL highlight={6,8-10}
+      curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "Search API requests",
+            "code": "search_requests",
+            "aggregation_type": "sum_agg",
+            "field_name": "search_requests_volume",
+            "recurring": false
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/billable-metrics/create).
+  </Step>
+
+  <Step title="Create a metered product">
+    <CodeGroup>
+      ```bash cURL highlight={7-8}
+      curl --location --request POST "$LAGO_URL/api/v2/products" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "product": {
+            "name": "Search API",
+            "code": "search_api",
+            "product_type": "metered",
+            "billable_metric_code": "search_requests"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [metered products guide](/v2/guide/product-catalog/metered-products).
+  </Step>
+
+  <Step title="Create a rate card">
+    The `package` rate charges `amount` per `package_size` requests. `free_units` sets the free units per billing period.
+
+    <CodeGroup>
+      ```bash cURL highlight={14-22}
+      curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "rate_card": {
+            "name": "Search API USD",
+            "code": "search_api_usd",
+            "product_code": "search_api",
+            "currency": "USD",
+            "billing_timing": "arrears",
+            "proration": false,
+            "rates": [
+              {
+                "code": "search_api_standard",
+                "effective_from": "2027-01-01T00:00:00Z",
+                "rate_model": "package",
+                "rate_properties": {
+                  "amount": "1.50",
+                  "package_size": 1000,
+                  "free_units": 10000
+                },
+                "billing_interval_count": 1,
+                "billing_interval_unit": "month"
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/rate-cards/create) and the [package model](/v2/guide/rate-cards/pricing-models/package).
+  </Step>
+
+  <Step title="Create a plan and apply the rate card">
+    <CodeGroup>
+      ```bash cURL highlight={6-7}
+      curl --location --request POST "$LAGO_URL/api/v2/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Algolia Search pay as you go",
+            "code": "algolia_payg",
+            "currency": "USD"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    <CodeGroup>
+      ```bash cURL highlight={6}
+      curl --location --request POST "$LAGO_URL/api/v2/plans/algolia_payg/applied_rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "applied_rate_card": {
+            "rate_card_code": "search_api_usd"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/plan-applied-rate-cards/create) and the [plans guide](/v2/guide/plans/overview).
+  </Step>
+
+  <Step title="Create a customer">
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a contract">
+    Replace `__PLAN_CODE__` with `algolia_payg`.
+
+    <CreateContract />
+  </Step>
+
+  <Step title="Ingest usage via events">
+    <CodeGroup>
+      ```bash cURL highlight={7-10}
+      curl --location --request POST "$LAGO_URL/api/v2/events" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "search_requests",
+            "external_contract_id": "contract_example",
+            "properties": {
+              "search_requests_volume": 5000
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/events/create) and the [usage ingestion guide](/v2/guide/events/ingesting-usage).
+  </Step>
+
+  <Step title="Monitor current usage">
+    <ContractUsage />
+  </Step>
+</Steps>
+
+## Worked example
+
+Over one full monthly period, the customer sends 50,000 search requests.
+
+| Line | Calculation | Amount |
+|---|---|---|
+| Free requests | 10,000 requests | $0.00 |
+| Billable requests | 40,000 requests = 40 packages × $1.50 | $60.00 |
+| **Total before tax** | | **$60.00** |
+
+## What changed from v1
+
+- The plan has no fixed product, so there is no platform fee. In v1 this was `amount_cents: 0` on the plan.
+- The charge becomes a rate card and a `package` rate with an effective date.
+- Events target `external_contract_id` instead of `external_subscription_id`.
+
+<CardGroup cols={2}>
+  <Card title="Package model" icon="box" href="/v2/guide/rate-cards/pricing-models/package">
+    Charge a fixed amount per bundle of units.
+  </Card>
+  <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
+    Products priced from usage events.
+  </Card>
+  <Card title="Contract current usage" icon="chart-line" href="/v2/guide/events/retrieve-usage#retrieve-current-usage">
+    Monitor open billing periods.
+  </Card>
+  <Card title="Create a contract (API)" icon="code" href="/v2/api-reference/contracts/create">
+    `POST /api/v2/contracts`
+  </Card>
+</CardGroup>

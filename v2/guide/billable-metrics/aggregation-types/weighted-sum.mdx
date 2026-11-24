@@ -1,0 +1,120 @@
+---
+title: "Weighted sum"
+sidebarTitle: "Weighted sum"
+description: "Measure a quantity while accounting for how long it applies during a billing cycle."
+keywords: ["Lago", "billable metric", "weighted_sum_agg", "WEIGHTED SUM"]
+---
+
+`Weighted sum` measures a quantity while accounting for how long it applies during a billing cycle. Use it for quantities that change over time, such as allocated storage or memory.
+
+Each event adds to the running quantity at its timestamp. Lago weights each quantity by how long it applies, then divides the total by the billing cycle duration. The result keeps the original unit: storage measured in GB produces an average in GB.
+
+## Configure the metric
+
+Set `field_name` to the event property you want to measure.
+
+`weighted_interval` is required and accepts `seconds` only.
+
+Choose what happens when a billing cycle ends:
+
+- `recurring: true`: Lago keeps the quantity and carries it into the next cycle.
+- `recurring: false`: Lago resets the quantity, so each cycle starts fresh.
+
+See [Metric recurrence](/v2/guide/billable-metrics/recurring-vs-metered).
+
+## Create the metric
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Go to **Billable metrics** in the side menu.
+    2. Create a new billable metric.
+    3. Enter a name, a code and an optional description.
+    4. Select **Weighted sum** as the aggregation type.
+    5. Choose whether the measured quantity carries over or resets at the end of each billing cycle.
+    6. Select the event property you want to measure.
+    7. Define the `weighted_interval` used for time proration (`seconds`).
+    8. Add filters if you want to group usage by dimensions such as region or provider.
+    9. Click **Add billable metric**.
+
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+          "billable_metric": {
+            "name": "Average storage",
+            "code": "average_storage",
+            "description": "Time-weighted average storage in GB",
+            "aggregation_type": "weighted_sum_agg",
+            "weighted_interval": "seconds",
+            "field_name": "gb",
+            "recurring": false
+          }
+        }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Calculation example
+
+This example covers January 1, 2027 at 00:00 UTC through February 1 at 00:00 UTC, a 31-day billing cycle. The opening quantity is 0 GB and `recurring` is `false`.
+
+The first event adds 20 GB on January 16 at 00:00 UTC. The second adds 10 GB on January 17 at 00:00 UTC, bringing the running quantity to 30 GB. No more events occur during the cycle.
+
+```json Event 1
+{
+  "transaction_id": "transaction_1",
+  "external_contract_id": "contract_example",
+  "code": "average_storage",
+  "timestamp": 1800057600,
+  "properties": {
+    "gb": 20
+  }
+}
+```
+
+```json Event 2
+{
+  "transaction_id": "transaction_2",
+  "external_contract_id": "contract_example",
+  "code": "average_storage",
+  "timestamp": 1800144000,
+  "properties": {
+    "gb": 10
+  }
+}
+```
+
+| Period (UTC) | Running quantity | Duration |
+| --- | --- | --- |
+| January 1–16 | 0 GB | 15 days |
+| January 16–17 | 20 GB | 1 day |
+| January 17–February 1 | 30 GB | 15 days |
+
+Multiply each running quantity by its duration, add the results, then divide by the full billing cycle duration:
+
+`Average storage = (0 × 15 + 20 × 1 + 30 × 15) / 31 ≈ 15.1612903226 GB`
+
+The same calculation in seconds is `(0 × 1,296,000 + 20 × 86,400 + 30 × 1,296,000) / 2,678,400`. The result is a time-weighted average in GB. The displayed decimal is approximate, before any configured rounding.
+
+<CardGroup cols={2}>
+  <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">
+    Compare how aggregation types calculate usage.
+  </Card>
+  <Card title="Rounding" icon="arrow-up-1-9" href="/v2/guide/billable-metrics/rounding">
+    Choose how to round the measured quantity.
+  </Card>
+  <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
+    `POST /billable_metrics`
+  </Card>
+  <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
+    Send usage events to Lago.
+  </Card>
+</CardGroup>

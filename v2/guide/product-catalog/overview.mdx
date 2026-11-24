@@ -1,0 +1,89 @@
+---
+title: "Overview"
+sidebarTitle: "Overview"
+description: "Organize what you sell with Products, categories and filters, then define prices with Rate Cards."
+keywords: ["Lago", "product catalog", "products", "product filters", "contract billing"]
+---
+
+Your Product catalog describes what you sell, such as platform access, API calls or compute time. Create a Product for each item you bill for.
+
+Use [Product categories](/v2/guide/product-catalog/product-categories) to group related Products. For a metered Product, use [Product filters](/v2/guide/product-catalog/product-filters) when groups of usage need different prices. Categories and filters are optional.
+
+Prices are defined separately in Rate Cards and Rates.
+
+## Product structures
+
+| Object | Purpose | Example |
+| --- | --- | --- |
+| Product category | Groups related Products. | Compute and Bandwidth in Usage rates. |
+| Product | An item you bill for. | Compute, Bandwidth or Platform fee. |
+| Product filter | Selects usage within a metered Product. | Compute with `instance_type: "flex_512mib"`. |
+
+## Cloud platform example
+
+A cloud platform sells compute time, bandwidth, team seats and platform access. Its catalog can combine these structures:
+
+```txt
+Usage rates (category)
+├── Compute (metered Product)
+│   ├── Flex 512MiB (filter)
+│   ├── Flex 1GiB (filter)
+│   └── Flex 2GiB (filter)
+└── Bandwidth (metered Product)
+
+Seat (standalone metered Product)
+├── Admin (filter)
+└── Read-only (filter)
+
+Platform fee (standalone fixed Product)
+```
+
+Compute and Bandwidth share a category. Compute has filters for machine configurations; Bandwidth has none. Seat has filters for roles but no category. Platform fee has neither a category nor filters.
+
+<a id="category-product-and-filter"></a>
+
+### Select usage with filters
+
+Compute's filters select usage by the `instance_type` property:
+
+| Filter name | Matching value |
+| --- | --- |
+| Flex 512MiB | `instance_type: "flex_512mib"` |
+| Flex 1GiB | `instance_type: "flex_1gib"` |
+| Flex 2GiB | `instance_type: "flex_2gib"` |
+
+A filter's name is a readable label. Its matching values decide which usage it selects. Lago does not infer CPU or memory criteria from the name. Define the key and its allowed values on the billable metric before using them in Product filters.
+
+<a id="category-and-product"></a>
+<a id="product-and-filter"></a>
+<a id="product-only"></a>
+
+### Choose how to measure quantity
+
+A metered Product uses a billable metric to measure usage from events. Bandwidth is a metered Product even when it has no filters. Seat is also metered in this example, with filters for `role: "admin"` and `role: "read_only"`.
+
+A fixed Product uses a configured quantity and does not need a billable metric. Platform fee is a fixed Product. If seat quantities are agreed in the Contract, use fixed Products such as Admin seat and Read-only seat. Product filters apply only to metered Products.
+
+See [Products](/v2/guide/product-catalog/products) to choose a type and create a Product.
+
+## Choose a structure
+
+- Add a Product category when grouping related Products makes your catalog and invoices easier to read.
+- Add a Product for each item you bill for.
+- Add Product filters when groups of metered usage need different prices.
+- Keep a Product standalone when it does not need a category.
+
+<CardGroup cols={2}>
+  <Card title="Product categories" icon="folder-tree" href="/v2/guide/product-catalog/product-categories">
+    Group products on usage and invoices.
+  </Card>
+  <Card title="Products" icon="box" href="/v2/guide/product-catalog/products">
+    Fixed and metered products.
+  </Card>
+  <Card title="Product filters" icon="filter" href="/v2/guide/product-catalog/product-filters">
+    Price subsets of metered usage.
+  </Card>
+  <Card title="Rate cards" icon="tags" href="/v2/guide/rate-cards/overview">
+    Put a price on a product or filter.
+  </Card>
+</CardGroup>

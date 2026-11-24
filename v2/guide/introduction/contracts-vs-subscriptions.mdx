@@ -1,0 +1,79 @@
+---
+title: "Contracts vs subscriptions"
+description: "Compare subscription-based and contract-based billing and understand how their main objects relate."
+keywords: ["Lago", "contracts vs subscriptions", "migration", "rate cards", "glossary"]
+---
+
+Subscriptions and Contracts both apply billing terms to a customer. They organize pricing differently.
+
+With subscriptions, pricing is configured on a Plan through fees and charges. With Contracts, Products, Rate Cards and Rates define pricing that you can reuse across Plans.
+
+Use this page to compare the models and understand how their objects relate.
+
+<Info>
+API v2 is in beta (`2.0.0-beta`), served under `/api/v2`. API v1 (`/api/v1`) stays supported. The two versions document separate objects: v2 invoice and fee endpoints return Contract invoices and Product fees, not v1 subscription fees.
+</Info>
+
+## Why a new model?
+
+The contract-based model gives you more flexibility to manage pricing as your business evolves. Prices are defined in Rates and organized into Rate Cards, separately from Plans. This makes it easier to introduce new prices, define pricing phases and override pricing for individual items.
+
+Explore the documentation to understand how Products, Rate Cards, Plans and Contracts work together, or start with [Your first invoice](/v2/guide/introduction/your-first-invoice) to build a complete example.
+
+## What changed
+
+In v1, a Plan holds charges, and a charge prices one billable metric with a charge model. The Plan also carries the subscription fee and a single billing interval.
+
+In v2, pricing is split into reusable layers:
+
+- A [Product](/v2/guide/product-catalog/products) defines what you sell. A fixed Product uses a configured quantity. A metered Product uses a billable metric to measure usage.
+- A [Rate Card](/v2/guide/rate-cards/overview) holds Rates and shared billing settings for a Product or [Product filter](/v2/guide/product-catalog/product-filters), including currency, billing timing and adjustments for part of a billing period.
+- A [Rate](/v2/guide/rate-cards/rates) defines the price, pricing model, effective date and billing interval.
+- A [Plan](/v2/guide/plans/overview) combines applied Rate Cards in one currency. Each applied Rate Card can define `units` and a sequence of `rate_phases`.
+- A [Contract](/v2/guide/contracts/overview) applies billing terms to a customer.
+
+```mermaid
+flowchart LR
+  subgraph V1["v1 · Subscriptions (Legacy)"]
+    direction TB
+    S["Subscription"] --> P1["Plan"]
+    P1 --> F1["Subscription fee + Plan interval"]
+    P1 --> C1["Charges"]
+    C1 --> BM1["Billable metric"]
+  end
+  subgraph V2["v2 · Contracts"]
+    direction TB
+    K["Contract"] --> P2["Plan"]
+    P2 --> ARC["Applied Rate Cards and rate phases"]
+    ARC --> RC["Rate Card"]
+    RC --> R["Rates: prices, effective dates and billing intervals"]
+    RC --> PR["Product or Product filter"]
+    PR --> BM2["Billable metric (for metered Products)"]
+  end
+```
+
+## Compare the billing models
+
+| Subscriptions (v1) | Contracts (v2) | What changed |
+| --- | --- | --- |
+| Subscription | [Contract](/v2/guide/contracts/overview) | Applies terms to one customer. |
+| Plan with charges | Plan with applied Rate Cards | A Plan references reusable Rate Cards instead of owning its charges. |
+| Charge | Applied Rate Card + Rate | Not a 1:1 mapping. The Rate Card holds billing settings, the Rate holds the price. |
+| Charge filters | [Product filters](/v2/guide/product-catalog/product-filters) | Filters are catalog objects on a metered Product. A Rate Card can target one. |
+| Plan subscription fee | Fixed Product + Rate Card + `standard` Rate, applied with `units` | The recurring fee is a Product like any other. |
+| Plan interval | Billing interval on each Rate | Each Rate has its own billing interval. |
+
+<CardGroup cols={2}>
+  <Card title="Your first invoice" icon="rocket" href="/v2/guide/introduction/your-first-invoice">
+    Build the $100 monthly fee plus $0.01 per API call example.
+  </Card>
+  <Card title="Product Catalog" icon="boxes-stacked" href="/v2/guide/product-catalog/overview">
+    Define the Products you sell and their filters.
+  </Card>
+  <Card title="Rate Cards" icon="tags" href="/v2/guide/rate-cards/overview">
+    Configure billing settings and prices over time.
+  </Card>
+  <Card title="API reference" icon="code" href="/v2/api-reference/intro">
+    Find endpoints and request fields under `/api/v2`.
+  </Card>
+</CardGroup>

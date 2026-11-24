@@ -1,0 +1,234 @@
+---
+sidebarTitle: "Overview"
+title: "Overview"
+description: "Correct an invoice with a credit, refund or reduction of the amount due."
+keywords: ["Lago", "credit note", "refund", "contract invoice"]
+---
+
+A [credit note](/v2/api-reference/credit-notes/retrieve) corrects all or part of a finalized invoice without changing the original invoice. Use it to give your customer credit for future invoices, refund a payment or reduce the amount still due.
+
+<Info>
+Creating a credit note requires a premium license and an eligible invoice.
+</Info>
+
+<span id="how-the-credited-amount-is-allocated" />
+
+## Choose how to allocate the amount
+
+| Option | Purpose |
+| --- | --- |
+| Credit | Give the customer credit for future invoices. |
+| Refund | Return money to the customer. |
+| Offset | Reduce the amount still due on the invoice. |
+
+## Estimate a credit note
+
+### Worked example
+
+The `contract_example` invoice has two fees: `monthly_service` at $100.00 and `api_calls_product` at $20.00, in USD, with a 20% tax. The customer paid the full $144.00. You agree to reduce the API-call fee by USD 10. This illustrative reduction includes USD 2 in tax, for a total of USD 12.
+
+1. Estimate the credit note to get the tax-inclusive amount.
+2. The estimate returns `sub_total_excluding_taxes_amount_cents: 1000`, `taxes_amount_cents: 200` and `sub_total_including_taxes_amount_cents: 1200`.
+3. Create the credit note and request the USD 12 refund.
+
+```
+CREDIT NOTE on contract_example invoice
+
+api_calls_product (agreed reduction)    $10.00
+Tax (20%)                               $2.00
+---------------------------------------------
+Total credited                         $12.00
+  Refund                               $12.00
+```
+
+
+`POST /credit_notes/estimate` computes amounts and taxes without creating anything. Items and applied taxes are always included in the response.
+
+<CodeGroup>
+```bash Estimate a credit note
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/credit_notes/estimate" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "credit_note": {
+      "invoice_id": "__LAGO_INVOICE_ID__",
+      "items": [
+        {
+          "fee_id": "__LAGO_FEE_ID__",
+          "amount_cents": 1000
+        }
+      ]
+    }
+  }'
+```
+</CodeGroup>
+
+## Issue a credit note
+
+<Warning>
+Review the selected fees and the credit, refund and offset amounts before issuing the credit note.
+</Warning>
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the invoice.
+    2. Open the **Credit notes** tab.
+    3. Click **Issue a credit note**.
+    4. Select a reason.
+    5. Optionally, add a description.
+    6. Select the fees.
+    7. Enter the amount to credit for each fee.
+    8. Split the total between credit, refund and offset.
+    9. Click **Issue credit note** to confirm.
+  </Tab>
+  <Tab title="API">
+    Select the fees in `items`. Each `fee_id` must belong to the invoice, and `amount_cents` specifies the amount to credit for that fee. Allocate the total with `credit_amount_cents`, `refund_amount_cents` and `offset_amount_cents`.
+
+    Set a `reason` for the adjustment. See the [Create API reference](/v2/api-reference/credit-notes/create) for accepted values and amount formats.
+
+    <Accordion title="API compatibility">
+      Product fees from Contracts and legacy invoice fees can both be credited. The list also includes finalized credit notes for legacy invoices.
+    </Accordion>
+
+    <CodeGroup>
+    ```bash Create a credit note
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/credit_notes" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "credit_note": {
+          "invoice_id": "__LAGO_INVOICE_ID__",
+          "reason": "other",
+          "description": "Agreed reduction on API-call fee",
+          "credit_amount_cents": 0,
+          "refund_amount_cents": 1200,
+          "offset_amount_cents": 0,
+          "items": [
+            {
+              "fee_id": "__LAGO_FEE_ID__",
+              "amount_cents": 1000
+            }
+          ],
+          "metadata": {
+            "erp_reference": "CN-0001"
+          }
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+<span id="read-credit-notes" />
+
+## Retrieve credit notes
+
+Retrieve a credit note with its items and applied taxes to see which fees were credited. To find credit notes across invoices, use the [list endpoint](/v2/api-reference/credit-notes/list) and its customer, invoice, status or date filters.
+
+See the [Retrieve API reference](/v2/api-reference/credit-notes/retrieve) for supported expansions and response details.
+
+<CodeGroup>
+```bash Retrieve a credit note with its items
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+
+curl --globoff --location --request GET "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID?expands[]=items&expands[]=applied_taxes" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+To list one customer's credit notes, call [`GET /customers/{customer_external_id}/credit_notes`](/v2/api-reference/customers/list-credit-notes).
+
+## Update the refund status
+
+If you process a refund outside Lago, update `refund_status` to record its outcome. This records the status; it is not a request to send a refund. `PUT` and `PATCH` accept only `refund_status` and `metadata`.
+
+<CodeGroup>
+```bash Mark a refund as succeeded
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+
+curl --location --request PUT "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "credit_note": {
+      "refund_status": "succeeded"
+    }
+  }'
+```
+</CodeGroup>
+
+<span id="void-a-credit-note" />
+
+## Void remaining credit
+
+`credit_status` reports the credit balance: `available`, `consumed` or `voided`. Voiding an eligible credit note sets it to `voided`.
+
+<Warning>
+Voiding a credit note removes the remaining credit available to the customer. It cannot be undone. Review the remaining credit before confirming.
+</Warning>
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open the customer’s page.
+    2. Open the **Credit notes** tab.
+    3. Click a credit note.
+    4. Open the **Actions** menu.
+    5. Select **Void credit available**.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Void a credit note
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID/void" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Download and resend
+
+`POST /credit_notes/{lago_id}/download_pdf` and `POST /credit_notes/{lago_id}/download_xml` work on finalized credit notes. They return `200` with the credit note when the document exists, or `202` with an empty body while it is generated. Read `file_url` and `xml_url` on the credit note.
+
+`POST /credit_notes/{lago_id}/resend_email` queues an email with optional `to`, `cc` and `bcc`. It requires a premium license and valid billing entity email settings. A successful request queues the email; it does not confirm delivery.
+
+<CodeGroup>
+```bash Download a credit note PDF
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
+
+curl --location --request POST "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID/download_pdf" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Credit note metadata" icon="tags" href="/v2/guide/invoicing/credit-notes/credit-note-metadata">
+    Store ERP or tax references on a credit note.
+  </Card>
+  <Card title="Void invoice" icon="ban" href="/v2/guide/invoicing/void">
+    Cancel a whole invoice instead.
+  </Card>
+  <Card title="Create a credit note (API)" icon="code" href="/v2/api-reference/credit-notes/create">
+    Request and response schema.
+  </Card>
+  <Card title="Estimate a credit note (API)" icon="code" href="/v2/api-reference/credit-notes/estimate">
+    Request and response schema.
+  </Card>
+</CardGroup>

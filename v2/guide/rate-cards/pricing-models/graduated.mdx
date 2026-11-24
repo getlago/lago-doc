@@ -1,0 +1,98 @@
+---
+title: "Graduated rate model"
+sidebarTitle: "Graduated"
+description: "Apply each tier's price to the units within that tier."
+keywords: ["Lago", "graduated pricing", "tiered pricing", "graduated_ranges", "rate model"]
+---
+
+Graduated pricing applies each tier's unit price to the units within that tier. Use it when units above a threshold have a different price while earlier units keep their tier's price.
+
+## How it works
+
+Tiers are ordered by their upper bound. The quantity fills tier 1 up to its `to_value`, then tier 2, and so on. Each unit is priced using the `per_unit_amount` of the tier it falls within. A tier can also carry a `flat_amount`: a flat fee for the whole tier, on top of its unit prices. The last tier has `to_value: null` and is open-ended.
+
+## Availability
+
+- Fixed Products: available. Advance billing is unavailable when the Rate Card is prorated.
+- Metered Products: available for every aggregation except Weighted sum with `recurring: true` and proration. Advance billing is available only for Count, non-prorated Count unique and non-prorated Sum.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
+## Configure the rate
+
+Set `rate_model` to `graduated` and describe the tiers in `rate_properties.graduated_ranges`. Each tier uses these fields:
+
+| Field | Description |
+| --- | --- |
+| `to_value` | Upper bound of the tier, as a decimal string. `null` on the last tier. Bounds must increase. |
+| `per_unit_amount` | Price per unit in this tier. |
+| `flat_amount` | Flat fee for the tier. Use `"0"` for none. |
+
+Do not send `from_value`.
+
+<CodeGroup>
+```bash Create a graduated rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "calls_graduated",
+      "effective_from": "2027-07-01T00:00:00Z",
+      "rate_model": "graduated",
+      "rate_properties": {
+        "graduated_ranges": [
+          { "to_value": "100", "per_unit_amount": "1.00", "flat_amount": "0" },
+          { "to_value": "200", "per_unit_amount": "0.50", "flat_amount": "0" },
+          { "to_value": null, "per_unit_amount": "0.10", "flat_amount": "0" }
+        ]
+      },
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
+
+## Example
+
+This example prices 250 API calls over one full monthly billing period in USD, with no proration or spending minimum. Each unit is one API call:
+
+| Tier | Up to (`to_value`) | Unit price | Flat fee |
+| --- | --- | --- | --- |
+| Tier 1 | 100 | 1.00 USD | 0 USD |
+| Tier 2 | 200 | 0.50 USD | 0 USD |
+| Tier 3 | ∞ (`null`) | 0.10 USD | 0 USD |
+
+With 250 calls in the billing period:
+
+| Tier | Units | Calculation | Amount |
+| --- | --- | --- | --- |
+| Tier 1 | 100 | 100 × 1.00 USD | 100.00 USD |
+| Tier 2 | 100 | 100 × 0.50 USD | 50.00 USD |
+| Tier 3 | 50 | 50 × 0.10 USD | 5.00 USD |
+| **Fee** | **250** | | **155.00 USD** |
+
+The calculated fee for these 250 API calls is 155 USD before tax.
+
+## Check the result
+
+Check the units in each tier, the tier's unit price and any applicable flat fee. Add the tier amounts to check the calculated fee. Use [Contract current usage](/v2/guide/events/retrieve-usage#retrieve-current-usage) to inspect provisional values. See [Rates](/v2/guide/rate-cards/rates#check-which-rate-was-used) to check which Rate applies.
+
+<CardGroup cols={2}>
+  <Card title="Volume" icon="layer-group" href="/v2/guide/rate-cards/pricing-models/volume">
+    One tier price for all units.
+  </Card>
+  <Card title="Graduated percentage" icon="percent" href="/v2/guide/rate-cards/pricing-models/graduated-percentage">
+    Percentage tiers on an amount.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Compare every rate model.
+  </Card>
+</CardGroup>

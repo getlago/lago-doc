@@ -1,0 +1,72 @@
+---
+title: "Aggregation examples"
+sidebarTitle: "Aggregation examples"
+description: "Compare how aggregation types calculate different quantities from the same usage events."
+keywords: ["Lago", "aggregation type", "billable metric", "examples"]
+---
+
+The same events can produce different measured quantities depending on the aggregation type. Compare the results to choose the type that matches what you want to measure.
+
+## Events received
+
+A tracking API company measures usage with the `tracked_pages` metric. The customer's contract `contract_example` has a monthly billing period, January 1 to January 31, 2027. Your backend sends two events:
+
+```json Event received #1
+{
+  "transaction_id": "1111-1111-1111-1111",
+  "external_contract_id": "contract_example",
+  "code": "tracked_pages",
+  "timestamp": 1800057600,
+  "properties": {
+    "tracked_user_id": "1234-5678-9098-7654",
+    "pageviews": 10
+  }
+}
+```
+
+```json Event received #2
+{
+  "transaction_id": "2222-2222-2222-2222",
+  "external_contract_id": "contract_example",
+  "code": "tracked_pages",
+  "timestamp": 1800144000,
+  "properties": {
+    "tracked_user_id": "1234-5678-9098-7654",
+    "pageviews": 20
+  }
+}
+```
+
+The first event is on January 16, the second on January 17.
+
+## Result per aggregation type
+
+| Aggregation | Calculation | Measured quantity |
+| --- | --- | --- |
+| **Count** | Count the two matching events. | 2 |
+| **Sum** | Add the reported values: 10 + 20. | 30 |
+| **Max** | Use the highest reported value. | 20 |
+| **Latest** | Use the value from the later event. | 20 |
+| **Count unique** | Count the distinct user identifier once. | 1 |
+| **Weighted sum** | Weight the running total by how long it applies. | 14.84 |
+
+[Weighted sum](/v2/guide/billable-metrics/aggregation-types/weighted-sum) also accounts for how long the running total applies within the billing period. Here the total is 10 for one day (January 16 to 17), then 30 for the remaining 15 days of January: (10 × 1 day + 30 × 15 days) / 31 days = 14.84.
+
+## Next step
+
+Connect your metric to a [Product](/v2/guide/product-catalog/metered-products), then configure pricing through a [Rate Card](/v2/guide/rate-cards/overview).
+
+<CardGroup cols={2}>
+  <Card title="Aggregation types" icon="calculator" href="/v2/guide/billable-metrics/aggregation-types/overview">
+    Compare the available aggregation types.
+  </Card>
+  <Card title="Rates" icon="tag" href="/v2/guide/rate-cards/rates">
+    Price the aggregated quantity.
+  </Card>
+  <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
+    `POST /billable_metrics`
+  </Card>
+  <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
+    Send usage events to Lago.
+  </Card>
+</CardGroup>

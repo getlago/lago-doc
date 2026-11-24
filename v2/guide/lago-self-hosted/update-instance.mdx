@@ -1,0 +1,106 @@
+---
+title: "Versions update"
+---
+
+Lago ships updates every 1 or 2 weeks. Keeping your self-hosted instance up to date keeps your billing engine on the latest fixes and features.
+
+<Frame type="glass">
+  <img src="/guide/images/updates.png" alt="Illustration of the Lago cat thinking in front of a server rack" />
+</Frame>
+
+## Why update your Lago self-hosted instance?
+
+### Bug fixes and security enhancements
+Updates resolve bugs and close security issues. This matters most in metering, billing calculations, tax application, and financial
+statements, where a defect affects what you invoice.
+
+### Access to new features
+Each update adds features, such as core billing improvements, tax-related features, and additional settings options. Updating regularly
+gives you access to them.
+
+## Determining update frequency
+Watch the [release notes](https://github.com/getlago/lago/releases) to see when an update is available and what it
+changes, then plan your updates accordingly. Over a year, that is more than 70 releases and about 30
+[product updates](/changelog/product).
+
+## Update process
+Follow these steps to move your instance to the latest version:
+
+### 1. Access your instance repository
+Navigate to the repository where your Lago open source instance is stored. This is typically where you initially cloned or
+downloaded the instance.
+
+### 2. Check your current version
+In the repository directory, execute the following command to check the current Lago version:
+
+```bash
+git describe --tags --abbrev=0
+```
+
+### 3. Check for the bridge releases
+
+<Note>
+  Bridge releases are released as mandatory intermediary releases that must be installed before upgrading to higher versions.
+</Note>
+
+Check the migration guides for [bridge releases](/guide/migration) and follow the update instructions for each intermediary release.
+
+### 4. Fetch the latest release
+Still in the repository directory, execute the following command to pull the latest release from the remote repository:
+
+```bash
+# Fetch all tags
+git fetch --tags
+
+# Checkout the latest tag
+git checkout $(git describe --tags --abbrev=0)
+```
+
+These commands fetch the most recent release from the remote repository and check it out locally.
+
+<Note>
+  To fetch the code of a specific release, use the following command:
+
+  ```bash
+  git checkout v1.29.0 # Replace with the right version number
+  ```
+</Note>
+
+### 5. Restart the updated instance
+Once the code is up-to-date, navigate to the directory containing your Docker Compose file.
+Execute the following command to start the updated instance:
+
+```bash
+docker compose up
+```
+
+This command pulls the images of the new release and restarts your Lago instance with it.
+
+### 6. Test new features
+After the instance restarts, test the new features and give feedback to the team.
+
+## Updating a Helm deployment
+
+The steps above assume a Docker Compose instance tracked with Git. If you deploy
+with the [Helm charts](/v2/guide/lago-self-hosted/kubernetes), update the chart
+instead:
+
+```bash
+helm repo update
+helm upgrade lago lago/lago -f values.yaml
+```
+
+Pin a specific chart version with `--version` when you want a known release
+rather than the newest one. The migration Job runs on each upgrade and brings
+the database schema up to date before the rest of the release restarts.
+
+<Warning>
+  Moving from chart `1.x` to `2.x` is the one exception: it is a new install,
+  not an upgrade, because the values schema and the generated resource names
+  both changed. See [coming from chart
+  v1](/v2/guide/lago-self-hosted/kubernetes#coming-from-chart-v1).
+</Warning>
+
+## Addressing concerns about breaking changes
+Lago reviews database and UI migrations carefully to limit the risk of breaking your instance during an update, so your workflows and
+user interfaces stay consistent across versions.

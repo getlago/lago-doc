@@ -1,0 +1,59 @@
+---
+title: "Product features"
+sidebarTitle: "Product features"
+description: "Which Lago v2 features cover payments, invoicing, credit notes, taxes, timezones and integrations, and which v1 features are not documented in v2 yet."
+keywords: ["Lago", "product features", "invoicing", "payments", "taxes"]
+---
+
+## 1. Does Lago v2 support prepaid credits?
+
+Not in the v2 API yet. The v2 reference does not document wallets or prepaid credits. Prepaid credits remain available with subscriptions. Legacy (v1): [wallets and prepaid credits](/guide/wallet-and-prepaid-credits/overview).
+
+## 2. Which payment methods does Lago support?
+
+Lago is payment-processor agnostic and connects with several [payment providers](/v2/guide/payments/payment-providers). List a customer's [payment methods](/v2/guide/payments/payment-methods), set the default one, and generate a checkout URL. You can also [record payments made outside Lago](/v2/guide/payments/record-manual-payments).
+
+## 3. Does Lago support invoicing?
+
+Yes. Every plan includes built-in invoicing, without a percentage of billings. You can:
+
+- Retrieve, update, finalize, refresh and void [invoices](/v2/guide/invoicing/overview)
+- Download invoice PDFs and resend invoice emails
+- Issue [credit notes](/v2/guide/invoicing/credit-notes/overview)
+- Inspect each [fee](/v2/guide/invoicing/fees) and trace it to its product, rate and period
+- Attach invoice custom sections to a contract
+
+You can also connect accounting tools such as NetSuite or QuickBooks through [integrations](/v2/integrations/introduction).
+
+## 4. Does Lago provide a customer self-service portal?
+
+The v2 documentation does not cover the customer portal yet. Legacy (v1): [customer portal](/guide/customers/customer-portal).
+
+## 5. Does Lago support different time zones?
+
+Customers have a `timezone` field, which requires a premium license. Contracts set their own cycle boundaries with `started_at` and `billing_anchor_date`. Use explicit timezones in timestamps. Event timestamps are Unix seconds.
+
+## 6. What integrations does Lago support?
+
+Lago offers native integrations for payments (Stripe, GoCardless, Adyen), accounting (NetSuite, QuickBooks), taxes (Anrok, Avalara) and CRM (Salesforce, HubSpot). Check each page in [integrations](/v2/integrations/introduction) for contract support.
+
+## 7. Does Lago support taxation?
+
+Yes. Create taxes with the `/taxes` endpoints and assign them with `tax_codes` on rate cards and plans. Contract current usage applies taxes by default (`apply_taxes=true`). You can also use the [Lago EU Taxes](/v2/integrations/taxes/lago-eu-taxes) or [Anrok](/v2/integrations/taxes/anrok) integrations.
+
+## 8. Does Lago process payments?
+
+No. Lago calculates how much to charge and when, and sends that to your payment provider. You then monitor payment status in Lago. Keep invoice status and payment status separate: a finalized invoice does not by itself mean the customer has paid.
+
+## 9. What is new in v2?
+
+v2 introduces contracts and a product catalog. Read the [contracts FAQ](/v2/faq/contracts) for how contracts, rate cards and the v2 API work.
+
+<CardGroup cols={2}>
+  <Card title="Contracts FAQ" icon="file-contract" href="/v2/faq/contracts">
+    Contracts, rate cards and API beta status.
+  </Card>
+  <Card title="Contracts vs subscriptions" icon="code-compare" href="/v2/guide/introduction/contracts-vs-subscriptions">
+    How v2 objects map to v1.
+  </Card>
+</CardGroup>

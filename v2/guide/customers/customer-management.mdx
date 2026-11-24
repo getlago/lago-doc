@@ -1,0 +1,149 @@
+---
+title: "Overview"
+sidebarTitle: "Overview"
+description: "Create customers and manage their contact, billing and payment details."
+keywords: ["Lago", "customer", "external_customer_id", "contracts"]
+---
+
+A customer is the account you bill. It stores their contact information, billing details and payment settings, and connects their Contracts and invoices.
+
+Create the customer first, then apply a Plan through a [Contract](/v2/guide/contracts/overview). The Contract defines when billing starts.
+
+## Create a customer
+
+Use `external_id` to identify the customer in your system. Pass this value as `external_customer_id` when creating a Contract.
+
+<Tabs>
+  <Tab title="Dashboard">
+1. Open **Customers**.
+2. Click **Create a customer**.
+3. Enter the customer's name.
+4. Enter their external ID.
+5. Optionally, select a timezone.
+6. Optionally, add billing details.
+7. Optionally, select a payment provider.
+8. Click **Create customer**.
+  </Tab>
+  <Tab title="API">
+Use `POST /customers` to create a customer. If the `external_id` already exists, the request returns `422`. Update that customer with `PUT /customers/{external_id}`.
+
+```bash Create customer_example
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "customer_example",
+          "name": "Acme Corp",
+          "customer_type": "company",
+          "email": "billing@example.com",
+          "currency": "USD"
+        }
+      }'
+    ```
+
+See [Create a customer](/v2/api-reference/customers/create) for all available fields.
+  </Tab>
+</Tabs>
+
+<span id="customer-fields" />
+<span id="companies-vs-individuals" />
+
+## Configure billing details
+
+Add the information you need to bill and collect payment from the customer.
+
+| Details | What to configure |
+| --- | --- |
+| Identity and contact | Name, company or individual type, email and phone number. |
+| Legal and address | Legal name, registration and tax identifiers, and billing or shipping address. |
+| Billing | Currency, [billing entity](/v2/guide/billing-entities) and invoice settings. |
+| Payments | Payment provider and the customer's record with that provider. See [Payment methods](/v2/guide/payments/payment-methods). |
+| Metadata | Extra context, such as a CRM ID or purchase order reference. See [Customer metadata](/v2/guide/customers/customer-metadata). |
+
+Set `customer_type` to `company` or `individual` when needed. You can leave it out and set it later.
+
+See the [Customer object](/v2/api-reference/customers/object) for the complete field list.
+
+## Update a customer
+
+Use `PUT /customers/{external_id}` to update an existing customer. Send the fields you want to change. Omitted fields keep their current values.
+
+Treat `external_id` as a permanent identifier. Once the customer has billing objects such as invoices or wallets, changes to it are ignored.
+
+If you send `metadata` or `integration_customers`, include every entry you want to keep. These arrays replace the existing list. Include each retained entry's `id`, using its `lago_id` from the response. Omitted entries are removed; an empty array removes all entries. See [Customer metadata](/v2/guide/customers/customer-metadata) for a worked example.
+
+<Tabs>
+  <Tab title="Dashboard">
+Open **Customers** and select the customer to edit their information.
+  </Tab>
+  <Tab title="API">
+This request changes the customer's billing email. If the customer does not exist, the request returns `404`.
+
+```bash Update the billing email
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "email": "finance@example.com"
+        }
+      }'
+    ```
+
+See [Update a customer](/v2/api-reference/customers/update) for the complete request schema.
+  </Tab>
+</Tabs>
+
+<span id="retrieve-and-list-customers" />
+
+## Find a customer
+
+Use `GET /customers/{external_id}` to retrieve a customer. To include metadata, taxes or integration details, request `metadata`, `taxes` or `integration_customers` with `expands[]`.
+
+Use `GET /customers` to list customers. Filter the results and follow the returned cursors to retrieve additional pages. See [List customers](/v2/api-reference/customers/list) for the available filters and [Pagination](/v2/api-reference/pagination) for navigating results.
+
+```bash Retrieve a customer with its metadata
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --globoff --request GET "$LAGO_URL/api/v2/customers/customer_example?expands[]=metadata" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+## Delete a customer
+
+Review the customer's pending and active Contracts and draft invoices before deleting the customer.
+
+`DELETE /customers/{external_id}` marks the customer as deleted and queues related termination work. The response includes `deleted_at`; it does not confirm that all related work has finished.
+
+```bash Delete a customer
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request DELETE "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+
+<span id="bill-the-customer" />
+
+<CardGroup cols={2}>
+  <Card title="Create a Contract" icon="file-signature" href="/v2/guide/contracts/overview">
+    Apply a Plan and set when the customer's billing starts.
+  </Card>
+  <Card title="Customer metadata" icon="tags" href="/v2/guide/customers/customer-metadata">
+    Store extra context on the customer.
+  </Card>
+  <Card title="Billing entities" icon="building" href="/v2/guide/billing-entities">
+    Choose the entity that issues invoices.
+  </Card>
+  <Card title="Retrieve usage" icon="gauge" href="/v2/guide/events/retrieve-usage">
+    Review received events and current usage.
+  </Card>
+</CardGroup>

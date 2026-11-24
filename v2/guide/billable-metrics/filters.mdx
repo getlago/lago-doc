@@ -1,0 +1,215 @@
+---
+title: "Filters and dimensions"
+sidebarTitle: "Filters and dimensions"
+description: "Define dimensions such as region, model or provider to distinguish groups of usage within a billable metric."
+keywords: ["Lago", "billable metric filters", "product filter", "dimensions"]
+---
+
+Filters define the event properties and values you can use to select groups of usage within a billable metric.
+
+For example, a compute metric measures hours of usage. A `region` filter lets you distinguish where that usage occurred, while a `provider` filter identifies the cloud provider. You can use the same metric across these dimensions.
+
+## How filters work
+
+A dimension is an attribute of usage, such as its region or model. Define each filter with a `key` and a list of `values`:
+
+- `key`: the event property to match, such as `region`.
+- `values`: the configured values for that property, such as `us-east-1` and `eu-west-1`.
+
+Your application sends these properties with each event. The metric's aggregation determines how the quantity is calculated; the filter identifies which group the event matches.
+
+## Use cases
+
+<AccordionGroup>
+  <Accordion title="Usage by region">
+    Measure compute hours across regions. Include `region` in each event to identify where the usage occurred.
+
+    ```json
+    "filters": [
+      {
+        "key": "region",
+        "values": ["us-east-1", "us-east-2", "eu-west-1", "eu-central-1"]
+      }
+    ]
+    ```
+
+  </Accordion>
+
+  <Accordion title="Usage by model">
+    Measure token usage across models. Include `model` in each event to identify which model processed the tokens.
+
+    ```json
+    "filters": [
+      {
+        "key": "model",
+        "values": ["llama", "mixtral", "gpt-4", "claude-sonnet"]
+      }
+    ]
+    ```
+
+  </Accordion>
+
+  <Accordion title="Usage by service tier">
+    Measure API calls by service tier. Use `tier` to distinguish real-time requests from batch requests.
+
+    ```json
+    "filters": [
+      {
+        "key": "tier",
+        "values": ["realtime", "batch"]
+      }
+    ]
+    ```
+  </Accordion>
+
+  <Accordion title="Combined dimensions">
+    Include both `region` and `model` when you want to distinguish usage by where it occurred and which model was used.
+
+    ```json
+    "filters": [
+      {
+        "key": "region",
+        "values": ["us-east-1", "eu-west-1"]
+      },
+      {
+        "key": "model",
+        "values": ["llama", "gpt-4"]
+      }
+    ]
+    ```
+
+  </Accordion>
+</AccordionGroup>
+
+## Create filters
+
+The `compute` metric adds the `hours` reported in usage events. Define `provider` and `region` filters to distinguish the cloud provider and location associated with that usage.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Create a new billable metric.
+    2. Add a new filter.
+    3. Define its key and values.
+
+    <Frame caption="How to add filters">
+      <img src="/guide/billable-metrics/images/add-filters.gif" alt="Adding filter keys and values on the billable metric form in the Lago dashboard" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Compute with provider and region {14-23}
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billable_metric": {
+          "name": "Compute",
+          "code": "compute",
+          "aggregation_type": "sum_agg",
+          "field_name": "hours",
+          "recurring": false,
+          "filters": [
+            {
+              "key": "provider",
+              "values": ["aws", "google", "azure"]
+            },
+            {
+              "key": "region",
+              "values": ["us-east-1", "us-east-2", "eu-west-1", "ap-southeast-1"]
+            }
+          ]
+        }
+      }'
+    ```
+    </CodeGroup>
+
+    Each filter needs a unique, non-empty `key` and a `values` array of strings. Null filters, malformed filters and non-string values are rejected before any change is saved.
+  </Tab>
+</Tabs>
+
+An event carrying both dimensions:
+
+```bash Event with filter values
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/events" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "event": {
+      "transaction_id": "event_001",
+      "external_contract_id": "contract_example",
+      "code": "compute",
+      "timestamp": 1800057600,
+      "properties": {
+        "hours": 0.07,
+        "provider": "aws",
+        "region": "us-east-1"
+      }
+    }
+  }'
+```
+
+This event reports 0.07 hours of compute usage on `aws` in `us-east-1`. The `hours` property supplies the quantity; `provider` and `region` supply the dimensions.
+
+<Warning>
+  Values are case-sensitive. An event must send the exact value to match. With the filters above, `"aws"` matches and `"AWS"` does not.
+</Warning>
+
+## Edit filters
+
+When you update `filters`, send the complete set you want to keep. The supplied array replaces the existing filters. An empty array removes all filters, subject to restrictions on values already referenced by Product filters.
+
+Filter values referenced by Product filters cannot be removed. Remove or change the Product filter first.
+
+```json Payload A
+{
+  "billable_metric": {
+    "filters": [
+      { "key": "region", "values": ["usa", "europe"] }
+    ]
+  }
+}
+```
+
+```json Payload B
+{
+  "billable_metric": {
+    "filters": [
+      { "key": "region", "values": ["USA", "europe", "africa"] }
+    ]
+  }
+}
+```
+
+Sending Payload B after Payload A:
+
+1. `europe` stays.
+2. `usa` is removed, unless a product filter references it. In that case the update is rejected.
+3. `USA` is added. Keys and values are case-sensitive, so it is a new value.
+4. `africa` is added.
+
+Once the metric is attached to a Plan, only its `name`, `description` and permitted filter changes can be updated.
+
+## Design guidance
+
+- Choose a metric code that describes the measurement, such as `compute_hours`.
+- Send the dimensions you need to distinguish as event properties.
+- Use consistent spelling and capitalization for filter values.
+
+## Next step
+
+See [Product filters](/v2/guide/product-catalog/product-filters) to learn how to select combinations of these dimensions for a Product.
+
+<CardGroup cols={2}>
+  <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
+    `POST /billable_metrics`
+  </Card>
+  <Card title="Create a product filter (API)" icon="code" href="/v2/api-reference/product-filters/create">
+    `POST /products/{product_code}/filters`
+  </Card>
+</CardGroup>

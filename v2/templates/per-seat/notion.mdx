@@ -1,0 +1,222 @@
+---
+title: "Clone Notion pricing"
+sidebarTitle: "Clone Notion pricing"
+description: "Rebuild Notion's per-seat pricing in Lago with a recurring unique-count metric, a prorated standard rate per active user and a contract."
+keywords: ["Lago", "per-seat pricing", "Notion", "proration", "contract"]
+---
+
+import SetupLago from "/snippets/v2/templates/setup-lago.mdx";
+import CreateCustomer from "/snippets/v2/templates/create-customer.mdx";
+import CreateContract from "/snippets/v2/templates/create-contract.mdx";
+import ContractUsage from "/snippets/v2/templates/contract-usage.mdx";
+
+This template builds per-seat pricing like Notion's Team plan with Lago: a price per active user, prorated by days of use. It suits productivity software, fintechs and data platforms whose price depends on users, cards or integrations that stay active across billing periods.
+
+Legacy (v1): [Clone Notion pricing with subscriptions](/templates/per-seat/notion).
+
+## Pricing structure
+
+| Model | Team plan |
+|---|---|
+| Price | $10 per user, billed monthly |
+
+## How it maps to Lago
+
+| Pricing element | Lago object |
+|---|---|
+| Active users | Billable metric `active_users` (`unique_count_agg` on `user_id`, `recurring: true`) |
+| What you sell | Metered product `workspace_seats` |
+| $10 per user, prorated | Rate card `workspace_seats_usd` with `proration: true` and a `standard` rate |
+| The offer | Plan `notion_team` |
+
+A recurring unique count metric with `proration: true` supports the `standard` and `graduated` models in arrears, and `standard` in advance.
+
+## Get started
+
+<Steps>
+  <Step title="Set up Lago">
+    <SetupLago />
+  </Step>
+
+  <Step title="Create a recurring billable metric">
+    `recurring: true` carries the value over between billing periods, so a user stays counted until removed.
+
+    <CodeGroup>
+      ```bash cURL highlight={6,8-10}
+      curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "billable_metric": {
+            "name": "Active users",
+            "code": "active_users",
+            "aggregation_type": "unique_count_agg",
+            "field_name": "user_id",
+            "recurring": true
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/billable-metrics/create) and the [billable metrics guide](/v2/guide/billable-metrics/create-billable-metrics).
+  </Step>
+
+  <Step title="Create a metered product">
+    <CodeGroup>
+      ```bash cURL highlight={7-8}
+      curl --location --request POST "$LAGO_URL/api/v2/products" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "product": {
+            "name": "Workspace seats",
+            "code": "workspace_seats",
+            "product_type": "metered",
+            "billable_metric_code": "active_users"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    <Tip>
+    If seats are agreed in the contract instead of tracked from events, use a [fixed product](/v2/guide/product-catalog/fixed-products) and set the seat count with `units` on the applied rate card. Product filters apply only to metered products, so price each seat type as its own fixed product.
+    </Tip>
+  </Step>
+
+  <Step title="Create a prorated rate card">
+    Set `proration` to `true` on the rate card. The `standard` rate charges $10 per active user per month.
+
+    <CodeGroup>
+      ```bash cURL highlight={10-11,15-18}
+      curl --location --request POST "$LAGO_URL/api/v2/rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "rate_card": {
+            "name": "Workspace seats USD",
+            "code": "workspace_seats_usd",
+            "product_code": "workspace_seats",
+            "currency": "USD",
+            "billing_timing": "arrears",
+            "proration": true,
+            "rates": [
+              {
+                "code": "seat_standard",
+                "effective_from": "2027-01-01T00:00:00Z",
+                "rate_model": "standard",
+                "rate_properties": { "amount": "10" },
+                "billing_interval_count": 1,
+                "billing_interval_unit": "month"
+              }
+            ]
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Once a rate exists, structural settings such as `proration` lock. Refer to the [API reference](/v2/api-reference/rate-cards/create) and the [standard model](/v2/guide/rate-cards/pricing-models/standard).
+  </Step>
+
+  <Step title="Create a plan and apply the rate card">
+    <CodeGroup>
+      ```bash cURL highlight={6-7}
+      curl --location --request POST "$LAGO_URL/api/v2/plans" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "plan": {
+            "name": "Team plan",
+            "code": "notion_team",
+            "currency": "USD"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    <CodeGroup>
+      ```bash cURL highlight={6}
+      curl --location --request POST "$LAGO_URL/api/v2/plans/notion_team/applied_rate_cards" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "applied_rate_card": {
+            "rate_card_code": "workspace_seats_usd"
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/plan-applied-rate-cards/create) and the [plans guide](/v2/guide/plans/overview).
+  </Step>
+
+  <Step title="Create a customer">
+    <CreateCustomer />
+  </Step>
+
+  <Step title="Create a contract">
+    Replace `__PLAN_CODE__` with `notion_team`.
+
+    <CreateContract />
+  </Step>
+
+  <Step title="Ingest user activity events">
+    Send an event when a user joins the workspace.
+
+    <CodeGroup>
+      ```bash cURL highlight={7-11}
+      curl --location --request POST "$LAGO_URL/api/v2/events" \
+        --header "Authorization: Bearer $API_KEY" \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+          "event": {
+            "transaction_id": "__TRANSACTION_ID__",
+            "code": "active_users",
+            "external_contract_id": "contract_example",
+            "properties": {
+              "user_id": "user_123",
+              "operation_type": "add"
+            }
+          }
+        }'
+      ```
+    </CodeGroup>
+
+    Refer to the [API reference](/v2/api-reference/events/create) and the [usage ingestion guide](/v2/guide/events/ingesting-usage).
+  </Step>
+
+  <Step title="Monitor current usage">
+    <ContractUsage />
+  </Step>
+</Steps>
+
+## Worked example
+
+Five users are active for one full monthly period.
+
+| Line | Quantity | Calculation | Amount |
+|---|---|---|---|
+| Workspace seats | 5 users | 5 × $10 | $50.00 |
+| **Total before tax** | | | **$50.00** |
+
+A user added or removed during the period is billed for part of the month, because the rate card has `proration: true`.
+
+## What changed from v1
+
+- The charge's `prorated` setting moves to the rate card's `proration` field.
+- The plan has no fixed product, so there is no platform fee.
+- Events target `external_contract_id` instead of `external_subscription_id`.
+
+<CardGroup cols={2}>
+  <Card title="Standard model" icon="equals" href="/v2/guide/rate-cards/pricing-models/standard">
+    One unit price for every unit.
+  </Card>
+  <Card title="Fixed products" icon="cube" href="/v2/guide/product-catalog/fixed-products">
+    Price contractual seat counts with `units`.
+  </Card>
+  <Card title="Contracts" icon="file-contract" href="/v2/guide/contracts/overview">
+    Apply a plan to a customer.
+  </Card>
+  <Card title="Create a rate card (API)" icon="code" href="/v2/api-reference/rate-cards/create">
+    `POST /api/v2/rate_cards`
+  </Card>
+</CardGroup>

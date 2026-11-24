@@ -1,0 +1,102 @@
+---
+title: "Volume rate model"
+sidebarTitle: "Volume"
+description: "Use the total quantity to select one tier's price for all units."
+keywords: ["Lago", "volume pricing", "tiered pricing", "volume_ranges", "rate model"]
+---
+
+Volume pricing uses the total quantity to select one tier. That tier's unit price applies to every unit, and its flat fee is added once.
+
+## How it works
+
+The total quantity for the billing period selects one tier. That tier's `per_unit_amount` applies to all units, and its `flat_amount` is added once. The last tier has `to_value: null` and is open-ended.
+
+Volume is billed in arrears only.
+
+## Availability
+
+- Billing timing: arrears only, for every product type.
+- Fixed Products: available, with or without proration.
+- Metered Products: available for every aggregation except Weighted sum with `recurring: true` and proration.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
+## Configure the rate
+
+Set `rate_model` to `volume` and describe the tiers in `rate_properties.volume_ranges`. Each tier uses these fields:
+
+| Field | Description |
+| --- | --- |
+| `to_value` | Upper quantity limit, as a decimal string. `null` means no upper limit on the last tier. Limits must increase. |
+| `per_unit_amount` | Price applied to every unit when this tier is selected. |
+| `flat_amount` | Flat fee added once for the selected tier. |
+
+Do not send `from_value`. The Rate Card must use `billing_timing: "arrears"`.
+
+<CodeGroup>
+```bash Create a volume rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "calls_volume",
+      "effective_from": "2027-07-01T00:00:00Z",
+      "rate_model": "volume",
+      "rate_properties": {
+        "volume_ranges": [
+          { "to_value": "10000", "per_unit_amount": "0.0010", "flat_amount": "10" },
+          { "to_value": "50000", "per_unit_amount": "0.0008", "flat_amount": "10" },
+          { "to_value": "100000", "per_unit_amount": "0.0006", "flat_amount": "10" },
+          { "to_value": null, "per_unit_amount": "0.0004", "flat_amount": "10" }
+        ]
+      },
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
+
+## Example
+
+This example prices 65,000 API calls over one full monthly billing period in USD, with no proration or spending minimum. Each unit is one API call:
+
+| Tier | Up to (`to_value`) | Unit price | Flat fee |
+| --- | --- | --- | --- |
+| Tier 1 | 10,000 | 0.0010 USD | 10 USD |
+| Tier 2 | 50,000 | 0.0008 USD | 10 USD |
+| Tier 3 | 100,000 | 0.0006 USD | 10 USD |
+| Tier 4 | ∞ (`null`) | 0.0004 USD | 10 USD |
+
+With 65,000 calls in the billing period, the total falls in tier 3:
+
+| Part | Calculation | Amount |
+| --- | --- | --- |
+| Units | 65,000 × 0.0006 USD | 39.00 USD |
+| Flat fee | Tier 3 | 10.00 USD |
+| **Fee** | | **49.00 USD** |
+
+The calculated fee for these 65,000 API calls is 49 USD before tax. With graduated tiers instead, the same 65,000 calls would be split across tiers 1 to 3.
+
+## Check the result
+
+Check the total quantity and the tier it selects. Multiply all units by that tier's unit price, then add its flat fee once. Use [Contract current usage](/v2/guide/events/retrieve-usage#retrieve-current-usage) to inspect provisional values. See [Rates](/v2/guide/rate-cards/rates#check-which-rate-was-used) to check which Rate applies.
+
+<CardGroup cols={2}>
+  <Card title="Graduated" icon="stairs" href="/v2/guide/rate-cards/pricing-models/graduated">
+    Each tier prices its own slice.
+  </Card>
+  <Card title="Rate cards" icon="tags" href="/v2/guide/rate-cards/overview">
+    Set `billing_timing`.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Compare every rate model.
+  </Card>
+</CardGroup>

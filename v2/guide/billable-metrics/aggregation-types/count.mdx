@@ -1,0 +1,94 @@
+---
+title: "Count"
+sidebarTitle: "Count"
+description: "Count matching usage events during a billing cycle."
+keywords: ["Lago", "billable metric", "count_agg", "COUNT"]
+---
+
+`Count` measures how many matching events Lago receives during a billing cycle. Use it when each event represents one action you want to measure, such as an API call.
+
+<Frame caption="Count calculation method">
+  <img src="/guide/images/count.png" alt="Diagram of the Count aggregation, counting the number of events received in a period" />
+</Frame>
+
+## Configure the metric
+
+Each matching event adds one to the count. You do not need to select an event property.
+
+Set `recurring` to `false`. This aggregation does not support carrying the quantity into the next billing cycle. Lago resets the measured quantity at the end of each cycle.
+
+## Create the metric
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Go to **Billable metrics** in the side menu.
+    2. Create a new billable metric.
+    3. Enter a name, a code and an optional description.
+    4. Select **Count** as the aggregation type.
+    5. Add filters if you want to group usage by dimensions such as region or provider.
+    6. Click **Add billable metric**.
+
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+          "billable_metric": {
+            "name": "API calls",
+            "code": "api_calls",
+            "description": "Number of API calls",
+            "aggregation_type": "count_agg",
+            "recurring": false
+          }
+        }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Calculation example
+
+The two example events below belong to `contract_example` and the same billing cycle. Their timestamps are January 16 and 17, 2027 at 00:00 UTC.
+
+```json Event 1
+{
+  "transaction_id": "transaction_1",
+  "external_contract_id": "contract_example",
+  "code": "api_calls",
+  "timestamp": 1800057600,
+  "properties": {}
+}
+```
+
+```json Event 2
+{
+  "transaction_id": "transaction_2",
+  "external_contract_id": "contract_example",
+  "code": "api_calls",
+  "timestamp": 1800144000,
+  "properties": {}
+}
+```
+
+Both events match the `api_calls` metric. Each adds one, so the measured quantity is 2.
+
+<CardGroup cols={2}>
+  <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">
+    Compare how aggregation types calculate usage.
+  </Card>
+  <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
+    Connect your metric to a Product.
+  </Card>
+  <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
+    `POST /billable_metrics`
+  </Card>
+  <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
+    Send usage events to Lago.
+  </Card>
+</CardGroup>

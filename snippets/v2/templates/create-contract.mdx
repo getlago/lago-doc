@@ -1,0 +1,22 @@
+<CodeGroup>
+    ```bash cURL highlight={6-10}
+    curl --location --request POST "$LAGO_URL/api/v2/contracts" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "contract": {
+          "external_id": "contract_example",
+          "external_customer_id": "customer_example",
+          "plan_code": "__PLAN_CODE__",
+          "started_at": "2027-01-01T00:00:00Z",
+          "billing_anchor_date": "2027-02-01"
+        }
+      }'
+    ```
+</CodeGroup>
+
+The plan supplies the contract's initial applied rate cards. A future `started_at` creates a `pending` contract that becomes `active` on that date. Only one pending or active contract can use a given `external_id` at a time. Refer to the [API reference](/v2/api-reference/contracts/create) to create a contract.
+
+<Note>
+The example dates are in the future. To test right away, set each rate's `effective_from` to today and omit `started_at`, which defaults to now.
+</Note>

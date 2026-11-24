@@ -1,0 +1,97 @@
+---
+title: "Payment retries"
+sidebarTitle: "Payment retries"
+description: "Retry an invoice payment or share a payment link with your customer."
+keywords: ["Lago", "retry payment", "payment URL", "invoice"]
+---
+
+Retry collection when an invoice payment fails. You can also generate a payment link so your customer can pay the invoice themselves.
+
+## Retry an invoice payment
+
+<Warning>
+A retry starts another collection attempt. Check the invoice and selected payment method before continuing.
+</Warning>
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open **Invoices**.
+    2. Open the **Outstanding** tab.
+    3. Click the **ellipsis icon** on the invoice.
+    4. Select **Resend for collection**.
+  </Tab>
+  <Tab title="API">
+    `POST /invoices/{lago_id}/retry_payment` retries collection using the selected or default payment method. The body is optional:
+
+    | Field | Meaning |
+    | --- | --- |
+    | `payment_method.payment_method_type` | `provider` or `manual`. |
+    | `payment_method.payment_method_id` | `lago_id` of a payment method that belongs to the customer. |
+
+    Omit `payment_method` to use the configured default. See [Payment methods](/v2/guide/payments/payment-methods).
+
+
+    <CodeGroup>
+    ```bash Retry with the default payment method
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    INVOICE_ID="__YOUR_INVOICE_ID__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/retry_payment" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+
+    ```bash Retry with a specific payment method
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    INVOICE_ID="__YOUR_INVOICE_ID__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/retry_payment" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "payment_method": {
+          "payment_method_type": "provider",
+          "payment_method_id": "__YOUR_PAYMENT_METHOD_ID__"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+A successful request does not confirm payment. Follow the result on the invoice `payment_status` (`pending`, `succeeded`, `failed`) or in `GET /payments?invoice_id=...`.
+
+## Create a payment URL
+
+`POST /invoices/{lago_id}/payment_url` returns a URL where the customer can pay the invoice through the payment provider. It requires a customer [connected to a provider](/v2/guide/payments/payment-providers). See the [API reference](/v2/api-reference/invoices/payment-url) for error responses.
+
+<CodeGroup>
+```bash Create a payment URL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+INVOICE_ID="__YOUR_INVOICE_ID__"
+
+curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/payment_url" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+Share `payment_url.payment_url` from the response with your customer.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Payment requests" icon="envelope-open-dollar" href="/v2/guide/payments/payment-requests">
+    Collect several overdue invoices at once.
+  </Card>
+  <Card title="Record manual payments" icon="money-check" href="/v2/guide/payments/record-manual-payments">
+    Record a payment collected outside Lago.
+  </Card>
+  <Card title="Retry an invoice payment (API)" icon="code" href="/v2/api-reference/invoices/retry-payment">
+    Request and response schema.
+  </Card>
+  <Card title="Create a payment URL (API)" icon="code" href="/v2/api-reference/invoices/payment-url">
+    Request and response schema.
+  </Card>
+</CardGroup>

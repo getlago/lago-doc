@@ -1,0 +1,40 @@
+---
+title: "Overview"
+description: "Compare aggregation types and choose how Lago calculates usage from your events."
+keywords: ["Lago", "aggregation type", "billable metric", "aggregation_type"]
+---
+
+An aggregation type defines how a billable metric calculates a quantity from usage events. Choose it based on what you want to measure: the number of actions, distinct users, a total, or a reported value.
+
+For example, use Count to count API calls, Sum to total tokens consumed, or Max to find the highest number of CPUs used.
+
+| Aggregation | `aggregation_type` | What it does | Supports recurring: |
+| --- | --- | --- | --- |
+| [Count](/v2/guide/billable-metrics/aggregation-types/count) | `count_agg` | Counts matching events. | False |
+| [Count unique](/v2/guide/billable-metrics/aggregation-types/count-unique) | `unique_count_agg` | Counts distinct values of an event property. | True |
+| [Latest](/v2/guide/billable-metrics/aggregation-types/latest) | `latest_agg` | Uses the most recent value of an event property. | False |
+| [Max](/v2/guide/billable-metrics/aggregation-types/max) | `max_agg` | Uses the highest value of an event property. | False |
+| [Sum](/v2/guide/billable-metrics/aggregation-types/sum) | `sum_agg` | Adds the values of an event property. | True |
+| [Weighted sum](/v2/guide/billable-metrics/aggregation-types/weighted-sum) | `weighted_sum_agg` | Weights each value by how long it applies during the billing period. | True |
+
+`Count` measures how many matching events Lago receives. Other aggregation types use a value within each event. Set `field_name` to the property you want to measure—for example, `tokens` to add up token usage. You can also use [SQL expressions](/v2/guide/billable-metrics/sql-expressions) to calculate a value from event properties.
+
+The `recurring` setting controls what happens to the measured quantity when a billing cycle ends:
+
+- `true`: Lago keeps the quantity and carries it into the next billing cycle.
+- `false`: Lago resets the quantity, so each billing cycle starts fresh.
+
+<CardGroup cols={2}>
+  <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">
+    Compare how aggregation types calculate usage.
+  </Card>
+  <Card title="Metric recurrence" icon="repeat" href="/v2/guide/billable-metrics/recurring-vs-metered">
+    Choose whether aggregated values carry over or reset.
+  </Card>
+  <Card title="Create billable metrics" icon="ruler" href="/v2/guide/billable-metrics/create-billable-metrics">
+    Define what to measure and how to calculate it.
+  </Card>
+  <Card title="Billable metric object (API)" icon="code" href="/v2/api-reference/billable-metrics/object">
+    Explore the metric's fields.
+  </Card>
+</CardGroup>

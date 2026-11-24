@@ -1,0 +1,150 @@
+---
+title: "Rates"
+description: "Set a price, choose a billing interval and schedule when the price takes effect."
+keywords: ["Lago", "rate", "effective date", "billing interval", "price change"]
+---
+
+A Rate defines a price within a [Rate Card](/v2/guide/rate-cards/overview). It specifies the pricing model, the values used to calculate the amount, the billing interval and when the price takes effect.
+
+Create a new Rate to schedule a price change. Earlier Rates remain available to explain past billing.
+
+## How it fits together
+
+The Rate Card supplies the currency and billing timing. The Rate defines the price and billing interval. Plans and Contracts can also have pricing overrides in their [phases](/v2/guide/plans/plan-phases); check the applicable phase when reviewing a customer's price.
+
+## Rate fields
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `code` | Yes | Unique within the rate card. |
+| `effective_from` | Yes | Effective timestamp. See [scheduling rules](#schedule-a-price-change). |
+| `rate_model` | Yes | `standard`, `graduated`, `package`, `percentage`, `volume`, `graduated_percentage` or `dynamic`. See [pricing models](/v2/guide/rate-cards/pricing-models/overview). |
+| `rate_properties` | Model-dependent | The model's pricing configuration. `standard` requires `amount`. `package` also requires `package_size`. Tiered models use their `*_ranges` array. |
+| `billing_interval_unit` | Yes | `day`, `week`, `month` or `year`. |
+| `billing_interval_count` | No | Number of units, at least `1`. Defaults to `1`. |
+| `min_amount_cents` | No | [Spending minimum](/v2/guide/rate-cards/spending-minimums) per billing interval, in cents. Arrears only. Defaults to `0`. |
+
+For a Rate Card priced in USD, `rate_properties.amount: "100"` represents 100 USD. The spending minimum uses cents: `min_amount_cents: 3000` represents 30 USD.
+
+## Billing interval
+
+The interval sets the length of each billing period for this rate:
+
+| `billing_interval_count` | `billing_interval_unit` | Billing period |
+| --- | --- | --- |
+| `1` | `month` | Monthly |
+| `3` | `month` | Every three months |
+| `1` | `year` | Yearly |
+| `2` | `week` | Every two weeks |
+
+Each rate has its own interval, so one plan can mix a yearly fee and monthly usage.
+
+## Example
+
+These examples define monthly Rates for two USD Rate Cards: `monthly_service_usd` and `api_calls_usd`.
+
+<CodeGroup>
+```json monthly_standard (on monthly_service_usd)
+{
+  "rate": {
+    "code": "monthly_standard",
+    "effective_from": "2027-01-01T00:00:00Z",
+    "rate_model": "standard",
+    "rate_properties": { "amount": "100" },
+    "billing_interval_count": 1,
+    "billing_interval_unit": "month"
+  }
+}
+```
+
+```json calls_standard (on api_calls_usd)
+{
+  "rate": {
+    "code": "calls_standard",
+    "effective_from": "2027-01-01T00:00:00Z",
+    "rate_model": "standard",
+    "rate_properties": { "amount": "0.01" },
+    "billing_interval_count": 1,
+    "billing_interval_unit": "month"
+  }
+}
+```
+</CodeGroup>
+
+The first Rate sets a price of 100 USD per unit per month. The second sets a price of 0.01 USD per API call, billed monthly. See [Your first invoice](/v2/guide/introduction/your-first-invoice) for the complete calculation.
+
+## Before you schedule a price change
+
+Check the scheduling rules for `effective_from`:
+
+- It cannot be before today in your organization timezone.
+- It must be unique on the Rate Card and later than the active Rate.
+- Rates billed in arrears start at the beginning of the day.
+
+## Schedule a price change
+
+This request adds a Rate to `api_calls_usd` with an amount of 0.008 USD per API call and `effective_from: "2027-07-01T00:00:00Z"`.
+
+<CodeGroup>
+```bash Create a rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/api_calls_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "calls_standard_2027_07",
+      "effective_from": "2027-07-01T00:00:00Z",
+      "rate_model": "standard",
+      "rate_properties": { "amount": "0.008" },
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+</CodeGroup>
+
+## Rate statuses
+
+| Status | Meaning |
+| --- | --- |
+| `pending` | Scheduled for a future date. |
+| `active` | The current Rate on the Rate Card. |
+| `terminated` | Replaced by a later Rate and kept for history. |
+
+## Update or delete a Rate
+
+- Pending Rates are fully editable and can be deleted.
+- Active Rates reject `effective_from`, `rate_model`, `min_amount_cents` and billing interval fields, even when the supplied values are unchanged.
+- Terminated Rates cannot be edited.
+
+<Warning>
+`DELETE /api/v2/rate_cards/{rate_card_code}/rates/{code}` works only on `pending` rates. Active and terminated rates cannot be deleted: they explain past invoices.
+</Warning>
+
+## List rates
+
+`GET /api/v2/rate_cards/{rate_card_code}/rates` returns the complete list, ordered by `effective_from`, newest first. It has no cursor pagination.
+
+<a id="verify-the-applied-price"></a>
+
+## Check which Rate was used
+
+To explain an invoice fee, start with its `rate_code` and billing period: `from_datetime` and `to_datetime`. Check the applicable Plan or Contract phase for overrides. Use the Rate and settings that applied to that period rather than today's catalog price.
+
+<CardGroup cols={2}>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Choose a rate model and its properties.
+  </Card>
+  <Card title="Spending minimums" icon="arrow-up-from-bracket" href="/v2/guide/rate-cards/spending-minimums">
+    A minimum per billing interval.
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+  <Card title="The rate object" icon="code" href="/v2/api-reference/rates/object">
+    Every rate field.
+  </Card>
+</CardGroup>

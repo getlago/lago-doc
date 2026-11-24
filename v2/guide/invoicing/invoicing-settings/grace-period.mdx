@@ -1,0 +1,100 @@
+---
+title: "Grace period"
+sidebarTitle: "Grace period"
+description: "Give your team time to review invoices before Lago finalizes them."
+keywords: ["Lago", "grace period", "draft invoice", "billing entity"]
+---
+
+A grace period keeps an invoice in draft for a set number of days before Lago finalizes it. Use this time to review fees or add usage received after the billing period ends.
+
+<Info>
+The grace period requires a premium license.
+</Info>
+
+While an invoice is in draft, you can [refresh, finalize or delete it](/v2/guide/invoicing/draft-invoices).
+
+## Example
+
+With a three-day grace period, you have three days to review the draft invoice. If usage for the billed period arrives during that time, send the events and [refresh the draft](/v2/guide/invoicing/draft-invoices#refresh-a-draft-invoice).
+
+## Set the grace period on the billing entity
+
+The billing entity value applies to every customer of the entity that has no value of its own.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Settings** in the side menu.
+    2. Open **Billing entity**.
+    3. Open **Invoicing settings**.
+    4. Click **Edit** in the **Grace period** block.
+    5. Enter the number of days.
+    6. Click **Edit grace period**.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Set a 3-day grace period on a billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    BILLING_ENTITY_CODE="acme_corp"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/billing_entities/$BILLING_ENTITY_CODE" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "invoice_grace_period": 3
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Set the grace period on a customer
+
+A customer value overrides the billing entity value for that customer only.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open **Customers**.
+    2. Select a customer.
+    3. Open the **Settings** tab.
+    4. Click **Add grace period** in the **Grace period** block.
+    5. Enter the number of days.
+    6. Confirm the grace period.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Set a 5-day grace period on a customer
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "invoice_grace_period": 5
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Draft invoice" icon="pen-to-square" href="/v2/guide/invoicing/draft-invoices">
+    Refresh, finalize or delete a draft.
+  </Card>
+  <Card title="Issuing date" icon="calendar" href="/v2/guide/invoicing/invoicing-settings/issuing-date">
+    Choose the date printed on periodic invoices.
+  </Card>
+  <Card title="Update a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/update">
+    Request and response schema.
+  </Card>
+  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/update">
+    Request and response schema.
+  </Card>
+</CardGroup>

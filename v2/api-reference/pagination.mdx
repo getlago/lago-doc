@@ -1,0 +1,65 @@
+---
+title: "Pagination"
+description: "How the Lago API paginates lists with opaque cursors: limit, after, before, include_total_count, next_cursor and prev_cursor."
+keywords: ["Lago API pagination", "cursor pagination", "next_cursor", "include_total_count"]
+---
+
+API list endpoints use cursor pagination. You page forward with `after` and backward with `before`, using the opaque cursors returned in `meta`.
+
+## Query parameters
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `limit` | integer | Records per page. From 1 to 100. Defaults to 20. Values outside the range return `400`. |
+| `after` | string | The `next_cursor` from a previous response. Returns the next page. |
+| `before` | string | The `prev_cursor` from a previous response. Returns the previous page in the same order. |
+| `include_total_count` | boolean | Returns `total_count`. Only on the first page, without `after` or `before`. |
+
+`after`, `before` and `include_total_count=true` cannot be combined. Keep the same filters while you page.
+
+## Response metadata
+
+| Field | Description |
+| --- | --- |
+| `next_cursor` | Cursor for the next page. `null` on the last page. |
+| `prev_cursor` | Cursor for the previous page. `null` on the first page. |
+| `total_count` | Number of matching records. Present only when requested. |
+| `total_count_estimated` | Present and `true` only when `total_count` is an estimate. |
+
+Cursors are opaque. Never build or edit one from response fields.
+
+<RequestExample>
+```bash cURL
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+# First page, with a total count
+curl --location --request GET "$LAGO_URL/api/v2/products?limit=20&include_total_count=true" \
+  --header "Authorization: Bearer $API_KEY"
+
+# Next page
+curl --location --request GET "$LAGO_URL/api/v2/products?limit=20&after=$NEXT_CURSOR" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "products": [
+    // ...
+  ],
+  "meta": {
+    "next_cursor": "eyJ2IjoxLCJvIjp7...",
+    "prev_cursor": null,
+    "total_count": 42
+  }
+}
+```
+</ResponseExample>
+
+## Unpaginated lists
+
+Some lists return the complete collection without pagination. Rates of a rate card and rate phases of an applied rate card are returned in full. See [List rates](/v2/api-reference/rates/list) and [List plan rate phases](/v2/api-reference/plan-rate-phases/list).
+
+Legacy (v1) lists use page numbers. See [v1 pagination](/api-reference/pagination).

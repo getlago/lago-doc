@@ -1,0 +1,93 @@
+---
+title: "Void invoice"
+sidebarTitle: "Void invoice"
+description: "Cancel a finalized invoice while keeping a record of it."
+keywords: ["Lago", "void invoice", "credit note", "contract"]
+---
+
+Void an invoice when it needs to be canceled. It remains in your records with the status `voided`. To remove a draft invoice, [delete it instead](/v2/guide/invoicing/draft-invoices#delete-a-draft-invoice).
+
+<Warning>
+Voiding cannot be undone. Review any refund or credit amounts before confirming.
+</Warning>
+
+## Void an invoice
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open **Invoices**.
+    2. Click the invoice’s **ellipsis icon**.
+    3. Select **Void invoice**.
+    4. Choose whether to generate a credit note.
+    5. Review any refund or credit amounts.
+    6. Confirm.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Void an invoice
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    INVOICE_ID="__YOUR_INVOICE_ID__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/void" \
+      --header "Authorization: Bearer $API_KEY"
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Void and generate a credit note
+
+When voiding an invoice, you can also generate a credit note to refund a payment or give your customer credit for future invoices.
+
+<Info>
+Generating a credit note while voiding requires a premium license. Voiding without a credit note does not.
+</Info>
+
+The request body accepts three optional fields:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `generate_credit_note` | boolean | Whether to generate credit notes. |
+| `refund_amount` | integer, cents | Amount to refund. |
+| `credit_amount` | integer, cents | Amount to credit to the customer. |
+
+### Example
+
+This example requests a USD 100 refund and USD 44 in credit for a fully paid USD 144 invoice. The invoice for `contract_example` includes a USD 120 subtotal and 20% tax.
+
+<CodeGroup>
+```bash Void with a refund and a credit
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+INVOICE_ID="__YOUR_INVOICE_ID__"
+
+curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/void" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "generate_credit_note": true,
+    "refund_amount": 10000,
+    "credit_amount": 4400
+  }'
+```
+</CodeGroup>
+
+The body is not wrapped in an `invoice` key. The resulting credit note follows the rules in [Credit notes](/v2/guide/invoicing/credit-notes/overview).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Credit notes" icon="file-invoice-dollar" href="/v2/guide/invoicing/credit-notes/overview">
+    Partially correct an invoice instead of voiding it.
+  </Card>
+  <Card title="Draft invoice" icon="pen-to-square" href="/v2/guide/invoicing/draft-invoices">
+    Delete a draft instead of voiding it.
+  </Card>
+  <Card title="Void an invoice (API)" icon="code" href="/v2/api-reference/invoices/void">
+    Request and response schema.
+  </Card>
+  <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
+    Statuses and available actions.
+  </Card>
+</CardGroup>

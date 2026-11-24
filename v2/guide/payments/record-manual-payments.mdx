@@ -1,0 +1,109 @@
+---
+title: "Record manual payments"
+sidebarTitle: "Record manual payments"
+description: "Record payments received outside Lago against an invoice."
+keywords: ["Lago", "manual payment", "record payment", "invoice"]
+---
+
+Record a payment you have already received outside Lago, such as a bank transfer or cheque. Lago uses the recorded amount to update the invoice’s paid and outstanding balances.
+
+<Info>
+Recording a manual payment requires premium access and an eligible invoice.
+</Info>
+
+## Worked example
+
+The `contract_example` invoice totals $144.00. The customer pays by bank transfer in two parts:
+
+| Payment | Amount received | Total paid | Still due |
+| --- | --- | --- | --- |
+| Before any payment | — | USD 0 | USD 144 |
+| First transfer | USD 100 | USD 100 | USD 44 |
+| Second transfer | USD 44 | USD 144 | USD 0 |
+
+The first transfer is `10000` cents; the second is `4400` cents. After the first transfer, the invoice matches the `partially_paid=true` list filter.
+
+## Record a payment
+
+<Warning>
+Record only money you have received. This updates the invoice balance; it does not collect money.
+</Warning>
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open an unpaid invoice.
+    2. Click **Record payment**.
+    3. Select the payment date.
+    4. Enter the payment reference.
+    5. Enter the amount, partial or full.
+    6. Confirm.
+
+    <Frame caption="Record a manual payment">
+      <img src="/guide/payments/images/record-payment.png" alt="Record a payment dialog with the payment date, reference and amount fields" />
+    </Frame>
+  </Tab>
+  <Tab title="API">
+    | Field | Meaning |
+    | --- | --- |
+    | `invoice_id` | `lago_id` of the invoice being paid. |
+    | `amount_cents` | Amount paid, a positive integer in cents. Required. |
+    | `reference` | Your payment reference, such as a transfer number. Required. |
+    | `paid_at` | Payment timestamp. Defaults to now. |
+
+
+    <CodeGroup>
+    ```bash Record a manual payment
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/payments" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "payment": {
+          "invoice_id": "__LAGO_INVOICE_ID__",
+          "amount_cents": 10000,
+          "reference": "wire_transfer_123",
+          "paid_at": "2027-02-05T10:00:00Z"
+        }
+      }'
+    ```
+    </CodeGroup>
+
+    The response returns the payment with `payment_type: "manual"`, `payable_type: "Invoice"` and `lago_invoice_ids`.
+  </Tab>
+</Tabs>
+
+## List payments
+
+`GET /payments` lists manual and provider payments, including payments attached to a payment request, newest first. Filter with `external_customer_id`, `invoice_id`, `created_at_from` and `created_at_to`. The `invoice_id` filter also returns payments made through a payment request that covers the invoice.
+
+<CodeGroup>
+```bash List payments for an invoice
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+INVOICE_ID="__YOUR_INVOICE_ID__"
+
+curl --location --request GET "$LAGO_URL/api/v2/payments?invoice_id=$INVOICE_ID" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+`GET /payments/{lago_id}` returns one payment. No expansions are supported. To list one customer's payments, call [`GET /customers/{customer_external_id}/payments`](/v2/api-reference/customers/list-payments).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Payment receipts" icon="receipt" href="/v2/guide/payments/receipts">
+    Receipts generated for each payment.
+  </Card>
+  <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
+    Amounts due and payment statuses.
+  </Card>
+  <Card title="Create a payment (API)" icon="code" href="/v2/api-reference/payments/create">
+    Request and response schema.
+  </Card>
+  <Card title="List payments (API)" icon="code" href="/v2/api-reference/payments/list">
+    Filters and response schema.
+  </Card>
+</CardGroup>

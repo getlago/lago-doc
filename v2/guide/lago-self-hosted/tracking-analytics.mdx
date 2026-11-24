@@ -1,0 +1,110 @@
+---
+title: "Tracking and analytics"
+---
+
+## Why does Lago need data?
+
+We decided to open-source the billing API we would have wanted to use. Because
+Lago is a self-hosted product, we cannot easily collect the usage metrics and
+insights that help us build a better product. This analytics data helps us
+understand how Lago is used and ship better quality to serve your needs.
+
+Lago tracks a small set of behaviors and metrics by default. The tracking plan
+is kept to the minimum needed, to limit the security impact of collecting those
+events. Every metric collected is listed below, and none of them carries
+financial information such as invoice amounts.
+
+Lago collects the metrics with the
+[Segment server-side Ruby library](https://segment.com/docs/connections/sources/catalog/libraries/server/ruby/).
+
+<Info>
+  Lago does not collect any financial information about your customers or your
+  invoices.
+</Info>
+
+## Opting out
+
+Keep tracking enabled unless you have a specific reason to opt out. It is the
+easiest way for Lago to get feedback based on product usage.
+
+If you need to opt out, set the `LAGO_DISABLE_SEGMENT` environment variable to
+`true`. This prevents the entire tracking logic from running in your application.
+
+## Detail of events collected by Lago
+
+Lago tracks the following events:
+
+- `organization_registered`: when you create your organization by signing up to Lago
+- `billable_metric_created`: whenever you create a new billable metric
+- `plan_created`: whenever you create a new plan
+- `add_on_created`: whenever a new add-on is created
+- `credit_note_issued`: when a new credit note is issued for a customer
+- `refund_status_changed`: when the refund status of a credit note changes
+- `billing_entity_created`: when a new billing entity is created
+- `webhook_endpoint_created`: when a webhook endpoint is created
+- `webhook_endpoint_deleted`: when a webhook endpoint is deleted
+
+## Detail of data collected about your organization
+
+By default, we collect data of your organization that you used in the signup
+form:
+
+- Your organization's **email**; and
+- Your organization's **name**.
+
+By [opting out](#opting-out), your organization's data
+won't be tracked anymore.
+
+## Examples of collected payloads
+
+### billable_metric_created
+
+```ruby
+Analytics.track(
+  user_id: 'membership/f37a6b2e-1e79-4710-b0e2-9e451b532461',
+  event: 'billable_metric_created',
+  properties: {
+    aggregation_property: 'amount',
+    aggregation_type: 'sum_agg',
+    code: 'atm',
+    description: '',
+    hosting_type: 'self',
+    name: 'ATM',
+    organization_id: '7c868af7-201c-4ebc-9829-ca902e289e5f',
+    version: 'v1.41.2'
+  }
+)
+```
+
+### organization_registered
+
+```ruby
+Analytics.track(
+  user_id: 'membership/4ad5b91f-2a42-4a58-9786-6c07fa03a3d4',
+  event: 'organization_registered',
+  properties: {
+    email: 'admin@hooli.com',
+    hosting_type: 'self',
+    organization_id: '0d173830-9017-4f57-9d11-e3e83b3e38fe',
+    organization_name: 'Hooli',
+    version: 'v1.41.2'
+  }
+)
+```
+
+### credit_note_issued
+
+```ruby
+Analytics.track(
+  user_id: 'membership/f37a6b2e-1e79-4710-b0e2-9e451b532461',
+  event: 'credit_note_issued',
+  properties: {
+    credit_note_id: 'd1f1a1b0-2f7a-4f3e-9b2e-5f8d2c3a4b5c',
+    credit_note_method: 'credit',
+    hosting_type: 'self',
+    invoice_id: '0e31afd2-8e15-49e1-a6fb-11895fa03c97',
+    organization_id: 'b3e35674-c3d1-4279-8ef1-271271b6cafb',
+    version: 'v1.41.2'
+  }
+)
+```

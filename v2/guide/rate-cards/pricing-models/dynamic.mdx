@@ -1,0 +1,104 @@
+---
+title: "Dynamic rate model"
+sidebarTitle: "Dynamic"
+description: "Bill the amounts your application sends with usage events."
+keywords: ["Lago", "dynamic pricing", "precise_total_amount_cents", "SUM metric", "rate model"]
+---
+
+Dynamic pricing uses the monetary amount your application sends with each usage event. Use it when your application calculates the amount to bill.
+
+## How it works
+
+- The Product's billable metric must use Sum (`sum_agg`). It measures the quantity, for example the units in each event.
+- Each event sends its own total in `precise_total_amount_cents`: a finite amount in cents, as a number or decimal string.
+- The fee is the sum of those event amounts for the period.
+
+Send the measured quantity in `properties` and the event's total monetary amount in `precise_total_amount_cents`. Lago aggregates the quantity and sums the monetary amounts separately.
+
+## Availability
+
+- Fixed Products: not available.
+- Metered Products: Sum metrics only, with `recurring: false` or `recurring: true` without proration. Arrears and advance.
+
+See the [availability matrix](/v2/guide/rate-cards/pricing-models/overview#model-availability).
+
+## Configure the rate
+
+Set `rate_model` to `dynamic`. The model needs no `rate_properties`.
+
+<CodeGroup>
+```bash Create a dynamic rate
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/rate_cards/sms_messages_usd/rates" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "rate": {
+      "code": "sms_dynamic",
+      "effective_from": "2027-01-01T00:00:00Z",
+      "rate_model": "dynamic",
+      "billing_interval_count": 1,
+      "billing_interval_unit": "month"
+    }
+  }'
+```
+
+```bash Send events with their amounts
+curl --location --request POST "$LAGO_URL/api/v2/events/batch" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "events": [
+      {
+        "transaction_id": "sms_0001",
+        "code": "sms_units",
+        "external_contract_id": "contract_example",
+        "precise_total_amount_cents": "70",
+        "properties": { "units": "7" }
+      },
+      {
+        "transaction_id": "sms_0002",
+        "code": "sms_units",
+        "external_contract_id": "contract_example",
+        "precise_total_amount_cents": "55",
+        "properties": { "units": "5" }
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+## Example
+
+This example uses a metered Product, `sms_messages`, and `sms_units`, a Sum metric on the `units` property. Two events fall within the same full monthly billing period. The Rate Card uses USD, with no proration or spending minimum:
+
+| Event | `units` | `precise_total_amount_cents` |
+| --- | --- | --- |
+| `sms_0001` | 7 | 70 |
+| `sms_0002` | 5 | 55 |
+| **Total** | **12** | **125** |
+
+The measured quantity is 12 units. The calculated fee is 1.25 USD before tax: 70 + 55 = 125 cents.
+
+Send `precise_total_amount_cents` on every event priced this way.
+
+## Check the result
+
+Compare the sum of event quantities with the measured quantity, and the sum of event amounts with the calculated fee. Check these two totals separately. Use [Contract current usage](/v2/guide/events/retrieve-usage#retrieve-current-usage) to inspect provisional values. See [Rates](/v2/guide/rate-cards/rates#check-which-rate-was-used) to check which Rate applies.
+
+<CardGroup cols={2}>
+  <Card title="Usage ingestion" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
+    Send events to a Contract.
+  </Card>
+  <Card title="Pricing models" icon="chart-line" href="/v2/guide/rate-cards/pricing-models/overview">
+    Compare every rate model.
+  </Card>
+  <Card title="Ingest a batch of events" icon="code" href="/v2/api-reference/events/batch">
+    `POST /events/batch`
+  </Card>
+  <Card title="Create a rate" icon="code" href="/v2/api-reference/rates/create">
+    `POST /rate_cards/{rate_card_code}/rates`
+  </Card>
+</CardGroup>

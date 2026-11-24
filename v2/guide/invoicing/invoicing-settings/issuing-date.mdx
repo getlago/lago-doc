@@ -1,0 +1,114 @@
+---
+title: "Issuing date"
+sidebarTitle: "Issuing date"
+description: "Choose the date shown on periodic invoices."
+keywords: ["Lago", "issuing date", "periodic invoice", "billing entity"]
+---
+
+Choose whether a periodic invoice is dated at the end of its billing period or the start of the next one. If the invoice is finalized later, choose whether to keep that date or use the finalization date.
+
+Set the default on the [billing entity](/v2/guide/billing-entities) and override it per customer. On a customer, `null` on either field resets it.
+
+<span id="settings" />
+<span id="anchor" />
+
+## Choose a reference date
+
+`periodic_invoice_issuing_date_anchor` sets the reference date.
+
+| Value | Issuing date for an October 2027 period |
+| --- | --- |
+| `next_period_start` | November 1, 2027 |
+| `current_period_end` | October 31, 2027 |
+
+<span id="adjustment" />
+
+## Handle later finalization
+
+`periodic_invoice_issuing_date_adjustment` decides what happens when the invoice is finalized after the anchor date, for example during a [grace period](/v2/guide/invoicing/invoicing-settings/grace-period).
+
+| Value | Effect |
+| --- | --- |
+| `align_with_finalization_date` | The issuing date moves to the finalization date. |
+| `keep_anchor` | The issuing date stays on the anchor date. |
+
+### Combined example
+
+For an October 2027 billing period, assume the invoice is finalized on November 3, 2027:
+
+| Anchor | Adjustment | Issuing date |
+| --- | --- | --- |
+| `next_period_start` | `align_with_finalization_date` | November 3, 2027 |
+| `next_period_start` | `keep_anchor` | November 1, 2027 |
+| `current_period_end` | `align_with_finalization_date` | November 3, 2027 |
+| `current_period_end` | `keep_anchor` | October 31, 2027 |
+
+## Configure the issuing date
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Settings** in the side menu.
+    2. Open **Billing entity**.
+    3. Open **Invoicing settings**.
+    4. Edit the **Issuing date** block.
+    5. Save your changes.
+
+    To override the issuing date for a customer:
+
+    1. Open the customer’s page.
+    2. Open **Settings**.
+    3. Edit the **Issuing date** block.
+    4. Save your changes.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Date invoices at period end on the billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    BILLING_ENTITY_CODE="acme_corp"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/billing_entities/$BILLING_ENTITY_CODE" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "periodic_invoice_issuing_date_anchor": "current_period_end",
+          "periodic_invoice_issuing_date_adjustment": "keep_anchor"
+        }
+      }'
+    ```
+
+    ```bash Reset a customer to the billing entity setting
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "periodic_invoice_issuing_date_anchor": null,
+          "periodic_invoice_issuing_date_adjustment": null
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Grace period" icon="hourglass" href="/v2/guide/invoicing/invoicing-settings/grace-period">
+    Keep invoices in draft before finalization.
+  </Card>
+  <Card title="Invoicing settings" icon="gear" href="/v2/guide/invoicing/invoicing-settings/overview">
+    All invoicing settings and where they live.
+  </Card>
+  <Card title="Update a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/update">
+    Request and response schema.
+  </Card>
+  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/update">
+    Request and response schema.
+  </Card>
+</CardGroup>

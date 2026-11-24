@@ -1,0 +1,93 @@
+---
+title: "Zero-amount invoices"
+sidebarTitle: "Zero-amount invoices"
+description: "Choose whether Lago finalizes invoices with a zero amount."
+keywords: ["Lago", "zero amount invoice", "empty invoice", "billing entity"]
+---
+
+Choose whether Lago finalizes invoices with a zero amount. Set the default on the [billing entity](/v2/guide/billing-entities), then override it for individual customers when needed.
+
+This setting checks the fee amount (`fees_amount_cents`), before taxes and credits. It does not check the final amount due.
+
+You can finalize invoices with a zero fee amount or skip finalization. Skipped invoices receive the `closed` status. A customer can also inherit the billing entity’s setting.
+
+## Settings
+
+| Level | Field | Values |
+| --- | --- | --- |
+| Billing entity | `finalize_zero_amount_invoice` | `true` finalizes zero-amount invoices, `false` skips them. |
+| Customer | `finalize_zero_amount_invoice` | `inherit` follows the billing entity, `skip` skips them, `finalize` always finalizes them. `null` resets to `inherit`. |
+
+## Configure the billing entity
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Click **Settings** in the side menu.
+    2. Open **Billing entity**.
+    3. Open **Invoicing settings**.
+    4. Update the **Finalize zero amount invoice** block.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Skip zero-amount invoices for a billing entity
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+    BILLING_ENTITY_CODE="acme_corp"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/billing_entities/$BILLING_ENTITY_CODE" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billing_entity": {
+          "finalize_zero_amount_invoice": false
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Override for a customer
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Open **Customers**.
+    2. Select a customer.
+    3. Open the **Settings** tab.
+    4. Update the **Finalize zero amount invoice** block.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Always finalize for one customer
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "finalize_zero_amount_invoice": "finalize"
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Invoicing settings" icon="gear" href="/v2/guide/invoicing/invoicing-settings/overview">
+    All invoicing settings and where they live.
+  </Card>
+  <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
+    Invoice statuses and actions.
+  </Card>
+  <Card title="Update a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/update">
+    Request and response schema.
+  </Card>
+  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/update">
+    Request and response schema.
+  </Card>
+</CardGroup>

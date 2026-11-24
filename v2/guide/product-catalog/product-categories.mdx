@@ -1,0 +1,133 @@
+---
+title: "Product categories"
+description: "Group related Products to organize your catalog and how fees appear on invoices."
+keywords: ["Lago", "product category", "product catalog", "invoice grouping"]
+---
+
+A Product category groups related Products, such as Compute and Bandwidth. Use categories to organize your catalog and group fees on invoices.
+
+Categories are optional. Each Product can belong to one category or remain uncategorized. Assigning a category does not set a price or add the Product to a Plan.
+
+<a id="how-it-fits-together"></a>
+
+## Example
+
+Usage rates groups two infrastructure services:
+
+```txt
+Usage rates (category)
+├── Compute (Product)
+└── Bandwidth (Product)
+```
+
+See [Overview](/v2/guide/product-catalog/overview) for an example with standalone Products and Product filters.
+
+## Category fields
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `name` | Yes | Name shown in the catalog, such as `Usage rates`. |
+| `code` | Yes | Unique code within your organization, such as `usage_rates`. |
+| `invoice_display_name` | No | Name used on invoices. When blank, Lago uses `name`. |
+| `description` | No | Internal description. |
+
+## Create a category
+
+Use `POST /product_categories` to create the Usage rates category.
+
+<CodeGroup>
+```bash Create a product category
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/product_categories" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "product_category": {
+      "name": "Usage rates",
+      "code": "usage_rates",
+      "invoice_display_name": "Infrastructure usage",
+      "description": "Compute and bandwidth services."
+    }
+  }'
+```
+</CodeGroup>
+
+## Assign products to a category
+
+Set `product_category_code` to assign a Product to a category. To remove the assignment, set it to `null`. The Product remains in your catalog.
+
+Filters belong to their Product and are not assigned to categories separately.
+
+| Action | `product_category_code` | Result |
+| --- | --- | --- |
+| Create a standalone Product | Omit the field. | The Product has no category. |
+| Assign a category | Set the category code, such as `usage_rates`. | The Product belongs to that category. |
+| Remove an assignment | Set `null` or an empty string on update. | The Product becomes uncategorized. |
+| Keep the assignment | Omit the field on update. | The assignment stays unchanged. |
+
+<CodeGroup>
+```bash Assign an existing product
+curl --location --request PUT "$LAGO_URL/api/v2/products/compute" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "product": {
+      "product_category_code": "usage_rates"
+    }
+  }'
+```
+
+```bash Remove the assignment
+curl --location --request PUT "$LAGO_URL/api/v2/products/compute" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "product": {
+      "product_category_code": null
+    }
+  }'
+```
+</CodeGroup>
+
+List the Products in `usage_rates` to check the assignment. After removing an assignment, check the list of uncategorized Products.
+
+## List a category's products
+
+- Retrieve the category: `GET /api/v2/product_categories/usage_rates`.
+- List its products: `GET /api/v2/products?product_category_code=usage_rates`.
+- List uncategorized products: `GET /api/v2/products?without_product_category=true`.
+
+## Read grouped fees
+
+Category totals summarize the fees within the group. When checking an invoice total, use the group total or its detailed fees, not both. Keep quantities with different units separate.
+
+<a id="update-or-delete-a-category"></a>
+
+## Update a category
+
+`PUT /api/v2/product_categories/{code}` accepts partial updates. Omitted fields stay unchanged.
+
+## Delete a category
+
+<Warning>
+Deleting a category also deletes its Products, filters, Rate Cards and Rates. A category used by a Plan cannot be deleted. To keep a Product and remove only its grouping, clear `product_category_code` instead.
+</Warning>
+
+Use `DELETE /api/v2/product_categories/{code}` to delete the category.
+
+<CardGroup cols={2}>
+  <Card title="Products" icon="box" href="/v2/guide/product-catalog/products">
+    Fixed and metered products.
+  </Card>
+  <Card title="Product catalog" icon="boxes-stacked" href="/v2/guide/product-catalog/overview">
+    Choose a catalog structure.
+  </Card>
+  <Card title="Create a product category" icon="code" href="/v2/api-reference/product-categories/create">
+    `POST /product_categories`
+  </Card>
+  <Card title="Delete a product category" icon="code" href="/v2/api-reference/product-categories/delete">
+    `DELETE /product_categories/{code}`
+  </Card>
+</CardGroup>

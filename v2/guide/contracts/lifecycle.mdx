@@ -1,0 +1,124 @@
+---
+title: "Contract lifecycle"
+description: "Understand Contract statuses and the actions available at each stage."
+keywords: ["Lago", "Contract", "Contract status", "lifecycle"]
+---
+
+A Contract's status shows whether it is waiting to start, active or ended. Check the status before changing its terms or ending it.
+
+## Statuses
+
+| Status | What it means | When it applies |
+| --- | --- | --- |
+| `pending` | Scheduled, not started. The billing timeline has not begun. | `started_at` is in the future. |
+| `active` | Started. Follows its configured billing timeline. Its applied Rate Cards and phases cannot be edited. | The Contract reached its start and has not ended. |
+| `canceled` | Ended before it started. | A pending Contract is ended. |
+| `terminated` | Ended after becoming active. Its billing history remains available. | An active Contract is ended. |
+
+Contract status describes the agreement, not money. Check [invoices](/v2/guide/invoicing/overview) and [payments](/v2/guide/payments/payment-providers) separately to see what was billed, paid or remains due.
+
+## Transitions
+
+```mermaid
+stateDiagram-v2
+    state "Create a Contract" as creation
+    state "Lifecycle ended" as ended
+    creation --> pending: create with a future started_at
+    creation --> active: create with started_at omitted
+    pending --> active: start reached
+    pending --> canceled: DELETE (cancel)
+    active --> terminated: DELETE (terminate)
+    canceled --> ended
+    terminated --> ended
+```
+
+- **Create.** Omitting `started_at` starts the Contract now. A future timestamp creates a `pending` Contract.
+- **Activate.** A pending Contract becomes `active` at its start. On a pending Contract, updating `started_at` to the current time or earlier activates it.
+- **End.** `DELETE /contracts/{external_id}` ends the lifecycle. It cancels a pending Contract and terminates an active one. It does not delete the record. See [End or cancel a Contract](/v2/guide/contracts/end-or-cancel).
+
+Do not try to set `status` directly. The field is read-only. Use the documented actions and date fields.
+
+### Example
+
+A Contract scheduled to start on January 1, 2027 is `pending` before that date and `active` from it. Ending it while pending sets `canceled` and fills `canceled_at`. Ending it while active sets `terminated` and fills `terminated_at`.
+
+## What each status allows
+
+| Action | `pending` | `active` |
+| --- | --- | --- |
+| Edit applied Rate Cards and phases | Yes | No |
+| Edit `started_at` | Yes. The current time or earlier activates the Contract. | No. Only the stored value is accepted. |
+| [Current usage](/v2/guide/events/retrieve-usage#retrieve-current-usage) | Returns no usage | Returns usage for open billing windows |
+| `DELETE /contracts/{external_id}` | Cancels | Terminates |
+
+Canceled and terminated Contracts are history. Retrieve a specific record with its `external_id` and `contract_code`.
+
+<span id="read-contracts-by-status" />
+
+## Retrieve a specific Contract
+
+Each Contract has a required `contract_code`. Use `GET /contracts/{external_id}?contract_code={contract_code}` to retrieve that specific Contract, including after it has ended.
+
+After a Contract ends, a new Contract can use the same `external_id`. Only one pending or active Contract can use it at a time, but several terminated or canceled Contracts can share it. A status alone does not identify which historical Contract you want.
+
+For example, these three Contracts can share `contract_example`:
+
+| `contract_code` | `status` |
+| --- | --- |
+| `contract_example_2025` | `terminated` |
+| `contract_example_2026` | `terminated` |
+| `contract_example_2027` | `active` |
+
+To retrieve the 2026 Contract, pass `contract_code=contract_example_2026`. If several Contracts share the `external_id`, you must provide `contract_code`. Lago does not automatically select the pending or active Contract.
+
+Use this selector for current usage, ending a Contract and requests for its applied Rate Cards or phases too. Pass `contract_code` as a query parameter to target the specific Contract.
+
+### List Contracts by status
+
+`GET /contracts` accepts `status[]` and defaults to `active`. Pass several values to list more.
+
+<CodeGroup>
+```bash Retrieve a terminated contract
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example?contract_code=contract_example_2026" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+```bash List pending and active contracts for a customer
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --globoff --request GET "$LAGO_URL/api/v2/contracts?external_customer_id=customer_example&status[]=pending&status[]=active" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+## Contract dates
+
+| Field | Set by |
+| --- | --- |
+| `started_at` | You, at creation. Defaults to now. |
+| `ended_at` | You, optionally. Must be after the start and not already in the past. |
+| `canceled_at` | Lago, when a pending Contract is canceled. |
+| `terminated_at` | Lago, when an active Contract is terminated. |
+
+## Check the status
+
+Retrieve the Contract using its `external_id` and `contract_code` after changing its start or ending it. Check its `status` and the corresponding dates. Review invoices and payments separately to check financial outcomes.
+
+<CardGroup cols={2}>
+  <Card title="End or cancel a Contract" icon="circle-stop" href="/v2/guide/contracts/end-or-cancel">
+    End the billing timeline and review billing records.
+  </Card>
+  <Card title="Contracts" icon="file-signature" href="/v2/guide/contracts/overview">
+    Start date, anchor and inherited terms.
+  </Card>
+  <Card title="Retrieve a Contract (API)" icon="code" href="/v2/api-reference/contracts/retrieve">
+    `GET /contracts/{external_id}`
+  </Card>
+  <Card title="List Contracts (API)" icon="code" href="/v2/api-reference/contracts/list">
+    `GET /contracts`
+  </Card>
+</CardGroup>

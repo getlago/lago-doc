@@ -1,0 +1,198 @@
+---
+title: "Create billable metrics"
+sidebarTitle: "Create billable metrics"
+description: "Define what you want to measure from usage events and how Lago calculates the quantity."
+keywords: ["Lago", "billable metric", "aggregation", "usage measurement"]
+---
+
+A [billable metric](/v2/api-reference/billable-metrics/object) defines what you want to measure from your customers’ usage and how Lago calculates the quantity. For example, you can count API calls, sum tokens consumed, or track the highest number of CPUs used.
+
+Your application sends usage events to Lago. The metric identifies the matching events and applies an aggregation rule, such as counting events or adding the values of an event property.
+
+Start with the quantity you need to track. Pricing is configured separately through Products and Rate Cards.
+
+## Choose what to measure
+
+| What you want to measure | How to calculate it |
+| --- | --- |
+| Number of API calls | Count matching events. |
+| Total tokens consumed | Sum the token count sent with each event. |
+| Highest number of CPUs used | Take the maximum CPU count reported. |
+| Number of distinct users | Count unique user identifiers. |
+
+## Metric fields
+
+| Field | Example | Purpose |
+| --- | --- | --- |
+| `name` | `API calls` | Readable name. |
+| `code` | `api_calls` | The code your events send so Lago can match them to the metric. |
+| `description` | `Number of API calls` | Optional context for your team. |
+| `aggregation_type` | `count_agg` | How events are aggregated: `count_agg`, `sum_agg`, `max_agg`, `unique_count_agg`, `weighted_sum_agg` or `latest_agg`. See [Aggregation types](/v2/guide/billable-metrics/aggregation-types/overview). |
+| `field_name` | `gb` | The event property to aggregate. Required for every type except `count_agg`. |
+| `expression` | `event.properties.gb * event.properties.replicas` | Optional computed value per event. See [SQL expressions](/v2/guide/billable-metrics/sql-expressions). |
+| `weighted_interval` | `seconds` | Required for `weighted_sum_agg`. |
+| `recurring` | `false` | `true` carries the aggregated value between billing cycles; `false` resets it at the end of each cycle. See [Metric recurrence](/v2/guide/billable-metrics/recurring-vs-metered). |
+| `rounding_function`, `rounding_precision` | `round`, `2` | Optional rounding of the aggregated value. See [Rounding](/v2/guide/billable-metrics/rounding). |
+| `filters` | `[{ "key": "region", "values": ["us", "eu"] }]` | Dimensions you can use to group usage, such as region or provider. See [Filters and dimensions](/v2/guide/billable-metrics/filters). |
+
+## Create the API calls metric
+
+Use COUNT (`count_agg`) when each event is one API call. `field_name` is not needed.
+
+<Tabs>
+  <Tab title="Dashboard">
+    1. Access the **Billable metrics** section in the side menu.
+    2. Create a new billable metric.
+    3. Enter its `name`, a `code` your events will send, and an optional `description`.
+    4. Select the aggregation type that defines how consumption is measured.
+    5. Define the property to aggregate, except for Count.
+    6. Define `filters` if you want to group usage by dimensions such as region or provider.
+    7. Set `recurring: true` to carry the aggregated value between billing cycles, or `recurring: false` to reset it at the end of each cycle.
+    8. Save the billable metric.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash API calls (COUNT)
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billable_metric": {
+          "name": "API calls",
+          "code": "api_calls",
+          "description": "Number of API calls",
+          "aggregation_type": "count_agg",
+          "recurring": false
+        }
+      }'
+    ```
+
+    ```bash Storage (SUM with a filter)
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billable_metric": {
+          "name": "Storage",
+          "code": "storage",
+          "description": "Number of GB used",
+          "aggregation_type": "sum_agg",
+          "field_name": "gb",
+          "recurring": false,
+          "filters": [
+            {
+              "key": "provider",
+              "values": ["aws", "google", "azure"]
+            }
+          ]
+        }
+      }'
+    ```
+
+    ```bash Seats (COUNT UNIQUE, recurring)
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billable_metric": {
+          "name": "Seats",
+          "code": "seats",
+          "description": "Active seats added",
+          "aggregation_type": "unique_count_agg",
+          "field_name": "seat_id",
+          "recurring": true
+        }
+      }'
+    ```
+
+    ```bash CPUs (MAX)
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/billable_metrics" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "billable_metric": {
+          "name": "CPU",
+          "code": "cpu",
+          "description": "Maximum number of CPUs used",
+          "aggregation_type": "max_agg",
+          "field_name": "total_cpu",
+          "recurring": false
+        }
+      }'
+    ```
+    </CodeGroup>
+
+    The API key needs `billable_metric` write permission, and the product catalog must be enabled. A successful request returns `200` with the metric.
+  </Tab>
+</Tabs>
+
+## Verify the metric
+
+Retrieve the metric and confirm that `code`, `aggregation_type` and `recurring` match. Add `expands[]=filters` to see its filters.
+
+```bash Retrieve api_calls
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --globoff --request GET "$LAGO_URL/api/v2/billable_metrics/api_calls?expands[]=filters" \
+  --header "Authorization: Bearer $API_KEY"
+```
+
+Creating the metric does not create a product, a contract or an invoice.
+
+## Test with sample usage
+
+Once a metered product uses the metric and a test contract includes its rate card, send two events and check the count. Use a contract with an open billing period and no other matching usage.
+
+```bash Send one API call event
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request POST "$LAGO_URL/api/v2/events" \
+  --header "Authorization: Bearer $API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "event": {
+      "transaction_id": "api-call-test-001",
+      "code": "api_calls",
+      "external_contract_id": "contract_example"
+    }
+  }'
+```
+
+Send a second event with `transaction_id` set to `api-call-test-002`. The omitted `timestamp` defaults to the request time. Then read [contract current usage](/v2/guide/events/retrieve-usage#retrieve-current-usage): the `api_calls_usd` entry should show `units` of `"2"`. Newly accepted events may take time to appear.
+
+## Update a metric
+
+`PUT /billable_metrics/{code}` accepts partial updates. Once the metric is attached to a plan, only `name`, `description` and permitted filter changes are allowed. Changes to locked fields return `422`. Filter values referenced by product filters cannot be removed.
+
+## Next step: connect the metric to a Product
+
+To use the metric for billing, connect it to a [metered Product](/v2/guide/product-catalog/metered-products). Set `product_type` to `metered` and `billable_metric_code` to `api_calls`. Configure pricing separately through a [Rate Card](/v2/guide/rate-cards/overview).
+
+<CardGroup cols={2}>
+  <Card title="Aggregation types" icon="calculator" href="/v2/guide/billable-metrics/aggregation-types/overview">
+    Choose how usage is measured.
+  </Card>
+  <Card title="Metered products" icon="gauge" href="/v2/guide/product-catalog/metered-products">
+    Connect your metric to a Product.
+  </Card>
+  <Card title="Create a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/create">
+    `POST /billable_metrics`
+  </Card>
+  <Card title="Update a billable metric (API)" icon="code" href="/v2/api-reference/billable-metrics/update">
+    `PUT /billable_metrics/{code}`
+  </Card>
+</CardGroup>

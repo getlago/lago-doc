@@ -1,0 +1,131 @@
+---
+title: "Customer metadata"
+sidebarTitle: "Customer metadata"
+description: "Store up to five key-value pairs on a customer, show them on invoices with display_on_invoice, and edit or remove them without losing data."
+keywords: ["Lago", "customer metadata", "display_on_invoice", "customer"]
+---
+
+Customer metadata is a set of key-value pairs that stores extra context on a [customer](/v2/api-reference/customers/object), such as an ID from your CRM or a purchase order reference. Use it for data your billing team needs to see, and set `display_on_invoice` to print a pair on invoices.
+
+## Limits
+
+| Rule | Limit |
+| --- | --- |
+| Entries per customer | Up to 5 |
+| `key` | String, up to 20 characters. Required for a new entry. |
+| `value` | String, up to 100 characters. Required for a new entry. |
+| `display_on_invoice` | Boolean. Defaults to `false` when omitted, including when you update an existing entry. |
+
+## Add metadata
+
+Send the `metadata` array when you create or update the customer.
+
+<Tabs>
+  <Tab title="Dashboard">
+    Add key-value pairs in the customer creation or edition drawer, then save the customer.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Add metadata at creation
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request POST "$LAGO_URL/api/v2/customers" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "external_id": "customer_example",
+          "name": "Acme Corp",
+          "metadata": [
+            {
+              "key": "purchase_order",
+              "value": "123456789",
+              "display_on_invoice": true
+            }
+          ]
+        }
+      }'
+    ```
+    </CodeGroup>
+  </Tab>
+</Tabs>
+
+## Edit and delete metadata
+
+On update, `metadata` is a full replacement:
+
+- An entry with an `id` keeps or updates that existing entry. Use the `lago_id` returned for it.
+- An entry without an `id` is created. Lago does not match entries by `key`.
+- An existing entry you omit is deleted.
+- An empty array removes all entries.
+
+Retrieve the current entries first with `GET /customers/{external_id}?expands[]=metadata`.
+
+<Tabs>
+  <Tab title="Dashboard">
+    Edit or remove pairs in the customer edition drawer (the trash icon removes a pair), then save the customer.
+  </Tab>
+  <Tab title="API">
+    <CodeGroup>
+    ```bash Update one entry and keep it on invoices
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "metadata": [
+            {
+              "id": "1a901a90-1a90-1a90-1a90-1a901a901a90",
+              "value": "987654321",
+              "display_on_invoice": true
+            }
+          ]
+        }
+      }'
+    ```
+
+    ```bash Remove all metadata
+    LAGO_URL="https://api.getlago.com"
+    API_KEY="__YOUR_API_KEY__"
+
+    curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
+      --header "Authorization: Bearer $API_KEY" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+        "customer": {
+          "metadata": []
+        }
+      }'
+    ```
+    </CodeGroup>
+
+    Send `display_on_invoice: true` again on every update where you want to keep it. Omitting it resets the entry to `false`.
+  </Tab>
+</Tabs>
+
+<Warning>
+  Any existing entry you leave out of `metadata` on update is deleted. Send every pair you want to keep, with its `id`.
+</Warning>
+
+## Display metadata on invoices
+
+Set `display_on_invoice` to `true` on a pair to show it on invoices. In the Dashboard, switch on the option in the customer creation or edition drawer.
+
+<CardGroup cols={2}>
+  <Card title="Customer management" icon="users" href="/v2/guide/customers/customer-management">
+    Create, update and delete customers.
+  </Card>
+  <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
+    Where displayed metadata appears.
+  </Card>
+  <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/update">
+    `PUT /customers/{external_id}`
+  </Card>
+  <Card title="Customer object (API)" icon="code" href="/v2/api-reference/customers/object">
+    Every customer field.
+  </Card>
+</CardGroup>

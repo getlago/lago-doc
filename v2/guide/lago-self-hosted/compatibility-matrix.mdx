@@ -1,0 +1,50 @@
+---
+title: "Compatibility matrix"
+description: "Supported technologies and versions for Lago self-hosted deployments."
+---
+
+This document outlines the supported technologies and their versions for Lago self-hosted deployments. Use this matrix to ensure your infrastructure meets the requirements for your target Lago version.
+
+## Core dependencies by version
+
+| Lago Version | PostgreSQL | Redis | Valkey | Kubernetes | Notes |
+|---|---|---|---|---|---|
+| ≥ 1.0 | 14+ | 6.2+ | 7.0+ | - | Safe baseline for existing installs |
+| ≥ 1.30 | 15+ | 7.x | 7.2+ | - | Recommended for new installs |
+| ≥ Latest Release | 15+ | 7.x | 7.2+ | 1.26+ | Production-grade setup |
+
+<Info>
+  **For PostgreSQL, the [pg_partman](https://github.com/pgpartman/pg_partman) extension should be installed on the server.**
+
+  Check [the repository](https://github.com/getlago/lago/blob/main/docs/database_partitioning.md) for more details.
+</Info>
+
+## Helm chart versions
+
+Two chart lines are published, and they are not interchangeable. See
+[Kubernetes](/v2/guide/lago-self-hosted/kubernetes) for the details.
+
+| Chart version | Lago version | Branch | Shape |
+|---|---|---|---|
+| 2.x | v1.41.2+ | `main` | Umbrella chart over independent subcharts |
+| 1.x (up to 1.28.0) | up to 1.32.4 | `v1` | Single monolithic chart, maintained for fixes |
+
+## Analytics and streaming dependencies
+
+These components are required for specific Lago features.
+
+| Category | Technology | Supported Version | Purpose |
+|---|---|---|---|
+| Analytics DB | ClickHouse | 25.6+ | Required for the ClickHouse [event store](/v2/guide/lago-self-hosted/docker#configuring-the-event-store), analytics, and activity/API/security logs |
+| Streaming | Redpanda | 25.2+ | Required for event streaming capabilities |
+
+## Recommendations
+
+**For new deployments**, we recommend starting with the latest supported versions:
+- **PostgreSQL 15+** for full compatibility with recent Lago releases
+- **Redis 7.x** or **Valkey 7.2+** for optimal performance and stability
+- **Kubernetes 1.26+** if deploying with Helm charts
+
+<Warning>
+PostgreSQL 14 is supported for older Lago versions (≥ 1.0) but newer releases target PostgreSQL 15+. If you are running PostgreSQL 14, plan an upgrade before moving to Lago ≥ 1.30.
+</Warning>
