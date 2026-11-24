@@ -19,7 +19,7 @@ The Plan defines the reusable offer. The Contract identifies the customer, appli
 | Rate phases | The ordered sequence of pricing terms on each applied Rate Card. |
 | Phase overrides | Pricing configured for a phase, such as an introductory price or a different billing interval. |
 
-Usage events identify the Contract through `external_contract_id`, which matches its `external_id`, not its `code`. See [Ingest usage](/v2/guide/events/ingesting-usage).
+Usage events identify the Contract through `external_contract_id`, which matches its `external_id`, not its `contract_code`. See [Ingest usage](/v2/guide/events/ingesting-usage).
 
 ## Before you start
 
@@ -30,7 +30,7 @@ Prepare these fields:
 | Field | Purpose |
 | --- | --- |
 | `external_id` | Your identifier for the Contract. It can be reused after a Contract ends. Only one pending or active Contract can use it at a time. |
-| `code` | Required. Identifies one specific Contract among those sharing the same `external_id`. |
+| `contract_code` | Required. Identifies one specific Contract among those sharing the same `external_id`. |
 | `external_customer_id` | The customer to bill. This cannot change after creation. |
 | `plan_code` | The Plan to apply. |
 
@@ -77,7 +77,7 @@ curl --location --request POST "$LAGO_URL/api/v2/contracts" \
   --data-raw '{
     "contract": {
       "external_id": "contract_example",
-      "code": "contract_example_2027",
+      "contract_code": "contract_example_2027",
       "external_customer_id": "customer_example",
       "plan_code": "api_monthly",
       "started_at": "2027-01-01T00:00:00Z",
@@ -92,17 +92,17 @@ For a complete billing walkthrough, see [Your first invoice](/v2/guide/introduct
 
 ## Check the Contract
 
-Retrieve the Contract by its `external_id` and `code`, including its applied Rate Cards. Check the code, customer, Plan, status and start date. Then check the fixed quantities, phase sequence and any overrides.
+Retrieve the Contract by its `external_id` and `contract_code`, including its applied Rate Cards. Check the code, customer, Plan, status and start date. Then check the fixed quantities, phase sequence and any overrides.
 
 ```bash Retrieve it with its applied rate cards
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --globoff --request GET "$LAGO_URL/api/v2/contracts/contract_example?code=contract_example_2027&expands[]=applied_rate_cards" \
+curl --location --globoff --request GET "$LAGO_URL/api/v2/contracts/contract_example?contract_code=contract_example_2027&expands[]=applied_rate_cards" \
   --header "Authorization: Bearer $API_KEY"
 ```
 
-Use the same `code` to retrieve this Contract after it ends, even if another Contract now uses its `external_id`. See [Contract lifecycle](/v2/guide/contracts/lifecycle#retrieve-a-specific-contract).
+Use the same `contract_code` to retrieve this Contract after it ends, even if another Contract now uses its `external_id`. See [Contract lifecycle](/v2/guide/contracts/lifecycle#retrieve-a-specific-contract).
 
 Use [Current usage](/v2/guide/contracts/current-usage) for provisional amounts and [invoices and fees](/v2/guide/invoicing/fees) for billed results. Check invoice and payment status separately.
 
