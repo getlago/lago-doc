@@ -9,7 +9,7 @@ Package pricing applies a fixed price to a group of units, such as 100 API calls
 
 ## How it works
 
-A package has a size (`package_size`) and a price (`amount`). The fee is the number of packages consumed × `amount`.
+A package has a size (`package_size`) and a price (`amount`). Lago subtracts `free_units` from the measured quantity, then rounds the remaining quantity up to whole packages. The fee is the number of packages × `amount`. If the quantity does not exceed the free units, the fee is zero.
 
 ## Availability
 
@@ -62,6 +62,8 @@ This example prices 2,000 calls over one full monthly billing period in USD. Eac
 | 2,000 calls | 20 | 20 × 1.00 USD | 20.00 USD |
 
 The 2,000 calls fill exactly 20 packages, giving a calculated fee of 20 USD before tax. This example uses complete packages and no free units.
+
+For example, with 50 free calls, packages of 100 calls and a package price of 1 USD, 200 calls leave 150 billable calls. Lago rounds these up to two packages, for a fee of 2 USD before tax.
 
 ## Check the result
 

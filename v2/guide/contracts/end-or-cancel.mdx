@@ -27,14 +27,14 @@ Cancel a pending Contract before it starts, or terminate an active Contract to e
   Ending a Contract is irreversible. A pending Contract becomes `canceled` and never starts billing. An active Contract becomes `terminated` and stops billing from that point, which can produce final fees. Review the Contract and its open usage before you send the request.
 </Warning>
 
-Your API key needs `contract` write permission.
+Your API key needs `contract` write permission. Pass the saved `contract_code` to select the Contract, especially when its `external_id` has been reused.
 
 <CodeGroup>
 ```bash End contract_example
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request DELETE "$LAGO_URL/api/v2/contracts/contract_example" \
+curl --location --request DELETE "$LAGO_URL/api/v2/contracts/contract_example?contract_code=contract_example_2027" \
   --header "Authorization: Bearer $API_KEY"
 ```
 </CodeGroup>

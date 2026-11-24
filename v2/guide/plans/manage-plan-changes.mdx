@@ -15,15 +15,19 @@ While no Contract uses the Plan, you can:
 - Change `units` on an applied Rate Card.
 - Add, update, reorder or remove [phases and overrides](/v2/guide/plans/plan-phases).
 
+The currency is also locked once the Plan has applied Rate Cards or wallets, even before a Contract uses it.
+
 Review the offer and its pricing before you create the first [Contract](/v2/guide/contracts/overview).
 
 ## After a Contract uses the Plan
 
-The Plan's applied Rate Cards, quantities and phases are locked. Tax codes (`tax_codes`) can still be updated.
+The Plan's `code`, `currency`, applied Rate Cards, quantities and phases are locked. You can still update `name`, `description`, `invoice_display_name` and `tax_codes`.
 
 Plan locking applies to the Plan's configuration. To review a customer's price, check the relevant Rate and any Plan or Contract overrides.
 
-## Update an unused Plan
+<span id="update-an-unused-plan" />
+
+## Update a Plan
 
 Use `PUT` to update the Plan. Omitted fields are unchanged.
 
@@ -43,13 +47,13 @@ curl --location --request PUT "$LAGO_URL/api/v2/plans/api_monthly" \
   }'
 ```
 
-To change a fixed quantity, update the applied Rate Card:
+Before a Contract uses the Plan, change a fixed quantity by updating the applied Rate Card:
 
 ```bash Change the fixed quantity on an applied rate card
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request PATCH "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards/monthly_service_usd" \
+curl --location --request PUT "$LAGO_URL/api/v2/plans/api_monthly/applied_rate_cards/monthly_service_usd" \
   --header "Authorization: Bearer $API_KEY" \
   --header 'Content-Type: application/json' \
   --data-raw '{

@@ -42,7 +42,7 @@ The response is split into pages. Use the returned cursors to retrieve additiona
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request GET "$LAGO_URL/api/v2/events?external_contract_id=contract_example&code=api_calls&timestamp_from=2027-01-01T00:00:00Z&timestamp_to=2027-01-31T23:59:59Z&limit=100" \
+curl --location --request GET "$LAGO_URL/api/v2/events?external_contract_id=contract_example&code=api_calls&timestamp_from=2027-01-01T00:00:00Z&timestamp_to=2027-01-31T23:59:59.999999Z&limit=100" \
   --header "Authorization: Bearer $API_KEY"
 ```
 
@@ -54,6 +54,8 @@ curl --location --request GET "$LAGO_URL/api/v2/events?transaction_id=api_202701
   --header "Authorization: Bearer $API_KEY"
 ```
 </CodeGroup>
+
+Both timestamp bounds are inclusive. Include fractional seconds in an end-of-day bound so you do not omit events received during the final second.
 
 ### Read the response
 
@@ -149,13 +151,14 @@ curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example/curre
 | `product_code` | One Product. |
 | `product_filter_code` | One Product filter. |
 | `product_type` | `fixed` or `metered`. |
-| `apply_taxes` | Whether to apply taxes. |
+| `apply_taxes` | Whether to apply taxes. Defaults to `true`. |
+| `contract_code` | Select a specific Contract when several share the external identifier. |
 
 ### Read the response
 
-`GET /contracts/{external_id}/current_usage` reads the pending or active Contract.
+Use `contract_code` when several Contracts share the `external_id`, for example `GET /contracts/contract_example/current_usage?contract_code=contract_example_2027`. Without it, an ambiguous identifier is rejected.
 
-- Pending Contracts have no usage.
+- Pending and canceled Contracts have no current usage. Active and terminated Contracts can return usage while their billing windows remain open and the Contract has not passed its end time.
 - Totals cover the open billing windows of every applied Rate Card. Because each card follows its own timeline, totals may span several future invoices.
 - Amounts are in cents of the Contract's billing `currency`.
 - The data is provisional. The billing windows are still open and new events keep accruing.

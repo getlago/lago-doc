@@ -84,7 +84,7 @@ Pass the request body to the verification library exactly as received. Parsing a
 
 ## Handle deliveries and retries
 
-Return `200` to acknowledge a delivery. Lago retries failed deliveries. By default, it makes up to three attempts: the initial delivery and two retries.
+Return `200`, `201`, `202` or `204` to acknowledge a delivery. Lago retries failed deliveries. By default, it makes up to three attempts: the initial delivery and two retries.
 
 Use `webhook-id` to identify messages you have already processed. The identifier stays the same when Lago retries a message. Verify the signature before using the identifier or processing the payload.
 
@@ -110,7 +110,7 @@ LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 WEBHOOK_ENDPOINT_ID="__YOUR_WEBHOOK_ENDPOINT_ID__"
 
-curl --location --request PATCH "$LAGO_URL/api/v2/webhook_endpoints/$WEBHOOK_ENDPOINT_ID" \
+curl --location --request PUT "$LAGO_URL/api/v2/webhook_endpoints/$WEBHOOK_ENDPOINT_ID" \
   --header "Authorization: Bearer $API_KEY" \
   --header 'Content-Type: application/json' \
   --data-raw '{

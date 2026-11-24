@@ -7,9 +7,7 @@ keywords: ["Lago", "billable metric", "weighted_sum_agg", "WEIGHTED SUM"]
 
 `Weighted sum` measures a quantity while accounting for how long it applies during a billing cycle. Use it for quantities that change over time, such as allocated storage or memory.
 
-<Frame caption="Weighted sum calculation method">
-  <img src="/guide/images/weighted-sum.png" alt="Diagram of the Weighted sum aggregation, summing a property prorated over the time it was used" />
-</Frame>
+Each event adds to the running quantity at its timestamp. Lago weights each quantity by how long it applies, then divides the total by the billing cycle duration. The result keeps the original unit: storage measured in GB produces an average in GB.
 
 ## Configure the metric
 
@@ -50,9 +48,9 @@ See [Metric recurrence](/v2/guide/billable-metrics/recurring-vs-metered).
       --header 'Content-Type: application/json' \
       --data-raw '{
           "billable_metric": {
-            "name": "GB seconds",
-            "code": "gb_seconds",
-            "description": "Gigabytes prorated per second used per period",
+            "name": "Average storage",
+            "code": "average_storage",
+            "description": "Time-weighted average storage in GB",
             "aggregation_type": "weighted_sum_agg",
             "weighted_interval": "seconds",
             "field_name": "gb",
@@ -66,13 +64,15 @@ See [Metric recurrence](/v2/guide/billable-metrics/recurring-vs-metered).
 
 ## Calculation example
 
-Lago calculates `SUM(events.properties.gb) / (DATEDIFF(SECOND, timestamp.event_1, timestamp.event_2) + 1) * (DATEDIFF(SECOND, 'period_start', 'period_end') + 1)` for the two events below, sent to `contract_example` in January 2027.
+This example covers January 1, 2027 at 00:00 UTC through February 1 at 00:00 UTC, a 31-day billing cycle. The opening quantity is 0 GB and `recurring` is `false`.
+
+The first event adds 20 GB on January 16 at 00:00 UTC. The second adds 10 GB on January 17 at 00:00 UTC, bringing the running quantity to 30 GB. No more events occur during the cycle.
 
 ```json Event 1
 {
   "transaction_id": "transaction_1",
   "external_contract_id": "contract_example",
-  "code": "gb_seconds",
+  "code": "average_storage",
   "timestamp": 1800057600,
   "properties": {
     "gb": 20
@@ -84,7 +84,7 @@ Lago calculates `SUM(events.properties.gb) / (DATEDIFF(SECOND, timestamp.event_1
 {
   "transaction_id": "transaction_2",
   "external_contract_id": "contract_example",
-  "code": "gb_seconds",
+  "code": "average_storage",
   "timestamp": 1800144000,
   "properties": {
     "gb": 10
@@ -92,11 +92,17 @@ Lago calculates `SUM(events.properties.gb) / (DATEDIFF(SECOND, timestamp.event_1
 }
 ```
 
-The first event arrives on January 16, the second on January 17. January has 2,678,400 seconds. The first 20 GB is held for one day (86,400 seconds). The running total of 30 GB (20 + 10) is then held for 15 days (1,296,000 seconds) until the end of the month:
+| Period (UTC) | Running quantity | Duration |
+| --- | --- | --- |
+| January 1–16 | 0 GB | 15 days |
+| January 16–17 | 20 GB | 1 day |
+| January 17–February 1 | 30 GB | 15 days |
 
-- (20 / 2,678,400) × 86,400 = 0.64516129032
-- (30 / 2,678,400) × 1,296,000 = 14.5161290323
-- 0.64516129032 + 14.5161290323 = **15.1612903226 units**
+Multiply each running quantity by its duration, add the results, then divide by the full billing cycle duration:
+
+`Average storage = (0 × 15 + 20 × 1 + 30 × 15) / 31 ≈ 15.1612903226 GB`
+
+The same calculation in seconds is `(0 × 1,296,000 + 20 × 86,400 + 30 × 1,296,000) / 2,678,400`. The result is a time-weighted average in GB. The displayed decimal is approximate, before any configured rounding.
 
 <CardGroup cols={2}>
   <Card title="Aggregation examples" icon="table" href="/v2/guide/billable-metrics/aggregation-types/aggregation-examples">

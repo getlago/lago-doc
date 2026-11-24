@@ -34,7 +34,7 @@ Add new keys or update existing values. Keys you do not include stay unchanged. 
     API_KEY="__YOUR_API_KEY__"
     CREDIT_NOTE_ID="__YOUR_CREDIT_NOTE_ID__"
 
-    curl --location --request PATCH "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID/metadata" \
+    curl --location --request PUT "$LAGO_URL/api/v2/credit_notes/$CREDIT_NOTE_ID/metadata" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -50,7 +50,7 @@ Add new keys or update existing values. Keys you do not include stay unchanged. 
 
 ## Replace all metadata
 
-Replacing metadata removes keys you do not include. `POST` replaces the whole set. Omitted `metadata` defaults to an empty object.
+Replacing metadata removes keys you do not include. `POST` replaces the whole set. Sending an empty object or omitting `metadata` clears all existing keys. With `PUT`, either leaves the existing metadata unchanged. The top-level `metadata` value cannot be `null`; individual values can be.
 
 <CodeGroup>
 ```bash Replace all metadata
@@ -129,7 +129,7 @@ The metadata endpoints return only the metadata object, or `null`. To read metad
   <Card title="Credit notes" icon="file-invoice-dollar" href="/v2/guide/invoicing/credit-notes/overview">
     Issue, estimate and void credit notes.
   </Card>
-  <Card title="Merge metadata (API)" icon="code" href="/v2/api-reference/credit-notes/metadata/partially-merge">
+  <Card title="Merge metadata (API)" icon="code" href="/v2/api-reference/credit-notes/metadata/merge">
     Request and response schema.
   </Card>
   <Card title="Replace metadata (API)" icon="code" href="/v2/api-reference/credit-notes/metadata/replace">

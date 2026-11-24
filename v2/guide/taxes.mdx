@@ -71,6 +71,17 @@ Every object below takes a `tax_codes` array. An empty array clears the assignme
 | [Customer](/v2/guide/customers/customer-management) | `tax_codes` |
 | [Billing entity](/v2/guide/billing-entities) | `tax_codes` |
 
+### Which taxes apply
+
+For a Product fee, Lago uses the first nonempty tax assignment in this order:
+
+1. Rate Card.
+2. Plan.
+3. Customer.
+4. Billing entity.
+
+Lago applies all taxes in the selected set. It does not combine assignments from different levels. Clearing an assignment allows the next level to apply.
+
 ### Assign a tax to a Rate Card
 
 Tax assignments remain editable after the Rate Card has Rates.
@@ -89,7 +100,7 @@ Tax assignments remain editable after the Rate Card has Rates.
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
-    curl --location --request PATCH "$LAGO_URL/api/v2/rate_cards/api_calls_usd" \
+    curl --location --request PUT "$LAGO_URL/api/v2/rate_cards/api_calls_usd" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -147,7 +158,7 @@ curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example" \
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request PATCH "$LAGO_URL/api/v2/billing_entities/acme_corp" \
+curl --location --request PUT "$LAGO_URL/api/v2/billing_entities/acme_corp" \
   --header "Authorization: Bearer $API_KEY" \
   --header 'Content-Type: application/json' \
   --data-raw '{
@@ -195,7 +206,7 @@ Changing a rate or deleting a tax can affect how future fees are taxed for every
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request PATCH "$LAGO_URL/api/v2/taxes/standard_vat" \
+curl --location --request PUT "$LAGO_URL/api/v2/taxes/standard_vat" \
   --header "Authorization: Bearer $API_KEY" \
   --header 'Content-Type: application/json' \
   --data-raw '{
@@ -232,7 +243,7 @@ To let a tax provider compute taxes, use a tax integration: [Anrok](/v2/integrat
   <Card title="Create a tax (API)" icon="code" href="/v2/api-reference/taxes/create">
     Request and response schema.
   </Card>
-  <Card title="Update a rate card (API)" icon="code" href="/v2/api-reference/rate-cards/partially-update">
+  <Card title="Update a rate card (API)" icon="code" href="/v2/api-reference/rate-cards/update">
     Assign `tax_codes` to a rate card.
   </Card>
 </CardGroup>

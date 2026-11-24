@@ -7,7 +7,9 @@ keywords: ["Lago", "zero amount invoice", "empty invoice", "billing entity"]
 
 Choose whether Lago finalizes invoices with a zero amount. Set the default on the [billing entity](/v2/guide/billing-entities), then override it for individual customers when needed.
 
-You can finalize these invoices or skip finalization. A customer can also inherit the billing entity’s setting.
+This setting checks the fee amount (`fees_amount_cents`), before taxes and credits. It does not check the final amount due.
+
+You can finalize invoices with a zero fee amount or skip finalization. Skipped invoices receive the `closed` status. A customer can also inherit the billing entity’s setting.
 
 ## Settings
 
@@ -32,7 +34,7 @@ You can finalize these invoices or skip finalization. A customer can also inheri
     API_KEY="__YOUR_API_KEY__"
     BILLING_ENTITY_CODE="acme_corp"
 
-    curl --location --request PATCH "$LAGO_URL/api/v2/billing_entities/$BILLING_ENTITY_CODE" \
+    curl --location --request PUT "$LAGO_URL/api/v2/billing_entities/$BILLING_ENTITY_CODE" \
       --header "Authorization: Bearer $API_KEY" \
       --header 'Content-Type: application/json' \
       --data-raw '{
@@ -82,7 +84,7 @@ You can finalize these invoices or skip finalization. A customer can also inheri
   <Card title="Invoices" icon="file-invoice" href="/v2/guide/invoicing/overview">
     Invoice statuses and actions.
   </Card>
-  <Card title="Update a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/partially-update">
+  <Card title="Update a billing entity (API)" icon="code" href="/v2/api-reference/billing-entities/update">
     Request and response schema.
   </Card>
   <Card title="Update a customer (API)" icon="code" href="/v2/api-reference/customers/update">

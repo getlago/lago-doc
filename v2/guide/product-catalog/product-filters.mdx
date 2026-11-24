@@ -21,12 +21,23 @@ Only metered Products can have filters. Filter values must refer to keys and con
 | Field | Required | Description |
 | --- | --- | --- |
 | `name` | Yes | Readable label. Lago does not infer matching rules from it. |
-| `code` | Yes | Unique code, used by rate cards in `product_filter_code`. |
+| `code` | Yes | Code unique within the Product, used by rate cards in `product_filter_code`. |
 | `values` | Yes | At least one `{ "key", "value" }` entry matched against the metric's filter keys. |
 | `invoice_display_name` | No | Name used on invoices. Defaults to `name` when blank. |
 | `description` | No | Internal description. |
 
 In `values`, omit `value` or set it to `null` to select all configured values for that key. For the same key, choose either all configured values or specific values; you cannot combine both.
+
+## How matching works
+
+An event must contain every key in the filter and match one of the allowed values for each key. A missing key does not match.
+
+When several filters match, Lago chooses one using these priorities:
+
+1. The filter with more keys.
+2. The filter with fewer allowed values, after expanding selections of all configured values.
+3. The filter created first.
+4. The filter identifier, if creation times are equal.
 
 ## Example
 
