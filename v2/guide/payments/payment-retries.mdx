@@ -1,34 +1,36 @@
 ---
-title: "Payment retries and payment URLs"
+title: "Payment retries"
 sidebarTitle: "Payment retries"
-description: "Retry collection of an unpaid invoice with the default or a chosen payment method, or create a payment URL your customer can use to pay it."
+description: "Retry an invoice payment or share a payment link with your customer."
 keywords: ["Lago", "retry payment", "payment URL", "invoice"]
 ---
 
-A payment retry asks Lago to collect an unpaid invoice again, for example after a card was declined. A payment URL is a provider checkout link for one invoice that you share with the customer so they can pay it themselves.
+Retry collection when an invoice payment fails. You can also generate a payment link so your customer can pay the invoice themselves.
 
 ## Retry an invoice payment
 
-`POST /invoices/{lago_id}/retry_payment` retries collection using the selected or default payment method. The body is optional:
-
-| Field | Meaning |
-| --- | --- |
-| `payment_method.payment_method_type` | `provider` or `manual`. |
-| `payment_method.payment_method_id` | `lago_id` of a payment method that belongs to the customer. |
-
-Omit `payment_method` to use the configured default. See [Payment methods](/v2/guide/payments/payment-methods).
-
 <Warning>
-A retry can charge the customer's payment method. Check the invoice and the payment method before you run it in production.
+A retry starts another collection attempt. Check the invoice and selected payment method before continuing.
 </Warning>
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Open **Invoices** and go to the **Outstanding** tab;
-    2. Click the **ellipsis icon** on the invoice; and
-    3. Select **Resend for collection**.
+    1. Open **Invoices**.
+    2. Open the **Outstanding** tab.
+    3. Click the **ellipsis icon** on the invoice.
+    4. Select **Resend for collection**.
   </Tab>
   <Tab title="API">
+    `POST /invoices/{lago_id}/retry_payment` retries collection using the selected or default payment method. The body is optional:
+
+    | Field | Meaning |
+    | --- | --- |
+    | `payment_method.payment_method_type` | `provider` or `manual`. |
+    | `payment_method.payment_method_id` | `lago_id` of a payment method that belongs to the customer. |
+
+    Omit `payment_method` to use the configured default. See [Payment methods](/v2/guide/payments/payment-methods).
+
+
     <CodeGroup>
     ```bash Retry with the default payment method
     LAGO_URL="https://api.getlago.com"
@@ -58,11 +60,11 @@ A retry can charge the customer's payment method. Check the invoice and the paym
   </Tab>
 </Tabs>
 
-Follow the result on the invoice `payment_status` (`pending`, `succeeded`, `failed`) or in `GET /payments?invoice_id=...`.
+A successful request does not confirm payment. Follow the result on the invoice `payment_status` (`pending`, `succeeded`, `failed`) or in `GET /payments?invoice_id=...`.
 
 ## Create a payment URL
 
-`POST /invoices/{lago_id}/payment_url` returns a URL where the customer can pay the invoice through the payment provider. It requires a customer [connected to a provider](/v2/guide/payments/payment-providers). A provider rate limit returns `429`.
+`POST /invoices/{lago_id}/payment_url` returns a URL where the customer can pay the invoice through the payment provider. It requires a customer [connected to a provider](/v2/guide/payments/payment-providers). See the [API reference](/v2/api-reference/invoices/payment-url) for error responses.
 
 <CodeGroup>
 ```bash Create a payment URL
@@ -75,7 +77,7 @@ curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/payment_ur
 ```
 </CodeGroup>
 
-The response returns `payment_url` with `payment_url`, `payment_provider`, `lago_invoice_id` and `external_customer_id`.
+Share `payment_url.payment_url` from the response with your customer.
 
 ## Next steps
 

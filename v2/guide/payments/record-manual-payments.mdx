@@ -1,50 +1,41 @@
 ---
 title: "Record manual payments"
 sidebarTitle: "Record manual payments"
-description: "Record a bank transfer, cheque or other offline payment against a contract invoice with POST /api/v2/payments, with partial payment math."
+description: "Record payments received outside Lago against an invoice."
 keywords: ["Lago", "manual payment", "record payment", "invoice"]
 ---
 
-A manual payment records money you collected outside a payment provider, such as a bank transfer or a cheque, against an existing invoice. Use it to keep `total_paid_amount_cents` and `total_due_amount_cents` accurate when Lago does not run the collection.
+Record a payment you have already received outside Lago, such as a bank transfer or cheque. Lago uses the recorded amount to update the invoice’s paid and outstanding balances.
 
 <Info>
-Recording a manual payment requires premium access and an eligible invoice. Lago checks invoice eligibility, except for supported advance-fee payments.
+Recording a manual payment requires premium access and an eligible invoice.
 </Info>
-
-## Fields
-
-| Field | Meaning |
-| --- | --- |
-| `invoice_id` | `lago_id` of the invoice being paid. |
-| `amount_cents` | Amount paid, a positive integer in cents. Required. |
-| `reference` | Your payment reference, such as a transfer number. Required. |
-| `paid_at` | Payment timestamp. Defaults to now. |
 
 ## Worked example
 
 The `contract_example` invoice totals $144.00. The customer pays by bank transfer in two parts:
 
-| Payment | `amount_cents` | `total_paid_amount_cents` | `total_due_amount_cents` |
+| Payment | Amount received | Total paid | Still due |
 | --- | --- | --- | --- |
-| Before any payment | | `0` | `14400` |
-| Transfer 1, reference `wire_transfer_123` | `10000` | `10000` | `4400` |
-| Transfer 2, reference `wire_transfer_124` | `4400` | `14400` | `0` |
+| Before any payment | — | USD 0 | USD 144 |
+| First transfer | USD 100 | USD 100 | USD 44 |
+| Second transfer | USD 44 | USD 144 | USD 0 |
 
-After the first transfer, the invoice matches the `partially_paid=true` list filter.
+The first transfer is `10000` cents; the second is `4400` cents. After the first transfer, the invoice matches the `partially_paid=true` list filter.
 
 ## Record a payment
 
 <Warning>
-Recording a payment changes the amount due on the invoice. Check the invoice identifier and the amount, and review the request before you run it in production.
+Record only money you have received. This updates the invoice balance; it does not collect money.
 </Warning>
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Open an unpaid invoice;
-    2. Click **Record payment**;
-    3. Select the payment date;
-    4. Enter the payment reference;
-    5. Enter the amount, partial or full; and
+    1. Open an unpaid invoice.
+    2. Click **Record payment**.
+    3. Select the payment date.
+    4. Enter the payment reference.
+    5. Enter the amount, partial or full.
     6. Confirm.
 
     <Frame caption="Record a manual payment">
@@ -52,6 +43,14 @@ Recording a payment changes the amount due on the invoice. Check the invoice ide
     </Frame>
   </Tab>
   <Tab title="API">
+    | Field | Meaning |
+    | --- | --- |
+    | `invoice_id` | `lago_id` of the invoice being paid. |
+    | `amount_cents` | Amount paid, a positive integer in cents. Required. |
+    | `reference` | Your payment reference, such as a transfer number. Required. |
+    | `paid_at` | Payment timestamp. Defaults to now. |
+
+
     <CodeGroup>
     ```bash Record a manual payment
     LAGO_URL="https://api.getlago.com"

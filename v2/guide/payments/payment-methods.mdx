@@ -1,35 +1,38 @@
 ---
-title: "Payment methods: store and choose how customers pay"
+title: "Payment methods"
 sidebarTitle: "Payment methods"
-description: "Capture a customer payment method with a checkout URL, list stored methods, set the default and pick a method per payment request or retry in /api/v2."
+description: "Add a payment method, choose a default and select how a customer pays."
 keywords: ["Lago", "payment method", "checkout URL", "default payment method"]
 ---
 
-A payment method is a stored reference to a customer's payment instrument, such as a card or a direct debit mandate, held by the payment provider. Lago never stores the raw details: it keeps the provider's `provider_method_id` and asks the provider to charge it.
+A payment method identifies how your customer pays, such as a card or direct debit. Lago uses the payment provider’s reference to request payment.
 
-## The payment method object
+<span id="capture-a-payment-method-with-a-checkout-url" />
+<span id="the-payment-method-object" />
 
-| Field | Meaning |
-| --- | --- |
-| `lago_id` | Lago identifier, used in the endpoints below. |
-| `external_customer_id` | The customer that owns the method. |
-| `provider_method_id` | Identifier of the instrument in the provider. |
-| `payment_provider_code`, `payment_provider_name`, `payment_provider_type` | The provider connection. |
-| `is_default` | Whether it is the customer's default method. |
-| `deleted_at` | Set once the method is deleted. |
-
-## Capture a payment method with a checkout URL
+## Add a payment method
 
 A checkout URL sends the customer to the provider's checkout page to register a payment method. The customer must already be [connected to a provider](/v2/guide/payments/payment-providers).
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Open the customer;
-    2. In **Payment methods**, click **Add a payment method**;
-    3. Click **Generate link**; and
-    4. Copy the URL and share it with your customer.
+    1. Open the customer.
+    2. In **Payment methods**, click **Add a payment method**.
+    3. Click **Generate link**.
+    4. Copy the URL.
+    5. Share it with your customer.
   </Tab>
   <Tab title="API">
+    | Field | Meaning |
+    | --- | --- |
+    | `lago_id` | Lago identifier, used in the endpoints below. |
+    | `external_customer_id` | The customer that owns the method. |
+    | `provider_method_id` | Identifier of the instrument in the provider. |
+    | `payment_provider_code`, `payment_provider_name`, `payment_provider_type` | The provider connection. |
+    | `is_default` | Whether it is the customer's default method. |
+    | `deleted_at` | Set once the method is deleted. |
+
+
     No request body is required.
 
     <CodeGroup>
@@ -42,7 +45,7 @@ A checkout URL sends the customer to the provider's checkout page to register a 
     ```
     </CodeGroup>
 
-    The response returns `checkout_url` with `checkout_url`, `payment_provider` and `payment_provider_code`.
+    Use `checkout_url.checkout_url` from the response to open the provider’s setup page. This registers a payment method; to collect an invoice, [create a payment URL](/v2/guide/payments/payment-retries#create-a-payment-url).
   </Tab>
 </Tabs>
 
@@ -75,26 +78,9 @@ curl --location --request PUT "$LAGO_URL/api/v2/customers/customer_example/payme
 ```
 </CodeGroup>
 
-## Delete a payment method
+<span id="choose-a-payment-method-per-collection" />
 
-<Warning>
-Deleting a payment method stops Lago from charging it. Collections that relied on it need another method. Review the change before you run it in production.
-</Warning>
-
-<CodeGroup>
-```bash Delete a payment method
-LAGO_URL="https://api.getlago.com"
-API_KEY="__YOUR_API_KEY__"
-PAYMENT_METHOD_ID="__YOUR_PAYMENT_METHOD_ID__"
-
-curl --location --request DELETE "$LAGO_URL/api/v2/customers/customer_example/payment_methods/$PAYMENT_METHOD_ID" \
-  --header "Authorization: Bearer $API_KEY"
-```
-</CodeGroup>
-
-The response returns the payment method with `deleted_at` set.
-
-## Choose a payment method per collection
+## Choose a method for a payment
 
 [Payment requests](/v2/guide/payments/payment-requests) and [payment retries](/v2/guide/payments/payment-retries) accept an optional `payment_method` object. Omit it to use the configured default.
 
@@ -112,11 +98,30 @@ The response returns the payment method with `deleted_at` set.
 }
 ```
 
+## Delete a payment method
+
+<Warning>
+Before deleting a payment method, select another method for payments that relied on it.
+</Warning>
+
+<CodeGroup>
+```bash Delete a payment method
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+PAYMENT_METHOD_ID="__YOUR_PAYMENT_METHOD_ID__"
+
+curl --location --request DELETE "$LAGO_URL/api/v2/customers/customer_example/payment_methods/$PAYMENT_METHOD_ID" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+The response returns the payment method with `deleted_at` set.
+
 ## Next steps
 
 <CardGroup cols={2}>
   <Card title="Payment retries" icon="rotate" href="/v2/guide/payments/payment-retries">
-    Retry a charge with a chosen method.
+    Retry an invoice payment with a chosen method.
   </Card>
   <Card title="Payment requests" icon="envelope-open-dollar" href="/v2/guide/payments/payment-requests">
     Collect several overdue invoices at once.
