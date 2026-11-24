@@ -5,12 +5,23 @@ description: "Find received events and check the quantities and amounts calculat
 keywords: ["Lago", "events", "current usage", "external_contract_id"]
 ---
 
-Use the events list to check which usage events Lago received. Use [Contract current usage](/v2/guide/contracts/current-usage) to check the quantities and amounts calculated for the current billing periods.
-
-These checks help you investigate missing events and compare Lago's results with your own records.
+Find the events Lago received and review the quantities and amounts calculated for a Contract’s open billing periods.
 
 ## List events
 
+Find received usage events to check your integration or investigate missing usage.
+
+<Tabs>
+  <Tab title="Dashboard">
+1. Click **Developers** in the sidebar.
+2. Open the **Events** tab.
+3. Select an event to view its details and payload.
+
+<Frame caption="View received events in the Dashboard">
+  <img src="/v2/guide/events/images/list-events.png" alt="Events tab in the Developers panel, with a received event selected and its properties and payload displayed" />
+</Frame>
+  </Tab>
+  <Tab title="API">
 Use `GET /events` to find events by Contract, billable metric, transaction ID or the time the usage happened. Your API key needs `event` read permission.
 
 The response is split into pages. Use the returned cursors to retrieve additional pages.
@@ -91,11 +102,28 @@ See [Pagination](/v2/api-reference/pagination).
 3. Check that its `timestamp` falls within your `timestamp_from` and `timestamp_to` range.
 4. Check the remaining result pages.
 5. If the event was just accepted, wait and repeat the retrieval request. Newly accepted events may not appear immediately.
+  </Tab>
+</Tabs>
 
 ## Retrieve current usage
 
-Use `GET /contracts/{external_id}/current_usage` to check the quantities and amounts calculated for a Contract's open billing periods, grouped by applied Rate Card. Your API key needs `customer_usage` read permission.
+Review a Contract’s calculated quantities and amounts for its open billing periods, grouped by applied Rate Card. These values can change before invoicing.
 
+<Tabs>
+  <Tab title="Dashboard">
+1. Open the Contract from the customer’s page or the Contract list.
+2. Click the **Usage** tab.
+3. Browse usage by Product category, if applicable.
+4. Review the quantities, amounts and billing periods.
+
+<Frame caption="Review a Contract’s current usage by Product category">
+  <img src="/v2/guide/events/images/current-usage.png" alt="Contract Usage tab showing total current usage and GPU compute usage with quantities, amounts and billing periods" />
+</Frame>
+  </Tab>
+  <Tab title="API">
+Your API key needs `customer_usage` read permission.
+
+<CodeGroup>
 ```bash Current usage of contract_example
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
@@ -104,11 +132,119 @@ curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example/curre
   --header "Authorization: Bearer $API_KEY"
 ```
 
-These values can change while the billing periods are open. See [Contract current usage](/v2/guide/contracts/current-usage) for the response fields, filters and a worked example.
+```bash Metered products only
+LAGO_URL="https://api.getlago.com"
+API_KEY="__YOUR_API_KEY__"
+
+curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example/current_usage?product_type=metered" \
+  --header "Authorization: Bearer $API_KEY"
+```
+</CodeGroup>
+
+### Filter results
+
+| Query parameter | Effect |
+| --- | --- |
+| `rate_card_code` | One applied Rate Card. |
+| `product_code` | One Product. |
+| `product_filter_code` | One Product filter. |
+| `product_type` | `fixed` or `metered`. |
+| `apply_taxes` | Whether to apply taxes. |
+
+### Read the response
+
+`GET /contracts/{external_id}/current_usage` reads the pending or active Contract.
+
+- Pending Contracts have no usage.
+- Totals cover the open billing windows of every applied Rate Card. Because each card follows its own timeline, totals may span several future invoices.
+- Amounts are in cents of the Contract's billing `currency`.
+- The data is provisional. The billing windows are still open and new events keep accruing.
+
+| Field | Meaning |
+| --- | --- |
+| `external_contract_id`, `external_customer_id` | The Contract and its customer. |
+| `currency` | Billing currency. |
+| `amount_cents` | Amount excluding tax. |
+| `taxes_amount_cents` | Tax amount. |
+| `total_amount_cents` | Amount including tax. |
+| `rate_cards[]` | One entry per applied Rate Card billing window. |
+
+For each `rate_cards[]` entry, check:
+
+| Field | Meaning |
+| --- | --- |
+| `rate_card_code`, `product_code`, `product_filter_code` | The applied Rate Card and the Product or Product filter it prices. |
+| `rate_phase_code`, `rate_source` | The phase and pricing source used for the window. |
+| `rate_model`, `rate_properties` | Pricing settings used in the calculation. |
+| `units` | Calculated quantity, as a decimal string. |
+| `events_count` | Number of matching events. This may differ from the measured quantity. |
+| `amount_cents` | Amount excluding tax for the window. |
+| `from_datetime`, `to_datetime` | Start and end of the billing window. |
+
+See the [API reference](/v2/api-reference/contracts/retrieve-current-usage) for the complete response.
+
+### Example
+
+`contract_example` started on January 1, 2027 on Plan `api_monthly`. While January's billing period is still open, 2,000 matching `api_calls` events have been received. This example uses Count, so the measured quantity and event count are both 2,000. It illustrates full monthly prices in USD, with no tax, proration, spending minimum or other adjustment. The response below is illustrative and trimmed to the fields used in the reconciliation.
+
+<Accordion title="View the response example">
+
+```json Response (illustrative, trimmed)
+{
+  "current_usage": {
+    "external_contract_id": "contract_example",
+    "external_customer_id": "customer_example",
+    "currency": "USD",
+    "amount_cents": 12000,
+    "taxes_amount_cents": 0,
+    "total_amount_cents": 12000,
+    "rate_cards": [
+      {
+        "rate_card_code": "monthly_service_usd",
+        "product_code": "monthly_service",
+        "product_type": "fixed",
+        "billable_metric_code": null,
+        "billing_timing": "arrears",
+        "rate_source": "rate",
+        "rate_model": "standard",
+        "units": "1",
+        "events_count": 0,
+        "amount_cents": 10000
+      },
+      {
+        "rate_card_code": "api_calls_usd",
+        "product_code": "api_calls_product",
+        "product_type": "metered",
+        "billable_metric_code": "api_calls",
+        "billing_timing": "arrears",
+        "rate_source": "rate",
+        "rate_model": "standard",
+        "units": "2000",
+        "events_count": 2000,
+        "amount_cents": 2000
+      }
+    ]
+  }
+}
+```
+
+</Accordion>
+
+| Rate card | Units | Unit price | `amount_cents` |
+| --- | --- | --- | --- |
+| `monthly_service_usd` | 1 | 100.00 USD | 10000 |
+| `api_calls_usd` | 2,000 | 0.01 USD | 2000 |
+| **Total** | | | **12000 (120.00 USD)** |
+
+`amount_cents` is in minor units: `12000` is 120.00 USD. Do not multiply it by 100 again.
+  </Tab>
+</Tabs>
+
+Each applied Rate Card can follow a different billing period. The combined total may span several future invoices. Use [invoice fees](/v2/guide/invoicing/fees) to review billed results.
 
 <a id="reconcile-events-and-usage"></a>
 
-## Compare events with calculated usage
+### Compare events with calculated usage
 
 Compare the same Contract, metric and time range in your source records and Lago. Retrieve all result pages before comparing event counts.
 
@@ -120,19 +256,27 @@ For a `Count` metric, 2,000 matching events represent a measured quantity of 2,0
 | Quantity calculated | The metric's aggregation result and the quantity in Contract current usage. |
 | Final invoice | The relevant invoice [fees](/v2/guide/invoicing/fees) after the invoice is finalized. |
 
-If results differ, check the Contract, metric, time range and filters. Allow recently accepted events time to appear before comparing again. See [Contract current usage](/v2/guide/contracts/current-usage) for pricing details.
+If results differ, check the Contract, metric, time range and filters. Allow recently accepted events time to appear before comparing again.
+
+### If usage is missing
+
+1. Check the Contract is `active`. Pending Contracts have no usage.
+2. List the events for the Contract with `GET /events?external_contract_id=contract_example`. See [List events](#list-events).
+3. Check each event's `code` matches the billable metric of the metered Product.
+4. Check event timestamps fall inside the window's `from_datetime` and `to_datetime`.
+5. If an event was accepted but is not visible yet, retrieve usage again after processing. Do not resend the event just to refresh the result.
 
 <CardGroup cols={2}>
   <Card title="Ingest usage" icon="arrow-right-to-bracket" href="/v2/guide/events/ingesting-usage">
     Send usage events for a Contract.
   </Card>
-  <Card title="Contract current usage" icon="gauge" href="/v2/guide/contracts/current-usage">
-    Check calculated quantities and amounts.
-  </Card>
   <Card title="List events (API)" icon="code" href="/v2/api-reference/events/list">
     `GET /events`
   </Card>
-  <Card title="Retrieve contract current usage (API)" icon="code" href="/v2/api-reference/contracts/retrieve-current-usage">
+  <Card title="Retrieve Contract current usage (API)" icon="code" href="/v2/api-reference/contracts/retrieve-current-usage">
     `GET /contracts/{external_id}/current_usage`
+  </Card>
+  <Card title="Fees" icon="receipt" href="/v2/guide/invoicing/fees">
+    Billed results after the window closes.
   </Card>
 </CardGroup>
