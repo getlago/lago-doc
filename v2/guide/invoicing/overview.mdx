@@ -1,50 +1,60 @@
 ---
-title: "How invoices work"
-description: "Learn how Lago invoices group contract fees, which statuses and actions they support, and how to list, retrieve and act on them through /api/v2."
+title: "Overview"
+sidebarTitle: "Overview"
+description: "Understand invoice amounts, statuses and how to retrieve a customer's invoices."
 keywords: ["Lago", "invoice", "contract invoice", "fees", "billing"]
 ---
 
-An [invoice](/v2/api-reference/invoices/retrieve) is the billing document Lago generates from the fees of one or more [contracts](/v2/guide/contracts/overview). Use the invoice endpoints to read what a customer owes, follow its payment status and run the few actions a finalized or draft invoice supports.
+An invoice brings together the fees billed to a customer. It shows the billed items, taxes and total amount due.
 
-<Info>
-The v2 invoice endpoints return product catalog invoices only. `GET /invoices` lists contract invoices and invoices that contain contract fees. Invoices that only exist in the legacy engine return `404` on retrieval.
-</Info>
+Lago generates invoices from your [Contracts](/v2/guide/contracts/overview) and their billing settings. Invoice status tracks the document's lifecycle. Payment status tracks payment separately.
 
-## How an invoice is built
+<span id="how-an-invoice-is-built" />
 
-Each [rate](/v2/guide/rate-cards/rates) that applies to a contract produces a [fee](/v2/guide/invoicing/fees) for the billing period. Lago groups the fees on an invoice, applies taxes, then computes the totals.
+## How invoices are calculated
+
+Lago calculates fees from the pricing applied to a Contract. It groups the fees on an invoice and calculates the taxes and totals.
+
+Each fee identifies the Product, quantity and pricing used. See [Fees](/v2/guide/invoicing/fees) for the line-item details.
 
 ```mermaid
 flowchart LR
-  A[Contract] --> B[Applied rate cards]
+  A[Contract] --> B[Applied Rate Cards]
   B --> C[Rates]
   C --> D[Fees]
   D --> E[Invoice]
-  E --> F[Payments and credit notes]
 ```
 
-## Worked example
+## Read an invoice
 
-The running example uses contract `contract_example` with two applied rate cards, both billed in arrears in USD:
+Review the billed items, billing periods, taxes and total. Check the amount still due separately from the invoice total.
 
-- `monthly_service_usd`: rate `monthly_standard`, $100 per month.
-- `api_calls_usd`: rate `calls_standard`, $0.01 per call.
+| Detail | What it tells you |
+| --- | --- |
+| Fees | The items billed and their calculated amounts. |
+| Billing periods | The dates covered by each fee. |
+| Taxes | The taxes applied to the invoice. |
+| Invoice total | The total amount on the invoice. |
+| Amount due | The amount still outstanding. |
 
-The customer sends 2,000 API calls in the period. Assume a 20% tax rate is assigned (see [Taxes](/v2/guide/taxes)).
+### Worked example
 
-```
-INVOICE: contract_example, one monthly period, USD
+For one full monthly billing period, `contract_example` has a $100 fixed fee and 2,000 API calls at $0.01 each. Both are billed in arrears in USD. This example applies 20% tax, with no discounts, proration, credits or payments.
 
-monthly_service      1 x $100.00          $100.00
-api_calls_product    2,000 x $0.01         $20.00
-------------------------------------------------
-Fees (excl. tax)                          $120.00
-Tax (20%)                                  $24.00
-------------------------------------------------
-Total                                     $144.00
-```
+The applied Rate Cards are `monthly_service_usd`, with Rate `monthly_standard`, and `api_calls_usd`, with Rate `calls_standard`.
 
-On the invoice object, this reads as:
+| Item | Calculation | Amount |
+| --- | --- | ---: |
+| Monthly service | 1 × $100.00 | $100.00 |
+| API calls | 2,000 × $0.01 | $20.00 |
+| Subtotal before tax | | $120.00 |
+| Tax | $120.00 × 20% | $24.00 |
+| **Total** | | **$144.00** |
+
+With no payments or credits applied, the amount due is also $144.00. See [Taxes](/v2/guide/taxes) for tax configuration.
+
+<Accordion title="View the example's API amounts">
+These illustrative values show how the example maps to invoice fields. In USD, `12000` represents $120.00.
 
 | Field | Value |
 | --- | --- |
@@ -53,159 +63,83 @@ On the invoice object, this reads as:
 | `taxes_amount_cents` | `2400` |
 | `sub_total_including_taxes_amount_cents` | `14400` |
 | `total_amount_cents` | `14400` |
-| `total_due_amount_cents` | `14400` until a payment or credit note settles it |
+| `total_due_amount_cents` | `14400` |
 
-Each line is a fee with `product_code`, `rate_card_code`, `rate_code`, `units` and `amount_cents`. Request `expands[]=fees` to get them inline.
+Each line is a fee with `product_code`, `rate_card_code`, `rate_code`, `units` and `amount_cents`. Request `expands[]=fees` to include the fees when retrieving the invoice.
+</Accordion>
 
-## Invoice types
+For open billing periods, use [current usage](/v2/guide/events/retrieve-usage#retrieve-current-usage) to review provisional quantities and amounts.
 
-`invoice_type` tells you why the invoice exists. The list filter accepts two values:
+<span id="statuses" />
 
-| `invoice_type` | Meaning |
+## Invoice and payment statuses
+
+An invoice's `status` describes the billing document. Its `payment_status` describes payment. A finalized invoice is not necessarily paid.
+
+| Field | Purpose |
 | --- | --- |
-| `contract` | Periodic invoice for a contract. |
-| `advance_fees` | Invoice for fees billed in advance. The v1 name was `advance_charges`. |
+| `status` | Follow the invoice lifecycle, including `draft`, `finalized` or `voided` states. |
+| `payment_status` | Check whether payment is `pending`, `succeeded` or `failed`. |
 
-The invoice object can also return legacy types (`subscription`, `add_on`, `credit`, `one_off`, `progressive_billing`) for invoices that mix legacy and contract fees.
+See [Draft invoices](/v2/guide/invoicing/draft-invoices), [Void invoices](/v2/guide/invoicing/void) and [Payment retries](/v2/guide/payments/payment-retries) for the actions available in each situation. The [API reference](/v2/api-reference/invoices/retrieve) lists all supported status values.
 
-## Statuses
+<span id="list-and-retrieve-invoices" />
 
-`status` follows the invoice lifecycle. `payment_status` tracks collection separately.
-
-| Field | Values |
-| --- | --- |
-| `status` | `generating`, `draft`, `open`, `finalized`, `voided`, `failed`, `closed`, `pending`, `deleted` |
-| `payment_status` | `pending`, `succeeded`, `failed` |
-
-The list endpoint filters on `status[]` with `draft`, `finalized`, `voided`, `failed` and `pending`.
-
-## Available actions
-
-| Action | Endpoint | Applies to |
-| --- | --- | --- |
-| Refresh | `PUT /invoices/{lago_id}/refresh` | Draft invoices. See [Draft invoices](/v2/guide/invoicing/draft-invoices). |
-| Finalize | `PUT /invoices/{lago_id}/finalize` | Draft invoices. |
-| Delete | `DELETE /invoices/{lago_id}` | Draft invoices not synced to an external integration. |
-| Download PDF | `POST /invoices/{lago_id}/download_pdf` | Finalized invoices. See [Download invoices](/v2/guide/invoicing/download-invoices). |
-| Resend email | `POST /invoices/{lago_id}/resend_email` | Finalized invoices. Premium license. |
-| Void | `POST /invoices/{lago_id}/void` | Eligible invoices. See [Void invoices](/v2/guide/invoicing/void). |
-| Retry payment | `POST /invoices/{lago_id}/retry_payment` | See [Payment retries](/v2/guide/payments/payment-retries). |
-| Payment URL | `POST /invoices/{lago_id}/payment_url` | See [Payment retries](/v2/guide/payments/payment-retries). |
-| Retry taxes | `POST /invoices/{lago_id}/retry_taxes` | Invoices whose tax processing failed. |
-| Lose dispute | `POST /invoices/{lago_id}/lose_dispute` | Invoices with a payment dispute. |
-| Update | `PUT` or `PATCH /invoices/{lago_id}` | Only `payment_status` is editable. Voided invoices reject updates. |
-
-## List and retrieve invoices
+## Find invoices
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Open **Invoices** in the side menu, or open a customer and select the **Invoices** tab;
-    2. Use the filters to narrow the list; and
-    3. Click an invoice to see its fees, taxes and payments.
+1. Open **Invoices** in the sidebar.
+2. Use the filters to narrow the list.
+3. Select an invoice.
+4. Review its fees, taxes and payments.
+
+You can also open a customer and select the **Invoices** tab.
   </Tab>
   <Tab title="API">
-    The list is cursor-paginated and ordered by `issuing_date`, newest first. Filters include `external_customer_id`, `status[]`, `payment_status[]`, `invoice_type`, `currency`, `billing_entity_codes[]`, `issuing_date_from`, `issuing_date_to`, `amount_from`, `amount_to`, `payment_overdue`, `partially_paid`, `payment_dispute_lost`, `settlements[]` and `search_term`. See [Pagination](/v2/api-reference/pagination).
+Use `GET /invoices` to list invoices. Filter by customer, status, date or other supported criteria. Results use cursor pagination and are ordered by `issuing_date`, newest first. See [List invoices](/v2/api-reference/invoices/list) for the available filters and [Pagination](/v2/api-reference/pagination) for navigating results.
 
-    <CodeGroup>
-    ```bash List finalized invoices of a customer
+Use `GET /invoices/{lago_id}` to retrieve an invoice. Add `expands[]=fees` and `expands[]=applied_taxes` to include its fees and taxes.
+
+<CodeGroup>
+```bash List finalized invoices of a customer
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
 
-    curl --location --request GET "$LAGO_URL/api/v2/invoices?external_customer_id=customer_example&status[]=finalized&limit=20" \
+    curl --location --globoff --request GET "$LAGO_URL/api/v2/invoices?external_customer_id=customer_example&status[]=finalized&limit=20" \
       --header "Authorization: Bearer $API_KEY"
     ```
 
-    ```bash Retrieve an invoice with its fees
+```bash Retrieve an invoice with its fees
     LAGO_URL="https://api.getlago.com"
     API_KEY="__YOUR_API_KEY__"
     INVOICE_ID="__YOUR_INVOICE_ID__"
 
-    curl --location --request GET "$LAGO_URL/api/v2/invoices/$INVOICE_ID?expands[]=fees&expands[]=applied_taxes" \
+    curl --location --globoff --request GET "$LAGO_URL/api/v2/invoices/$INVOICE_ID?expands[]=fees&expands[]=applied_taxes" \
       --header "Authorization: Bearer $API_KEY"
     ```
-    </CodeGroup>
+</CodeGroup>
 
-    Supported expansions on retrieval: `fees`, `applied_taxes`, `customer`, `contracts`, `applied_invoice_custom_sections` and `error_details`. Expanding more than 1,000 fees returns `400 expansion_too_large`. Use [`GET /fees`](/v2/api-reference/fees/list) for larger invoices.
+Expanding more than 1,000 fees returns `400 expansion_too_large`. For larger invoices, use `GET /fees?lago_invoice_id=...` and page through the results. See [List fees](/v2/api-reference/fees/list).
 
-    To list the invoices of one customer, you can also call [`GET /customers/{customer_external_id}/invoices`](/v2/api-reference/customers/list-invoices).
+See [Retrieve an invoice](/v2/api-reference/invoices/retrieve) for the full list of supported expansions. You can also list a customer's invoices with [`GET /customers/{customer_external_id}/invoices`](/v2/api-reference/customers/list-invoices).
+
+<span id="invoice-types" />
+
+The list returns Contract invoices and invoices containing Contract fees. Invoices produced only by the legacy engine are excluded; retrieving one returns `404`.
+
+The `invoice_type` list filter accepts `contract` and `advance_fees`. The latter was named `advance_charges` in v1. Invoices containing both legacy and Contract fees can return legacy invoice types; see the [invoice schema](/v2/api-reference/invoices/retrieve).
   </Tab>
 </Tabs>
 
-## Retry taxes
+<span id="retry-taxes" />
+<span id="mark-a-payment-dispute-as-lost" />
+<span id="update-the-payment-status" />
 
-When tax processing fails, for example with a tax provider, retry it once the cause is fixed.
+For specific operations, see the API references for [retrying invoice taxes](/v2/api-reference/invoices/retry-taxes), [recording a lost payment dispute](/v2/api-reference/invoices/lose-dispute) and [updating payment status](/v2/api-reference/invoices/update). To record money collected outside Lago, see [Record manual payments](/v2/guide/payments/record-manual-payments).
 
-<CodeGroup>
-```bash Retry invoice taxes
-LAGO_URL="https://api.getlago.com"
-API_KEY="__YOUR_API_KEY__"
-INVOICE_ID="__YOUR_INVOICE_ID__"
-
-curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/retry_taxes" \
-  --header "Authorization: Bearer $API_KEY"
-```
-</CodeGroup>
-
-Request `expands[]=error_details` on retrieval to see why the previous attempt failed.
-
-## Mark a payment dispute as lost
-
-When a customer disputes a payment and you lose the dispute, record it on the invoice. The invoice then exposes `payment_dispute_lost_at`.
-
-<Warning>
-Marking a dispute as lost changes the financial record of the invoice. Check the invoice identifier before you call the endpoint, and review the change before you run it in production.
-</Warning>
-
-<CodeGroup>
-```bash Mark a dispute as lost
-LAGO_URL="https://api.getlago.com"
-API_KEY="__YOUR_API_KEY__"
-INVOICE_ID="__YOUR_INVOICE_ID__"
-
-curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/lose_dispute" \
-  --header "Authorization: Bearer $API_KEY"
-```
-</CodeGroup>
-
-## Update the payment status
-
-If you collect payments outside Lago and do not record them as [manual payments](/v2/guide/payments/record-manual-payments), you can set `payment_status` directly. It is the only editable field.
-
-<CodeGroup>
-```bash Set an invoice as paid
-LAGO_URL="https://api.getlago.com"
-API_KEY="__YOUR_API_KEY__"
-INVOICE_ID="__YOUR_INVOICE_ID__"
-
-curl --location --request PATCH "$LAGO_URL/api/v2/invoices/$INVOICE_ID" \
-  --header "Authorization: Bearer $API_KEY" \
-  --header 'Content-Type: application/json' \
-  --data-raw '{
-    "invoice": {
-      "payment_status": "succeeded"
-    }
-  }'
-```
-</CodeGroup>
-
-## FAQ
-
-<AccordionGroup>
-  <Accordion title="Why does GET /api/v2/invoices not return some of my invoices?">
-    The v2 list returns contract invoices and invoices containing contract fees. Invoices produced only by the legacy engine are excluded, and retrieving one by `lago_id` returns `404`.
-  </Accordion>
-  <Accordion title="Can I create a one-off invoice or preview an invoice?">
-    No. The API has no `POST /invoices` and no invoice preview endpoint. Invoices come from contracts. For an open period, read [current usage](/v2/guide/events/retrieve-usage#retrieve-current-usage) instead of a preview.
-  </Accordion>
-  <Accordion title="Which invoice fields can I edit?">
-    Only `payment_status`, through `PUT` or `PATCH /invoices/{lago_id}`. Voided invoices reject updates. To correct amounts on a finalized invoice, issue a [credit note](/v2/guide/invoicing/credit-notes/overview).
-  </Accordion>
-  <Accordion title="How do I get every fee of a large invoice?">
-    `expands[]=fees` is limited to 1,000 fees. For larger invoices, call `GET /fees?lago_invoice_id=...` and page through the results.
-  </Accordion>
-</AccordionGroup>
-
-## Next steps
+<span id="available-actions" />
+<span id="next-steps" />
 
 <CardGroup cols={2}>
   <Card title="Fees" icon="receipt" href="/v2/guide/invoicing/fees">
@@ -214,10 +148,16 @@ curl --location --request PATCH "$LAGO_URL/api/v2/invoices/$INVOICE_ID" \
   <Card title="Draft invoices" icon="pen-to-square" href="/v2/guide/invoicing/draft-invoices">
     Refresh, finalize or delete a draft.
   </Card>
+  <Card title="Void invoices" icon="ban" href="/v2/guide/invoicing/void">
+    Void an eligible invoice.
+  </Card>
+  <Card title="Download and resend invoices" icon="download" href="/v2/guide/invoicing/download-invoices">
+    Download a PDF or resend an invoice email.
+  </Card>
   <Card title="Credit notes" icon="file-invoice-dollar" href="/v2/guide/invoicing/credit-notes/overview">
     Correct a finalized invoice.
   </Card>
-  <Card title="List invoices (API)" icon="code" href="/v2/api-reference/invoices/list">
-    Filters, pagination and response schema.
+  <Card title="Payment retries" icon="rotate-right" href="/v2/guide/payments/payment-retries">
+    Follow up on payment collection.
   </Card>
 </CardGroup>
