@@ -1,26 +1,26 @@
 ---
 title: "Void invoice"
 sidebarTitle: "Void invoice"
-description: "Void an eligible contract invoice with /api/v2, optionally generating a credit note to refund or credit the customer, and know what voiding changes."
+description: "Cancel a finalized invoice while keeping a record of it."
 keywords: ["Lago", "void invoice", "credit note", "contract"]
 ---
 
-Voiding an invoice cancels it while keeping it on record with a `voided` status and a `voided_at` timestamp. Use it when a finalized invoice should not be collected, for example after a billing error, and you need an auditable trail.
-
-A voided invoice rejects updates. To remove a `draft` invoice instead, [delete it](/v2/guide/invoicing/draft-invoices#delete-a-draft-invoice).
+Void an invoice when it needs to be canceled. It remains in your records with the status `voided`. To remove a draft invoice, [delete it instead](/v2/guide/invoicing/draft-invoices#delete-a-draft-invoice).
 
 <Warning>
-Voiding changes the financial record of the invoice and cannot be undone through the API. If you also generate a credit note, a refund can be sent to the customer's payment method. Check the invoice identifier and the amounts, and review the change before you run it in production.
+Voiding cannot be undone. Review any refund or credit amounts before confirming.
 </Warning>
 
 ## Void an invoice
 
 <Tabs>
   <Tab title="Dashboard">
-    1. Open the **Invoices** list;
-    2. Click the **ellipsis icon** on the invoice line;
-    3. Select **Void invoice**; and
-    4. Choose the refund option, then confirm.
+    1. Open **Invoices**.
+    2. Click the invoice’s **ellipsis icon**.
+    3. Select **Void invoice**.
+    4. Choose whether to generate a credit note.
+    5. Review any refund or credit amounts.
+    6. Confirm.
   </Tab>
   <Tab title="API">
     <CodeGroup>
@@ -38,6 +38,8 @@ Voiding changes the financial record of the invoice and cannot be undone through
 
 ## Void and generate a credit note
 
+When voiding an invoice, you can also generate a credit note to refund a payment or give your customer credit for future invoices.
+
 <Info>
 Generating a credit note while voiding requires a premium license. Voiding without a credit note does not.
 </Info>
@@ -52,7 +54,7 @@ The request body accepts three optional fields:
 
 ### Example
 
-The `contract_example` invoice totals $144.00 ($120.00 plus 20% tax) and was paid in full. You void it, refund $100.00 and credit the remaining $44.00 for future invoices:
+This example requests a USD 100 refund and USD 44 in credit for a fully paid USD 144 invoice. The invoice for `contract_example` includes a USD 120 subtotal and 20% tax.
 
 <CodeGroup>
 ```bash Void with a refund and a credit
@@ -79,7 +81,7 @@ The body is not wrapped in an `invoice` key. The resulting credit note follows t
   <Card title="Credit notes" icon="file-invoice-dollar" href="/v2/guide/invoicing/credit-notes/overview">
     Partially correct an invoice instead of voiding it.
   </Card>
-  <Card title="Draft invoices" icon="pen-to-square" href="/v2/guide/invoicing/draft-invoices">
+  <Card title="Draft invoice" icon="pen-to-square" href="/v2/guide/invoicing/draft-invoices">
     Delete a draft instead of voiding it.
   </Card>
   <Card title="Void an invoice (API)" icon="code" href="/v2/api-reference/invoices/void">

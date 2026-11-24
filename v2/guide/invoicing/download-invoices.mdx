@@ -1,29 +1,25 @@
 ---
-title: "Download and resend invoices"
-sidebarTitle: "Download invoices"
-description: "Generate and download the PDF of a finalized contract invoice with /api/v2, read pdf_url and xml_url, and resend the invoice email to your customer."
+title: "Download invoice"
+sidebarTitle: "Download invoice"
+description: "Download an invoice PDF or resend the invoice email to your customer."
 keywords: ["Lago", "invoice PDF", "download invoice", "resend invoice email"]
 ---
 
-Lago renders a PDF for each finalized invoice so you can send it to your customer or archive it. Use the download endpoint to get the file, and the resend endpoint to email it again.
+Download a finalized invoice as a PDF to share with your customer or keep for your records. You can also resend the invoice email through the API.
 
 ## Download an invoice PDF
 
-`POST /invoices/{lago_id}/download_pdf` works for finalized invoices only:
-
-- If the PDF already exists, the response is `200` with the invoice. Read `pdf_url`.
-- Otherwise, Lago queues PDF generation and returns `202` with an empty body. Call the endpoint again, or retrieve the invoice later and read `pdf_url`.
-
-`pdf_url` and `xml_url` are `null` while the document is unavailable.
-
 <Tabs>
   <Tab title="Dashboard">
-    1. Click **Customers** in the side menu;
-    2. Select a customer and open the **Invoices** tab;
-    3. Click the **ellipsis icon** on the invoice; and
-    4. Click **Download invoice**.
+    1. Click **Customers**.
+    2. Select a customer.
+    3. Open the **Invoices** tab.
+    4. Click the invoice’s **ellipsis icon**.
+    5. Click **Download invoice**.
   </Tab>
   <Tab title="API">
+    Request the PDF with `POST /invoices/{lago_id}/download_pdf`. The invoice must be finalized.
+
     <CodeGroup>
     ```bash Download an invoice PDF
     LAGO_URL="https://api.getlago.com"
@@ -34,26 +30,26 @@ Lago renders a PDF for each finalized invoice so you can send it to your custome
       --header "Authorization: Bearer $API_KEY"
     ```
     </CodeGroup>
+
+    If the PDF is ready, the request returns `200` with the invoice and its `pdf_url`. Use this URL to download the file.
+
+    If Lago needs to generate the PDF, the request returns `202` with an empty body. [Retrieve the invoice](/v2/api-reference/invoices/retrieve) later and use `pdf_url` when it becomes available.
   </Tab>
 </Tabs>
 
 ## Resend an invoice email
 
-<Info>
-Resending an invoice email requires a premium license, valid recipients and an email configuration on the [billing entity](/v2/guide/billing-entities).
-</Info>
+Resend a finalized invoice when your customer needs another copy. Email delivery must be configured on the [billing entity](/v2/guide/billing-entities), and this action requires a premium license.
 
-`POST /invoices/{lago_id}/resend_email` queues an email for a finalized invoice. All body fields are optional:
+Check the recipients before sending. If `to` is omitted or empty, Lago uses the customer’s email address.
+
+Send `POST /invoices/{lago_id}/resend_email` with any of these optional fields:
 
 | Field | Meaning |
 | --- | --- |
 | `to` | Recipients. When omitted or empty, Lago uses the customer email. |
 | `cc` | Additional recipients. |
 | `bcc` | Additional recipients. |
-
-<Warning>
-This sends an email to your customer. Check the recipients before you call it in production.
-</Warning>
 
 <CodeGroup>
 ```bash Resend an invoice email
@@ -70,6 +66,8 @@ curl --location --request POST "$LAGO_URL/api/v2/invoices/$INVOICE_ID/resend_ema
   }'
 ```
 </CodeGroup>
+
+A successful request queues the email. It does not confirm delivery.
 
 ## Next steps
 
