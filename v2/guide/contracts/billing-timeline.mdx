@@ -8,15 +8,13 @@ Each applied Rate Card on a Contract follows a billing timeline. Its billing int
 
 ## Start and first billing cycle
 
-The Contract's `started_at` sets when its billing timeline begins. Each inherited phase sequence starts at position `1`.
+`started_at` sets when the Contract’s billing timeline begins. If phases are configured, their sequence starts from this date at position `1`. This also applies when `started_at` is in the past: phases follow that past date, not the date you create the Contract.
 
-`billing_anchor_date` defines when the first billing cycle ends and renews. The first cycle runs from `started_at` to that anchor. An applied Rate Card can carry its own `billing_anchor_date`, which defaults to the Contract anchor.
+`billing_anchor_date` sets when the first billing cycle ends. The first cycle runs from `started_at` to this date. Each applied Rate Card uses the Contract’s anchor unless it has its own.
 
-From that first renewal, each applied Rate Card follows its own timeline. Its effective Rate or phase override defines the interval. Its phase cycle count decides when the next phase starts.
+After the first cycle, each applied Rate Card follows its configured billing interval. A phase runs for its configured number of cycles, then the next phase begins. Later phases follow each other without realigning to the original anchor.
 
-Phases chain: the next phase starts where the previous one ends. Later phases are not realigned to the original anchor date.
-
-The Rate Card's `billing_timing` still decides advance or arrears billing. The anchor is a cycle boundary, not a payment date. When the first cycle is shorter than the configured interval, its amount depends on the applicable proration rules.
+The anchor defines a cycle boundary, not a payment date. `billing_timing` determines whether billing happens in advance or in arrears. If the first cycle is shorter than the configured interval, the applicable proration rules determine its amount.
 
 Timeline colors: purple for phase 1, amber for phase 2, blue for ongoing or inherited pricing, and gray for Contract boundaries.
 
