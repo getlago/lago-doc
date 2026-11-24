@@ -8,7 +8,7 @@ Cancel a pending Contract before it starts, or terminate an active Contract to e
 
 ## Before you end a Contract
 
-1. Retrieve the live Contract and check its `status` and dates.
+1. Retrieve the live Contract, save its `code` and check its `status` and dates.
 2. Decide between a scheduled end and an immediate end. They are not interchangeable:
    - A scheduled end is the Contract's `ended_at`. It must be after the start and not already in the past.
    - An immediate end is `DELETE /contracts/{external_id}`.
@@ -45,7 +45,7 @@ The response returns the Contract with its new `status`.
 
 After the Contract ends, check its status and review any fees and invoices for the closing billing period. The amounts depend on the billing configuration and the period being closed.
 
-1. Retrieve the ended Contract with `GET /contracts/{external_id}?status=terminated` (or `status=canceled`).
+1. Retrieve the ended Contract with `GET /contracts/{external_id}?code={code}`, using the code you saved. Check that its status is `terminated` or `canceled`. This selects the same Contract even if its `external_id` has since been reused.
 2. List the customer's [invoices](/v2/guide/invoicing/overview) and inspect their [fees](/v2/guide/invoicing/fees) and service periods.
 
 Review invoices, [credit notes and refunds](/v2/guide/invoicing/credit-notes/overview) separately. Ending a Contract does not by itself confirm that money was collected or returned.
@@ -54,11 +54,11 @@ Review invoices, [credit notes and refunds](/v2/guide/invoicing/credit-notes/ove
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example?status=terminated" \
+curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example?code=contract_example_2027" \
   --header "Authorization: Bearer $API_KEY"
 ```
 
-See [Contract lifecycle](/v2/guide/contracts/lifecycle#read-contracts-by-status) for identifier reuse and historical Contracts.
+See [Contract lifecycle](/v2/guide/contracts/lifecycle#retrieve-a-specific-contract) for identifier reuse and historical Contracts.
 
 <CardGroup cols={2}>
   <Card title="Contract lifecycle" icon="arrows-spin" href="/v2/guide/contracts/lifecycle">

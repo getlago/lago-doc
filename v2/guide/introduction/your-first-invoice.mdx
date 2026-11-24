@@ -262,7 +262,7 @@ If you run this later, move the Rate and Contract dates forward together and upd
   </Step>
 
   <Step title="Create the Contract">
-    The Contract applies `api_monthly` to `customer_example`. A future `started_at` creates a `pending` Contract. It becomes `active` at the start. `billing_anchor_date` sets when the first billing cycle ends.
+    The Contract applies `api_monthly` to `customer_example`. Set the required `code` to identify this specific Contract, including when retrieving it after it ends. A future `started_at` creates a `pending` Contract. It becomes `active` at the start. `billing_anchor_date` sets when the first billing cycle ends.
 
     <CodeGroup>
     ```bash Create contract
@@ -272,6 +272,7 @@ If you run this later, move the Rate and Contract dates forward together and upd
       --data-raw '{
         "contract": {
           "external_id": "contract_example",
+          "code": "contract_example_2027",
           "external_customer_id": "customer_example",
           "plan_code": "api_monthly",
           "started_at": "2027-01-01T00:00:00Z",
@@ -281,7 +282,7 @@ If you run this later, move the Rate and Contract dates forward together and upd
     ```
     </CodeGroup>
 
-    Retrieve it with `GET /api/v2/contracts/contract_example?expands[]=applied_rate_cards` to confirm the Plan, status, start and anchor. Reference: [Create a Contract](/v2/api-reference/contracts/create).
+    Retrieve it with `GET /api/v2/contracts/contract_example?code=contract_example_2027&expands[]=applied_rate_cards` to confirm the Plan, status, start and anchor. Reference: [Create a Contract](/v2/api-reference/contracts/create).
   </Step>
 
   <Step title="Send usage events">

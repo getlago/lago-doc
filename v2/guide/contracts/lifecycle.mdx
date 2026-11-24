@@ -51,13 +51,27 @@ A Contract scheduled to start on January 1, 2027 is `pending` before that date a
 | [Current usage](/v2/guide/contracts/current-usage) | Returns no usage | Returns usage for open billing windows |
 | `DELETE /contracts/{external_id}` | Cancels | Terminates |
 
-Canceled and terminated Contracts are history. Read them with the `status` parameter below.
+Canceled and terminated Contracts are history. Retrieve a specific record with its `external_id` and `code`.
 
-## Read Contracts by status
+<span id="read-contracts-by-status" />
 
-`GET /contracts/{external_id}` returns the pending or active Contract. Pass `status` to select a historical `terminated` or `canceled` Contract with the same `external_id`.
+## Retrieve a specific Contract
 
-After a Contract ends, a new Contract can use the same `external_id`. Only one pending or active Contract can use it at a time.
+Each Contract has a required `code`. Use `GET /contracts/{external_id}?code={code}` to retrieve that specific Contract, including after it has ended.
+
+After a Contract ends, a new Contract can use the same `external_id`. Only one pending or active Contract can use it at a time, but several terminated or canceled Contracts can share it. A status alone does not identify which historical Contract you want.
+
+For example, these three Contracts can share `contract_example`:
+
+| `code` | `status` |
+| --- | --- |
+| `contract_example_2025` | `terminated` |
+| `contract_example_2026` | `terminated` |
+| `contract_example_2027` | `active` |
+
+To retrieve the 2026 Contract, pass `code=contract_example_2026`. Without a selector, `GET /contracts/{external_id}` returns the pending or active Contract.
+
+### List Contracts by status
 
 `GET /contracts` accepts `status[]` and defaults to `active`. Pass several values to list more.
 
@@ -66,7 +80,7 @@ After a Contract ends, a new Contract can use the same `external_id`. Only one p
 LAGO_URL="https://api.getlago.com"
 API_KEY="__YOUR_API_KEY__"
 
-curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example?status=terminated" \
+curl --location --request GET "$LAGO_URL/api/v2/contracts/contract_example?code=contract_example_2026" \
   --header "Authorization: Bearer $API_KEY"
 ```
 
@@ -90,7 +104,7 @@ curl --location --globoff --request GET "$LAGO_URL/api/v2/contracts?external_cus
 
 ## Check the status
 
-Retrieve the Contract after changing its start or ending it. Check its `status` and the corresponding dates. Review invoices and payments separately to check financial outcomes.
+Retrieve the Contract using its `external_id` and `code` after changing its start or ending it. Check its `status` and the corresponding dates. Review invoices and payments separately to check financial outcomes.
 
 <CardGroup cols={2}>
   <Card title="End or cancel a Contract" icon="circle-stop" href="/v2/guide/contracts/end-or-cancel">
