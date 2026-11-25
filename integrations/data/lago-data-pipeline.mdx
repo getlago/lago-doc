@@ -81,6 +81,7 @@ Here is the list of tables synced from Lago to your data destination:
 | `payment_requests`                  | Table |
 | `payments`                          | Table |
 | `plans`                             | Table |
+| `plans_taxes`                       | Table |
 | `record_deletions`                  | Table |
 | `subscriptions`                     | Table |
 | `taxes`                             | Table |
@@ -116,7 +117,9 @@ Product catalog plans are in `catalog_plans`, separate from the `plans` table us
 
 ## Tax tables
 
-One row per tax applied to a billing entity, a customer or a rate card. `billing_entities_taxes` and `customers_taxes` are filled for every organization, whatever its billing engine. `rate_cards_taxes` is a product catalog table and is empty for an organization that does not use it.
+One row per tax applied to a billing entity, a customer, a plan or a rate card. `billing_entities_taxes`, `customers_taxes` and `plans_taxes` are filled for every organization, whatever its billing engine. `rate_cards_taxes` is a product catalog table and is empty for an organization that does not use it.
+
+### `billing_entities_taxes`, `customers_taxes` and `rate_cards_taxes`
 
 | Column                                                              | Type      | Description                                         |
 |---------------------------------------------------------------------|-----------|-----------------------------------------------------|
@@ -126,6 +129,24 @@ One row per tax applied to a billing entity, a customer or a rate card. `billing
 | `lago_tax_id`                                                       | string    | Tax applied.                                        |
 | `created_at`                                                        | timestamp | Creation date.                                      |
 | `updated_at`                                                        | timestamp | Last update date.                                   |
+
+<Note>
+The `lago_taxes_ids` column of `customers` is deprecated: it is always an empty array and is only kept so existing destinations keep working. Use `customers_taxes` for the taxes assigned to a customer.
+</Note>
+
+### `plans_taxes`
+
+Each row belongs to either a plan or a catalog plan: exactly one of `lago_plan_id` and `lago_catalog_plan_id` is set. Taxes of plans used with subscriptions have `lago_plan_id`, taxes of product catalog plans have `lago_catalog_plan_id`.
+
+| Column                 | Type      | Description                                        |
+|------------------------|-----------|----------------------------------------------------|
+| `organization_id`      | string    | Lago organization id.                              |
+| `lago_id`              | string    | Primary key.                                       |
+| `lago_plan_id`         | string    | Plan of the tax, empty for a catalog plan tax.     |
+| `lago_catalog_plan_id` | string    | Catalog plan of the tax, empty for a plan tax.     |
+| `lago_tax_id`          | string    | Tax applied.                                       |
+| `created_at`           | timestamp | Creation date.                                     |
+| `updated_at`           | timestamp | Last update date.                                  |
 
 ## Product catalog columns
 
@@ -140,6 +161,7 @@ These columns come after the existing `fees` columns. They are empty for fees bi
 | `lago_rate_card_rate_id`     | string | Rate card rate applied to compute the fee.        |
 | `lago_product_filter_id`     | string | Product filter the fee applies to, if any.        |
 | `lago_product_id`            | string | Product the fee was billed for.                   |
+| `lago_rate_override_id`      | string | Rate override applied to compute the fee, if any. |
 
 For product catalog fees, the existing `item` column has the type `product` with the product's code and name, and `lago_customer_id` is the customer of the contract.
 
@@ -389,7 +411,7 @@ The sync only adds and updates rows in your destination, so deletions in Lago ar
 - When a table keeps deleted records, the row is still synced and its `deleted_at` column holds the deletion date. Filter on `deleted_at IS NULL` to keep active records only.
 - When a record is removed from Lago, a row is added to the `record_deletions` table with the name of its table in `table_name` and its id in `lago_record_id`. Delete or ignore the matching rows in your destination.
 
-`record_deletions` covers the following tables: `fees`, `fees_taxes`, `invoice_subscriptions`, `invoices_taxes`, `credit_notes_taxes`, `billing_entities_taxes`, `customers_taxes`, `rate_cards_taxes` and `contract_rate_cards_terms`.
+`record_deletions` covers the following tables: `fees`, `fees_taxes`, `invoice_subscriptions`, `invoices_taxes`, `credit_notes_taxes`, `billing_entities_taxes`, `customers_taxes`, `rate_cards_taxes`, `plans_taxes` and `contract_rate_cards_terms`.
 
 <Warning>
 Rows in `record_deletions` are kept for one month. If the sync to your destination is paused for longer than that, deletions from that period are not exported, and a full resync of the affected tables is needed to remove the deleted records from your destination.
