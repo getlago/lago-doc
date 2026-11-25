@@ -1,0 +1,91 @@
+---
+title: "Move to live mode"
+description: "Copy a billable metric, feature, coupon, plan or product from your sandbox to your production account. Lago reuses what production already has and copies the rest."
+keywords: ["sandbox", "move to live mode", "test mode", "production", "Lago Cloud"]
+---
+
+On Lago Cloud self-serve, each production account has one linked sandbox. You build and test your pricing in the sandbox, then use **Move to live mode** to copy each item to production.
+
+The move is a one-time copy. The item keeps its code in production, and your sandbox keeps its own version. Later changes in the sandbox never reach production, and nothing is ever copied from production to the sandbox.
+
+## Before you start
+
+- **You must be an admin of the production account.** For anyone else, the move is refused with "Only admins can move items to live mode."
+- **Production must be active.** Add a card to your production account first. Until then, every move is refused.
+- **Move to live mode is only available in the sandbox.** Production items have no such action.
+
+## What you can move
+
+| Item | What is copied |
+| --- | --- |
+| Billable metric | The metric with its filters. |
+| Feature | The feature with its privileges. |
+| Coupon | The coupon, and the billable metrics it is limited to. A coupon limited to plans moves once those plans are live. |
+| Product category | The category with all its products. |
+| Product | The product with its filters and rate cards. Its category must be live first. |
+| Plan | The whole plan: its rate cards with their phases, its entitlements, its wallets (with their credit allocations and alerts) and its taxes. |
+| Plan rate card | One rate card of a plan, with its phases. The plan must be live first. |
+
+No other item has the action. Customers, subscriptions, events, invoices and add-ons stay in the sandbox.
+
+When a rate card is copied, its current rate starts applying in production at the time of the move. Rates scheduled for later are kept, and past rates are not copied.
+
+## Move an item
+
+<Steps>
+  <Step title="Open the item's actions">
+    In your sandbox, open the list of items (for example **Billable metrics**) and click the actions menu of the item, or open the item's detail page.
+  </Step>
+  <Step title="Click Move to live mode">
+    A confirmation window lists the related items that Lago will copy with it (**Copied with it**) and the production items it will reuse (**Already in production, reused**).
+  </Step>
+  <Step title="Confirm">
+    Lago copies everything in one step. When the move succeeds, you see a message such as "Your billable metric `storage` is now in live mode." If anything fails, nothing is copied.
+  </Step>
+</Steps>
+
+The production [activity log](/guide/security/audit-logs) records each item the move creates, for example `billable_metric.moved_to_live`, under the name of the admin who moved it.
+
+## Codes already in production
+
+Lago matches items by code, and never overwrites a production item.
+
+- **The item itself:** when production already has an item with the same code, the move is refused, for example with "An active item already exists for plan `premium`". To change a live item, edit it in production.
+- **The items it uses:** when production already has a related item with the same code, Lago reuses it as it is, without changing it. Otherwise Lago copies it along.
+
+Related items that are reused or copied along include billable metrics, taxes, pricing units, features, product categories, products and rate cards. For example, moving a plan whose billable metric is already live reuses that metric and copies the plan's other metrics.
+
+## Parents go first
+
+Some items belong to another item, which must be live before you move them:
+
+- a product needs its product category;
+- a plan rate card needs its plan;
+- a coupon limited to plans needs each of those plans.
+
+Until then the move is refused, for example with "Move the plan `premium` to live mode first." Moving a product category or a plan copies its products or rate cards along, so you do not need to move them one by one.
+
+## Moving a rate card into a live plan
+
+You can add a sandbox rate card to a plan that is already live. Lago copies only that rate card and its phases into the live plan.
+
+The confirmation window shows how many active subscriptions of the live plan the change applies to. A live plan that has subscriptions cannot change its pricing, so the move is refused in that case.
+
+## Why a move can be refused
+
+The confirmation window tells you why a move is refused, and nothing is copied. The table lists each reason and what to do.
+
+| Reason | What to do |
+| --- | --- |
+| The coupon is terminated or expired. | Create a new coupon in the sandbox, or create it in production. |
+| The item relies on deleted items: a coupon whose billable metrics or plans are all deleted, a product whose billable metric is deleted, or a plan wallet whose targets are all deleted. | Point the item to items that still exist. |
+| The billable metric uses a custom aggregation. | Recreate the metric in production. |
+| Production already uses the code for another item, for example a product in another category or a rate card in another product. | Change the code in your sandbox. |
+| A live item to reuse lacks a filter the item uses: a billable metric without a filter value of the product, or a product without a filter of the rate card or plan wallet. | Add the filter in production. |
+| A live feature to reuse lacks a privilege the plan uses, or has one with another value type or without a select option the plan uses. | Add or change the privilege in production. |
+| A prorated rate card would bill a live billable metric that is not recurring, or that uses a weighted sum. | Use a recurring metric without a weighted sum in production. |
+| A rate card's pricing model, or a phase's rate, does not suit the live product or billable metric it lands on. | Change the pricing model in your sandbox. |
+| The live plan has subscriptions, so its pricing cannot change. | Create a new plan, or change the live plan in production. |
+| The live plan already prices the same product, or product filter, with another rate card. | Remove the duplicate pricing in your sandbox or in production. |
+| The rate card's currency differs from the plan's. | Use a rate card in the plan's currency. |
+| A pricing unit to copy needs a premium license that production does not have. | Contact the Lago team. |
