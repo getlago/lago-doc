@@ -8,12 +8,35 @@ Older updates: [2025](/changelog/product-2025) · [2024](/changelog/product-2024
 
 <Update
   label="November 2026"
-  tags={["Usage & metering", "API", "Security & access", "Invoicing", "Subscriptions", "Wallets & credits"]}
+  tags={["AI agents", "Payments", "Usage & metering", "API", "Security & access", "Invoicing", "Subscriptions", "Wallets & credits"]}
   rss={{
-    title: "November 2026 - Real-time usage, Standard Webhooks and payment terms that follow the contract",
-    description: "A premium add-on that refreshes wallet balances and current usage seconds after each event, webhooks signed with the Standard Webhooks open specification, and payment terms set on the subscription, wallet or one-off invoice they were negotiated for."
+    title: "November 2026 - x402 payments for agents, real-time usage, Standard Webhooks and payment terms that follow the contract",
+    description: "AI agents that top up prepaid credits in USDC over x402, a premium add-on that refreshes wallet balances and current usage seconds after each event, webhooks signed with the Standard Webhooks open specification, and payment terms set on the subscription, wallet or one-off invoice they were negotiated for."
   }}
 >
+  ## x402 payments: agents pay once, then call against credits
+
+  <Frame>
+    <img src="/changelog/images/20261127-x402-payments.webp" alt="An agent's 402 response offering a USDC top-up, the settled credit purchase in Lago and the wallet it funded." loading="lazy" />
+  </Frame>
+
+  An agent can't fill a signup form or enter a card. Raw x402 lets it pay in USDC, but it settles one on-chain payment per call, with no customer, plan or invoice behind it.
+
+  With **x402 payments**, an agent tops up a Lago wallet in USDC once, then calls your API against those credits, off chain.
+
+  - **One payment, many calls:** a $1.00 top-up covers 500 searches at 0.2 cents each. One settlement, then usage events priced by your plan.
+  - **No signup:** the paying address becomes a Lago customer, with a subscription and a wallet, on its first top-up. Later calls sign in with the same key.
+  - **Drop-in middleware:** `lago-x402` gates each paid route in Express, Hono or Next.js, and sends Lago one usage event per served call.
+  - **Invoices paid the same way:** a finalized USD invoice gets an x402 payment URL, so a buyer pays the amount due without a card on file.
+
+  Lago prices and records. The Coinbase facilitator settles. USDC lands on your payout address, and Lago never holds funds or keys.
+
+  [Learn more](/guide/ai-agents/x402)
+
+  <Info>
+  **Premium, on request.** USDC on Base and Solana, through Coinbase only, starting on testnet. The gate checks the wallet before each call, but a balance can go slightly negative between refreshes. Refunds are a credit note plus a transfer you send yourself.
+  </Info>
+
   ## Real-time usage: act on a balance seconds old, not minutes old
 
   <Frame>
