@@ -1,0 +1,74 @@
+---
+title: "Migration to v1.58.0"
+---
+
+Dear Lago Community, 👋
+
+We're writing to inform you about a fix in Lago v1.58.0 to the daily usage of customers whose timezone is 3 hours or more ahead of UTC. It only concerns organizations with revenue analytics enabled. An optional rake task repairs the daily usage already recorded.
+
+# What are the changes?
+
+## Every day is recorded for customers ahead of UTC
+
+Lago records the usage of each subscription for each day of the customer's timezone. An hourly job records the day that just ended when the customer's next day starts.
+
+Before v1.58.0, the job checked whether that day was already recorded against the UTC date instead of the customer's date. For a customer 3 hours or more ahead of UTC (for example in Moscow, India, Tokyo or Sydney), it skipped every other day, and the next recorded day held the usage of both days. Totals stayed right, but the usage per day alternated between nothing and twice the real amount. For recurring billable metrics, the usage carried over at the start of a billing period was not recorded either.
+
+From v1.58.0, every day is recorded. Upgrading does not change the daily usage already recorded.
+
+## A rake task repairs the recorded daily usage
+
+The `migrations:repair_daily_usage_gaps` task repairs one organization at a time. For the active subscriptions of customers whose timezone reached UTC+3 in the period it covers, it records the missing days that have usage, then splits the usage of the day that follows each of them.
+
+# Why are we doing this?
+
+The daily breakdown shows how a customer's usage grew over a billing period. With every other day missing, it showed spikes and gaps that did not happen.
+
+# What should self-hosted users do?
+
+<Note>
+Cloud users do not need to follow these instructions as the migration will be performed by the Lago Team.
+</Note>
+
+Follow these steps if an organization has revenue analytics enabled and customers whose timezone is 3 hours or more ahead of UTC for part of the year or all of it. Otherwise, installing v1.58.0 is enough.
+
+## Migration steps
+
+### 1. Install Lago v1.58.0
+
+Install the new version. Daily usage is recorded for every day from then on.
+
+### 2. Find the organizations to repair
+
+Open a shell (bash) on your API server and list the organizations with revenue analytics enabled:
+
+```bash
+bundle exec rails runner 'Organization.with_revenue_analytics_support.each { puts "#{it.id} #{it.name}" }'
+```
+
+### 3. Preview the repair
+
+For each organization, run the task without `DRY_RUN`:
+
+```bash
+bundle exec rails "migrations:repair_daily_usage_gaps[<organization_id>]"
+```
+
+The task lists each subscription it would repair, with the days it would record and the days whose usage it would split, and writes nothing. It covers the last 120 days by default. To start from another date, pass it after the organization ID, for example `[<organization_id>,2026-09-01]`.
+
+### 4. Run the repair
+
+```bash
+DRY_RUN=false bundle exec rails "migrations:repair_daily_usage_gaps[<organization_id>]"
+```
+
+The task computes the usage of every day it records, so it can take a while on a large organization.
+
+<Note>
+The task is safe to run multiple times. Each subscription is repaired in a single transaction: if the task stops, run it again and it resumes with the subscriptions that are not repaired yet. A repaired subscription is not changed again.
+</Note>
+
+The task leaves some daily usage as it is:
+
+- Terminated subscriptions, including the previous subscription of an upgrade or a downgrade.
+- Usage received late: a day the task records counts the events received after the following day was recorded, so that following day shows a negative usage for them. The total of the period does not change.
