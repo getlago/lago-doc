@@ -40,6 +40,27 @@ Under the hood, Lago's high-volume pipeline is built on **Kafka/Redpanda** for s
   </Step>
 </Steps>
 
+### The real-time path
+
+For eligible charges, Lago also maintains usage continuously as events arrive. Current usage and wallet balances are then read from that pre-aggregated usage, without a query over raw events.
+
+<Steps>
+  <Step title="Deduplicate">
+    The first event for a given organization, metric code, subscription, timestamp and `transaction_id` is kept.
+  </Step>
+  <Step title="Expand">
+    The event is matched to the subscription active at its timestamp, then to each charge and charge filter it bills.
+  </Step>
+  <Step title="Bucket">
+    Usage is aggregated into 15-minute buckets per subscription, charge, filter and grouping key. Every UTC offset is a multiple of 15 minutes, so a billing period in any timezone is an exact sum of buckets. An event with an old timestamp is added to the bucket for that timestamp.
+  </Step>
+  <Step title="Serve">
+    Buckets are stored in ClickHouse. The API reads them and prices them with the same charge models used for invoices.
+  </Step>
+</Steps>
+
+Real-time usage and invoices use the same pricing code, so they cannot disagree on price. See [which charges are served this way](/guide/events/retrieve-usage#charges-served-from-pre-aggregated-usage).
+
 ### Why ClickHouse?
 
 <CardGroup cols={2}>
@@ -104,6 +125,18 @@ Numbers from Lago's internal load tests and customer deployments:
 | Billing aggregation latency | **< 100ms p99** | Over 1B+ events in ClickHouse |
 | End-to-end (event to billable) | **< 2 seconds p99** | Kafka to enrichment to ClickHouse |
 | Storage compression | **10-20x** | ClickHouse columnar vs. raw JSON |
+| Event to wallet ongoing balance | **1.19 s p50, 1.72 s p99** | Production, isolated events, real-time path |
+| Event to wallet ongoing balance, under load | **1.37 s p50, 3.51 s p99** | Production, 100 events/sec for 3 minutes, real-time path |
+| Event to wallet ongoing balance | **603 ms p50, 949 ms p99** | Staging, 5,000 events/sec, real-time path |
+| Current usage read over 30 days | **20.6 ms CPU** (10,091 ms on raw events) | One subscription with 2.6M events per month |
+
+These rows measure different things. Sustained ingestion is the rate at which events are accepted into the event store. Event to billable is the time for an event to be enriched and stored. Event to wallet ongoing balance covers the whole path, from the client's request to the committed wallet balance.
+
+### How wallet latency is measured
+
+Each test uses one clock, started when the client sends the event. A probe event is sent, then the wallet is polled until the ongoing balance reflects it.
+
+Your latency depends on your event rate, your number of charges and charge filters, and your region. Measure it on your own organization before relying on a figure.
 
 ## Throughput by connector
 
