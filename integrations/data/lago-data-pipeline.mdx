@@ -48,11 +48,11 @@ The table names, column names and their meaning are the same for both, so an org
 - Tables that only apply to one billing engine are synced for every organization, and are empty when your organization does not use that engine. For example, the product catalog tables below are empty for an organization billing with plans and subscriptions.
 - Tables used by both billing engines, such as `fees` and `daily_usages`, have additional columns for the product catalog. These columns are always added after the existing ones and are empty for rows that do not come from the product catalog. Existing columns are never renamed, removed or reordered.
 
-Every table has an `organization_id` column, a `lago_id` primary key and an `updated_at` column used for incremental syncs.
+Every table has an `organization_id` column, a `lago_id` primary key and an `updated_at` column used for incremental syncs. See the [Data Pipeline schema](/integrations/data/lago-data-pipeline-schema) for the columns of every table.
 
 ### Tables
 
-Here is the list of tables synced from Lago to your data destination:
+These tables are filled for every organization, whatever its billing engine:
 
 | Name                                | Type  |
 |-------------------------------------|-------|
@@ -60,7 +60,6 @@ Here is the list of tables synced from Lago to your data destination:
 | `billable_metrics`                  | Table |
 | `billing_entities`                  | Table |
 | `billing_entities_taxes`            | Table |
-| `charges`                           | Table |
 | `coupons`                           | Table |
 | `credit_notes`                      | Table |
 | `credit_notes_taxes`                | Table |
@@ -74,23 +73,32 @@ Here is the list of tables synced from Lago to your data destination:
 | `fees_taxes`                        | Table |
 | `integration_customers`             | Table |
 | `invoice_settlements`               | Table |
-| `invoice_subscriptions`             | Table |
 | `invoices`                          | Table |
 | `invoices_taxes`                    | Table |
 | `item_metadata`                     | Table |
 | `payment_requests`                  | Table |
 | `payments`                          | Table |
-| `plans`                             | Table |
 | `plans_taxes`                       | Table |
+| `pricing_units`                     | Table |
 | `record_deletions`                  | Table |
-| `subscriptions`                     | Table |
 | `taxes`                             | Table |
 | `usage_monitoring_alert_thresholds` | Table |
 | `usage_monitoring_triggered_alerts` | Table |
-| `usage_thresholds`                  | Table |
 | `wallet_transaction_consumptions`   | Table |
 | `wallet_transactions`               | Table |
 | `wallets`                           | Table |
+
+### Plans and subscriptions tables
+
+These tables are empty for an organization billing with the product catalog:
+
+| Name                    | Type  |
+|-------------------------|-------|
+| `charges`               | Table |
+| `invoice_subscriptions` | Table |
+| `plans`                 | Table |
+| `subscriptions`         | Table |
+| `usage_thresholds`      | Table |
 
 ### Product catalog tables
 
@@ -103,7 +111,6 @@ These tables hold the product catalog and are empty for an organization that doe
 | `contract_rate_cards_terms` | Table |
 | `contracts`                 | Table |
 | `plan_rate_cards`           | Table |
-| `pricing_units`             | Table |
 | `product_categories`        | Table |
 | `product_filters`           | Table |
 | `products`                  | Table |
@@ -114,295 +121,6 @@ These tables hold the product catalog and are empty for an organization that doe
 | `rate_phases`               | Table |
 
 Product catalog plans are in `catalog_plans`, separate from the `plans` table used by plans and subscriptions.
-
-## Tax tables
-
-One row per tax applied to a billing entity, a customer, a plan or a rate card. `billing_entities_taxes`, `customers_taxes` and `plans_taxes` are filled for every organization, whatever its billing engine. `rate_cards_taxes` is a product catalog table and is empty for an organization that does not use it.
-
-### `billing_entities_taxes`, `customers_taxes` and `rate_cards_taxes`
-
-| Column                                                              | Type      | Description                                         |
-|---------------------------------------------------------------------|-----------|-----------------------------------------------------|
-| `organization_id`                                                   | string    | Lago organization id.                               |
-| `lago_id`                                                           | string    | Primary key.                                        |
-| `lago_billing_entity_id`, `lago_customer_id` or `lago_rate_card_id` | string    | Billing entity, customer or rate card of the tax.   |
-| `lago_tax_id`                                                       | string    | Tax applied.                                        |
-| `created_at`                                                        | timestamp | Creation date.                                      |
-| `updated_at`                                                        | timestamp | Last update date.                                   |
-
-<Note>
-The `lago_taxes_ids` column of `customers` is deprecated: it is always an empty array and is only kept so existing destinations keep working. Use `customers_taxes` for the taxes assigned to a customer.
-</Note>
-
-### `plans_taxes`
-
-Each row belongs to either a plan or a catalog plan: exactly one of `lago_plan_id` and `lago_catalog_plan_id` is set. Taxes of plans used with subscriptions have `lago_plan_id`, taxes of product catalog plans have `lago_catalog_plan_id`.
-
-| Column                 | Type      | Description                                        |
-|------------------------|-----------|----------------------------------------------------|
-| `organization_id`      | string    | Lago organization id.                              |
-| `lago_id`              | string    | Primary key.                                       |
-| `lago_plan_id`         | string    | Plan of the tax, empty for a catalog plan tax.     |
-| `lago_catalog_plan_id` | string    | Catalog plan of the tax, empty for a plan tax.     |
-| `lago_tax_id`          | string    | Tax applied.                                       |
-| `created_at`           | timestamp | Creation date.                                     |
-| `updated_at`           | timestamp | Last update date.                                  |
-
-## Product catalog columns
-
-### Columns added to `fees`
-
-These columns come after the existing `fees` columns. They are empty for fees billed from plans and subscriptions.
-
-| Column                       | Type   | Description                                       |
-|------------------------------|--------|---------------------------------------------------|
-| `lago_contract_id`           | string | Contract the fee was billed for.                  |
-| `lago_contract_rate_card_id` | string | Contract rate card the fee was billed from.       |
-| `lago_rate_card_rate_id`     | string | Rate card rate applied to compute the fee.        |
-| `lago_product_filter_id`     | string | Product filter the fee applies to, if any.        |
-| `lago_product_id`            | string | Product the fee was billed for.                   |
-| `lago_rate_override_id`      | string | Rate override applied to compute the fee, if any. |
-
-For product catalog fees, the existing `item` column has the type `product` with the product's code and name, and `lago_customer_id` is the customer of the contract.
-
-To link invoices to contracts, use `fees`: each fee carries `lago_invoice_id` along with `lago_contract_id` and `lago_contract_rate_card_id`.
-
-### Columns added to `daily_usages`
-
-These columns come after the existing `daily_usages` columns. A row holds the daily usage of either a subscription or a contract: subscription columns are empty for contract rows, and contract columns are empty for subscription rows.
-
-| Column                       | Type   | Description                                         |
-|------------------------------|--------|-----------------------------------------------------|
-| `lago_contract_id`           | string | Contract the usage belongs to.                      |
-| `external_contract_id`       | string | External id of the contract.                        |
-| `lago_contract_rate_card_id` | string | Contract rate card the usage is tracked for.        |
-
-For contract rows, the entries of `daily_usage` reference a contract rate card instead of a charge.
-
-### `products`
-
-| Column                     | Type      | Description                                            |
-|----------------------------|-----------|--------------------------------------------------------|
-| `organization_id`          | string    | Lago organization id.                                  |
-| `lago_id`                  | string    | Primary key.                                           |
-| `lago_product_category_id` | string    | Category of the product, if any.                       |
-| `lago_billable_metric_id`  | string    | Billable metric of the product, if any.                |
-| `lago_add_on_id`           | string    | Add-on of the product, if any.                         |
-| `lago_charge_id`           | string    | Charge of the product, if any.                         |
-| `product_type`             | string    | `metered` or `fixed`.                                  |
-| `code`                     | string    | Unique code of the product.                            |
-| `name`                     | string    | Name of the product.                                   |
-| `invoice_display_name`     | string    | Name displayed on invoices.                            |
-| `description`              | string    | Description of the product.                            |
-| `created_at`               | timestamp | Creation date.                                         |
-| `updated_at`               | timestamp | Last update date.                                      |
-| `deleted_at`               | timestamp | Deletion date, empty if the product is not deleted.    |
-
-### `product_categories`
-
-| Column                 | Type      | Description                                          |
-|------------------------|-----------|------------------------------------------------------|
-| `organization_id`      | string    | Lago organization id.                                |
-| `lago_id`              | string    | Primary key.                                         |
-| `code`                 | string    | Unique code of the category.                         |
-| `name`                 | string    | Name of the category.                                |
-| `description`          | string    | Description of the category.                         |
-| `invoice_display_name` | string    | Name displayed on invoices.                          |
-| `created_at`           | timestamp | Creation date.                                       |
-| `updated_at`           | timestamp | Last update date.                                    |
-| `deleted_at`           | timestamp | Deletion date, empty if the category is not deleted. |
-
-### `product_filters`
-
-| Column                 | Type      | Description                                                                 |
-|------------------------|-----------|-----------------------------------------------------------------------------|
-| `organization_id`      | string    | Lago organization id.                                                       |
-| `lago_id`              | string    | Primary key.                                                                |
-| `lago_product_id`      | string    | Product the filter belongs to.                                              |
-| `code`                 | string    | Unique code of the filter.                                                  |
-| `name`                 | string    | Name of the filter.                                                         |
-| `description`          | string    | Description of the filter.                                                  |
-| `invoice_display_name` | string    | Name displayed on invoices.                                                 |
-| `created_at`           | timestamp | Creation date.                                                              |
-| `updated_at`           | timestamp | Last update date, also updated when one of the filter's values changes.     |
-| `deleted_at`           | timestamp | Deletion date, empty if the filter is not deleted.                          |
-| `filter_values`        | json      | Billable metric filter values selected by the filter, as `[{"key", "value"}]`. |
-
-### `pricing_units`
-
-| Column            | Type      | Description                    |
-|-------------------|-----------|--------------------------------|
-| `organization_id` | string    | Lago organization id.          |
-| `lago_id`         | string    | Primary key.                   |
-| `code`            | string    | Unique code of the pricing unit. |
-| `name`            | string    | Name of the pricing unit.      |
-| `short_name`      | string    | Short name of the pricing unit. |
-| `description`     | string    | Description of the pricing unit. |
-| `created_at`      | timestamp | Creation date.                 |
-| `updated_at`      | timestamp | Last update date.              |
-
-### `rate_cards`
-
-| Column                      | Type      | Description                                                    |
-|-----------------------------|-----------|----------------------------------------------------------------|
-| `organization_id`           | string    | Lago organization id.                                          |
-| `lago_id`                   | string    | Primary key.                                                   |
-| `lago_product_id`           | string    | Product priced by the rate card.                               |
-| `lago_product_filter_id`    | string    | Product filter priced by the rate card, if any.                |
-| `code`                      | string    | Unique code of the rate card.                                  |
-| `name`                      | string    | Name of the rate card.                                         |
-| `description`               | string    | Description of the rate card.                                  |
-| `currency`                  | string    | Currency of the rate card.                                     |
-| `billing_timing`            | string    | `arrears` or `advance`.                                        |
-| `proration`                 | boolean   | Whether the rate card is prorated.                             |
-| `display_on_invoice`        | boolean   | Whether the rate card's fees are displayed on invoices.        |
-| `regroup_paid_fees`         | string    | `none` or `invoice`.                                           |
-| `applied_pricing_unit_code` | string    | Code of the pricing unit the rate card is priced in, if any.   |
-| `created_at`                | timestamp | Creation date.                                                 |
-| `updated_at`                | timestamp | Last update date.                                              |
-| `deleted_at`                | timestamp | Deletion date, empty if the rate card is not deleted.          |
-
-### `rate_card_rates`
-
-| Column                                 | Type      | Description                                                                                          |
-|----------------------------------------|-----------|------------------------------------------------------------------------------------------------------|
-| `organization_id`                      | string    | Lago organization id.                                                                                |
-| `lago_id`                              | string    | Primary key.                                                                                         |
-| `lago_rate_card_id`                    | string    | Rate card the rate belongs to.                                                                       |
-| `code`                                 | string    | Unique code of the rate.                                                                             |
-| `effective_from`                       | timestamp | Date the rate takes effect.                                                                          |
-| `rate_model`                           | string    | `standard`, `graduated`, `package`, `percentage`, `volume`, `graduated_percentage`, `custom` or `dynamic`. |
-| `rate_properties`                      | json      | Properties of the rate model.                                                                        |
-| `min_amount_cents`                     | bigint    | Minimum amount, in cents.                                                                            |
-| `billing_interval_count`               | integer   | Number of units in the billing interval.                                                             |
-| `billing_interval_unit`                | string    | `day`, `week`, `month` or `year`.                                                                    |
-| `applied_pricing_unit_conversion_rate` | decimal   | Conversion rate from the pricing unit to the currency, if the rate card uses a pricing unit.         |
-| `created_at`                           | timestamp | Creation date.                                                                                       |
-| `updated_at`                           | timestamp | Last update date.                                                                                    |
-| `deleted_at`                           | timestamp | Deletion date, empty if the rate is not deleted.                                                     |
-
-### `rate_phases`
-
-| Column                         | Type      | Description                                               |
-|--------------------------------|-----------|-----------------------------------------------------------|
-| `organization_id`              | string    | Lago organization id.                                     |
-| `lago_id`                      | string    | Primary key.                                              |
-| `lago_plan_rate_card_id`       | string    | Plan rate card the phase belongs to, if any.              |
-| `lago_contract_rate_card_id`   | string    | Contract rate card the phase belongs to, if any.          |
-| `lago_rate_override_id`        | string    | Rate override applied during the phase, if any.           |
-| `code`                         | string    | Unique code of the phase.                                 |
-| `name`                         | string    | Name of the phase.                                        |
-| `position`                     | integer   | Order of the phase.                                       |
-| `billing_interval_cycle_count` | integer   | Number of billing cycles the phase lasts.                 |
-| `created_at`                   | timestamp | Creation date.                                            |
-| `updated_at`                   | timestamp | Last update date.                                         |
-| `deleted_at`                   | timestamp | Deletion date, empty if the phase is not deleted.         |
-
-### `rate_overrides`
-
-| Column                         | Type      | Description                                                                                          |
-|--------------------------------|-----------|------------------------------------------------------------------------------------------------------|
-| `organization_id`              | string    | Lago organization id.                                                                                |
-| `lago_id`                      | string    | Primary key.                                                                                         |
-| `rate_model`                   | string    | Rate model, with the same values as `rate_card_rates.rate_model`.                                    |
-| `rate_properties`              | json      | Properties of the rate model.                                                                        |
-| `min_amount_cents`             | bigint    | Minimum amount, in cents.                                                                            |
-| `billing_interval_count`       | integer   | Number of units in the billing interval.                                                             |
-| `billing_interval_unit`        | string    | `day`, `week`, `month` or `year`.                                                                    |
-| `pricing_unit_conversion_rate` | decimal   | Conversion rate from the pricing unit to the currency, if any.                                       |
-| `created_at`                   | timestamp | Creation date.                                                                                       |
-| `updated_at`                   | timestamp | Last update date.                                                                                    |
-| `deleted_at`                   | timestamp | Deletion date, empty if the override is not deleted.                                                 |
-
-### `catalog_plans`
-
-| Column                 | Type      | Description                                      |
-|------------------------|-----------|--------------------------------------------------|
-| `organization_id`      | string    | Lago organization id.                            |
-| `lago_id`              | string    | Primary key.                                     |
-| `code`                 | string    | Unique code of the plan.                         |
-| `name`                 | string    | Name of the plan.                                |
-| `invoice_display_name` | string    | Name displayed on invoices.                      |
-| `description`          | string    | Description of the plan.                         |
-| `currency`             | string    | Currency of the plan.                            |
-| `created_at`           | timestamp | Creation date.                                   |
-| `updated_at`           | timestamp | Last update date.                                |
-| `deleted_at`           | timestamp | Deletion date, empty if the plan is not deleted. |
-
-### `plan_rate_cards`
-
-One row per rate card attached to a catalog plan.
-
-| Column                 | Type      | Description                                           |
-|------------------------|-----------|-------------------------------------------------------|
-| `organization_id`      | string    | Lago organization id.                                 |
-| `lago_id`              | string    | Primary key.                                          |
-| `lago_catalog_plan_id` | string    | Catalog plan the rate card is attached to.            |
-| `lago_rate_card_id`    | string    | Rate card attached to the plan.                       |
-| `units`                | decimal   | Units of the rate card in the plan.                   |
-| `created_at`           | timestamp | Creation date.                                        |
-| `updated_at`           | timestamp | Last update date.                                     |
-| `deleted_at`           | timestamp | Deletion date, empty if the rate card is not removed. |
-
-### `contracts`
-
-A contract is priced through a catalog plan, rate cards attached directly to it, or both. Contracts are never deleted: they are terminated or canceled, so this table has no `deleted_at` column.
-
-| Column                         | Type      | Description                                                         |
-|--------------------------------|-----------|---------------------------------------------------------------------|
-| `organization_id`              | string    | Lago organization id.                                               |
-| `lago_id`                      | string    | Primary key.                                                        |
-| `lago_customer_id`             | string    | Customer of the contract.                                           |
-| `external_id`                  | string    | External id of the contract.                                        |
-| `code`                         | string    | Code of the contract.                                               |
-| `name`                         | string    | Name of the contract.                                               |
-| `status`                       | string    | `draft`, `pending`, `active`, `terminated` or `canceled`.           |
-| `billing_anchor_date`          | date      | Date the contract's billing periods are anchored to.                |
-| `started_at`                   | timestamp | Start date of the contract.                                         |
-| `ended_at`                     | timestamp | End date of the contract, if any.                                   |
-| `terminated_at`                | timestamp | Termination date, if the contract was terminated.                   |
-| `canceled_at`                  | timestamp | Cancellation date, if the contract was canceled.                    |
-| `lago_catalog_plan_id`         | string    | Catalog plan of the contract, if any.                               |
-| `lago_billing_entity_id`       | string    | Billing entity of the contract.                                     |
-| `lago_payment_method_id`       | string    | Payment method of the contract, if any.                             |
-| `payment_method_type`          | string    | `provider` or `manual`.                                             |
-| `purchase_order_number`        | string    | Purchase order number, if any.                                      |
-| `consolidate_invoice`          | boolean   | Whether the contract's fees are consolidated on one invoice.        |
-| `skip_invoice_custom_sections` | boolean   | Whether invoice custom sections are skipped for the contract.       |
-| `created_at`                   | timestamp | Creation date.                                                      |
-| `updated_at`                   | timestamp | Last update date.                                                   |
-
-### `contract_rate_cards`
-
-One row per rate card attached to a contract. A contract rate card has no units column: its units over time are in `contract_rate_cards_terms`.
-
-| Column                | Type      | Description                                           |
-|-----------------------|-----------|-------------------------------------------------------|
-| `organization_id`     | string    | Lago organization id.                                 |
-| `lago_id`             | string    | Primary key.                                          |
-| `lago_contract_id`    | string    | Contract the rate card is attached to.                |
-| `lago_rate_card_id`   | string    | Rate card attached to the contract.                   |
-| `billing_anchor_date` | date      | Date the rate card's billing periods are anchored to. |
-| `next_billing_at`     | timestamp | Next billing date of the rate card.                   |
-| `effective_date`      | date      | Date the rate card takes effect on the contract.      |
-| `created_at`          | timestamp | Creation date.                                        |
-| `updated_at`          | timestamp | Last update date.                                     |
-| `deleted_at`          | timestamp | Deletion date, empty if the rate card is not removed. |
-
-### `contract_rate_cards_terms`
-
-The units of a contract rate card over time: one row per change, with the date it takes effect. Rows removed from Lago are listed in `record_deletions`.
-
-| Column                       | Type      | Description                                                 |
-|------------------------------|-----------|-------------------------------------------------------------|
-| `organization_id`            | string    | Lago organization id.                                       |
-| `lago_id`                    | string    | Primary key.                                                |
-| `lago_contract_rate_card_id` | string    | Contract rate card the units apply to.                      |
-| `units`                      | decimal   | Units of the contract rate card from `effective_date`.      |
-| `effective_date`             | date      | Date the units take effect.                                 |
-| `application_timing`         | string    | `current_billing_cycle` or `next_billing_cycle`.            |
-| `created_at`                 | timestamp | Creation date.                                              |
-| `updated_at`                 | timestamp | Last update date.                                           |
 
 ## Deleted records
 

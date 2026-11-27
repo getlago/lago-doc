@@ -1,0 +1,1151 @@
+---
+title: "Data Pipeline schema"
+description: "Every table and column synced by Lago Data Pipeline"
+---
+
+This page lists every table and column that [Lago Data Pipeline](/integrations/data/lago-data-pipeline) syncs to your destination, grouped by domain. Open a table to see its columns, in the order they appear in your destination.
+
+- `lago_id` is the primary key of every table.
+- `updated_at` drives incremental syncs: a row is synced again when its `updated_at` changes.
+- Amounts in `_cents` columns are in the smallest unit of the currency, for example cents for USD or EUR.
+- Timestamps are in UTC.
+- Organizations billing with plans and subscriptions and organizations billing with the product catalog share the same tables. Tables or columns that only apply to one of them are marked, and stay empty for the other. Columns for the product catalog are always added after the existing columns of a shared table.
+
+## Billing entities
+
+<AccordionGroup>
+  <Accordion title="billing_entities">
+    One row per billing entity, including archived and deleted ones.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the billing entity, assigned by Lago. |
+    | `code` | string | Unique code of the billing entity. |
+    | `name` | string | Name of the billing entity. |
+    | `legal_name` | string | Legal name of the billing entity. |
+    | `legal_number` | string | Legal registration number of the billing entity. |
+    | `email` | string | Email address of the billing entity. |
+    | `address_line1` | string | First line of the billing entity's address. |
+    | `address_line2` | string | Second line of the billing entity's address. |
+    | `city` | string | City of the billing entity's address. |
+    | `zipcode` | string | Zipcode of the billing entity's address. |
+    | `state` | string | State of the billing entity's address. |
+    | `country` | string | Country code of the billing entity's address. |
+    | `vat_rate` | float | Legacy VAT rate field on the billing entity. Taxes applied to the billing entity are listed in `billing_entities_taxes`. |
+    | `timezone` | string | Timezone of the billing entity. |
+    | `created_at` | timestamp | Date and time the billing entity was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the billing entity was last updated, in UTC. |
+    | `archived_at` | timestamp | Date and time the billing entity was archived, in UTC. Empty when it is not archived. |
+    | `deleted_at` | timestamp | Date and time the billing entity was deleted, in UTC. Empty when it is not deleted. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Customers
+
+<AccordionGroup>
+  <Accordion title="customers">
+    One row per customer, including deleted customers.
+
+    <Note>
+      The `lago_taxes_ids` column is deprecated: it is always an empty array and is only kept so existing destinations keep working. Use [`customers_taxes`](#taxes) for the taxes assigned to a customer.
+    </Note>
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the customer, assigned by Lago. |
+    | `billing_entity_id` | string | Unique identifier of the billing entity the customer is attached to, assigned by Lago. |
+    | `external_id` | string | Customer external unique identifier, provided by your own application. |
+    | `account_type` | string | Type of the account: `customer` or `partner`. |
+    | `name` | string | Full name of the customer. |
+    | `firstname` | string | First name of the customer. |
+    | `lastname` | string | Last name of the customer. |
+    | `customer_type` | string | Type of the customer: `company` or `individual`. Empty when not set. |
+    | `sequential_id` | bigint | Number of the customer within the organization, reflecting its order of creation. |
+    | `slug` | string | Short unique identifier of the customer, built from the organization and the customer's `sequential_id`. |
+    | `created_at` | timestamp | Date and time the customer was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the customer was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the customer was deleted, in UTC. Empty for active customers. |
+    | `country` | string | Country code of the customer's billing address, in ISO 3166 alpha-2 format. |
+    | `address_line1` | string | First line of the customer's billing address. |
+    | `address_line2` | string | Second line of the customer's billing address. |
+    | `state` | string | State of the customer's billing address. |
+    | `zipcode` | string | Zipcode of the customer's billing address. |
+    | `email` | string | Email of the customer. |
+    | `city` | string | City of the customer's billing address. |
+    | `url` | string | Custom website URL of the customer. |
+    | `phone` | string | Phone number of the customer. |
+    | `legal_name` | string | Legal company name of the customer. |
+    | `legal_number` | string | Legal company number of the customer. |
+    | `currency` | string | Currency of the customer, in ISO 4217 format. |
+    | `tax_identification_number` | string | Tax identification number of the customer. |
+    | `timezone` | string | Timezone set on the customer, used for billing in their local time. Empty when the customer has no timezone of its own. |
+    | `applicable_timezone` | string | Timezone that applies to the customer: its own timezone, else the organization's timezone, else `UTC`. |
+    | `net_payment_term` | integer | Number of days the customer has to pay an invoice after it is issued. Empty when the customer has no payment term of its own. |
+    | `external_salesforce_id` | string | Customer ID within the Salesforce system. |
+    | `finalize_zero_amount_invoice` | string | How invoices with a zero total are handled for this customer: `inherit` (follows the higher-level setting), `skip` or `finalize`. |
+    | `skip_invoice_custom_sections` | boolean | Whether all invoice custom sections are excluded from PDF generation for this customer. |
+    | `payment_provider` | string | Payment provider used to collect payments for the customer's invoices: `stripe`, `adyen`, `cashfree`, `flutterwave`, `gocardless` or `moneyhash`. Empty when none is set. |
+    | `payment_provider_code` | string | Unique code of the payment provider connection used for the customer. |
+    | `invoice_grace_period` | integer | Grace period in days set on the customer, during which invoices can still be adjusted before they are finalized. Empty when the customer has no grace period of its own. |
+    | `vat_rate` | float | Legacy VAT rate field on the customer. Taxes applied to the customer are listed in `customers_taxes`. |
+    | `applicable_invoice_grace_period` | integer | Invoice grace period in days that applies to the customer: its own value, else the organization's value. |
+    | `document_locale` | string | Language of the documents issued for the customer, in ISO 639-1 format. Empty when the customer has no locale of its own. |
+    | `provider_customer_id` | string | Customer ID within the payment provider's system, from the customer's payment provider record. |
+    | `provider_settings` | json | Settings of the customer's payment provider record, such as `provider_mandate_id`, `payment_method_id` or `sync_with_provider`. |
+    | `metadata` | json | Always an empty object in this table. |
+    | `lago_taxes_ids` | json | Always an empty array in this table. The taxes applied to a customer are listed in `customers_taxes`. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Billable metrics
+
+<AccordionGroup>
+  <Accordion title="billable_metrics">
+    One row per billable metric. Deleted billable metrics are excluded.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the billable metric, assigned by Lago. |
+    | `name` | string | Name of the billable metric. |
+    | `code` | string | Unique code of the billable metric, used to associate each event with the correct metric. |
+    | `description` | string | Internal description of the billable metric. |
+    | `aggregation_type` | string | Aggregation method used to compute usage: `count_agg`, `sum_agg`, `max_agg`, `unique_count_agg`, `weighted_sum_agg`, `latest_agg`, `custom_agg` or `unknown`. |
+    | `weighted_interval` | string | Time interval used to weight usage with the `weighted_sum_agg` aggregation type: `seconds`. Empty for other aggregation types. |
+    | `recurring` | boolean | Whether the accumulated number of units carries over from one billing period to the next instead of resetting to 0. |
+    | `rounding_function` | string | Rounding applied to the aggregated number of units: `round`, `ceil` or `floor`. Empty when units are not rounded. |
+    | `rounding_precision` | integer | Number of decimal places kept when `rounding_function` is applied. It can be positive or negative. |
+    | `created_at` | timestamp | Date and time the billable metric was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the billable metric was last updated, in UTC. |
+    | `field_name` | string | Event property used to aggregate usage. Empty when `aggregation_type` is `count_agg`. |
+    | `expression` | string | Expression evaluated for each event to calculate its units. |
+    | `filters` | json | Filters of the billable metric, as an array of objects with a `key` (the event property) and its possible `values`. Empty array when there are no filters. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Plans and subscriptions
+
+<AccordionGroup>
+  <Accordion title="charges">
+    One row per usage-based charge of a plan, including deleted charges.
+
+    Plans and subscriptions only: empty for organizations billing with the product catalog.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the charge, assigned by Lago. |
+    | `lago_billable_metric_id` | string | Unique identifier of the billable metric the charge prices, assigned by Lago. |
+    | `lago_plan_id` | string | Unique identifier of the plan the charge belongs to, assigned by Lago. |
+    | `invoice_display_name` | string | Name displayed on invoices for this charge. When empty, the name of the billable metric is used. |
+    | `created_at` | timestamp | Date and time the charge was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the charge was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the charge was deleted, in UTC. Empty while the charge exists. |
+    | `charge_model` | string | Pricing model of the charge: `standard`, `graduated`, `package`, `percentage`, `volume`, `graduated_percentage`, `custom` or `dynamic`. |
+    | `invoiceable` | boolean | Whether the charge is included in an invoice. When `false`, no invoice is issued for this charge. It can only be `false` when `pay_in_advance` is `true`. |
+    | `regroup_paid_fees` | string | Set to `invoice` when the paid-in-advance fees of a non-invoiceable charge are consolidated into an invoice at the end of the period once their payment succeeded. Empty when no invoice is issued for them. |
+    | `pay_in_advance` | boolean | When `true`, the charge is due and invoiced immediately. When `false`, it is due and invoiced at the end of each billing period. |
+    | `prorated` | boolean | When `true`, the charge is prorated based on the remaining days in the billing period. When `false`, it is billed in full. |
+    | `min_amount_cents` | bigint | Minimum amount to charge for each billing period, excluding taxes, in cents. |
+    | `properties` | json | JSON object holding the pricing properties of the charge model, with the same structure as the charge `properties` in the API (for example `amount` for a standard charge or `graduated_ranges` for a graduated one). |
+    | `charge_filters` | json | JSON array of the charge filters used to apply differentiated pricing. Each item holds `invoice_display_name`, `properties` (pricing properties for the filter) and `values`, an array of objects mapping a billable metric filter identifier to the list of filter values. Empty when the charge has no filter. |
+
+  </Accordion>
+  <Accordion title="plans">
+    One row per plan that is not deleted, including plans that override a parent plan for a single subscription.
+
+    Plans and subscriptions only: empty for organizations billing with the product catalog.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the plan, assigned by Lago. |
+    | `name` | string | Name of the plan. |
+    | `invoice_display_name` | string | Name displayed on invoices. When empty, the plan name is used. |
+    | `created_at` | timestamp | Date and time the plan was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the plan was last updated, in UTC. |
+    | `code` | string | Code of the plan, a unique identifier used for example when assigning a subscription. |
+    | `plan_interval` | string | Interval used for recurring billing: `weekly`, `monthly`, `yearly` or `quarterly`. Empty for `semiannual` plans, which this column does not map. |
+    | `description` | string | Description of the plan. |
+    | `amount_cents` | bigint | Base cost of the plan, excluding taxes, billed on a recurring basis, in cents. It is 0 for a pay-as-you-go plan. |
+    | `amount_currency` | string | Currency of the plan, used for its base cost and usage-based charges. |
+    | `trial_period` | float | Duration in days during which the base cost of the plan is offered for free. |
+    | `pay_in_advance` | boolean | When `true`, the base cost of the plan is due at the beginning of each billing period. When `false`, it is due at the end of the period. |
+    | `bill_charges_monthly` | boolean | When `true`, usage-based charges are invoiced monthly even if the plan interval is yearly or semiannual. |
+    | `parent_id` | string | Unique identifier of the parent plan, assigned by Lago. Set on plans that override a parent plan for a single subscription, empty on standard plans. |
+    | `lago_taxes_ids` | json | JSON array of the unique identifiers of the taxes applied to the plan, assigned by Lago. |
+
+  </Accordion>
+  <Accordion title="subscriptions">
+    One row per subscription of a customer to a plan.
+
+    Plans and subscriptions only: empty for organizations billing with the product catalog.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the subscription, assigned by Lago. |
+    | `external_id` | string | Subscription external unique identifier (provided by your own application). |
+    | `lago_customer_id` | string | Unique identifier of the customer, assigned by Lago. |
+    | `name` | string | Display name of the subscription on invoices. |
+    | `lago_plan_id` | string | Unique identifier of the plan of the subscription, assigned by Lago. |
+    | `status` | string | Status of the subscription: `pending`, `active`, `terminated` or `canceled`. Empty for `incomplete` subscriptions (waiting for a gating payment), which this column does not map. |
+    | `billing_time` | string | Billing time of the subscription: `calendar` or `anniversary`. It determines when recurring billing cycles start. |
+    | `subscription_at` | timestamp | Anniversary date and time of the initial subscription, in UTC. It is the basis for billing subscriptions with `anniversary` billing time. |
+    | `started_at` | timestamp | Effective start date and time of the subscription, in UTC. Empty if the subscription is `pending` or `canceled`. |
+    | `trial_ended_at` | timestamp | Date and time the free trial ended, in UTC. |
+    | `ending_at` | timestamp | Effective end date and time of the subscription, in UTC. When empty, the subscription renews automatically. |
+    | `terminated_at` | timestamp | Date and time the subscription was terminated, in UTC. Set when the status is `terminated`. |
+    | `canceled_at` | timestamp | Date and time the subscription was canceled, in UTC. Set when the status is `canceled`. |
+    | `created_at` | timestamp | Date and time the subscription was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the subscription was last updated, in UTC. |
+    | `lago_next_subscriptions_id` | json | JSON array of the unique identifiers of the subscriptions that replace this one after an upgrade or downgrade, assigned by Lago. Empty array when there is none. |
+    | `lago_previous_subscription_id` | string | Unique identifier of the subscription this one replaces after an upgrade or downgrade, assigned by Lago. Empty for a first subscription. |
+
+  </Accordion>
+  <Accordion title="usage_thresholds">
+    One row per progressive billing usage threshold, including deleted thresholds.
+
+    Plans and subscriptions only: empty for organizations billing with the product catalog.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_plan_id` | string | Unique identifier of the plan the threshold belongs to, assigned by Lago. Empty for a threshold defined on a single subscription. |
+    | `lago_id` | string | Unique identifier of the usage threshold, assigned by Lago. |
+    | `amount_cents` | bigint | Usage amount to reach to trigger a progressive billing invoice, in cents. |
+    | `recurring` | boolean | When `true`, a progressive billing invoice is created every time the lifetime usage increases by `amount_cents`. |
+    | `threshold_display_name` | string | Display name of the usage threshold. |
+    | `created_at` | timestamp | Date and time the usage threshold was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the usage threshold was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the usage threshold was deleted, in UTC. Empty while the threshold exists. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Product catalog
+
+<AccordionGroup>
+  <Accordion title="catalog_plans">
+    One row per plan of the product catalog.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the catalog plan, assigned by Lago. |
+    | `code` | string | Unique code of the catalog plan within the organization. |
+    | `name` | string | Name of the catalog plan. |
+    | `invoice_display_name` | string | Name of the catalog plan displayed on invoices. Empty when the plan name is used. |
+    | `description` | string | Description of the catalog plan. |
+    | `currency` | string | Currency of the catalog plan, as an ISO 4217 code. |
+    | `created_at` | timestamp | Date and time the catalog plan was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the catalog plan was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the catalog plan was deleted, in UTC. Empty if the catalog plan is not deleted. |
+
+  </Accordion>
+  <Accordion title="plan_rate_cards">
+    One row per rate card attached to a catalog plan.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the plan rate card, assigned by Lago. |
+    | `lago_catalog_plan_id` | string | Unique identifier of the catalog plan the rate card is attached to, assigned by Lago. |
+    | `lago_rate_card_id` | string | Unique identifier of the rate card attached to the plan, assigned by Lago. |
+    | `units` | decimal | Number of units of the rate card included in the plan. Copied to the contract's rate card terms when a contract uses the plan. Empty when not set. |
+    | `created_at` | timestamp | Date and time the rate card was attached to the plan, in UTC. |
+    | `updated_at` | timestamp | Date and time the plan rate card was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the rate card was removed from the plan, in UTC. Empty if it is still attached. |
+
+  </Accordion>
+  <Accordion title="pricing_units">
+    One row per pricing unit, a custom unit in which prices can be expressed instead of a currency.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the pricing unit, assigned by Lago. |
+    | `code` | string | Unique code of the pricing unit within the organization. |
+    | `name` | string | Name of the pricing unit. |
+    | `short_name` | string | Short name of the pricing unit, up to 3 characters, displayed next to amounts. |
+    | `description` | string | Description of the pricing unit. |
+    | `created_at` | timestamp | Date and time the pricing unit was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the pricing unit was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="product_categories">
+    One row per product category, used to group products.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the product category, assigned by Lago. |
+    | `code` | string | Unique code of the product category within the organization. |
+    | `name` | string | Name of the product category. |
+    | `description` | string | Description of the product category. |
+    | `invoice_display_name` | string | Name of the product category displayed on invoices. Empty when the category name is used. |
+    | `created_at` | timestamp | Date and time the product category was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the product category was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the product category was deleted, in UTC. Empty if the product category is not deleted. |
+
+  </Accordion>
+  <Accordion title="product_filters">
+    One row per product filter, a slice of a metered product's usage defined by billable metric filter values.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the product filter, assigned by Lago. |
+    | `lago_product_id` | string | Unique identifier of the product the filter belongs to, assigned by Lago. |
+    | `code` | string | Unique code of the filter within its product. |
+    | `name` | string | Name of the product filter. |
+    | `description` | string | Description of the product filter. |
+    | `invoice_display_name` | string | Name of the product filter displayed on invoices. Empty when the filter name is used. |
+    | `created_at` | timestamp | Date and time the product filter was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the product filter or one of its values was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the product filter was deleted, in UTC. Empty if the filter is not deleted. |
+    | `filter_values` | json | Billable metric filter values selected by the filter, as an array of `{"key", "value"}` objects where `key` is the billable metric filter key. Empty array when the filter has no values. |
+
+  </Accordion>
+  <Accordion title="products">
+    One row per product of the product catalog.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the product, assigned by Lago. |
+    | `lago_product_category_id` | string | Unique identifier of the product category, assigned by Lago. Empty when the product has no category. |
+    | `lago_billable_metric_id` | string | Unique identifier of the billable metric measuring the product's usage, assigned by Lago. Set for `metered` products, empty for `fixed` products. |
+    | `lago_add_on_id` | string | Unique identifier of the add-on linked to the product, assigned by Lago. Empty when the product is not linked to an add-on. |
+    | `lago_charge_id` | string | Unique identifier of the charge linked to the product, assigned by Lago. Empty when the product is not linked to a charge. |
+    | `product_type` | string | Type of the product: `metered` or `fixed`. A metered product is billed on usage of its billable metric, a fixed product bills a fixed fee per period. |
+    | `code` | string | Unique code of the product within the organization. |
+    | `name` | string | Name of the product. |
+    | `invoice_display_name` | string | Name of the product displayed on invoices. Empty when the product name is used. |
+    | `description` | string | Description of the product. |
+    | `created_at` | timestamp | Date and time the product was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the product was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the product was deleted, in UTC. Empty if the product is not deleted. |
+
+  </Accordion>
+  <Accordion title="rate_card_rates">
+    One row per rate of a rate card. A rate card's rates form a timeline: each rate applies from its `effective_from` until the next one takes effect.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the rate, assigned by Lago. |
+    | `lago_rate_card_id` | string | Unique identifier of the rate card the rate belongs to, assigned by Lago. |
+    | `code` | string | Unique code of the rate within its rate card. |
+    | `effective_from` | timestamp | Date and time the rate takes effect, in UTC. On `arrears` rate cards it is the start of a day. |
+    | `rate_model` | string | Pricing model of the rate: `standard`, `graduated`, `package`, `percentage`, `volume`, `graduated_percentage`, `custom` or `dynamic`. |
+    | `rate_properties` | json | Pricing properties of the rate, structured per `rate_model` with the same properties as a charge's pricing model (for example `amount` for `standard`, `graduated_ranges` for `graduated`). |
+    | `min_amount_cents` | bigint | Minimum amount billed per billing period, in cents. `0` when there is no minimum. Only used on `arrears` rate cards. |
+    | `billing_interval_count` | integer | Length of the billing period, as a number of `billing_interval_unit`. |
+    | `billing_interval_unit` | string | Unit of the billing period: `day`, `week`, `month` or `year`. |
+    | `applied_pricing_unit_conversion_rate` | decimal | Conversion rate from one pricing unit to the rate card currency. Set when the rate card is priced in a pricing unit, empty otherwise. |
+    | `created_at` | timestamp | Date and time the rate was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the rate was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the rate was deleted, in UTC. Empty if the rate is not deleted. |
+
+  </Accordion>
+  <Accordion title="rate_cards">
+    One row per rate card, which sets how a product, or a filter of it, is priced and billed.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the rate card, assigned by Lago. |
+    | `lago_product_id` | string | Unique identifier of the product priced by the rate card, assigned by Lago. |
+    | `lago_product_filter_id` | string | Unique identifier of the product filter priced by the rate card, assigned by Lago. Empty when the rate card prices the whole product. |
+    | `code` | string | Unique code of the rate card within the organization. |
+    | `name` | string | Name of the rate card. |
+    | `description` | string | Description of the rate card. |
+    | `currency` | string | Currency of the rate card, as an ISO 4217 code. |
+    | `billing_timing` | string | When the rate card's fees are billed: `arrears` (at the end of the period) or `advance`. |
+    | `proration` | boolean | Whether fees are prorated when the rate card covers part of a billing period. |
+    | `display_on_invoice` | boolean | Whether the rate card's fees are included on an invoice. Can only be `false` for metered products billed in `advance`. |
+    | `regroup_paid_fees` | string | How paid fees not displayed on an invoice are grouped: `none` or `invoice`. `invoice` gathers them on one invoice at the end of the period. Empty when fees stay standalone. |
+    | `applied_pricing_unit_code` | string | Code of the pricing unit the rate card is priced in. Empty when the rate card is priced in its currency. |
+    | `created_at` | timestamp | Date and time the rate card was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the rate card was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the rate card was deleted, in UTC. Empty if the rate card is not deleted. |
+
+  </Accordion>
+  <Accordion title="rate_overrides">
+    One row per rate override, which replaces the rate card's rate during a rate phase.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the rate override, assigned by Lago. |
+    | `rate_model` | string | Pricing model of the override: `standard`, `graduated`, `package`, `percentage`, `volume`, `graduated_percentage`, `custom` or `dynamic`. |
+    | `rate_properties` | json | Pricing properties of the override, structured per `rate_model` like `rate_card_rates.rate_properties`. |
+    | `min_amount_cents` | bigint | Minimum amount billed per billing period during the phase, in cents. `0` when there is no minimum. |
+    | `billing_interval_count` | integer | Length of the billing period during the phase, as a number of `billing_interval_unit`. Empty when the rate card rate's interval applies. |
+    | `billing_interval_unit` | string | Unit of the billing period during the phase: `day`, `week`, `month` or `year`. Empty when the rate card rate's interval applies. |
+    | `pricing_unit_conversion_rate` | decimal | Conversion rate from one pricing unit to the rate card currency during the phase. Set when the rate card is priced in a pricing unit, empty otherwise. |
+    | `created_at` | timestamp | Date and time the rate override was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the rate override was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the rate override was deleted, in UTC. Empty if the rate override is not deleted. |
+
+  </Accordion>
+  <Accordion title="rate_phases">
+    One row per phase of a plan rate card or contract rate card. Phases run in `position` order, each for a number of billing cycles.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the rate phase, assigned by Lago. |
+    | `lago_plan_rate_card_id` | string | Unique identifier of the plan rate card the phase belongs to, assigned by Lago. Empty when the phase belongs to a contract rate card. |
+    | `lago_contract_rate_card_id` | string | Unique identifier of the contract rate card the phase belongs to, assigned by Lago. Empty when the phase belongs to a plan rate card. |
+    | `lago_rate_override_id` | string | Unique identifier of the rate override applied during the phase, assigned by Lago. Empty when the phase uses the rate card's own rate. |
+    | `code` | string | Unique code of the phase within its rate card. |
+    | `name` | string | Name of the phase. |
+    | `position` | integer | Order of the phase in its rate card's timeline, starting at 1. |
+    | `billing_interval_cycle_count` | integer | Number of billing cycles the phase lasts. Empty for the last phase, which lasts indefinitely. |
+    | `created_at` | timestamp | Date and time the rate phase was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the rate phase was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the rate phase was deleted, in UTC. Empty if the rate phase is not deleted. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Contracts
+
+<AccordionGroup>
+  <Accordion title="contract_rate_cards">
+    One row per rate card attached to a contract, from its catalog plan or directly. Its units over time are in `contract_rate_cards_terms`.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the contract rate card, assigned by Lago. |
+    | `lago_contract_id` | string | Unique identifier of the contract the rate card is attached to, assigned by Lago. |
+    | `lago_rate_card_id` | string | Unique identifier of the rate card attached to the contract, assigned by Lago. |
+    | `billing_anchor_date` | date | Date the rate card's billing periods are anchored to. Defaults to the contract's anchor date, or its start date. |
+    | `next_billing_at` | timestamp | Date and time of the rate card's next billing, in UTC. Empty when there is nothing left to bill. |
+    | `effective_date` | date | Date the rate card takes effect on the contract. |
+    | `created_at` | timestamp | Date and time the rate card was attached to the contract, in UTC. |
+    | `updated_at` | timestamp | Date and time the contract rate card was last updated, in UTC. |
+    | `deleted_at` | timestamp | Date and time the rate card was removed from the contract, in UTC. Empty if it is still attached. |
+
+  </Accordion>
+  <Accordion title="contract_rate_cards_terms">
+    One row per change of units of a contract rate card, with the date it takes effect.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the term, assigned by Lago. |
+    | `lago_contract_rate_card_id` | string | Unique identifier of the contract rate card the units apply to, assigned by Lago. |
+    | `units` | decimal | Number of units of the contract rate card from `effective_date`. |
+    | `effective_date` | date | Date the units take effect. Unique per contract rate card. |
+    | `application_timing` | string | When the change of units applies: `current_billing_cycle` or `next_billing_cycle`. |
+    | `created_at` | timestamp | Date and time the term was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the term was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="contracts">
+    One row per contract, the agreement that bills a customer with the product catalog. Contracts are not deleted, they are terminated or canceled.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the contract, assigned by Lago. |
+    | `lago_customer_id` | string | Unique identifier of the customer of the contract, assigned by Lago. |
+    | `external_id` | string | External unique identifier of the contract, set by the organization. A new contract can reuse the external id of the one it replaces. |
+    | `code` | string | Code of the contract, unique per external id. |
+    | `name` | string | Name of the contract. |
+    | `status` | string | Status of the contract: `draft`, `pending`, `active`, `terminated` or `canceled`. |
+    | `billing_anchor_date` | date | Date the contract's billing periods are anchored to. Empty when billing is anchored to the start date. |
+    | `started_at` | timestamp | Date and time the contract starts, in UTC. |
+    | `ended_at` | timestamp | Planned end date and time of the contract, in UTC. Empty when the contract has no planned end. |
+    | `terminated_at` | timestamp | Date and time the contract was terminated, in UTC. Empty if the contract was not terminated. |
+    | `canceled_at` | timestamp | Date and time the contract was canceled, in UTC. Empty if the contract was not canceled. |
+    | `lago_catalog_plan_id` | string | Unique identifier of the catalog plan of the contract, assigned by Lago. Empty when the contract only has rate cards attached directly. |
+    | `lago_billing_entity_id` | string | Unique identifier of the billing entity of the contract, assigned by Lago. Empty when not set on the contract. |
+    | `lago_payment_method_id` | string | Unique identifier of the payment method used for the contract, assigned by Lago. Empty when not set. |
+    | `payment_method_type` | string | Payment method type of the contract: `provider` or `manual`. |
+    | `purchase_order_number` | string | Purchase order number of the contract, if any. |
+    | `consolidate_invoice` | boolean | Whether the contract is billed on the same recurring invoice as the customer's other contracts. |
+    | `skip_invoice_custom_sections` | boolean | Whether invoice custom sections are left off the contract's invoices. |
+    | `created_at` | timestamp | Date and time the contract was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the contract was last updated, in UTC. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Usage
+
+<AccordionGroup>
+  <Accordion title="daily_usages">
+    One row per subscription, or per contract rate card, for each day with usage.
+
+    Columns for the product catalog come after the original columns. A row holds the usage of either a subscription or a contract.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization the daily usage belongs to, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the daily usage record, assigned by Lago. |
+    | `from_datetime` | timestamp | Start of the billing period the usage belongs to, in UTC. |
+    | `refreshed_at` | timestamp | Date and time the usage was computed, in UTC. |
+    | `to_datetime` | timestamp | End of the billing period the usage belongs to, in UTC. |
+    | `daily_usage` | json | Usage accumulated since the start of the billing period, as an object with the keys `from_datetime`, `to_datetime`, `issuing_date`, `currency`, `amount_cents`, `taxes_amount_cents`, `total_amount_cents`, `lago_invoice_id` and `charges_usage`. For a contract, its single `charges_usage` entry references a contract rate card, a rate card and a product instead of a charge. |
+    | `daily_usage_date` | date | Day the usage is recorded for. |
+    | `daily_usage_diff` | json | Usage added on this day only, with the same structure as `daily_usage`. It is the difference with the previous daily usage of the same billing period, or the full usage when there is none. |
+    | `created_at` | timestamp | Date and time the record was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the record was last updated, in UTC. |
+    | `lago_customer_id` | string | Unique identifier of the customer the usage belongs to, assigned by Lago. |
+    | `lago_subscription_id` | string | Unique identifier of the subscription the usage belongs to, assigned by Lago. It is empty for contract usage. Plans and subscriptions only. |
+    | `external_subscription_id` | string | Unique identifier of the subscription in your application. It is empty for contract usage. Plans and subscriptions only. |
+    | `lago_contract_id` | string | Unique identifier of the contract the usage belongs to, assigned by Lago. It is empty for subscription usage. Product catalog only. |
+    | `external_contract_id` | string | Unique identifier of the contract in your application. It is empty for subscription usage. Product catalog only. |
+    | `lago_contract_rate_card_id` | string | Unique identifier of the contract rate card the usage belongs to, assigned by Lago. It is empty for subscription usage. Product catalog only. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Invoices and fees
+
+<AccordionGroup>
+  <Accordion title="fees">
+    One row per fee.
+
+    Columns for the product catalog come after the original columns. To link invoices to contracts, use `lago_invoice_id` with `lago_contract_id` and `lago_contract_rate_card_id`.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization the fee belongs to, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the fee, assigned by Lago. |
+    | `lago_charge_id` | string | Unique identifier of the charge the fee belongs to, assigned by Lago. It is empty for fees that are not charge fees. Plans and subscriptions only. |
+    | `lago_fixed_charge_id` | string | Unique identifier of the fixed charge the fee belongs to, assigned by Lago. It is empty for fees that are not fixed charge fees. Plans and subscriptions only. |
+    | `lago_charge_filter_id` | string | Unique identifier of the charge filter the fee belongs to, assigned by Lago. It is empty when the fee is not tied to a charge filter. Plans and subscriptions only. |
+    | `lago_invoice_id` | string | Unique identifier of the invoice the fee belongs to, assigned by Lago. It is empty for fees that are not attached to an invoice, such as pay-in-advance fees that are not invoiced. |
+    | `lago_subscription_id` | string | Unique identifier of the subscription the fee belongs to, assigned by Lago. It is empty for fees that are not tied to a subscription. Plans and subscriptions only. |
+    | `lago_customer_id` | string | Unique identifier of the customer the fee belongs to, assigned by Lago. It comes from the subscription, or from the contract for contract fees, and is empty when the fee has neither. |
+    | `item` | json | Item attached to the fee, as an object with the keys `type`, `code`, `name`, `description`, `invoice_display_name`, `filters`, `lago_item_id`, `item_type` and `grouped_by`. `type` is `charge`, `add_on`, `subscription`, `credit`, `commitment`, `fixed_charge`, `product` or `unknown`, and `item_type` is `billable_metric`, `add_on`, `wallet_transaction`, `product` or `subscription`. |
+    | `pay_in_advance` | boolean | Whether the fee was paid in advance (`true`) or in arrears at the end of the period (`false`). |
+    | `amount_cents` | bigint | Amount of the fee, excluding taxes, in cents. |
+    | `invoiceable` | boolean | Whether the fee is included on an invoice. For charge fees it comes from the charge, for product fees from whether the rate card is displayed on invoices. It is empty for other fee types. |
+    | `taxes_amount_cents` | bigint | Tax amount of the fee, in cents. |
+    | `taxes_precise_amount_cents` | decimal | Tax amount of the fee, in cents, with full precision. |
+    | `taxes_rate` | float | Tax rate applied to the fee. |
+    | `total_amount_cents` | bigint | Amount of the fee, including taxes, in cents. It is `amount_cents` plus `taxes_amount_cents`. |
+    | `currency` | string | Currency of the fee. |
+    | `units` | decimal | Number of units used to charge the customer for this fee. |
+    | `description` | string | Description of the fee. |
+    | `precise_amount_cents` | decimal | Amount of the fee, excluding taxes, in cents, with full precision. |
+    | `precise_unit_amount` | decimal | Amount of the fee per unit, with full precision. |
+    | `precise_coupons_amount_cents` | decimal | Coupon amount applied to the fee, in cents, with full precision. |
+    | `precise_total_amount_cents` | decimal | Amount of the fee, including taxes, in cents, with full precision. It is `precise_amount_cents` plus `taxes_precise_amount_cents`. |
+    | `precise_credit_notes_amount_cents` | decimal | Credit note amount applied to the fee, in cents, with full precision. |
+    | `events_count` | integer | Number of events used to compute the fee. |
+    | `payment_status` | string | Payment status of the fee. Possible values are `pending`, `succeeded`, `failed`, `refunded` or `unknown`. |
+    | `created_at` | timestamp | Date and time the fee was created, in UTC. |
+    | `succeeded_at` | timestamp | Date and time the payment of the fee succeeded, in UTC. |
+    | `failed_at` | timestamp | Date and time the payment of the fee failed, in UTC. |
+    | `refunded_at` | timestamp | Date and time the payment of the fee was refunded, in UTC. |
+    | `amount_details` | json | Details used to compute the fee amount, such as the units and amounts of each tier or package, depending on the pricing model. |
+    | `updated_at` | timestamp | Date and time the fee was last updated, in UTC. |
+    | `from_date` | string | Start of the period the fee covers, as an ISO 8601 timestamp in text form. For charge and fixed charge fees it is the start of their own billing period. |
+    | `to_date` | string | End of the period the fee covers, as an ISO 8601 timestamp in text form. For charge and fixed charge fees it is the end of their own billing period. |
+    | `lago_contract_id` | string | Unique identifier of the contract the fee was billed for, assigned by Lago. It is empty for fees that do not come from a contract. Product catalog only. |
+    | `lago_contract_rate_card_id` | string | Unique identifier of the contract rate card the fee was billed from, assigned by Lago. It is empty for fees that do not come from a contract. Product catalog only. |
+    | `lago_rate_card_rate_id` | string | Unique identifier of the rate card rate used to price the fee, assigned by Lago. It is empty for fees that are not product fees. Product catalog only. |
+    | `lago_product_filter_id` | string | Unique identifier of the product filter the fee belongs to, assigned by Lago. It is empty when the fee is not tied to a product filter. Product catalog only. |
+    | `lago_product_id` | string | Unique identifier of the product the fee was billed for, assigned by Lago. It comes from the rate card of the fee's rate and is empty for fees that are not product fees. Product catalog only. |
+    | `lago_rate_override_id` | string | Unique identifier of the rate override used to price the fee, assigned by Lago. A rate override replaces the pricing of a rate card rate. It is empty when no override applies. Product catalog only. |
+
+  </Accordion>
+  <Accordion title="invoice_settlements">
+    One row per settlement of an invoice by a payment or a credit note.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization the settlement belongs to, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the invoice settlement, assigned by Lago. |
+    | `lago_billing_entity_id` | string | Unique identifier of the billing entity the settlement belongs to, assigned by Lago. |
+    | `lago_target_invoice_id` | string | Unique identifier of the invoice being settled, assigned by Lago. |
+    | `settlement_type` | string | How the invoice was settled. Possible values are `payment` or `credit_note`. |
+    | `lago_source_payment_id` | string | Unique identifier of the payment that settled the invoice, assigned by Lago. It is empty when `settlement_type` is `credit_note`. |
+    | `lago_source_credit_note_id` | string | Unique identifier of the credit note that settled the invoice, assigned by Lago. It is empty when `settlement_type` is `payment`. |
+    | `amount_cents` | bigint | Amount of the invoice settled, in cents. |
+    | `amount_currency` | string | Currency of the settled amount. |
+    | `created_at` | timestamp | Date and time the settlement was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the settlement was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="invoice_subscriptions">
+    One row per subscription billed on an invoice.
+
+    Plans and subscriptions only: empty for organizations billing with the product catalog.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization the record belongs to, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the invoice subscription record, assigned by Lago. |
+    | `lago_invoice_id` | string | Unique identifier of the invoice, assigned by Lago. |
+    | `lago_regenerated_invoice_id` | string | Unique identifier of the invoice that replaced this invoice after it was voided and regenerated, assigned by Lago. It is empty when the invoice was not regenerated. |
+    | `lago_subscription_id` | string | Unique identifier of the subscription billed on the invoice, assigned by Lago. |
+    | `created_at` | timestamp | Date and time the record was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the record was last updated, in UTC. |
+    | `from_datetime` | timestamp | Start of the subscription period billed on the invoice, in UTC. |
+    | `to_datetime` | timestamp | End of the subscription period billed on the invoice, in UTC. |
+    | `charges_from_datetime` | timestamp | Start of the period billed for the subscription's usage-based charges, in UTC. |
+    | `charges_to_datetime` | timestamp | End of the period billed for the subscription's usage-based charges, in UTC. |
+    | `timestamp` | timestamp | Billing date and time used to generate the invoice for the subscription, in UTC. |
+    | `invoicing_reason` | string | Why the subscription was billed on the invoice. Possible values are `subscription_starting`, `subscription_periodic`, `subscription_terminating`, `in_advance_charge`, `in_advance_charge_periodic` or `progressive_billing`. |
+
+  </Accordion>
+  <Accordion title="invoices">
+    One row per invoice.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization the invoice belongs to, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the invoice, assigned by Lago. |
+    | `sequential_id` | integer | Sequential number of the invoice within the customer's invoices. It is assigned when the invoice is finalized, so it is empty on draft invoices. |
+    | `customer_id` | string | Unique identifier of the customer the invoice is issued to, assigned by Lago. |
+    | `number` | string | Unique number assigned to the invoice. |
+    | `issuing_date` | timestamp | Date when the invoice was issued. |
+    | `payment_due_date` | timestamp | Payment due date of the invoice. |
+    | `net_payment_term` | integer | Number of days between the issuing date and the payment due date of the invoice. |
+    | `invoice_type` | string | Type of invoice. Possible values are `subscription`, `add_on`, `credit`, `one_off`, `advance_charges`, `progressive_billing` or `contract`. |
+    | `status` | string | Status of the invoice. Possible values are `draft`, `finalized`, `voided`, `failed`, `pending` or `deleted`. Deleted invoices are kept with the `deleted` status so the deletion reaches your warehouse. |
+    | `payment_status` | string | Status of the payment associated with the invoice. Possible values are `pending`, `succeeded` or `failed`. |
+    | `payment_dispute_lost_at` | timestamp | Date when the payment dispute was lost. It is empty until a dispute is lost on the invoice. |
+    | `payment_overdue` | boolean | Whether the payment of the invoice is considered overdue. |
+    | `currency` | string | Currency of the invoice. |
+    | `fees_amount_cents` | bigint | Total amount of all fees on the invoice, in cents. |
+    | `taxes_amount_cents` | bigint | Total tax amount of the invoice, in cents. |
+    | `progressive_billing_credit_amount_cents` | bigint | Usage already billed on previous progressive billing invoices and deducted from this invoice, in cents. It only applies to `progressive_billing` and `subscription` invoices. |
+    | `coupons_amount_cents` | bigint | Total amount discounted by coupons on the invoice, in cents. |
+    | `credit_notes_amount_cents` | bigint | Total amount discounted by credit notes on the invoice, in cents. |
+    | `sub_total_excluding_taxes_amount_cents` | bigint | Subtotal of the invoice excluding taxes, in cents. How it is computed depends on `version_number`. |
+    | `sub_total_including_taxes_amount_cents` | bigint | Subtotal of the invoice including taxes, in cents. How it is computed depends on `version_number`. |
+    | `total_amount_cents` | bigint | Total amount of the invoice, including taxes, in cents. |
+    | `total_due_amount_cents` | bigint | Amount still to be paid on the invoice, in cents. It is `total_amount_cents` minus the amount already paid. |
+    | `prepaid_credit_amount_cents` | bigint | Total amount discounted by prepaid credits on the invoice, in cents. |
+    | `prepaid_granted_credit_amount_cents` | bigint | Part of the prepaid credits discounted on the invoice that came from granted (free) credits, in cents. Only filled for invoices of traceable wallets. |
+    | `prepaid_purchased_credit_amount_cents` | bigint | Part of the prepaid credits discounted on the invoice that came from purchased (paid) credits, in cents. Only filled for invoices of traceable wallets. |
+    | `version_number` | integer | Version of the invoice calculation rules applied to the invoice. It determines how the subtotals are computed. |
+    | `created_at` | timestamp | Date and time the invoice was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the invoice was last updated, in UTC. |
+    | `voided_at` | timestamp | Date and time the invoice was voided, in UTC. It is empty for invoices that have not been voided. |
+    | `metadata` | json | Metadata attached to the invoice, as an array of objects with the keys `lago_id`, `key`, `value` and `created_at`. It is empty when the invoice has no metadata. |
+    | `error_details` | json | Errors raised while generating the invoice, as an array of objects with the keys `lago_id`, `error_code` and `details`. It is empty when no error was raised. |
+
+  </Accordion>
+  <Accordion title="item_metadata">
+    One row per metadata object attached to a record.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the metadata object, assigned by Lago. |
+    | `owner_type` | string | Type of record the metadata belongs to: `Plan`, `CreditNote`, `Wallet`, `CatalogWallet` or `PlanWallet`. |
+    | `lago_owner_id` | string | Unique identifier of the record the metadata belongs to, assigned by Lago. Its type is given by `owner_type`. |
+    | `value` | json | Metadata as a JSON object of up to 50 keys, each mapped to a string value or null. |
+    | `created_at` | timestamp | Date and time the row was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the row was last updated, in UTC. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Credit notes
+
+<AccordionGroup>
+  <Accordion title="credit_notes">
+    One row per credit note.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization the credit note belongs to, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the credit note, assigned by Lago. |
+    | `sequential_id` | integer | Sequential number of the credit note within the credit notes of its invoice. |
+    | `number` | string | Unique number of the credit note. |
+    | `lago_invoice_id` | string | Unique identifier of the invoice the credit note belongs to, assigned by Lago. |
+    | `issuing_date` | date | Date when the credit note was issued. |
+    | `credit_status` | string | Status of the credit part of the credit note. Possible values are `available`, `consumed` or `voided`. It is empty when the credit note has no credit part. |
+    | `refund_status` | string | Status of the refund part of the credit note. Possible values are `pending`, `succeeded` or `failed`. It is empty when the credit note has no refund part. |
+    | `reason` | string | Reason for issuing the credit note. Possible values are `duplicated_charge`, `product_unsatisfactory`, `order_change`, `order_cancellation`, `fraudulent_charge` or `other`. |
+    | `description` | string | Description of the credit note. |
+    | `currency` | string | Currency of the credit note. |
+    | `total_amount_cents` | bigint | Total amount of the credit note, including taxes, in cents. |
+    | `taxes_amount_cents` | bigint | Tax amount of the credit note, in cents. |
+    | `sub_total_excluding_taxes_amount_cents` | bigint | Subtotal of the credit note excluding taxes, in cents. It is the sum of the credit note items minus the coupon adjustment, rounded. |
+    | `balance_amount_cents` | bigint | Remaining credit amount of the credit note, in cents. |
+    | `credit_amount_cents` | bigint | Amount credited to the customer by the credit note, in cents. |
+    | `refund_amount_cents` | bigint | Amount refunded to the customer by the credit note, in cents. |
+    | `coupons_adjustment_amount_cents` | bigint | Prorated amount of the coupons applied to the source invoice, in cents. |
+    | `taxes_rate` | float | Tax rate applied to the credit note. |
+    | `created_at` | timestamp | Date and time the credit note was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the credit note was last updated, in UTC. |
+    | `refunded_at` | timestamp | Date and time the credit note was refunded, in UTC. It is empty when no refund was made. |
+    | `items` | json | Items of the credit note, as an array of objects with the keys `lago_id`, `amount_cents`, `amount_currency` and `lago_fee_id` (the fee credited by the item). |
+    | `metadata` | json | Metadata attached to the credit note, as an array of objects with the keys `key` and `value`. It is empty when the credit note has no metadata. |
+    | `error_details` | json | Errors raised while the credit note was issued, as an array of objects with the keys `lago_id`, `error_code` and `details`. It is empty when no error was raised. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Payments
+
+<AccordionGroup>
+  <Accordion title="payment_requests">
+    One row per payment request.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization the payment request belongs to, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the payment request, assigned by Lago. |
+    | `lago_customer_id` | string | Unique identifier of the customer the payment request is for, assigned by Lago. |
+    | `payment_attempts` | int | Number of payment attempts made for the payment request. |
+    | `amount_cents` | bigint | Amount the payment request collects, in cents. |
+    | `amount_currency` | string | Currency of the payment request. |
+    | `email` | string | Email address used for sending dunning notifications. It defaults to the customer's email address. |
+    | `ready_for_payment_processing` | boolean | Whether a new payment can be started for the payment request. It is `false` once a payment is in progress or has succeeded. |
+    | `payment_status` | string | Payment status of the payment request. Possible values are `pending`, `succeeded` or `failed`. |
+    | `created_at` | timestamp | Date and time the payment request was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the payment request was last updated, in UTC. |
+    | `invoice_ids` | json | The Lago identifiers of the invoices the payment request collects payment for, as an array. |
+    | `payment_ids` | json | The Lago identifiers of the payments made for the payment request, as an array ordered by creation date. |
+
+  </Accordion>
+  <Accordion title="payments">
+    One row per payment.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization the payment belongs to, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the payment, assigned by Lago. |
+    | `amount_cents` | bigint | Amount of the payment, in cents. |
+    | `amount_currency` | string | Currency of the payment. |
+    | `payment_status` | string | Payment status, normalized by Lago so it is the same for every payment provider. Possible values are `pending`, `processing`, `succeeded` or `failed`. It is empty when Lago has not recorded a normalized status for the payment. |
+    | `payment_type` | string | Type of payment. Possible values are `provider`, `manual` or `x402`. |
+    | `reference` | string | Reference of the payment. It is set on manual payments only and empty for other payments. |
+    | `external_payment_id` | string | Unique identifier of the payment within the payment provider, if applicable. |
+    | `created_at` | timestamp | Date and time the payment was created in Lago, in UTC. |
+    | `updated_at` | timestamp | Date and time the payment was last updated, in UTC. |
+    | `invoice_ids` | json | The Lago identifiers of the invoices the payment applies to, as an array. For a payment on a payment request, it lists the invoices of that request. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Wallets
+
+<AccordionGroup>
+  <Accordion title="wallet_transaction_consumptions">
+    One row per amount of an inbound wallet transaction consumed by an outbound wallet transaction. Only recorded for traceable wallets.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the wallet transaction consumption, assigned by Lago. |
+    | `lago_inbound_wallet_transaction_id` | string | Unique identifier of the inbound wallet transaction the credits were consumed from, assigned by Lago. |
+    | `lago_outbound_wallet_transaction_id` | string | Unique identifier of the outbound wallet transaction that consumed the credits, assigned by Lago. |
+    | `consumed_amount_cents` | bigint | Amount consumed from the inbound wallet transaction, in cents. |
+    | `created_at` | timestamp | Date and time the consumption was recorded, in UTC. |
+    | `updated_at` | timestamp | Date and time the consumption was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="wallet_transactions">
+    One row per wallet transaction, either crediting (inbound) or debiting (outbound) a wallet.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the wallet transaction, assigned by Lago. |
+    | `lago_wallet_id` | string | Unique identifier of the wallet, assigned by Lago. |
+    | `status` | string | Status of the wallet transaction: `pending`, `settled` or `failed`. |
+    | `source` | string | Origin of the wallet transaction: `manual`, `interval` (recurring top-up rule), `threshold` (top-up rule triggered by a balance threshold) or `x402`. |
+    | `transaction_status` | string | Transaction status of the wallet transaction: `purchased`, `granted`, `voided` or `invoiced`. |
+    | `transaction_type` | string | Type of transaction: `inbound` (increasing the balance) or `outbound` (decreasing the balance). |
+    | `amount` | decimal | Amount of the transaction in the wallet currency, based on the credits and the wallet rate. |
+    | `credit_amount` | decimal | Number of credits of the transaction. |
+    | `settled_at` | timestamp | Date and time the wallet transaction was settled, in UTC. |
+    | `failed_at` | timestamp | Date and time the wallet transaction failed, in UTC. |
+    | `created_at` | timestamp | Date and time the wallet transaction was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the wallet transaction was last updated, in UTC. |
+    | `invoice_requires_successful_payment` | boolean | When `true`, the invoice for this top-up is issued only once its payment succeeds. When `false`, it is issued immediately. |
+    | `metadata` | json | JSON array of key-value pairs holding additional information about the transaction. Each item holds `key` and `value`. |
+    | `lago_invoice_id` | string | Unique identifier of the invoice associated with the wallet transaction, assigned by Lago. For an inbound transaction it is the top-up invoice, for an outbound transaction the invoice the credits were applied to. Empty when there is none. |
+
+  </Accordion>
+  <Accordion title="wallets">
+    One row per customer wallet holding prepaid credits.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the wallet, assigned by Lago. |
+    | `lago_customer_id` | string | Unique identifier of the customer, assigned by Lago. |
+    | `status` | string | Status of the wallet: `active` or `terminated`. |
+    | `currency` | string | Currency of the wallet. |
+    | `name` | string | Name of the wallet. |
+    | `rate_amount` | decimal | Conversion rate between credits and the wallet currency: the value of one credit in the currency. |
+    | `credits_balance` | decimal | Current wallet balance in credits, after all transactions are settled. |
+    | `credits_ongoing_balance` | decimal | Ongoing wallet balance in credits: `credits_balance` minus `credits_ongoing_usage_balance`, accounting for current usage including taxes. |
+    | `credits_ongoing_usage_balance` | decimal | Ongoing usage of the wallet in credits, covering all current usage and draft invoices including taxes. |
+    | `balance_cents` | bigint | Current wallet balance, after all transactions are settled, in cents. |
+    | `ongoing_balance_cents` | bigint | Ongoing wallet balance in cents: `balance_cents` minus `ongoing_usage_balance_cents`, accounting for current usage including taxes. |
+    | `ongoing_usage_balance_cents` | bigint | Ongoing usage of the wallet in cents, covering all current usage and draft invoices including taxes. |
+    | `consumed_credits` | decimal | Number of credits consumed from the wallet. |
+    | `created_at` | timestamp | Date and time the wallet was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the wallet was last updated, in UTC. |
+    | `terminated_at` | timestamp | Date and time the wallet was terminated, in UTC. |
+    | `last_balance_sync_at` | timestamp | Date and time of the last balance top-up, in UTC. |
+    | `last_consumed_credit_at` | timestamp | Date and time of the last credits consumption, in UTC. |
+    | `invoice_requires_successful_payment` | boolean | When `true`, the invoice for a wallet top-up is issued only once its payment succeeds. When `false`, it is issued immediately. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Coupons
+
+<AccordionGroup>
+  <Accordion title="applied_coupons">
+    One row per coupon applied to a customer.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the applied coupon, assigned by Lago. |
+    | `lago_coupon_id` | string | Unique identifier of the coupon, assigned by Lago. |
+    | `lago_customer_id` | string | Unique identifier of the customer, assigned by Lago. |
+    | `status` | string | Status of the applied coupon: `active` or `terminated`. |
+    | `amount_cents` | bigint | Amount of the coupon, in cents. Set for `fixed_amount` coupons. |
+    | `amount_cents_remaining` | bigint | Coupon `amount_cents` minus the sum of the credits it applied, in cents. Only computed for `fixed_amount` coupons with a `forever` frequency that have applied at least one credit, empty otherwise. |
+    | `amount_currency` | string | Currency of the coupon amount. Set for `fixed_amount` coupons. |
+    | `percentage_rate` | decimal | Percentage rate of the coupon. Set for `percentage` coupons. |
+    | `frequency` | string | Frequency of the applied coupon: `once`, `recurring` or `forever`. |
+    | `frequency_duration` | integer | Number of billing periods to which the coupon applies. Set when the frequency is `recurring`. |
+    | `frequency_duration_remaining` | integer | Remaining number of billing periods to which the coupon applies. |
+    | `created_at` | timestamp | Date and time the coupon was applied to the customer, in UTC. |
+    | `terminated_at` | timestamp | Date and time the coupon was fully used or removed from the customer, in UTC. |
+    | `updated_at` | timestamp | Date and time the applied coupon was last updated, in UTC. |
+    | `credits` | json | JSON array of the credits the coupon applied to invoices. Each item holds `lago_id`, `amount_cents`, `amount_currency` and `before_taxes`. Empty when the coupon has not been applied to an invoice yet. |
+
+  </Accordion>
+  <Accordion title="coupons">
+    One row per coupon, including deleted coupons.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the coupon, assigned by Lago. |
+    | `name` | string | Name of the coupon. |
+    | `code` | string | Unique code used to identify the coupon. |
+    | `description` | string | Description of the coupon. |
+    | `coupon_type` | string | Type of the coupon: `fixed_amount` for a fixed amount discount or `percentage` for a percentage-based discount. |
+    | `amount_cents` | bigint | Amount of the coupon, in cents. Set only for `fixed_amount` coupons. |
+    | `amount_currency` | string | Currency of the coupon. Set only for `fixed_amount` coupons. |
+    | `percentage_rate` | decimal | Percentage rate of the coupon. Set only for `percentage` coupons. |
+    | `frequency` | string | Frequency of the coupon: `once` (applies to a single invoice), `recurring` (applies for a number of billing periods) or `forever`. |
+    | `frequency_duration` | integer | Number of billing periods to which the coupon applies. Set only for `recurring` coupons. |
+    | `reusable` | boolean | When `true`, the coupon can be applied several times to the same customer. |
+    | `limited_plans` | boolean | When `true`, the coupon only applies to specific plans. |
+    | `limited_billable_metrics` | boolean | When `true`, the coupon only applies to specific billable metrics. |
+    | `lago_plan_ids` | json | JSON array of the unique identifiers of the plans the coupon is limited to, assigned by Lago. Empty array when the coupon is not limited to plans. Plans and subscriptions only. |
+    | `lago_billable_metrics_ids` | json | JSON array of the unique identifiers of the billable metrics the coupon is limited to, assigned by Lago. Empty array when the coupon is not limited to billable metrics. |
+    | `created_at` | timestamp | Date and time the coupon was created, in UTC. |
+    | `expiration` | string | Type of expiration of the coupon: `no_expiration` or `time_limit`. |
+    | `expiration_at` | timestamp | Date and time the coupon expires, in UTC. Set only when `expiration` is `time_limit`. |
+    | `terminated_at` | timestamp | Date and time the coupon was terminated, in UTC. A terminated coupon stays on the customers it was applied to but can no longer be applied. |
+    | `updated_at` | timestamp | Date and time the coupon was last updated, in UTC. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Taxes
+
+<AccordionGroup>
+  <Accordion title="billing_entities_taxes">
+    One row per tax applied to a billing entity.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the billing entity tax, assigned by Lago. |
+    | `lago_billing_entity_id` | string | Unique identifier of the billing entity, assigned by Lago. |
+    | `lago_tax_id` | string | Unique identifier of the tax, assigned by Lago. |
+    | `created_at` | timestamp | Date and time the row was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the row was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="credit_notes_taxes">
+    One row per tax applied to a credit note.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the credit note applied tax, assigned by Lago. |
+    | `lago_tax_id` | string | Unique identifier of the tax, assigned by Lago. |
+    | `lago_credit_note_id` | string | Unique identifier of the credit note, assigned by Lago. |
+    | `tax_name` | string | Name of the tax at the time it was applied. |
+    | `tax_code` | string | Code of the tax at the time it was applied. |
+    | `tax_rate` | float | Percentage rate of the tax at the time it was applied. |
+    | `tax_description` | string | Description of the tax at the time it was applied. |
+    | `base_amount_cents` | bigint | Credit note amount on which the tax is applied, in cents. |
+    | `amount_cents` | bigint | Tax amount of the credit note for this tax, in cents. |
+    | `amount_currency` | string | Currency of the tax amount, in ISO 4217 format. |
+    | `created_at` | timestamp | Date and time the row was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the row was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="customers_taxes">
+    One row per tax applied to a customer.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the customer tax, assigned by Lago. |
+    | `lago_customer_id` | string | Unique identifier of the customer, assigned by Lago. |
+    | `lago_tax_id` | string | Unique identifier of the tax, assigned by Lago. |
+    | `created_at` | timestamp | Date and time the row was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the row was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="fees_taxes">
+    One row per tax applied to a fee.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the fee applied tax, assigned by Lago. |
+    | `lago_fee_id` | string | Unique identifier of the fee, assigned by Lago. |
+    | `lago_tax_id` | string | Unique identifier of the tax, assigned by Lago. |
+    | `tax_name` | string | Name of the tax at the time it was applied. |
+    | `tax_code` | string | Code of the tax at the time it was applied. |
+    | `tax_rate` | float | Percentage rate of the tax at the time it was applied. |
+    | `tax_description` | string | Description of the tax at the time it was applied. |
+    | `amount_cents` | bigint | Tax amount of the fee for this tax, in cents. |
+    | `amount_currency` | string | Currency of the tax amount, in ISO 4217 format. |
+    | `created_at` | timestamp | Date and time the row was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the row was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="invoices_taxes">
+    One row per tax applied to an invoice. Taxes of deleted invoices are excluded.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the invoice applied tax, assigned by Lago. |
+    | `lago_invoice_id` | string | Unique identifier of the invoice, assigned by Lago. |
+    | `lago_tax_id` | string | Unique identifier of the tax, assigned by Lago. |
+    | `tax_name` | string | Name of the tax at the time it was applied. |
+    | `tax_code` | string | Code of the tax at the time it was applied. |
+    | `tax_rate` | float | Percentage rate of the tax at the time it was applied. |
+    | `tax_description` | string | Description of the tax at the time it was applied. |
+    | `amount_cents` | bigint | Tax amount of the invoice for this tax, in cents. |
+    | `amount_currency` | string | Currency of the tax amount, in ISO 4217 format. |
+    | `fees_amount_cents` | bigint | Total amount of the invoice fees on which the tax is applied, in cents. |
+    | `created_at` | timestamp | Date and time the row was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the row was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="plans_taxes">
+    One row per tax applied to a plan or a catalog plan.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the plan tax, assigned by Lago. |
+    | `lago_plan_id` | string | Unique identifier of the plan, assigned by Lago. Empty when the tax is applied to a catalog plan. Plans and subscriptions only. |
+    | `lago_catalog_plan_id` | string | Unique identifier of the catalog plan, assigned by Lago. Empty when the tax is applied to a plan. Product catalog only. |
+    | `lago_tax_id` | string | Unique identifier of the tax, assigned by Lago. |
+    | `created_at` | timestamp | Date and time the row was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the row was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="rate_cards_taxes">
+    One row per tax applied to a rate card.
+
+    Product catalog only: empty for organizations billing with plans and subscriptions.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the rate card tax, assigned by Lago. |
+    | `lago_rate_card_id` | string | Unique identifier of the rate card, assigned by Lago. |
+    | `lago_tax_id` | string | Unique identifier of the tax, assigned by Lago. |
+    | `created_at` | timestamp | Date and time the row was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the row was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="taxes">
+    One row per tax.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the tax, assigned by Lago. |
+    | `name` | string | Name of the tax. |
+    | `code` | string | Unique code of the tax. |
+    | `rate` | float | Percentage rate of the tax. |
+    | `description` | string | Internal description of the tax. |
+    | `applied_to_organization` | boolean | Deprecated. Whether the tax is applied to the organization's default billing entity. Use `billing_entities_taxes` instead. |
+    | `created_at` | timestamp | Date and time the tax was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the tax was last updated, in UTC. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Entitlements
+
+<AccordionGroup>
+  <Accordion title="entitlement_entitlement_values">
+    One row per privilege value set on an entitlement, including deleted values.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the entitlement value, assigned by Lago. |
+    | `lago_entitlement_entitlement_id` | string | Unique identifier of the entitlement the value belongs to, assigned by Lago. |
+    | `lago_entitlement_privilege_id` | string | Unique identifier of the feature privilege the value is set for, assigned by Lago. |
+    | `value` | string | Value assigned to the privilege in the entitlement, stored as text. Its type depends on the privilege value type (integer, boolean, string or select). |
+    | `deleted_at` | timestamp | Date and time the value was deleted, in UTC. Empty while the value exists. |
+    | `created_at` | timestamp | Date and time the value was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the value was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="entitlement_entitlements">
+    One row per feature granted to a plan or to a single subscription, including deleted entitlements.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the entitlement, assigned by Lago. |
+    | `lago_entitlement_feature_id` | string | Unique identifier of the feature granted, assigned by Lago. |
+    | `lago_plan_id` | string | Unique identifier of the plan the entitlement belongs to, assigned by Lago. Empty for an entitlement set on a single subscription or on a product catalog plan. Plans and subscriptions only. |
+    | `lago_subscription_id` | string | Unique identifier of the subscription the entitlement belongs to, assigned by Lago. Set when the entitlement overrides the plan for a single subscription, empty otherwise. Plans and subscriptions only. |
+    | `deleted_at` | timestamp | Date and time the entitlement was deleted, in UTC. Empty while the entitlement exists. |
+    | `created_at` | timestamp | Date and time the entitlement was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the entitlement was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="entitlement_features">
+    One row per feature, including deleted features.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the feature, assigned by Lago. |
+    | `code` | string | Unique code used to identify the feature. |
+    | `name` | string | Name of the feature. |
+    | `description` | string | Description of the feature. |
+    | `deleted_at` | timestamp | Date and time the feature was deleted, in UTC. Empty while the feature exists. |
+    | `created_at` | timestamp | Date and time the feature was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the feature was last updated, in UTC. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Usage monitoring
+
+<AccordionGroup>
+  <Accordion title="usage_monitoring_alert_thresholds">
+    One row per threshold of a subscription or wallet alert.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the alert threshold, assigned by Lago. |
+    | `lago_alert_id` | string | Unique identifier of the alert the threshold belongs to, assigned by Lago. |
+    | `value` | decimal | Value that triggers the alert. Its unit depends on the alert type: units for usage units alerts, credits for wallet credits alerts, and cents for all other types. |
+    | `code` | string | Code identifying the threshold inside the alert. |
+    | `recurring` | boolean | When `true`, the alert is triggered again each time this value is reached after the last non-recurring threshold. An alert has at most one recurring threshold. |
+    | `created_at` | timestamp | Date and time the threshold was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the threshold was last updated, in UTC. |
+
+  </Accordion>
+  <Accordion title="usage_monitoring_triggered_alerts">
+    One row per time a subscription or wallet alert was triggered.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the triggered alert, assigned by Lago. |
+    | `lago_alert_id` | string | Unique identifier of the alert, assigned by Lago. |
+    | `lago_subscription_id` | string | Unique identifier of the subscription, assigned by Lago. Empty when the alert is attached to a wallet. Plans and subscriptions only. |
+    | `lago_wallet_id` | string | Unique identifier of the wallet, assigned by Lago. Empty when the alert is attached to a subscription. |
+    | `current_value` | decimal | Value checked against the thresholds when the alert was triggered. |
+    | `previous_value` | decimal | Value retrieved during the previous check of the alert. |
+    | `crossed_thresholds` | json | JSON array of the threshold lines crossed since the previous check. Each item holds `code`, `value` and `recurring`; a recurring threshold can appear several times. |
+    | `triggered_at` | timestamp | Date and time the alert was triggered, in UTC. |
+    | `created_at` | timestamp | Date and time the record was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the record was last updated, in UTC. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Integrations
+
+<AccordionGroup>
+  <Accordion title="integration_customers">
+    One row per link between a customer and an accounting, tax or CRM integration.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the integration customer, assigned by Lago. |
+    | `lago_customer_id` | string | Unique identifier of the customer, assigned by Lago. |
+    | `lago_integration_id` | string | Unique identifier of the integration connection, assigned by Lago. |
+    | `external_customer_id` | string | Customer ID within the integration's system. Empty when the customer has not been created in that system yet. |
+    | `type` | string | Type of integration: `IntegrationCustomers::NetsuiteCustomer`, `IntegrationCustomers::XeroCustomer`, `IntegrationCustomers::QuickbooksCustomer`, `IntegrationCustomers::AnrokCustomer`, `IntegrationCustomers::AvalaraCustomer`, `IntegrationCustomers::HubspotCustomer` or `IntegrationCustomers::SalesforceCustomer`. |
+    | `settings` | json | Integration-specific settings, such as `sync_with_provider`, `subsidiary_id` (NetSuite) or `targeted_object` and `email` (HubSpot). |
+    | `created_at` | timestamp | Date and time the row was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the row was last updated, in UTC. |
+
+  </Accordion>
+</AccordionGroup>
+
+## Deleted records
+
+<AccordionGroup>
+  <Accordion title="record_deletions">
+    One row per hard-deleted record of a tracked table, kept for one month so the deletion can be applied to your copy of the data.
+
+    | Column | Type | Description |
+    | --- | --- | --- |
+    | `organization_id` | string | Unique identifier of the organization, assigned by Lago. |
+    | `lago_id` | string | Unique identifier of the deletion record, assigned by Lago. |
+    | `table_name` | string | Table the deleted record belonged to: `fees`, `fees_taxes`, `invoice_subscriptions`, `invoices_taxes`, `credit_notes_taxes`, `billing_entities_taxes`, `customers_taxes`, `rate_cards_taxes`, `plans_taxes` or `contract_rate_cards_terms`. |
+    | `lago_record_id` | string | Unique identifier of the deleted record, matching its `lago_id` in `table_name`. |
+    | `deleted_at` | timestamp | Date and time the record was deleted, in UTC. |
+    | `created_at` | timestamp | Date and time the row was created, in UTC. |
+    | `updated_at` | timestamp | Date and time the row was last updated, in UTC. |
+
+  </Accordion>
+</AccordionGroup>
