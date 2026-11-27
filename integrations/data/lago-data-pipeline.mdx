@@ -42,24 +42,95 @@ You can sync your Lago data to any of the following destinations:
 | `Google Sheets`     | Spreadsheet      | Supported |
 
 ## Data sources
-Here is the list of tables synced from Lago to your data destination:
+Lago syncs one dataset to your destination, whichever billing engine your organization uses: plans and subscriptions, or the product catalog with contracts and rate cards.
+The table names, column names and their meaning are the same for both, so an organization that moves to the product catalog keeps the same tables and queries.
 
-| Name                  | Type  |
-|-----------------------|-------|
-| `applied_coupons`     | Table |
-| `billable_metrics`    | Table |
-| `charges`             | Table |
-| `coupons`             | Table |
-| `credit_notes_taxes`  | Table |
-| `credit_notes`        | Table |
-| `customers`           | Table |
-| `fees_taxes`          | Table |
-| `fees`                | Table |
-| `invoices_taxes`      | Table |
-| `invoices`            | Table |
-| `plans`               | Table |
-| `subscriptions`       | Table |
-| `taxes`               | Table |
-| `wallet_transactions` | Table |
-| `wallets`             | Table |
+- Tables that only apply to one billing engine are synced for every organization, and are empty when your organization does not use that engine. For example, the product catalog tables below are empty for an organization billing with plans and subscriptions.
+- Tables used by both billing engines, such as `fees` and `daily_usages`, have additional columns for the product catalog. These columns are always added after the existing ones and are empty for rows that do not come from the product catalog. Existing columns are never renamed, removed or reordered.
 
+Every table has an `organization_id` column, a `lago_id` primary key and an `updated_at` column used for incremental syncs. See the [Data Pipeline schema](/integrations/data/lago-data-pipeline-schema) for the columns of every table.
+
+### Tables
+
+These tables are filled for every organization, whatever its billing engine:
+
+| Name                                | Type  |
+|-------------------------------------|-------|
+| `applied_coupons`                   | Table |
+| `billable_metrics`                  | Table |
+| `billing_entities`                  | Table |
+| `billing_entities_taxes`            | Table |
+| `coupons`                           | Table |
+| `credit_notes`                      | Table |
+| `credit_notes_taxes`                | Table |
+| `customers`                         | Table |
+| `customers_taxes`                   | Table |
+| `daily_usages`                      | Table |
+| `entitlement_entitlement_values`    | Table |
+| `entitlement_entitlements`          | Table |
+| `entitlement_features`              | Table |
+| `fees`                              | Table |
+| `fees_taxes`                        | Table |
+| `integration_customers`             | Table |
+| `invoice_settlements`               | Table |
+| `invoices`                          | Table |
+| `invoices_taxes`                    | Table |
+| `item_metadata`                     | Table |
+| `payment_requests`                  | Table |
+| `payments`                          | Table |
+| `plans_taxes`                       | Table |
+| `pricing_units`                     | Table |
+| `record_deletions`                  | Table |
+| `taxes`                             | Table |
+| `usage_monitoring_alert_thresholds` | Table |
+| `usage_monitoring_triggered_alerts` | Table |
+| `wallet_transaction_consumptions`   | Table |
+| `wallet_transactions`               | Table |
+| `wallets`                           | Table |
+
+### Plans and subscriptions tables
+
+These tables are empty for an organization billing with the product catalog:
+
+| Name                    | Type  |
+|-------------------------|-------|
+| `charges`               | Table |
+| `invoice_subscriptions` | Table |
+| `plans`                 | Table |
+| `subscriptions`         | Table |
+| `usage_thresholds`      | Table |
+
+### Product catalog tables
+
+These tables hold the product catalog and are empty for an organization that does not use it:
+
+| Name                        | Type  |
+|-----------------------------|-------|
+| `catalog_plans`             | Table |
+| `contract_rate_cards`       | Table |
+| `contract_rate_cards_terms` | Table |
+| `contracts`                 | Table |
+| `plan_rate_cards`           | Table |
+| `product_categories`        | Table |
+| `product_filters`           | Table |
+| `products`                  | Table |
+| `rate_card_rates`           | Table |
+| `rate_cards`                | Table |
+| `rate_cards_taxes`          | Table |
+| `rate_overrides`            | Table |
+| `rate_phases`               | Table |
+
+Product catalog plans are in `catalog_plans`, separate from the `plans` table used by plans and subscriptions.
+
+## Deleted records
+
+The sync only adds and updates rows in your destination, so deletions in Lago are exported as data:
+
+- When a table keeps deleted records, the row is still synced and its `deleted_at` column holds the deletion date. Filter on `deleted_at IS NULL` to keep active records only.
+- When a record is removed from Lago, a row is added to the `record_deletions` table with the name of its table in `table_name` and its id in `lago_record_id`. Delete or ignore the matching rows in your destination.
+
+`record_deletions` covers the following tables: `fees`, `fees_taxes`, `invoice_subscriptions`, `invoices_taxes`, `credit_notes_taxes`, `billing_entities_taxes`, `customers_taxes`, `rate_cards_taxes`, `plans_taxes` and `contract_rate_cards_terms`.
+
+<Warning>
+Rows in `record_deletions` are kept for one month. If the sync to your destination is paused for longer than that, deletions from that period are not exported, and a full resync of the affected tables is needed to remove the deleted records from your destination.
+</Warning>
