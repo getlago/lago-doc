@@ -30,14 +30,18 @@ sequenceDiagram
     Lago-->>API: Challenge (no credits)
     API-->>Agent: 402 + top-up offer + sign-in challenge
     Agent->>API: Retry with PAYMENT-SIGNATURE
-    API->>Lago: Credit purchase
+    API->>Lago: Gate check, then credit purchase
     Lago->>CDP: Verify, then settle
     CDP-->>Lago: Settled, tx hash
     Lago-->>API: Credits granted, subscription
     API-->>Agent: 200 + PAYMENT-RESPONSE
     API->>Lago: Usage event, after the response
     Note over Agent,Lago: Next calls: the agent signs in, is served from credits, no chain activity
-    Agent->>API: Call with SIGN-IN-WITH-X
+    Agent->>API: Call
+    API->>Lago: Gate check (no sign-in)
+    Lago-->>API: Challenge
+    API-->>Agent: 402 + sign-in challenge
+    Agent->>API: Retry with SIGN-IN-WITH-X
     API->>Lago: Gate check (sign-in proof)
     Lago-->>API: Pass
     API-->>Agent: 200
@@ -45,8 +49,8 @@ sequenceDiagram
 ```
 
 1. **No credits.** The agent calls a gated route. The middleware asks Lago for a [gate check](#the-gate-check), and Lago answers with a challenge. The agent gets a `402` whose `PAYMENT-REQUIRED` header offers a top-up in USDC on each network of your connection, plus a sign-in-with-x challenge.
-2. **Top-up.** The agent signs the payment and retries with `PAYMENT-SIGNATURE`. The middleware forwards it to Lago, which verifies and settles it through the facilitator, creates the agent's customer, subscription and wallet on its first purchase, and grants the credits. The call is served.
-3. **Served from credits.** On later calls the agent signs in with `SIGN-IN-WITH-X`, which proves it holds the address that paid. Lago passes the call while the wallet covers one more call. No chain activity.
+2. **Top-up.** The agent signs the payment and retries with `PAYMENT-SIGNATURE`. The middleware runs a fresh gate check, then forwards the payment to Lago, which verifies and settles it through the facilitator, creates the agent's customer, subscription and wallet on its first purchase, and grants the credits. The call is served.
+3. **Served from credits.** On later calls the agent signs in with `SIGN-IN-WITH-X`, which proves it holds the address that paid. The official client signs in only after a `402`, so a call served from credits is a `402` then a `200`, with two gate checks. Lago passes the call while the wallet covers one more call. No chain activity.
 4. **Metered.** After every served call, the middleware sends Lago one usage event with what the call consumed. Lago draws it from the agent's wallet at your plan's price.
 5. **Empty again.** When the credits no longer cover a call, the gate challenges, and the agent tops up again.
 
@@ -71,9 +75,12 @@ A `sum` aggregation on the field `value`, with no expression, not recurring. Eac
 
 The plan an agent is subscribed to on its first top-up. It must be:
 
-- **Usage-only**: no subscription fee, no fixed charges, no minimum commitment, no charge minimums. Lago refuses anything else with a `plan_*` or `charge_*` error.
+- **Usage-only**: no subscription fee, no fixed charges, no minimum commitment, no charge minimums. Lago refuses these with a `plan_*` error. Charge minimums too: they come back as `plan_not_usage_only`, not as a `charge_*` code.
 - **In USD.**
-- **Charged in arrears**, with the charge on the route's metric set to **accept target wallets**, so usage drains the route's wallet and nothing else.
+- **Invoiceable**: a pay-in-advance charge must be invoiceable, or Lago refuses it with `charge_not_invoiceable`.
+- **Targeted**: the charge on the route's metric must **accept target wallets**, so usage drains the route's wallet and nothing else.
+
+Lago doesn't check these rules when you save the plan. It checks them on every gate check and credit purchase, so a misconfigured plan shows up as refused calls. The middleware's boot check runs a gate check per route, so it catches them at startup.
 
 <Warning>
 Wallet targeting is not optional. The gate reads one wallet. If usage could drain another one first, such as a promotional wallet, the gate would keep passing on credits the route never spends. Lago refuses a route whose charge does not target the wallet (`charge_not_targeted`).
@@ -247,17 +254,17 @@ The middleware sends one `POST /events` per served call, after the response has 
 
 - A response with a status of 400 or more sends no event.
 - `transaction_id` and `timestamp` are fixed when the call is served and reused on every retry, so Lago counts the event once.
-- A missing, negative or non-numeric usage bills `fallbackUsage` and reports `usage.extract`. Alert on it: a handler that forgets to report usage bills every call at the fallback, and nothing else looks wrong.
+- A missing, negative or non-numeric usage bills `fallbackUsage` and reports `usage.extract`. So do `NaN`, `Infinity`, a usage read that throws, and a numeric string such as `"5"`: only numbers count. `0` is valid and sends `"0"`. Alert on it: a handler that forgets to report usage bills every call at the fallback, and nothing else looks wrong.
 
 ## The gate check
 
 Every request to a gated route costs one gate check against Lago, before your handler runs. Lago serves a signed-in agent when:
 
 ```text
-wallet balance − usage already counted − calls in flight  ≥  estimatedCallCostCents
+wallet balance − usage already counted − estimatedCallCostCents × (calls in flight + this call)  ≥  estimatedCallCostCents
 ```
 
-Lago computes a wallet's ongoing usage on a refresh cycle, every 5 minutes by default (`LAGO_WALLET_ONGOING_BALANCE_REFRESH_INTERVAL_SECONDS`). Between two refreshes, a per-wallet counter reserves `estimatedCallCostCents` for each call it passes, so concurrent calls can't all spend the same balance. Each refresh replaces the reservations with the metered usage.
+Lago computes a wallet's ongoing usage on a refresh cycle, every 5 minutes by default (`LAGO_WALLET_ONGOING_BALANCE_REFRESH_INTERVAL_SECONDS`). Between two refreshes, a per-wallet counter reserves `estimatedCallCostCents` for each call it checks, this one included, so concurrent calls can't all spend the same balance. With 900 free and an estimate of 300, the third concurrent call is refused even though 300 is still free. Each refresh replaces the reservations with the metered usage.
 
 The gate is a guardrail, not a ledger. A wallet can go slightly negative:
 
@@ -279,7 +286,7 @@ Refusals are JSON, `{"error": "<code>"}`, with `Cache-Control: no-store`.
 | `403 buyer_not_recognized` | Auto-create customers is off and Lago doesn't know the address. |
 | `409 payment_already_settled` | This payment was already recorded for another request. Nothing served, nothing billed. |
 | `503 payment_pending` | The payment may have moved but isn't confirmed. Comes with `Retry-After`. |
-| `503 unavailable` | Lago gave no clear answer: unreachable, timed out, or the route's configuration was refused. |
+| `503 unavailable` | Lago gave no clear answer: unreachable, timed out, or the route's configuration was refused. Also answered while the route's boot check is still running or retrying. |
 
 The gate fails closed. When the middleware can't get a clear answer from Lago, the call is not served. It never answers `402` after a payment may have settled, so an agent is never asked to pay twice for the same call.
 
@@ -304,7 +311,7 @@ const x402 = await createLagoX402({
 | `gate.check` | A gate check failed or was refused. The agent got `503 unavailable`. |
 | `gate.purchase` | A credit purchase failed or its outcome is unknown. Money may have moved. Worth a look. |
 | `usage.extract` | A served call reported no valid usage and was billed `fallbackUsage`. |
-| `usage.send` | A usage event was not delivered after retries, or the queue was full. |
+| `usage.send` | A usage event was not delivered, or the queue was full. 5xx, `408`, `429`, network errors and timeouts are retried, 4 attempts in total. Any other 4xx drops the event at once. A `422` on a duplicate `transaction_id` counts as delivered. |
 
 Messages carry route names, endpoint names, statuses and Lago error codes only. Never the API key, a payment or sign-in header, or a response body.
 
@@ -338,7 +345,7 @@ const res = await fetchWithPayment("https://api.example.com/v1/generate", {
 
 - **Sign in.** Without the sign-in-with-x extension, every call is a new top-up.
 - **Raise the spend cap** when the top-up is above $1.
-- **Allow about 45 seconds** on the request that carries the payment.
+- **Allow about 45 seconds, plus the handler's time,** on the request that carries the payment.
 - **Never resend a payment after `503 payment_pending`.** Wait `Retry-After`, then call again and sign in. Once Lago confirms the payment, the call is served from its credits.
 - **Python agents need `httpx`.** The sync `requests` client can't run the extension's hooks.
 
@@ -370,10 +377,10 @@ search: {
 },
 ```
 
-The facilitator catalogues a route when a payment carrying its listing settles, and keeps it while the route has a settlement in the trailing 30 days.
+The facilitator catalogues a route when a payment carrying its listing settles through CDP. A listing is a snapshot refreshed by settlements, so a quiet route can keep advertising an old top-up after a config change.
 
 <Warning>
-**The listed price is the top-up**, the `402`'s amount, not what one call costs. The Bazaar has no other price field, and its price filter compares against it. State the per-call rate in `resource.description` and `resource.tags`.
+**The listed price is the top-up**, the `402`'s amount, not what one call costs. The Bazaar has no other price field: the only amount in a listing is the payment requirement's `amount`. State the per-call rate in `resource.description` and `resource.tags`.
 </Warning>
 
 Only static routes can be listed: no path parameters. The middleware refuses at boot what the facilitator would silently drop: a `serviceName` over 32 characters, more than 5 tags, a `description` over 500 characters, an invalid `iconUrl`.
@@ -383,8 +390,8 @@ Only static routes can be listed: no path parameters. The middleware refuses at 
 - **Node only.** Express, Hono on `@hono/node-server`, and the Next.js Node runtime. No edge runtimes. A Python middleware is not available yet.
 - **x402 v2 only.** USDC on Base and Solana, through the Coinbase facilitator.
 - **No streaming metering.** One usage value per call, read once the response has gone out.
-- **Every request costs a gate check.** Nothing is cached, by design. Put a rate limiter per client in front of the gate: a flood of anonymous requests costs a gate check each, and on Solana connections it can exhaust the facilitator's rate limit.
-- **Paid requests take up to 45 seconds.** Agents' HTTP clients, proxies, load balancers and platform timeouts must allow it.
+- **Every request costs a gate check.** Nothing is cached, by design. A call served from credits usually costs two, since the client signs in only after a `402`, and a paid retry runs one before the credit purchase. Put a rate limiter per client in front of the gate: a flood of anonymous requests costs a gate check each, and on Solana connections it can exhaust the facilitator's rate limit.
+- **Paid requests take about 45 seconds plus your handler's time.** A 5-second gate check runs first, then the credit purchase with its own 45-second budget, then your handler. Agents' HTTP clients, proxies, load balancers and platform timeouts must allow it.
 - **Usage events live in memory.** Events still queued are lost if the process crashes, is killed, or `close()` times out. Those calls stay unbilled. Await `x402.close()` on shutdown.
 - **Long paths break sign-in.** A path that pushes the sign-in URI past 512 characters makes sign-in fail with `401`.
 - **Next.js bills clients that left.** `after()` runs even when the client disconnected first. Express and Hono bill only once the headers were sent.

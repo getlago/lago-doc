@@ -26,7 +26,9 @@ Every other [payment provider](/guide/payments/payment-providers) in Lago is **p
 
 - **Premium license** with the `x402_payments` feature flag.
 - **Events targeting wallets**, the premium integration that lets a usage event name the wallet it draws from. x402 gates read one wallet, so the usage must drain that same wallet. Without it, gate checks answer `charge_not_targeted`.
-- **Wallet balance refresh.** Gate checks read a wallet's ongoing balance. On self-hosted Lago this needs a Redis cache (`LAGO_REDIS_CACHE_URL`) and `LAGO_DISABLE_WALLET_REFRESH` left unset. Memcached does not run the refresh.
+- **A Redis cache on self-hosted Lago.** Set `LAGO_REDIS_CACHE_URL` and leave `LAGO_DISABLE_WALLET_REFRESH` unset. Memcached runs the wallet balance refresh, but x402 needs Redis for two things:
+  - **Turning `x402_enabled` on for a wallet.** Without a Redis cache, it fails with `wallet_refresh_unavailable`, memcached or not.
+  - **The per-wallet reservation counter** behind the [gate check](/guide/ai-agents/x402#the-gate-check). Without a Redis cache store, or with Redis unreachable, the gate falls back to a floor: it passes only when the balance minus usage covers 1,000 times `estimatedCallCostCents`. In practice, almost every call is challenged.
 - **A CDP project** with a [Secret API key](https://docs.cdp.coinbase.com/get-started/authentication/cdp-api-keys) and payout accounts created in that project (CDP Server Wallet accounts).
 
 ## Connect Coinbase
@@ -38,26 +40,26 @@ In the app, go to **Settings > Integrations > Coinbase** and click **Add a conne
 | **Connection name** | Yes | Display name in the app. |
 | **Connection code** | Yes | Unique per organization. The middleware and the invoice payment URL reference the connection by this code. |
 | **CDP API key ID** and **CDP API key secret** | Yes | Credentials of your CDP Secret API key. Write-only: the API never returns them. Lago uses them for every verify and settle call. |
-| **Asset** | Yes | `usdc`. The only asset in this version. |
+| **Asset** | No | `usdc`, the default and the only asset in this version. |
 | **Environment** and **Network** | Yes | The networks buyers can pay on. Testnet: Base Sepolia, Solana devnet. Mainnet: Base, Solana. All networks of one connection belong to one environment. |
 | **EVM payout address** | If an EVM network is selected | Where USDC paid on Base lands. Must be an EVM account of your CDP project. |
 | **SVM payout address** | If a Solana network is selected | Where USDC paid on Solana lands. Must be a Solana account of your CDP project. |
-| **Allowed origins** | For the middleware | The public origins of your API, such as `https://api.example.com`. Agents sign in for one origin, and Lago only accepts sign-ins for these. Up to 10. `http://` only for `localhost`, `127.0.0.1` and `[::1]`. |
-| **Auto-create customers** | Yes | On: an unknown address that pays becomes a new Lago customer. Off: unknown buyers are refused, known ones keep working. Use it as a kill switch. |
+| **Allowed origins** | Yes | The public origins of your API, such as `https://api.example.com`. Agents sign in for one origin, and Lago only accepts sign-ins for these. Up to 10. `http://` only for `localhost`, `127.0.0.1` and `[::1]`. |
+| **Auto-create customers** | No | On by default. On: an unknown address that pays becomes a new Lago customer. Off: unknown buyers are refused, known ones keep working. Use it as a kill switch. |
 
 ```json
 POST /api/v1/x402_connections
 {
   "x402_connection": {
-    "code": "coinbase_prod",
-    "name": "Coinbase Prod",
+    "code": "coinbase_test",
+    "name": "Coinbase Test",
     "facilitator": "coinbase_cdp",
     "cdp_api_key_id": "<cdp_api_key_id>",
     "cdp_api_key_secret": "<cdp_api_key_secret>",
     "asset": "usdc",
-    "networks": ["eip155:8453", "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"],
+    "networks": ["eip155:84532", "solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1"],
     "payout_addresses": {
-      "evm": "0x7bA9c02E8dE7124F3aD583b25Cc1B5aE97a6F5Dd",
+      "evm": "0x7bA9c02e8de7124F3ad583B25cC1B5AE97a6F5DD",
       "svm": "9mQrVxWtBhKz3nRaU5cP7dYeFgJ2sLwHqT8oNvXbAiCE"
     },
     "allowed_origins": ["https://api.example.com"],
@@ -83,7 +85,7 @@ Networks use [CAIP-2](https://chainagnostic.org/CAIPs/caip-2) identifiers:
 
 A bad connection fails when you save it, not when an agent tries to pay. On create and update, Lago:
 
-1. Validates the shape: every selected network's family has a payout address, EVM addresses pass the EIP-55 checksum, Solana addresses decode as base58, and all networks belong to one environment.
+1. Validates the shape: every selected network's family has a payout address, EVM addresses pass the EIP-55 checksum (an all-lowercase address is accepted and stored checksummed; a mixed-case one must match), Solana addresses decode as base58, and all networks belong to one environment.
 2. Calls the facilitator with your credentials. A wrong key or secret fails the save, and every selected network must be supported.
 3. Looks each payout address up in your CDP project. An address outside the project fails with `not_in_cdp_project` on that family.
 
@@ -91,19 +93,27 @@ A bad connection fails when you save it, not when an agent tries to pay. On crea
 
 New organizations run on testnet: Base Sepolia and Solana devnet. Lago switches an organization to mainnet on request. A connection whose networks belong to the other environment is refused with `environment_not_enabled`, at save and on every gate check, credit purchase or invoice payment. Test the full flow on testnet with faucet USDC, then ask for mainnet.
 
+Only one environment is enabled at a time. Once an organization is on mainnet, its testnet connections are refused too, with `environment_not_enabled` on gate checks and invoice payment URLs. A connection saved on mainnet networks can't be moved back to testnet networks (`mainnet_not_downgradable`): create a new one.
+
 <Warning>
 **Solana payout accounts need a USDC token account.** The x402 `exact` scheme on Solana does not create the payout account's associated token account. A CDP Solana account that has never held USDC cannot receive a first settlement. Send it any amount of USDC once, or create the associated token account yourself, before you go live.
 </Warning>
 
 ## Credit purchases
 
-A credit purchase turns one settled USDC payment into prepaid credits. The [`lago-x402` middleware](/guide/ai-agents/x402) drives it from your API. Lago does this on each purchase:
+A credit purchase turns one settled USDC payment into prepaid credits. The [`lago-x402` middleware](/guide/ai-agents/x402) drives it from your API, in **settle mode**: Lago settles the payment itself. On each purchase, Lago:
 
 1. **Verifies** the signed payment with the facilitator, and checks it against your connection: network, asset, payout address and amount.
 2. **Records a pending settlement**, then **settles** through the facilitator.
 3. **Creates what the agent needs**, on its first purchase only: a customer keyed on the paying address, a subscription to the route's plan and the route's wallet.
 4. **Grants the credits** on the wallet. They are spendable as soon as the response returns.
-5. **Issues the fiscal trail** asynchronously, within seconds: a credit invoice, an x402 payment and a receipt.
+5. **Issues the fiscal trail** asynchronously, within seconds: a credit invoice and an x402 payment, plus a receipt when your organization issues receipts.
+
+### Record mode
+
+If you run your own x402 gate and settle through the facilitator yourself, `POST /api/v1/x402/credit_purchases` also accepts `mode: "record"` with the facilitator's `settle_response`, and optionally its `verify_response`. Lago makes no facilitator call. It checks the settle response it is given, records the settlement as settled by you, and runs steps 3 to 5. The same payment sent again under another `idempotency_key` gets `payment_already_settled`.
+
+Record mode is available through the API only. The `lago-x402` middleware always uses settle mode, and invoice payments always settle through Lago.
 
 From then on the agent is a regular prepaid-credit customer. Usage events draw its wallet down at your plan's price, and its invoices, wallet transactions and payments show in the app, the API and your webhooks like any other customer's.
 
@@ -163,11 +173,13 @@ The payment URL is a standard x402 resource:
 
 1. **The buyer requests it without a payment.** Lago answers `402` with a `PAYMENT-REQUIRED` header: one payment requirement per network of the connection, for the invoice's full amount due.
 2. **The buyer signs and posts** the payment in a `PAYMENT-SIGNATURE` header, with `POST`.
-3. **Lago verifies, settles and records** it: an x402 payment on the invoice, `payment_status` set to `succeeded`, and the existing invoice and payment webhooks. The answer is `200` with a `PAYMENT-RESPONSE` header carrying the transaction hash.
+3. **Lago verifies, settles and records** it: an x402 payment on the invoice, `payment_status` set to `succeeded`, a receipt when your organization issues receipts, and the existing invoice and payment webhooks. The answer is `200` with a `PAYMENT-RESPONSE` header carrying the transaction hash.
 
 | Answer | Meaning |
 |---|---|
 | `402` | Unpaid. The header carries the challenge, plus an `error` when a payment was refused. Nothing moved. |
+| `422 wallet_not_x402_enabled` | The customer no longer has an active x402-enabled wallet, for example after its wallet was terminated. |
+| `422 invoice_currency_not_supported` | The invoice is not in USD. |
 | `200` | Paid. A buyer that lost the answer and resends the same payment gets the same receipt back. Nothing settles twice. |
 | `409 invoice_payment_pending` | A settlement for this invoice is still being confirmed. Wait, then request the URL again. |
 | `410` | The invoice is paid or voided. |
@@ -198,7 +210,7 @@ There is no refund endpoint and no on-chain void. A settle is final, and returni
 - **USDC only, USD only.** Wallets, plans and invoices paid over x402 must be in USD. Non-USD merchants run a parallel USD wallet and plan for agent traffic.
 - **Base and Solana only**, mainnet and testnet. One facilitator: Coinbase CDP.
 - **x402 v2 only.** v1 `X-PAYMENT` headers are not accepted.
-- **Every payment settles through Lago.** Lago does not record a payment settled by another facilitator or by your own gate.
+- **The middleware lets Lago settle every payment.** Recording a payment your own gate settled is available through the API only, in [record mode](#record-mode). Invoice payments always settle through Lago.
 - **No partial invoice payments.** A payment must equal the amount due.
 - **No refunds through Lago.** See [Refunds](#refunds).
 - **Terminating an agent's wallet forfeits its balance.** Lago neither moves nor refunds it, and usage already prepaid but not yet invoiced is billed at period close. The next payment creates a fresh wallet with the same code.
