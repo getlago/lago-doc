@@ -111,7 +111,7 @@ A credit purchase turns one settled USDC payment into prepaid credits. The [`lag
 
 ### Record mode
 
-If you run your own x402 gate and settle through the facilitator yourself, `POST /api/v1/x402/credit_purchases` also accepts `mode: "record"` with the facilitator's `settle_response`, and optionally its `verify_response`. Lago makes no facilitator call. It checks the settle response it is given, records the settlement as settled by you, and runs steps 3 to 5. The same payment sent again under another `idempotency_key` gets `payment_already_settled`.
+If you run your own x402 gate and settle through the facilitator yourself, `POST /api/v1/x402/credit_purchases` also accepts `mode: "record"` with the facilitator's `settle_response`, an `idempotency_key`, and optionally its `verify_response`. The `idempotency_key` is required in record mode, optional in settle mode. Lago makes no facilitator call. It checks the settle response it is given, records the settlement as settled by you, and runs steps 3 to 5. The same payment sent again under another `idempotency_key` gets `payment_already_settled`.
 
 Record mode is available through the API only. The `lago-x402` middleware always uses settle mode, and invoice payments always settle through Lago.
 
